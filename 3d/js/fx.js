@@ -11,6 +11,16 @@ export function createFx(scene, camera, labelsEl, flashEl) {
   const sparkMat = new THREE.SpriteMaterial({ map: sparkTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
   const ringGeo = new THREE.RingGeometry(0.75, 1, 32);
   const parts = [];
+  // Estelas de ataque: arcos brillantes en el aire. `made` cuenta cuántas se dibujaron (para las pruebas)
+  const made = { short: 0, long: 0, finisher: 0, enemy: 0, line: 0 };
+  const SLASH = {
+    short:    { r: 1.0, arc: 1.9, color: 0xffffff, life: 0.16, tilt: 0.3 },
+    long:     { r: 1.25, arc: 2.3, color: 0xffe08a, life: 0.2, tilt: -0.35 },
+    finisher: { r: 1.7, arc: 2.8, color: 0xffb02e, life: 0.28, tilt: 0.7 },
+    enemy:    { r: 1.0, arc: 1.9, color: 0xff4d5e, life: 0.18, tilt: -0.3 }
+  };
+  const arcGeos = {};
+  const lineGeo = new THREE.PlaneGeometry(1.3, 0.07);
   const pops = [];
   let shakeAmt = 0;
   let stop = 0;
@@ -45,6 +55,28 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       scene.add(ring);
       parts.push({ obj: ring, v: null, life: 0.2, max: 0.2, kind: 'ring', r: 0.6 + strength * 0.5 });
     },
+    slash(pos, facing, kind = 'short') {
+      const k = SLASH[kind];
+      made[kind]++;
+      arcGeos[kind] ??= new THREE.RingGeometry(0.6, 1, 20, 1, -k.arc / 2, k.arc);
+      const m = new THREE.Mesh(arcGeos[kind], new THREE.MeshBasicMaterial({ color: k.color, transparent: true, opacity: 0.95, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+      m.position.set(pos.x + facing * 0.8, pos.y, pos.z + 0.35);
+      m.lookAt(camera.position);
+      m.rotateZ(k.tilt * facing);
+      scene.add(m);
+      parts.push({ obj: m, v: null, life: k.life, max: k.life, kind: 'slash', r: k.r, facing });
+    },
+    // Raya de velocidad detrás de algo que corre (embestida del patovica)
+    speedLine(pos, facing) {
+      made.line++;
+      const m = new THREE.Mesh(lineGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+      m.position.set(pos.x - facing * 0.7, 0.4 + Math.random() * 1.8, pos.z + (Math.random() - 0.5) * 0.6);
+      m.lookAt(camera.position);
+      scene.add(m);
+      parts.push({ obj: m, v: new THREE.Vector3(-facing * 3, 0, 0), life: 0.18, max: 0.18, kind: 'line' });
+    },
+    made,
+    count(kind) { return parts.filter(p => p.kind === kind).length; },
     dust(pos) {
       for (let i = 0; i < 3; i++) {
         const s = new THREE.Sprite(sparkMat);
@@ -86,13 +118,20 @@ export function createFx(scene, camera, labelsEl, flashEl) {
           p.v.y -= 14 * dt;
           p.obj.position.addScaledVector(p.v, dt);
           p.obj.material.opacity = k;
+        } else if (p.kind === 'slash') {
+          const sc = p.r * (0.7 + 0.5 * (1 - k));
+          p.obj.scale.set(p.facing * sc, sc, 1);
+          p.obj.material.opacity = k * 0.95;
+        } else if (p.kind === 'line') {
+          p.obj.position.addScaledVector(p.v, dt);
+          p.obj.material.opacity = k * 0.8;
         } else {
           p.obj.scale.setScalar(p.r * (1.6 - k));
           p.obj.material.opacity = k;
         }
         if (p.life <= 0) {
           scene.remove(p.obj);
-          if (p.kind === 'ring') p.obj.material.dispose();
+          if (p.kind !== 'spark') p.obj.material.dispose();
           parts.splice(i, 1);
         }
       }
@@ -109,7 +148,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       }
     },
     clear() {
-      for (const p of parts) scene.remove(p.obj);
+      for (const p of parts) { scene.remove(p.obj); if (p.kind !== 'spark') p.obj.material.dispose(); }
       parts.length = 0;
       for (const p of pops) p.el.remove();
       pops.length = 0;

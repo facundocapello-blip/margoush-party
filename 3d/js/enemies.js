@@ -199,7 +199,7 @@ export function createEnemies(ctx) {
       e.t -= dt;
       a.lean = 0.18; // toma impulso
       a.material.color.setHex(Math.floor(e.t * 20) % 2 ? 0xff8080 : 0xffffff);
-      if (e.t <= 0) { e.state = 'strike'; e.t = 0.15; a.lean = -0.12; a.material.color.setHex(0xffffff); }
+      if (e.t <= 0) { e.state = 'strike'; e.t = 0.15; a.lean = -0.12; a.material.color.setHex(0xffffff); fx.slash(e.pos.clone().setY(1.25), a.facing, 'enemy'); }
     } else if (e.state === 'strike') {
       e.t -= dt;
       const ex = (hp.x - e.pos.x) * a.facing;
@@ -287,6 +287,8 @@ export function createEnemies(ctx) {
     e.ran += moved;
     a.lean = -0.22;
     gait(e, moved, dt);
+    e.lineT = (e.lineT || 0) - dt;
+    if (e.lineT <= 0) { e.lineT = 0.07; fx.speedLine(e.pos, e.dir); }
     if (!e.hitHero && Math.abs(hp.x - e.pos.x) < 1.0 && Math.abs(hp.z - e.pos.z) < 0.7 && heroCanBeHit(hero, 1.0)) {
       e.hitHero = true;
       if (hero.hurt(1, e.pos.x - e.dir)) hero.push(e.dir * e.k.shove, 0);
@@ -478,6 +480,13 @@ export function createEnemies(ctx) {
     spawn,
     attacking,
     alive() { return list.filter(e => e.hp > 0).length; },
+
+    // Golpe a un malo en particular (puños, fuego)
+    hitEnemy(e, facing, dmg, knock, strength) {
+      if (e.hp <= 0) return false;
+      damage(e, dmg, facing, knock, strength);
+      return true;
+    },
 
     hitArea({ x, z, facing, reach, depth, dmg, knock, strength }) {
       let n = 0;

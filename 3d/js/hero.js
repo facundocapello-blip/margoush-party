@@ -219,6 +219,7 @@ export function createHero(id, ctx) {
   function landSwing() {
     const s = h.swing;
     const area = { x: actor.position.x, z: actor.position.z, facing: actor.facing, reach: s.reach, depth: 0.75, dmg: s.dmg, knock: s.knock, strength: s.strength, airborne: h.lift > 0.5 };
+    fx.slash(new THREE.Vector3(actor.position.x, 1.25, actor.position.z), actor.facing, ['short', 'long', 'finisher'][h.combo]);
     const hits = game.enemies.hitArea(area) + (game.boss ? game.boss.hitArea(area) : 0) + game.props.hitArea(area);
     if (hits > 0 && s.strength > 1.2) { fx.hitstop(0.08); fx.shake(0.28); }
   }
@@ -227,16 +228,14 @@ export function createHero(id, ctx) {
     h.powerCd = POWER_CD;
     const p = actor.position;
     if (id === 'douge') {
-      const area = { x: p.x, z: p.z, facing: actor.facing, reach: 3.8, depth: 1.1, dmg: 2, knock: 9, strength: 1.8 };
-      game.enemies.hitArea(area);
-      if (game.boss) game.boss.hitArea(area);
-      game.props.hitArea(area);
+      game.powers.launchFists(p.x, p.z, actor.facing);
+      game.props.hitArea({ x: p.x, z: p.z, facing: actor.facing, reach: 3.8, depth: 1.1 });
       fx.popup(p.clone().setY(3.2).setX(p.x + actor.facing * 1.5), '¡VERDADES!', '#ffd36e', { size: 28, life: 1 });
       fx.shake(0.4); fx.hitstop(0.1);
       ctx.audio?.sfx('power');
     } else {
-      const hit = game.enemies.stunAround(p.x, p.z, 3.4, 1.6, 1);
-      if (game.boss) game.boss.stunAround?.(p.x, p.z, 3.4);
+      game.powers.throwPan(p.x, p.z, actor.facing);
+      const hit = 0;
       fx.popup(p.clone().setY(3.3), 'OH LÀ LÀ !', '#ff9fd0', { size: 28, life: 1 });
       fx.shake(0.25);
       ctx.audio?.sfx('power');
