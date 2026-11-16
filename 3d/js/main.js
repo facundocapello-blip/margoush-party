@@ -151,7 +151,7 @@ function clearRun() {
   game.story?.resetCage();
   fx.clear();
   game.combo.reset();
-  for (const g of world.gates) { g.open = false; g.mesh.visible = true; }
+  world.resetGates();
   game.waves = { vereda: 'idle', plaza: 'idle' };
 }
 
@@ -196,8 +196,10 @@ function openGate(i) {
   const g = world.gates[i];
   if (g.open) return;
   g.open = true;
-  g.mesh.visible = false;
+  g.t = 0;
+  fx.shake(0.35);
   game.banner('¡ZONA DESPEJADA!', 'Seguí hacia la derecha →');
+  game.ctx.audio?.sfx('crate');
   game.ctx.audio?.sfx('clear');
 }
 
@@ -343,6 +345,7 @@ function frame(now) {
     if (game.rescueT > 3.6) finish(true);
   }
   if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0) $('#banner').classList.add('hidden'); }
+  world.updateGates(dt);
   fx.update(dt);
   updateCamera(dt);
   renderer.render(scene, camera);

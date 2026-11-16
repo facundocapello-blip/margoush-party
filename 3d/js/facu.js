@@ -67,9 +67,16 @@ export function createFacu(ctx) {
   let jokeIdx = 0;
   let vx = 0, vy = 0, rolled = 0, idleT = 0;
 
+  // Hasta dónde puede avanzar el auto: no pasa barreras cerradas que estén delante del héroe
+  function gateLimit(hx) {
+    let lim = Infinity;
+    for (const g of world.gates) if (!g.open && hx < g.x) lim = Math.min(lim, g.x - 1.6);
+    return lim;
+  }
+
   function place() {
     const h = game.hero.actor.position;
-    car.position.set(Math.min(world.bounds.maxX - 2, h.x + AHEAD), 0, LANE_Z);
+    car.position.set(Math.min(world.bounds.maxX - 2, h.x + AHEAD, gateLimit(h.x)), 0, LANE_Z);
     vx = 0; vy = 0;
   }
   place();
@@ -113,11 +120,14 @@ export function createFacu(ctx) {
       if (Math.abs(h.x - p.x) > 16) { place(); fx.dust(p); }
 
       // Siempre para adelante: alcanza al héroe y lo espera; solo vuelve si quedó muy lejos
-      const target = Math.min(world.bounds.maxX - 2, h.x + AHEAD);
+      // frena antes de una barrera cerrada (y retrocede si quedó encima)
+      const limit = gateLimit(h.x);
+      const target = Math.min(world.bounds.maxX - 2, h.x + AHEAD, limit);
       const diff = target - p.x;
-      const want = diff > 0.2 ? Math.min(MAX_SPEED, diff * 2.5) : (diff < -7 ? -2 : 0);
+      const want = p.x > limit + 0.05 ? -3 : diff > 0.2 ? Math.min(MAX_SPEED, diff * 2.5) : (diff < -7 ? -2 : 0);
       vx += (want - vx) * Math.min(1, dt * 5);
       if (want >= 0) vx = Math.max(0, vx);
+      else if (want === -3) vx = Math.min(vx, 0);
       p.x += vx * dt;
 
       // Saltito sobre los cajones del pasaje

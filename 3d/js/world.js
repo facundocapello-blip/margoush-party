@@ -245,24 +245,77 @@ export function buildStreet(scene, assets) {
   const pasajeSign = sign('PASAJE DEL CORTADO', 117, 5.4, '#c084fc', 4.4);
   pasajeSign.position.z = BACK_Z + 0.5;
 
-  // Portones de cinta: se abren al despejar cada zona (Task 5)
+  // Barricadas de cajones y tambores (2,4 m): no se saltan; al despejar la zona se derrumban
+  const crateTex = canvasTex(128, 128, (c, w, h) => {
+    c.fillStyle = '#8a5a34'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#6b4126'; for (let y = 0; y < h; y += 32) c.fillRect(0, y, w, 6);
+    c.strokeStyle = '#4a2c18'; c.lineWidth = 8; c.strokeRect(4, 4, w - 8, h - 8);
+    c.beginPath(); c.moveTo(8, 8); c.lineTo(w - 8, h - 8); c.stroke();
+  });
+  const tagTex = canvasTex(256, 128, (c, w, h) => {
+    c.fillStyle = '#ffcc00'; c.fillRect(0, 0, w, h);
+    for (let i = -h; i < w; i += 40) { c.fillStyle = '#111'; c.beginPath(); c.moveTo(i, 0); c.lineTo(i + 20, 0); c.lineTo(i + 20 + h, h); c.lineTo(i + h, h); c.fill(); }
+    c.fillStyle = '#111'; c.fillRect(20, 34, w - 40, 60);
+    c.font = '900 40px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ffcc00';
+    c.fillText('CERRADO', w / 2, 66);
+  });
+  const crateMat = new THREE.MeshLambertMaterial({ map: crateTex });
+  const drumMat = new THREE.MeshLambertMaterial({ color: 0x3f5d7a });
+  const signMat = new THREE.MeshBasicMaterial({ map: tagTex });
+  const crateGeo = new THREE.BoxGeometry(1.15, 1.15, 1.15);
+  const drumGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.15, 14);
   const gates = [88, 150].map((x) => {
     const g = new THREE.Group();
-    const tapeMat = new THREE.MeshBasicMaterial({ map: canvasTex(64, 16, (c, w, h) => { for (let i = 0; i < w; i += 16) { c.fillStyle = (i / 16) % 2 ? '#111' : '#ffcc00'; c.fillRect(i, 0, 16, h); } }, 12, 1) });
-    for (const y of [0.7, 1.3]) {
-      const tape = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, 7.6), tapeMat);
-      tape.position.set(0, y, 0);
-      g.add(tape);
+    const pieces = [];
+    let i = 0;
+    for (let z = -3.4; z <= 3.5; z += 1.15) {
+      for (let row = 0; row < 2; row++) {
+        const drum = (i++ % 3) === 1 && row === 0;
+        const m = new THREE.Mesh(drum ? drumGeo : crateGeo, drum ? drumMat : crateMat);
+        m.position.set((row ? 0.08 : -0.05) * ((i % 2) * 2 - 1), 0.58 + row * 1.15, z);
+        m.rotation.y = (Math.random() - 0.5) * 0.25;
+        g.add(m);
+        pieces.push({ mesh: m, base: m.position.clone(), baseRot: m.rotation.clone(), v: new THREE.Vector3(), spin: new THREE.Vector3() });
+      }
     }
-    for (const z of [-3.9, 3.9]) {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.5, 10), new THREE.MeshLambertMaterial({ color: 0xff6a2a }));
-      cone.position.set(0, 0.75, z);
-      g.add(cone);
-    }
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.9), signMat);
+    sign.position.set(0, 2.75, 1.2);
+    sign.rotation.x = -0.25;
+    g.add(sign);
+    pieces.push({ mesh: sign, base: sign.position.clone(), baseRot: sign.rotation.clone(), v: new THREE.Vector3(), spin: new THREE.Vector3() });
     g.position.x = x;
     scene.add(g);
-    return { x, open: false, mesh: g };
+    return { x, open: false, mesh: g, pieces, t: 0 };
   });
+
+  // Animación del derrumbe (se llama en cada cuadro)
+  function updateGates(dt) {
+    for (const g of gates) {
+      if (!g.open || !g.mesh.visible) continue;
+      if (g.t === 0) {
+        for (const p of g.pieces) {
+          p.v.set(2 + Math.random() * 4, 2 + Math.random() * 4, (Math.random() - 0.5) * 3);
+          p.spin.set(Math.random() * 6, Math.random() * 4, -3 - Math.random() * 5);
+        }
+      }
+      g.t += dt;
+      for (const p of g.pieces) {
+        p.v.y -= 18 * dt;
+        p.mesh.position.addScaledVector(p.v, dt);
+        if (p.mesh.position.y < 0.5) { p.mesh.position.y = 0.5; p.v.y *= -0.3; p.v.x *= 0.7; }
+        p.mesh.rotation.x += p.spin.x * dt;
+        p.mesh.rotation.z += p.spin.z * dt;
+      }
+      if (g.t > 1.3) g.mesh.visible = false;
+    }
+  }
+
+  function resetGates() {
+    for (const g of gates) {
+      g.open = false; g.t = 0; g.mesh.visible = true;
+      for (const p of g.pieces) { p.mesh.position.copy(p.base); p.mesh.rotation.copy(p.baseRot); }
+    }
+  }
 
   const secret = { x: 117, halfWidth: 1.4, doorZ: BACK_Z + 0.6, found: false, sealed: true };
 
@@ -282,5 +335,5 @@ export function buildStreet(scene, assets) {
     return pos;
   }
 
-  return { bounds: STREET, zones: ZONES, colliders: [], gates, secret, clampPosition, galponX: GALPON_X };
+  return { bounds: STREET, zones: ZONES, colliders: [], gates, secret, clampPosition, updateGates, resetGates, galponX: GALPON_X };
 }
