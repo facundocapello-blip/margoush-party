@@ -2,12 +2,15 @@
 // Cada pose: { tex, frames?, cols?, rows?, cell?, h, foot } donde
 //   h    = alto de la imagen relativo a heightM (las tiras de correr traen margen),
 //   foot = fracción del alto donde apoyan los pies (1 = borde inferior).
+import { poseHeight } from './poses.js';
+
 const TILT = -0.32; // inclina la figura hacia la cámara (estilo Paper Mario)
 const shadowGeo = new THREE.CircleGeometry(1, 20);
 const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false });
 
 export class SpriteActor {
-  constructor(scene, assets, { poses, heightM, tint = 0xffffff, shadow = 0.55 }) {
+  // scaleRef: pose de referencia (p. ej. 'douge_idle'); las demás se escalan para que la cabeza mida igual
+  constructor(scene, assets, { poses, heightM, tint = 0xffffff, shadow = 0.55, scaleRef = null }) {
     this.scene = scene;
     this.heightM = heightM;
     this.poses = {};
@@ -18,6 +21,9 @@ export class SpriteActor {
     this.flashT = 0;
     this.squash = 0;
     this.lift = 0; // altura sobre el piso (saltos)
+    this.lean = 0; // inclinación (radianes, + = hacia atrás del personaje)
+    this.offsetX = 0; // corrimiento hacia adelante del personaje (m)
+    this.stretch = 0; // estirón (+) o aplastamiento (−) momentáneo
     this.root = new THREE.Group();
     this.position = this.root.position;
 
@@ -48,9 +54,9 @@ export class SpriteActor {
         frames: p.frames || meta.frames || 1,
         cell: p.cell ?? null,
         aspect: cellW / cellH,
-        h: p.h ?? 1,
-        foot: p.foot ?? 1,
-        stride: p.stride ?? 0.35
+        h: p.h ?? (scaleRef ? poseHeight(assets.manifest, p.tex, scaleRef) : 1),
+        foot: p.foot ?? meta.foot ?? 1,
+        stride: p.stride ?? 0.5
       };
     }
     this.setPose(Object.keys(poses)[0]);
@@ -101,8 +107,11 @@ export class SpriteActor {
     // golpe recibido: aplastamiento breve
     this.squash = Math.max(0, this.squash - dt * 6);
     const sq = Math.sin(this.squash * Math.PI) * 0.12;
-    this.mesh.scale.set(W * this.facing * (1 + sq), H * (1 - sq), 1);
+    const st = this.stretch;
+    this.mesh.scale.set(W * this.facing * (1 + sq - st * 0.5), H * (1 - sq + st), 1);
     this.mesh.position.y = -H * (1 - p.foot) + this.lift;
+    this.mesh.position.x = this.offsetX * this.facing;
+    this.mesh.rotation.z = this.lean * this.facing;
     this.shadow.scale.x = this.heightM * 0.3 * (1 - Math.min(0.5, this.lift * 0.2));
     if (this.flashT > 0) {
       this.flashT -= dt;

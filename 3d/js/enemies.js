@@ -97,7 +97,7 @@ export function createEnemies(ctx) {
           e.pos.x += e.kx * dt;
           a.lift = Math.max(0, a.lift + (e.dead > 0.3 ? 4 : -6) * dt);
           a.material.opacity = 1;
-          a.mesh.rotation.z = (1 - e.dead / 0.6) * -e.kx * 0.12;
+          a.lean = (1 - e.dead / 0.6) * -e.kx * 0.12;
           a.update(dt, 0);
           if (e.dead <= 0) { a.dispose(); list.splice(i, 1); }
           continue;
@@ -107,7 +107,7 @@ export function createEnemies(ctx) {
 
         if (e.stun > 0) {
           e.stun -= dt;
-          a.mesh.rotation.z = Math.sin(performance.now() / 90 + e.seed) * 0.08;
+          a.lean = Math.sin(performance.now() / 90 + e.seed) * 0.08;
         } else if (e.state === 'hitstun') {
           e.t -= dt;
           if (e.t <= 0) { e.state = 'walk'; e.cd = Math.max(e.cd, 0.5); }
@@ -124,7 +124,7 @@ export function createEnemies(ctx) {
           }
           if (e.t <= 0) { e.state = 'walk'; e.cd = 1.2; e.struck = false; }
         } else {
-          a.mesh.rotation.z = 0;
+          a.lean = 0;
           // Se acerca a un costado del héroe; si ya hay dos atacando, espera a distancia
           const side = dx > 0 ? -1 : 1;
           const busy = attackers() >= MAX_ATTACKERS;

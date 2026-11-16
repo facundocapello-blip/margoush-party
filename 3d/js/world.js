@@ -105,9 +105,9 @@ export function buildStreet(scene, assets) {
   floor.rotation.x = -Math.PI / 2;
   floor.position.set((GALPON_X - 20) / 2, 0, 5.6);
   scene.add(floor);
-  const slab = new THREE.Mesh(new THREE.PlaneGeometry(70, 22), new THREE.MeshLambertMaterial({ color: 0x8a7f96, map: canvasTex(256, 256, concrete, 14, 4) }));
+  const slab = new THREE.Mesh(new THREE.PlaneGeometry(70, 24), new THREE.MeshLambertMaterial({ color: 0x8a7f96, map: canvasTex(256, 256, concrete, 14, 4) }));
   slab.rotation.x = -Math.PI / 2;
-  slab.position.set(GALPON_X + 35, 0.005, 5.6);
+  slab.position.set(GALPON_X + 35, 0.005, 4.6);
   scene.add(slab);
   // Franja amarilla de seguridad y portón de entrada al galpón
   const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 9), new THREE.MeshBasicMaterial({ color: 0xffc23d }));
@@ -121,7 +121,7 @@ export function buildStreet(scene, assets) {
   // Barriles y cajas del galpón
   const barrelMat = new THREE.MeshLambertMaterial({ color: 0x8a3b3b });
   const boxMat = new THREE.MeshLambertMaterial({ color: 0x9a6a3c });
-  for (const [x, z, kind] of [[GALPON_X + 4, -4.3, 'b'], [GALPON_X + 5.1, -4.5, 'b'], [GALPON_X + 13, -4.4, 'x'], [GALPON_X + 14.2, -4.4, 'x'], [GALPON_X + 13.6, -4.4, 'x2'], [GALPON_X + 30, -4.3, 'b'], [GALPON_X + 39, -4.4, 'x']]) {
+  for (const [x, z, kind] of [[GALPON_X + 4, -5.6, 'b'], [GALPON_X + 5.1, -5.7, 'b'], [GALPON_X + 13, -5.6, 'x'], [GALPON_X + 14.2, -5.6, 'x'], [GALPON_X + 13.6, -5.6, 'x2'], [GALPON_X + 30, -5.6, 'b'], [GALPON_X + 39, -5.6, 'x']]) {
     const m = kind === 'b' ? new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.3, 14), barrelMat) : new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), boxMat);
     m.position.set(x, kind === 'x2' ? 1.8 : kind === 'b' ? 0.65 : 0.6, z);
     scene.add(m);
@@ -150,15 +150,22 @@ export function buildStreet(scene, assets) {
   const bgMeta = assets.meta('street_bg');
   const tileH = 13, tileW = tileH * bgMeta.w / bgMeta.h;
   const bgMat = new THREE.MeshBasicMaterial({ map: bg, fog: false });
-  for (let x = -20; x < GALPON_X; x += tileW) {
+  // el último mosaico termina justo donde empieza el galpón
+  const tiles = Math.ceil((GALPON_X + 20) / tileW);
+  for (let x = GALPON_X - tiles * tileW; x < GALPON_X - 1; x += tileW) {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(tileW, tileH), bgMat);
     p.position.set(x + tileW / 2, tileH * (0.5 - 0.165), BACK_Z);
     scene.add(p);
   }
   // Galpón del fondo
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(70, 13), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 256, warehouse, 4, 1), fog: false }));
-  wall.position.set(GALPON_X + 35, 4.5, BACK_Z + 0.05);
+  wall.position.set(GALPON_X + 35, 4.5, -6.8); // el galpón es más profundo: deja lugar a barriles detrás del carril del auto
   scene.add(wall);
+  // Pared lateral que cierra la esquina entre la fachada y el fondo del galpón
+  const side = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 13), new THREE.MeshBasicMaterial({ color: 0x1d1530, fog: false }));
+  side.rotation.y = Math.PI / 2;
+  side.position.set(GALPON_X + 0.4, 4.5, -6.0);
+  scene.add(side);
 
   // Carteles
   const sign = (text, x, y, color, w = 7) => {
@@ -178,10 +185,10 @@ export function buildStreet(scene, assets) {
   const haloMat = new THREE.SpriteMaterial({ map: glow, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
   for (let x = 6; x < GALPON_X; x += 15) {
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 4.2, 8), postMat);
-    post.position.set(x, 2.1, -4.3);
+    post.position.set(x, 2.1, -4.95);
     scene.add(post);
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), bulbMat);
-    bulb.position.set(x, 4.3, -4.3);
+    bulb.position.set(x, 4.3, -4.95);
     scene.add(bulb);
     const halo = new THREE.Sprite(haloMat);
     halo.scale.set(3.4, 3.4, 1);
@@ -197,10 +204,10 @@ export function buildStreet(scene, assets) {
   const potMat = new THREE.MeshLambertMaterial({ color: 0xb4643c });
   const leafMat = new THREE.MeshLambertMaterial({ color: 0x4f7a3c });
   for (let x = 13; x < GALPON_X; x += 15) {
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.32, 0.6, 10), potMat);
-    pot.position.set(x, 0.46, -4.6);
-    const bush = new THREE.Mesh(new THREE.SphereGeometry(0.6, 10, 8), leafMat);
-    bush.position.set(x, 1.15, -4.6);
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), potMat);
+    pot.position.set(x, 0.41, -5.0);
+    const bush = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 8), leafMat);
+    bush.position.set(x, 0.95, -5.0);
     scene.add(pot, bush);
   }
 
@@ -208,9 +215,9 @@ export function buildStreet(scene, assets) {
   const tableMat = new THREE.MeshLambertMaterial({ color: 0x2d2a2a });
   for (const x of [3.5, 7.5, 11.5]) {
     const top = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 14), tableMat);
-    top.position.set(x, 0.95, -3.95);
+    top.position.set(x, 0.95, -4.95);
     const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.95, 6), tableMat);
-    leg.position.set(x, 0.47, -3.95);
+    leg.position.set(x, 0.47, -4.95);
     scene.add(top, leg);
   }
 

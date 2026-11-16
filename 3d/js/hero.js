@@ -1,10 +1,11 @@
 import { SpriteActor } from './sprites.js';
 
+// Las alturas de correr y pegar salen del manifiesto (misma cabeza en todas las poses)
 export const HERO_CFG = {
-  douge: { name: 'DOUGE', heightM: 2.3, speed: 6.6, poses: {
-    idle: { tex: 'douge_idle' }, run: { tex: 'douge_run', h: 1.14, foot: 0.925 }, attack: { tex: 'douge_attack' } } },
-  marine: { name: 'MARINE', heightM: 2.2, speed: 7.2, poses: {
-    idle: { tex: 'marine_idle' }, run: { tex: 'marine_run', h: 1.293, foot: 0.918 }, attack: { tex: 'marine_attack' } } }
+  douge: { name: 'DOUGE', heightM: 2.3, speed: 6.6, scaleRef: 'douge_idle', poses: {
+    idle: { tex: 'douge_idle' }, run: { tex: 'douge_run' }, attack: { tex: 'douge_attack' } } },
+  marine: { name: 'MARINE', heightM: 2.2, speed: 7.2, scaleRef: 'marine_idle', poses: {
+    idle: { tex: 'marine_idle' }, run: { tex: 'marine_run' }, attack: { tex: 'marine_attack' } } }
 };
 
 // Combo de 3: el tercero es el remate
@@ -19,7 +20,7 @@ const POWER_CD = 7;
 export function createHero(id, ctx) {
   const cfg = HERO_CFG[id];
   const { input, world, fx, game } = ctx;
-  const actor = new SpriteActor(ctx.scene, ctx.assets, { poses: cfg.poses, heightM: cfg.heightM });
+  const actor = new SpriteActor(ctx.scene, ctx.assets, { poses: cfg.poses, heightM: cfg.heightM, scaleRef: cfg.scaleRef });
 
   const h = {
     id, actor, hp: 5, hpMax: 5, speed: cfg.speed,
@@ -99,11 +100,8 @@ export function createHero(id, ctx) {
         h.lift = Math.max(0, h.lift + h.vy * dt);
         if (h.lift === 0) { h.vy = 0; fx.dust(p); }
       }
-      actor.lift = h.lift;
-
       const speed = Math.hypot(vx, vz);
-      if (h.state === 'attack') actor.setPose('attack');
-      else actor.setPose(speed > 0.3 ? 'run' : 'idle');
+      animate(dt, speed);
       actor.update(dt, speed);
     },
 
@@ -112,6 +110,51 @@ export function createHero(id, ctx) {
       h.damageLog = [];
     }
   };
+
+  // Animación con peso: anticipación y estirón al pegar, rebote al correr, respiración quieto
+  let breathT = 0;
+  function animate(dt, speed) {
+    breathT += dt;
+    let hop = 0;
+    if (h.state === 'attack') {
+      const s = h.swing;
+      if (h.t < s.hitAt) {
+        // anticipación: se echa para atrás con la pose de reposo
+        const k = h.t / s.hitAt;
+        actor.setPose('idle');
+        actor.lean = 0.16 * k;
+        actor.offsetX = -0.18 * k;
+        actor.stretch = -0.05 * k;
+      } else {
+        const k = Math.min(1, (h.t - s.hitAt) / 0.08);
+        const settle = Math.max(0, 1 - (h.t - s.hitAt) / (s.dur - s.hitAt));
+        actor.setPose('attack');
+        actor.lean = -0.1 * settle;
+        actor.offsetX = (0.25 * k) * settle;
+        actor.stretch = 0.06 * settle;
+        // el remate sale con un saltito
+        if (h.combo === 2) hop = Math.sin(Math.min(1, (h.t - s.hitAt) / (s.dur - s.hitAt)) * Math.PI) * 0.45;
+      }
+    } else if (h.state === 'dodge') {
+      actor.setPose('run');
+      actor.lean = -0.22; actor.offsetX = 0; actor.stretch = -0.06;
+    } else if (h.lift > 0) {
+      actor.setPose('run');
+      actor.lean = h.vy > 0 ? 0.05 : -0.08; actor.offsetX = 0; actor.stretch = h.vy > 0 ? 0.05 : -0.02;
+    } else if (speed > 0.3) {
+      actor.setPose('run');
+      // rebote: dos pasos por ciclo de 6 cuadros
+      const phase = (actor.dist / actor.poses.run.stride) / 3 * Math.PI;
+      actor.lift = Math.abs(Math.sin(phase)) * 0.07;
+      actor.lean = -0.06; actor.offsetX = 0; actor.stretch = 0;
+    } else {
+      actor.setPose('idle');
+      actor.lean = 0; actor.offsetX = 0;
+      actor.stretch = Math.sin(breathT * 2.4) * 0.012;
+    }
+    if (h.lift > 0) actor.lift = h.lift + hop;
+    else if (speed <= 0.3 || h.state !== 'free') actor.lift = hop;
+  }
 
   function startSwing() {
     h.buffer = 0;

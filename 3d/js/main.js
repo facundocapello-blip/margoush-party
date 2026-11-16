@@ -37,7 +37,8 @@ const game = {
   time: 0,
   stats: { maxMult: 1 },
   waves: { vereda: 'idle', plaza: 'idle' },
-  lowQuality: false
+  lowQuality: false,
+  timeScale: 1 // para revisar animaciones en cámara lenta
 };
 window.__game = game;
 
@@ -230,8 +231,7 @@ game.onBossDown = () => {
   h.position.set(world.bounds.maxX - 9, 0, -0.6);
   h.setFacing(1);
   h.setPose('idle');
-  game.facu.actor.position.set(world.bounds.maxX - 10.5, 0, 0.6);
-  game.facu.actor.setFacing(1);
+  game.facu.park(world.bounds.maxX - 14);
   game.facu.say('¡MARGOT ESTÁ A SALVO! ¡Un aplauso para ' + HERO_CFG[game.heroId].name + '!', 3.5);
   game.banner('🎉 ¡RESCATADA!', 'Margot vuelve a casa.', 3.4);
   game.ctx.audio?.sfx('fanfare');
@@ -251,7 +251,7 @@ game.setStage = (id) => {
   }
   if (id === 'galpon') { openGate(0); openGate(1); game.waves.vereda = game.waves.plaza = 'cleared'; p.set(world.galponX + 8, 0, 0); spawnBoss(); }
   $('#banner').classList.add('hidden');
-  game.facu.actor.position.set(p.x - 1.4, 0, 0.9);
+  game.facu.park(p.x + 3);
   updateCamera(0, true);
 };
 
@@ -291,7 +291,7 @@ game.resume = resume;
 
 let last = 0;
 function frame(now) {
-  const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
+  const dt = Math.min(0.05, last ? (now - last) / 1000 : 0) * game.timeScale;
   last = now;
   if (game.state === 'playing') {
     const t0 = performance.now();
@@ -318,7 +318,7 @@ function frame(now) {
     game.rescueT += dt;
     game.story.updateRescue(dt, game.rescueT);
     game.boss?.update(dt);
-    for (const [a, ph] of [[game.hero.actor, 0], [game.facu.actor, 1.3]]) {
+    for (const [a, ph] of [[game.hero.actor, 0]]) {
       a.lift = Math.abs(Math.sin(game.rescueT * 7 + ph)) * 0.6;
       a.update(dt, 0);
     }

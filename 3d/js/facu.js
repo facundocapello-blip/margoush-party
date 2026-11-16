@@ -6,11 +6,56 @@ export const FACU_LINES = {
   jokes: ['¡JAJAJA!', '¡No da más!', '¡Qué chiste, che!']
 };
 const JOKE_EVERY = 12;
-const HIT_EVERY = 1.0;
+const LANE_Z = -4.25; // carril de atrás, sobre la vereda: arriba en pantalla, fuera de la pelea
+const AHEAD = 3; // va un poco adelante del héroe
+const MAX_SPEED = 10;
+
+// Autito descapotable de Facu
+function buildCar() {
+  const car = new THREE.Group();
+  const paint = new THREE.MeshLambertMaterial({ color: 0xe8434f });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x1b1626 });
+  const chrome = new THREE.MeshLambertMaterial({ color: 0xd9d9e3 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 1.15), paint);
+  body.position.y = 0.6;
+  const hood = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 1.1), paint);
+  hood.position.set(0.85, 0.94, 0);
+  const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.2, 1.1), paint);
+  trunk.position.set(-1.0, 0.93, 0);
+  const bumperF = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 1.2), chrome);
+  bumperF.position.set(1.33, 0.42, 0);
+  const bumperB = bumperF.clone(); bumperB.position.x = -1.33;
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.45), new THREE.MeshBasicMaterial({ color: 0xbfe6ff, transparent: true, opacity: 0.45, side: THREE.DoubleSide }));
+  glass.position.set(0.38, 1.25, 0);
+  glass.rotation.set(0, Math.PI / 2, -0.35);
+  const lightMat = new THREE.MeshBasicMaterial({ color: 0xfff1b8 });
+  const light = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), lightMat);
+  light.position.set(1.32, 0.66, 0.42);
+  const light2 = light.clone(); light2.position.z = -0.42;
+  car.add(body, hood, trunk, bumperF, bumperB, glass, light, light2);
+  const wheels = [];
+  for (const [x, z] of [[0.85, 0.6], [-0.85, 0.6], [0.85, -0.6], [-0.85, -0.6]]) {
+    const w = new THREE.Group();
+    const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16), dark);
+    tire.rotation.x = Math.PI / 2;
+    const hub = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.08, 0.22), chrome);
+    w.add(tire, hub);
+    w.position.set(x, 0.3, z);
+    car.add(w);
+    wheels.push(w);
+  }
+  car.userData.wheels = wheels;
+  car.userData.body = body;
+  return car;
+}
 
 export function createFacu(ctx) {
   const { scene, assets, world, fx, game } = ctx;
-  const actor = new SpriteActor(scene, assets, { poses: { idle: { tex: 'facu' } }, heightM: game.hero.actor.heightM * 0.6, shadow: 0.7 });
+  const car = buildCar();
+  scene.add(car);
+  // Facu sentado: la carrocería tapa las piernas
+  const actor = new SpriteActor(scene, assets, { poses: { idle: { tex: 'facu' } }, heightM: 1.9, shadow: 0 });
+  actor.shadow.visible = false;
   const labels = document.querySelector('#labels');
   const tag = document.createElement('div');
   tag.className = 'tag-name';
@@ -19,14 +64,13 @@ export function createFacu(ctx) {
   bubble.className = 'speech hidden';
   labels.append(tag, bubble);
   let bubbleT = 0;
-  let hitCd = 0.8;
   let jokeIdx = 0;
-  let walkT = 0;
-  let swing = 0;
+  let vx = 0, vy = 0, rolled = 0, idleT = 0;
 
   function place() {
     const h = game.hero.actor.position;
-    actor.position.set(h.x - game.hero.actor.facing * 1.4, 0, Math.min(world.bounds.maxZ, h.z + 0.9));
+    car.position.set(Math.min(world.bounds.maxX - 2, h.x + AHEAD), 0, LANE_Z);
+    vx = 0; vy = 0;
   }
   place();
 
@@ -34,14 +78,24 @@ export function createFacu(ctx) {
     const v = actor.position.clone();
     v.y += y;
     v.project(ctx.camera);
-    const vis = v.z < 1 && (game.state === 'playing' || game.state === 'rescue');
+    const vis = v.z < 1 && (game.state === 'playing' || game.state === 'rescue' || game.state === 'intro');
     el.style.display = vis ? '' : 'none';
     el.style.left = ((v.x + 1) / 2) * innerWidth + 'px';
     el.style.top = ((1 - v.y) / 2) * innerHeight + 'px';
   };
 
+  function syncActor() {
+    actor.position.set(car.position.x - 0.35, car.position.y + 0.1, LANE_Z);
+    actor.setFacing(1);
+  }
+
+  // ¿Hay cajones del pasaje sin romper adelante del auto?
+  function cratesAhead(x) {
+    return game.props.crates.list.some(c => !c.broken && c.x > x + 0.5 && c.x < x + 2.6);
+  }
+
   const f = {
-    actor,
+    actor, car,
     lines: FACU_LINES,
     jokeCd: 6,
     lastJokeStuns: 0,
@@ -53,79 +107,71 @@ export function createFacu(ctx) {
     },
 
     update(dt) {
-      const hero = game.hero.actor;
-      const h = hero.position;
-      const p = actor.position;
-      hitCd = Math.max(0, hitCd - dt);
+      const h = game.hero.actor.position;
+      const p = car.position;
       f.jokeCd = Math.max(0, f.jokeCd - dt);
-      swing = Math.max(0, swing - dt);
+      if (Math.abs(h.x - p.x) > 16) { place(); fx.dust(p); }
 
-      if (Math.hypot(h.x - p.x, h.z - p.z) > 12) { place(); fx.dust(p); }
+      // Siempre para adelante: alcanza al héroe y lo espera; solo vuelve si quedó muy lejos
+      const target = Math.min(world.bounds.maxX - 2, h.x + AHEAD);
+      const diff = target - p.x;
+      const want = diff > 0.2 ? Math.min(MAX_SPEED, diff * 2.5) : (diff < -7 ? -2 : 0);
+      vx += (want - vx) * Math.min(1, dt * 5);
+      if (want >= 0) vx = Math.max(0, vx);
+      p.x += vx * dt;
 
-      // Objetivo: el enemigo vivo más cercano a Facu, si está cerca del héroe
-      let target = null, best = 2.6;
-      for (const e of game.enemies.list) {
-        if (e.hp <= 0) continue;
-        const d = Math.hypot(e.pos.x - p.x, e.pos.z - p.z);
-        if (d < best && Math.abs(e.pos.x - h.x) < 6) { best = d; target = e; }
+      // Saltito sobre los cajones del pasaje
+      if (p.y === 0 && vx > 0.5 && cratesAhead(p.x)) vy = 6.5;
+      if (p.y > 0 || vy > 0) {
+        vy -= 22 * dt;
+        p.y = Math.max(0, p.y + vy * dt);
+        if (p.y === 0) { vy = 0; fx.dust(p.clone().setX(p.x - 1)); }
       }
+      car.rotation.z = p.y > 0 ? vy * 0.02 : 0;
+      rolled += vx * dt;
+      for (const w of car.userData.wheels) w.rotation.z = -rolled / 0.3;
+      // Traqueteo del motor con el auto parado
+      idleT += dt;
+      car.userData.body.position.y = 0.6 + (Math.abs(vx) < 0.3 ? Math.sin(idleT * 30) * 0.008 : 0);
 
-      let gx, gz, stop;
-      if (target) { gx = target.pos.x - Math.sign(target.pos.x - p.x || 1) * 1.0; gz = target.pos.z; stop = 0.15; }
-      else { gx = h.x - hero.facing * 1.4; gz = Math.min(world.bounds.maxZ, h.z + 0.9); stop = 0.35; }
-      const dx = gx - p.x, dz = gz - p.z, d = Math.hypot(dx, dz);
-      let moving = false;
-      if (d > stop) {
-        const speed = d > 3 ? 11 : 7.5;
-        const step = Math.min(d - stop * 0.5, speed * dt);
-        p.x += (dx / d) * step;
-        p.z += (dz / d) * step;
-        moving = step > 0.01;
-        if (Math.abs(dx) > 0.05) actor.setFacing(Math.sign(dx));
-      }
-      world.clampPosition(p, 0.2);
-
-      if (target) {
-        actor.setFacing(Math.sign(target.pos.x - p.x) || 1);
-        if (hitCd <= 0 && Math.abs(target.pos.x - p.x) < 1.5 && Math.abs(target.pos.z - p.z) < 0.7) {
-          hitCd = HIT_EVERY;
-          swing = 0.2;
-          game.enemies.hitArea({ x: p.x, z: p.z, facing: actor.facing, reach: 1.5, depth: 0.7, dmg: 1, knock: 2, strength: 0.8 });
-        }
-      }
-
-      // Chiste: aturde a los que estén cerca
+      // Chiste con megáfono: aturde a los que rodean al héroe
       if (f.jokeCd <= 0) {
-        const near = game.enemies.list.filter(e => e.hp > 0 && Math.hypot(e.pos.x - p.x, e.pos.z - p.z) < 4).length;
+        const near = game.enemies.list.filter(e => e.hp > 0 && Math.hypot(e.pos.x - h.x, e.pos.z - h.z) < 4).length;
         if (near >= 2) {
           f.jokeCd = JOKE_EVERY;
-          f.lastJokeStuns = game.enemies.stunAround(p.x, p.z, 4, 1.5);
+          f.lastJokeStuns = game.enemies.stunAround(h.x, h.z, 4, 1.5);
           const line = FACU_LINES.jokes[jokeIdx++ % FACU_LINES.jokes.length];
           f.say('🎤 ' + line, 1.6);
-          fx.popup(p.clone().setY(2.6), line, '#ffe08a', { size: 26, life: 1.1 });
+          fx.popup(h.clone().setY(3.2), line, '#ffe08a', { size: 26, life: 1.1 });
           ctx.audio?.sfx('laugh');
         }
       }
 
-      // Animación: saltitos al caminar, inclinación al pegar
-      walkT += dt * (moving ? 14 : 3);
-      actor.lift = moving ? Math.abs(Math.sin(walkT)) * 0.12 : 0;
-      actor.mesh.rotation.z = swing > 0 ? -actor.facing * Math.sin((swing / 0.2) * Math.PI) * 0.35 : (moving ? Math.sin(walkT) * 0.05 : 0);
+      syncActor();
       actor.update(dt, 0);
-
       if (bubbleT > 0) { bubbleT -= dt; if (bubbleT <= 0) bubble.classList.add('hidden'); }
-      project(tag, actor.heightM + 0.35);
-      project(bubble, actor.heightM + 0.75);
+      f.refreshLabels();
     },
 
-    // Para escenas: mantiene las etiquetas en su lugar sin mover a Facu
-    refreshLabels() { project(tag, actor.heightM + 0.35); project(bubble, actor.heightM + 0.75); },
+    // Para escenas: estaciona el auto en un lugar fijo
+    park(x) {
+      car.position.set(x, 0, LANE_Z);
+      vx = 0; vy = 0;
+      syncActor();
+      actor.update(0, 0);
+    },
+
+    refreshLabels() { project(tag, actor.heightM + 0.3); project(bubble, actor.heightM + 0.75); },
 
     dispose() {
+      scene.remove(car);
+      car.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       actor.dispose();
       tag.remove();
       bubble.remove();
     }
   };
+  syncActor();
+  actor.update(0, 0);
   return f;
 }

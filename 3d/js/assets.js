@@ -16,6 +16,7 @@ export async function loadAssets(manifestUrl, onProgress = () => {}) {
     }, undefined, () => reject(new Error('No se pudo cargar ' + m.file)));
   })));
   return {
+    manifest,
     texture: (name) => textures[name],
     meta: (name) => manifest[name],
     url: (name) => base + manifest[name].file

@@ -27,3 +27,9 @@ test('sheet metadata', () => {
   assert.equal(m.margot_sheet.cols, 2);
   assert.equal(m.margot_sheet.rows, 2);
 });
+
+test('run strips are clean, feet aligned and head sizes recorded', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const r = spawnSync('python3', ['-I', new URL('./check_sprites.py', import.meta.url).pathname, dir], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+});

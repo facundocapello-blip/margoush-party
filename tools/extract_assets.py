@@ -11,7 +11,9 @@ import subprocess
 import sys
 import tempfile
 
+import numpy as np
 from PIL import Image
+from scipy import ndimage
 
 # Orden de las imágenes embebidas en V23.8 (verificado por tamaño en cada corrida).
 IMAGES = [
@@ -47,6 +49,55 @@ def scaled(im, cols, rows):
     return im
 
 
+RUN_STRIPS = {'douge_run', 'marine_run', 'chaky_run'}
+FOOT_Y = 0.925  # fracción de la celda donde apoyan los pies en las tiras de correr
+
+
+def main_component(alpha):
+    """Máscara de la silueta principal (descarta restos de cuadros vecinos)."""
+    mask = alpha > 75
+    lab, n = ndimage.label(mask, structure=np.ones((3, 3)))
+    if n == 0:
+        return mask
+    sizes = ndimage.sum(mask, lab, range(1, n + 1))
+    keep = lab == (int(np.argmax(sizes)) + 1)
+    # conserva los bordes suaves pegados a la silueta
+    return ndimage.binary_dilation(keep, iterations=2)
+
+
+def clean_strip(im, frames):
+    """Limpia cada cuadro y lo re-centra con los pies a la misma altura."""
+    w, h = im.size
+    fw = w // frames
+    out = Image.new('RGBA', (fw * frames, h), (0, 0, 0, 0))
+    for k in range(frames):
+        cell = np.array(im.crop((k * fw, 0, (k + 1) * fw, h)))
+        keep = main_component(cell[:, :, 3])
+        cell[:, :, 3] = np.where(keep, cell[:, :, 3], 0)
+        ys, xs = np.nonzero(cell[:, :, 3] > 75)
+        top, bot, left, right = ys.min(), ys.max(), xs.min(), xs.max()
+        piece = Image.fromarray(cell).crop((left, top, right + 1, bot + 1))
+        x = (fw - piece.width) // 2
+        y = int(round(h * FOOT_Y)) - piece.height
+        out.alpha_composite(piece, (k * fw + max(0, x), max(0, y)))
+    return out
+
+
+def skull_width(im, cols, rows):
+    """Ancho de la cabeza en px (mediana bajo el borde superior) del primer cuadro."""
+    cell = np.array(im.crop((0, 0, im.width // cols, im.height // rows)))
+    mask = main_component(cell[:, :, 3])
+    ys = np.nonzero(mask.any(axis=1))[0]
+    top = ys.min()
+    span = max(8, int((ys.max() - top) * 0.1))
+    widths = []
+    for y in range(top + span // 2, top + span // 2 + span):
+        xs = np.nonzero(mask[y])[0]
+        if len(xs):
+            widths.append(xs.max() - xs.min() + 1)
+    return float(np.median(widths))
+
+
 def main(src, out):
     os.makedirs(out, exist_ok=True)
     html = io.open(src, encoding='utf-8', errors='replace').read()
@@ -58,10 +109,19 @@ def main(src, out):
         if im.size != (w0, h0):
             raise SystemExit(f'{name}: esperaba {w0}x{h0}, encontré {im.size}')
         im = scaled(im, cols, rows)
+        if name in RUN_STRIPS:
+            im = clean_strip(im, frames)
+        elif cols * rows == 1 and name != 'street_bg':
+            arr = np.array(im)
+            arr[:, :, 3] = np.where(main_component(arr[:, :, 3]), arr[:, :, 3], 0)
+            im = Image.fromarray(arr)
         quality = 72 if name == 'street_bg' else 82
         im.save(os.path.join(out, name + '.webp'), 'WEBP', quality=quality, method=6)
         manifest[name] = {'file': name + '.webp', 'w': im.width, 'h': im.height,
-                          'frames': frames, 'cols': cols, 'rows': rows}
+                          'frames': frames, 'cols': cols, 'rows': rows,
+                          'skull': round(skull_width(im, cols, rows), 1)}
+        if name in RUN_STRIPS:
+            manifest[name]['foot'] = FOOT_Y
     for name, b64 in zip(AUDIO, mp3s):
         with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as tmp:
             tmp.write(base64.b64decode(b64))

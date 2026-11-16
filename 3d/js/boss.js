@@ -2,15 +2,12 @@ import { SpriteActor } from './sprites.js';
 
 const HP = 30;
 const POSES = {
-  idle: { tex: 'boss_idle', h: 1 },
-  run: { tex: 'boss_run', h: 674 / 731 },
-  attack: { tex: 'boss_attack', h: 506 / 731 },
-  hurt: { tex: 'boss_hurt', h: 472 / 731 }
+  idle: { tex: 'boss_idle' }, run: { tex: 'boss_run' }, attack: { tex: 'boss_attack' }, hurt: { tex: 'boss_hurt' }
 };
 
 export function createBoss(ctx, x) {
   const { scene, assets, world, fx, game } = ctx;
-  const actor = new SpriteActor(scene, assets, { poses: POSES, heightM: 3.6, shadow: 0.8 });
+  const actor = new SpriteActor(scene, assets, { poses: POSES, heightM: 3.6, shadow: 0.8, scaleRef: 'boss_idle' });
   actor.position.set(x, 0, 0);
   actor.setFacing(-1);
   const bar = document.querySelector('#boss-bar');
@@ -79,8 +76,8 @@ export function createBoss(ctx, x) {
 
       if (b.wave) updateWave(dt, hero);
       if (b.dead) { actor.setPose('hurt'); actor.update(dt, 0); return; }
-      if (b.stun > 0) { b.stun -= dt; actor.mesh.rotation.z = Math.sin(performance.now() / 80) * 0.06; actor.setPose('hurt'); actor.update(dt, 0); return; }
-      actor.mesh.rotation.z = 0;
+      if (b.stun > 0) { b.stun -= dt; actor.lean = Math.sin(performance.now() / 80) * 0.06; actor.setPose('hurt'); actor.update(dt, 0); return; }
+      actor.lean = 0;
 
       const dx = hp.x - b.pos.x, dz = hp.z - b.pos.z;
       let speed = 0;
