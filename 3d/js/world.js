@@ -62,11 +62,18 @@ function warehouse(ctx, w, h) {
 }
 
 function concrete(ctx, w, h) {
-  ctx.fillStyle = '#3a3342'; ctx.fillRect(0, 0, w, h);
-  for (let i = 0; i < 900; i++) {
-    const l = 40 + Math.random() * 30;
-    ctx.fillStyle = `rgba(${l + 20},${l + 10},${l + 30},0.35)`;
-    ctx.fillRect(Math.random() * w, Math.random() * h, 3, 3);
+  // Hormigón cálido gastado, con manchas de aceite
+  ctx.fillStyle = '#5a4a4c'; ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 1400; i++) {
+    const l = 60 + Math.random() * 45;
+    ctx.fillStyle = `rgba(${l + 30},${l + 14},${l + 8},0.35)`;
+    ctx.fillRect(Math.random() * w, Math.random() * h, 2 + Math.random() * 3, 2 + Math.random() * 3);
+  }
+  for (let i = 0; i < 3; i++) {
+    const x = Math.random() * w, y = Math.random() * h, r = 20 + Math.random() * 30;
+    const g = ctx.createRadialGradient(x, y, 2, x, y, r);
+    g.addColorStop(0, 'rgba(20,14,24,0.55)'); g.addColorStop(1, 'rgba(20,14,24,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   }
   ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 3;
   for (let x = 0; x <= w; x += w / 2) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
@@ -105,7 +112,7 @@ export function buildStreet(scene, assets) {
   floor.rotation.x = -Math.PI / 2;
   floor.position.set((GALPON_X - 20) / 2, 0, 5.6);
   scene.add(floor);
-  const slab = new THREE.Mesh(new THREE.PlaneGeometry(70, 24), new THREE.MeshLambertMaterial({ color: 0x8a7f96, map: canvasTex(256, 256, concrete, 14, 4) }));
+  const slab = new THREE.Mesh(new THREE.PlaneGeometry(70, 24), new THREE.MeshLambertMaterial({ color: 0xb8a39a, map: canvasTex(256, 256, concrete, 14, 4) }));
   slab.rotation.x = -Math.PI / 2;
   slab.position.set(GALPON_X + 35, 0.005, 4.6);
   scene.add(slab);
@@ -119,8 +126,17 @@ export function buildStreet(scene, assets) {
   jamb.position.set(GALPON_X - 0.2, 4.5, BACK_Z + 0.4);
   scene.add(jamb);
   // Barriles y cajas del galpón
-  const barrelMat = new THREE.MeshLambertMaterial({ color: 0x8a3b3b });
-  const boxMat = new THREE.MeshLambertMaterial({ color: 0x9a6a3c });
+  const barrelMat = new THREE.MeshLambertMaterial({ map: canvasTex(128, 128, (c, w, h) => {
+    c.fillStyle = '#a3402f'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#6e2a20'; for (const y of [10, 60, 110]) c.fillRect(0, y, w, 8);
+    c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(18, 0, 10, h);
+    c.fillStyle = '#ffcc00'; c.fillRect(70, 30, 40, 24); c.fillStyle = '#111'; c.font = '900 20px Arial'; c.fillText('!', 86, 50);
+  }) });
+  const boxMat = new THREE.MeshLambertMaterial({ map: canvasTex(128, 128, (c, w, h) => {
+    c.fillStyle = '#9a6a3c'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#7a4f2a'; for (let y = 0; y < h; y += 32) c.fillRect(0, y, w, 6);
+    c.strokeStyle = '#4a2c18'; c.lineWidth = 8; c.strokeRect(4, 4, w - 8, h - 8);
+  }) });
   for (const [x, z, kind] of [[GALPON_X + 4, -5.6, 'b'], [GALPON_X + 5.1, -5.7, 'b'], [GALPON_X + 13, -5.6, 'x'], [GALPON_X + 14.2, -5.6, 'x'], [GALPON_X + 13.6, -5.6, 'x2'], [GALPON_X + 30, -5.6, 'b'], [GALPON_X + 39, -5.6, 'x']]) {
     const m = kind === 'b' ? new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.3, 14), barrelMat) : new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), boxMat);
     m.position.set(x, kind === 'x2' ? 1.8 : kind === 'b' ? 0.65 : 0.6, z);

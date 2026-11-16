@@ -48,7 +48,6 @@ export function createStory(ctx) {
       chaky.setFacing(-1);
       chaky.update(0, 0);
       intro = { t: 0, stroller, chaky, phase: 0 };
-      game.banner('LE CONCEPT', 'Una noche tranquila…', 2);
     },
 
     // Devuelve true cuando la intro terminó

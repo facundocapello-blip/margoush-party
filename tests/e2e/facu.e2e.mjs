@@ -21,6 +21,14 @@ try {
   check(maxZ <= -3.9, `el auto va por el carril de atrás (z máx ${maxZ.toFixed(2)})`);
   check(back < 0.01, 'mientras el héroe avanza, el auto nunca retrocede');
   check(gap < 6, `el auto acompaña al héroe (distancia máx ${gap.toFixed(1)} m)`);
+  // Facu se mueve en el auto: se inclina al acelerar y salta al contar el chiste
+  const lean = await G(async () => {
+    const g = window.__game; g.facu.park(g.hero.actor.position.x - 4);
+    let m = 0; const t0 = performance.now();
+    while (performance.now() - t0 < 700) { m = Math.max(m, Math.abs(g.facu.actor.lean)); await new Promise(r => setTimeout(r, 30)); }
+    return m;
+  });
+  check(lean > 0.05, `Facu se inclina cuando el auto acelera (${lean.toFixed(3)})`);
   await shot(page, 'facu-car');
 
   // Facu ya no pelea cuerpo a cuerpo
@@ -35,6 +43,8 @@ try {
   let stunned = 0;
   for (let i = 0; i < 20 && stunned < 2; i++) { await page.waitForTimeout(300); stunned = await G(() => window.__game.facu.lastJokeStuns); }
   check(stunned >= 2, `el chiste aturde a ${stunned} enemigos`);
+  const hop = await G(async () => { let m = 0; const t0 = performance.now(); while (performance.now() - t0 < 600) { m = Math.max(m, window.__game.facu.actor.lift - window.__game.facu.car.position.y); await new Promise(r => setTimeout(r, 30)); } return m; });
+  check(hop > 0.25, `Facu se para en el auto al contar el chiste (${hop.toFixed(2)} m)`);
   check(await G(() => window.__game.facu.lines.intro.startsWith('Buenas noches, Le Concept')), 'Facu sigue presentando la partida');
 
   // Salta los cajones del pasaje en vez de atravesarlos

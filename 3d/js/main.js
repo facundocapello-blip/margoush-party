@@ -85,15 +85,39 @@ game.combo = (() => {
   };
 })();
 
-game.banner = (title, text, seconds = 3.2) => {
-  const b = $('#banner');
-  b.replaceChildren();
-  const strong = document.createElement('b');
-  strong.textContent = title;
-  b.append(strong, document.createTextNode(text));
-  b.classList.remove('hidden');
-  bannerTimer = seconds;
+// Un solo canal de mensajes: se muestran de a uno, en orden
+const bannerQueue = [];
+let bannerCurrent = null;
+game.banner = (title, text, seconds = 3.2, opts = {}) => {
+  if (bannerQueue.length >= 3) bannerQueue.shift();
+  bannerQueue.push({ title, text, seconds, avatar: opts.avatar || null });
+  if (!bannerCurrent) nextBanner();
 };
+function nextBanner() {
+  const b = $('#banner');
+  bannerCurrent = bannerQueue.shift() || null;
+  if (!bannerCurrent) { b.classList.add('hidden'); return; }
+  b.replaceChildren();
+  if (bannerCurrent.avatar) {
+    const img = document.createElement('img');
+    img.src = bannerCurrent.avatar; img.alt = '';
+    b.append(img);
+  }
+  const body = document.createElement('div');
+  const strong = document.createElement('b');
+  strong.textContent = bannerCurrent.title;
+  body.append(strong, document.createTextNode(bannerCurrent.text));
+  b.append(body);
+  b.classList.toggle('with-avatar', !!bannerCurrent.avatar);
+  b.classList.remove('hidden');
+  bannerTimer = bannerCurrent.seconds;
+}
+function clearBanners() {
+  bannerQueue.length = 0;
+  bannerCurrent = null;
+  bannerTimer = 0;
+  $('#banner').classList.add('hidden');
+}
 
 function resize() {
   const w = innerWidth, h = innerHeight;
@@ -176,7 +200,8 @@ function startRun(heroId, withIntro = false) {
   if (matchMedia('(pointer: coarse)').matches) $('#touch').classList.remove('hidden');
   updateCamera(0, true);
   resize();
-  game.facu.say(game.facu.lines.intro, 5);
+  clearBanners();
+  game.facu.say(game.facu.lines.intro, 2.6);
   $('#boss-bar').classList.add('hidden');
   audio.music(heroId);
   if (withIntro) { game.state = 'intro'; game.story.startIntro(); }
@@ -269,7 +294,7 @@ game.setStage = (id) => {
     if (id === 'plaza') { game.waves.plaza = 'active'; game.enemies.spawnWave('plaza'); } else game.waves.plaza = 'cleared';
   }
   if (id === 'galpon') { openGate(0); openGate(1); game.waves.vereda = game.waves.plaza = 'cleared'; p.set(world.galponX + 8, 0, 0); spawnBoss(); }
-  $('#banner').classList.add('hidden');
+  clearBanners();
   game.facu.park(p.x + 3);
   updateCamera(0, true);
 };
@@ -337,6 +362,7 @@ function frame(now) {
     game.rescueT += dt;
     game.story.updateRescue(dt, game.rescueT);
     game.boss?.update(dt);
+    game.facu.celebrate(dt);
     for (const [a, ph] of [[game.hero.actor, 0]]) {
       a.lift = Math.abs(Math.sin(game.rescueT * 7 + ph)) * 0.6;
       a.update(dt, 0);
@@ -344,7 +370,7 @@ function frame(now) {
     game.facu.refreshLabels();
     if (game.rescueT > 3.6) finish(true);
   }
-  if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0) $('#banner').classList.add('hidden'); }
+  if (bannerCurrent) { bannerTimer -= dt; if (bannerTimer <= 0) nextBanner(); }
   world.updateGates(dt);
   fx.update(dt);
   updateCamera(dt);
