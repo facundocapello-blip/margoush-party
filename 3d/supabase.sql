@@ -15,6 +15,11 @@ create policy "leer ranking" on public.scores for select to anon using (true);
 drop policy if exists "guardar puntaje" on public.scores;
 create policy "guardar puntaje" on public.scores for insert to anon with check (true);
 
+-- El juego solo puede escribir apodo, héroe y puntaje: la fecha la pone la base (evita fijar puntajes "de esta semana" para siempre)
+revoke insert on public.scores from anon;
+grant insert (nickname, hero, score) on public.scores to anon;
+grant select on public.scores to anon;
+
 -- Sin políticas de update ni delete: nadie puede cambiar ni borrar puntajes desde el juego.
 create index if not exists scores_score_idx on public.scores (score desc);
 create index if not exists scores_created_idx on public.scores (created_at desc);

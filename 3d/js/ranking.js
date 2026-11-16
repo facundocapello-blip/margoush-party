@@ -19,9 +19,12 @@ export function createRanking({ url, anonKey, fetchImpl = globalThis.fetch, stor
     try { storage.setItem(LOCAL_KEY, JSON.stringify(rows.slice(0, 100))); } catch (_) { /* sin almacenamiento */ }
   };
 
-  async function request(path, opts = {}) {
+  // El límite de tiempo cubre también la lectura del cuerpo de la respuesta
+  async function request(path, opts = {}, readJson = false) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const expired = new Promise((_, rej) => ctrl.signal.addEventListener('abort', () => rej(new Error('timeout'))));
+    expired.catch(() => {});
     try {
       const res = await fetchImpl(url + path, {
         ...opts,
@@ -30,7 +33,7 @@ export function createRanking({ url, anonKey, fetchImpl = globalThis.fetch, stor
         headers: { apikey: anonKey, ...(anonKey.startsWith('eyJ') ? { Authorization: 'Bearer ' + anonKey } : {}), 'Content-Type': 'application/json', ...(opts.headers || {}) }
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res;
+      return readJson ? await Promise.race([res.json(), expired]) : res;
     } finally {
       clearTimeout(timer);
     }
@@ -67,8 +70,8 @@ export function createRanking({ url, anonKey, fetchImpl = globalThis.fetch, stor
       const q = new URLSearchParams({ select: 'nickname,hero,score,created_at', order: 'score.desc', limit: String(limit) });
       if (period === 'week') q.set('created_at', 'gte.' + new Date(Date.now() - WEEK_MS).toISOString());
       try {
-        const res = await request('/rest/v1/scores?' + q.toString(), { method: 'GET' });
-        return { online: true, rows: await res.json() };
+        const rows = await request('/rest/v1/scores?' + q.toString(), { method: 'GET' }, true);
+        return { online: true, rows };
       } catch (_) {
         return { online: false, rows: localTop(period, limit) };
       }

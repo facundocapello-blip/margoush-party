@@ -33,7 +33,7 @@ test('finalize adds hp and time bonuses and grades', () => {
   s.addKill('boss');
   const r = s.finalize({ hpLeft: 3, hpMax: 5, seconds: 200 });
   assert.equal(r.total, 2000 + 1800 + 1000);
-  assert.equal(r.rank, 'C');
+  assert.equal(r.rank, 'B');
   assert.deepEqual(r.breakdown, { play: 2000, hpBonus: 1800, timeBonus: 1000 });
   assert.ok(Number.isInteger(r.total));
 });
@@ -45,10 +45,11 @@ test('time bonus never goes negative', () => {
 
 test('rank thresholds', () => {
   const grade = (pts) => { const s = createScore(); s.addPickup('secret'); for (let i = 1; i < pts / 500; i++) s.addPickup('secret'); return s.finalize({ hpLeft: 0, hpMax: 5, seconds: 300 }).rank; };
-  assert.equal(grade(15000), 'S');
-  assert.equal(grade(10000), 'A');
-  assert.equal(grade(6000), 'B');
-  assert.equal(grade(5500), 'C');
+  // Un recorrido perfecto real ronda los 9.300 puntos: S tiene que ser alcanzable
+  assert.equal(grade(9000), 'S');
+  assert.equal(grade(7000), 'A');
+  assert.equal(grade(4500), 'B');
+  assert.equal(grade(4000), 'C');
 });
 
 test('totals are integers with fractional multipliers', () => {

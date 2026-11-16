@@ -102,8 +102,14 @@ function resize() {
   const halfV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   camDist = Math.max(BASE_DIST, 6 / (halfV * camera.aspect));
   camera.updateProjectionMatrix();
+  updateRotateHint();
+}
+
+// "Girá el celular": solo jugando en un celular en vertical
+function updateRotateHint() {
   const touch = matchMedia('(pointer: coarse)').matches;
-  $('#rotate-hint').classList.toggle('hidden', !(touch && h > w && game.state === 'playing'));
+  const show = touch && innerHeight > innerWidth && (game.state === 'playing' || game.state === 'intro');
+  $('#rotate-hint').classList.toggle('hidden', !show);
 }
 
 function updateCamera(dt, snap = false) {
@@ -122,6 +128,7 @@ function updateCamera(dt, snap = false) {
 function showScreen(id) {
   for (const s of document.querySelectorAll('.screen')) s.classList.toggle('hidden', s.id !== id);
   document.body.classList.toggle('has-screen', !!id);
+  queueMicrotask(updateRotateHint);
 }
 
 function updateHud() {
@@ -173,6 +180,7 @@ function startRun(heroId, withIntro = false) {
   audio.music(heroId);
   if (withIntro) { game.state = 'intro'; game.story.startIntro(); }
   else game.state = 'playing';
+  updateRotateHint();
 }
 
 function endIntro() {
@@ -355,7 +363,7 @@ async function boot() {
   game.quickStart = (heroId) => startRun(heroId);
 
   $('#btn-play').addEventListener('click', () => showScreen('screen-select'));
-  for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => startRun(card.dataset.hero, true));
+  for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => { audio.primeSpeech(); startRun(card.dataset.hero, true); });
   $('#btn-pause').addEventListener('click', pause);
   $('#btn-resume').addEventListener('click', resume);
   $('#btn-restart').addEventListener('click', () => startRun(game.heroId));

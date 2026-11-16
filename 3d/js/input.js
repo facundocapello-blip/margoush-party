@@ -60,10 +60,12 @@ export function createInput(dom) {
   addEventListener('pointercancel', endStick, true);
   joy.addEventListener('lostpointercapture', endStick);
 
-  // Botones de acción
+  // Botones de acción (owners: dedos apoyados en cada botón; se vacían en reset)
+  const allOwners = [];
   for (const btn of dom.buttons) {
     const a = btn.dataset.action;
     const owners = new Set();
+    allOwners.push(owners);
     btn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       owners.add(e.pointerId);
@@ -97,6 +99,7 @@ export function createInput(dom) {
       stick.id = null; stick.x = 0; stick.z = 0;
       knob.style.transform = 'translate(0px, 0px)';
       for (const b of dom.buttons) b.classList.remove('pressed');
+      for (const o of allOwners) o.clear();
     },
     ACTIONS
   };

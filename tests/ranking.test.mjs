@@ -98,3 +98,14 @@ test('new publishable keys go only in the apikey header', async () => {
   assert.equal(log[0].opts.headers.apikey, 'sb_publishable_abc');
   assert.equal(log[0].opts.headers.Authorization, undefined);
 });
+
+test('top gives up when the body never arrives', async () => {
+  const storage = memStorage();
+  const stalled = async (url, opts) => ({ ok: true, status: 200, json: () => new Promise((_, rej) => opts.signal.addEventListener('abort', () => rej(new Error('aborted')))) });
+  const r = createRanking({ url: 'https://x.supabase.co', anonKey: 'k', fetchImpl: stalled, storage, timeoutMs: 40 });
+  const t0 = Date.now();
+  const res = await Promise.race([r.top({ period: 'all' }), new Promise(ok => setTimeout(() => ok('colgado'), 500))]);
+  assert.notEqual(res, 'colgado');
+  assert.equal(res.online, false);
+  assert.ok(Date.now() - t0 < 500);
+});

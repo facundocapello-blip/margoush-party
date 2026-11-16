@@ -136,6 +136,11 @@ export function createAudio(assets) {
       paused = false;
       if (current && current !== 'boss') themes[current].play().catch(() => {});
     },
+    // iOS: la voz solo funciona si se arrancó una vez dentro de un toque
+    primeSpeech() {
+      if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
+      try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (_) {}
+    },
     say(text, lang) {
       if (muted || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
       speechSynthesis.cancel();

@@ -24,7 +24,8 @@ export function createScore() {
       const hpBonus = won ? Math.round((hpLeft / hpMax) * 3000) : 0;
       const timeBonus = won ? Math.round(Math.max(0, 300 - seconds) * 10) : 0;
       const sum = total + hpBonus + timeBonus;
-      const rank = sum >= 15000 ? 'S' : sum >= 10000 ? 'A' : sum >= 6000 ? 'B' : 'C';
+      // Un recorrido perfecto real ronda los 9.300 puntos
+      const rank = sum >= 9000 ? 'S' : sum >= 7000 ? 'A' : sum >= 4500 ? 'B' : 'C';
       return { total: sum, rank, breakdown: { play: total, hpBonus, timeBonus } };
     }
   };

@@ -144,4 +144,4 @@ h2 { margin: 0; font-family: Fredoka, sans-serif; font-size: clamp(24px, 5vw, 38
 }
 
 /* Con una pantalla abierta no se ven el HUD ni los carteles del juego */
-body.has-screen #labels, body.has-screen #combo, body.has-screen #hud, body.has-screen #banner, body.has-screen #boss-bar, body.has-screen #touch { visibility: hidden; }
+body.has-screen #labels, body.has-screen #combo, body.has-screen #hud, body.has-screen #banner, body.has-screen #boss-bar, body.has-screen #touch, body.has-screen #rotate-hint { visibility: hidden; }
