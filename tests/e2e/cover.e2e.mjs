@@ -13,7 +13,9 @@ for (const [w, h, name] of [[844, 390, 'acostado'], [390, 844, 'parado']]) {
     await page.waitForFunction(() => document.getAnimations().filter(a => a.effect?.target?.closest?.('#screen-menu') && a.effect.getComputedTiming().iterations !== Infinity).every(a => a.playState === 'finished'), null, { timeout: 8000 });
     check(await visible(page, '#press-start'), `${name}: se ve "TOCÁ PARA EMPEZAR"`);
     check(!(await visible(page, '#btn-play')), `${name}: antes del toque no están los botones`);
-    for (const sel of ['#screen-menu .logo', '#cover-heroes', '#cover-chaky', '#cover-facu']) check(await visible(page, sel), `${name}: se ve ${sel}`);
+    check(await visible(page, '#screen-menu .logo'), `${name}: se ve el logo`);
+    check(await page.$$eval('#cover-chaky, #cover-heroes, #cover-facu, #screen-menu .ribbon', n => n.length) === 0, `${name}: la portada no muestra a BIG CHAKY ni a nadie más`);
+    check(!(await page.textContent('#screen-select')).includes('Facu te acompaña'), `${name}: la selección no promete a Facu todo el camino`);
     await shot(page, `cover-${name}-press`);
 
     await page.tap('#press-start');
@@ -21,7 +23,7 @@ for (const [w, h, name] of [[844, 390, 'acostado'], [390, 844, 'parado']]) {
     check(await page.evaluate(() => window.__game.ctx.audio.current) === 'menu', `${name}: el toque arranca la música de la portada`);
     check(await visible(page, '#btn-play') && await visible(page, '#btn-ranking'), `${name}: después del toque aparecen ¡JUGAR! y Ranking`);
     const btns = [await rect(page, '#btn-play'), await rect(page, '#btn-ranking')];
-    for (const sel of ['#screen-menu .logo', '#cover-heroes', '#cover-chaky']) {
+    for (const sel of ['#screen-menu .logo']) {
       const r = await rect(page, sel);
       check(btns.every(b => !overlap(r, b)), `${name}: ${sel} no tapa los botones`);
     }

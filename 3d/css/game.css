@@ -170,31 +170,15 @@ body.has-screen #level-card { display: none; }
 @keyframes beam-l { from { transform: rotate(-24deg); } to { transform: rotate(14deg); } }
 @keyframes beam-r { from { transform: rotate(22deg); } to { transform: rotate(-12deg); } }
 
-.cover-presents { position: absolute; top: calc(10px + var(--safe-t)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 4px 14px 4px 4px; border-radius: 999px; background: rgba(16, 10, 30, 0.7); border: 2px solid rgba(255, 211, 110, 0.6); animation: fade-in 0.6s 0.2s both; z-index: 2; }
-.cover-presents img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; object-position: 50% 6%; background: #3a2a52; }
-.cover-presents span { white-space: nowrap; font-weight: 900; font-size: 12px; letter-spacing: 0.22em; color: #ffe9c4; }
 
-.cover-title { position: absolute; left: 0; right: 0; top: calc(56px + var(--safe-t)); display: flex; flex-direction: column; align-items: center; z-index: 3; pointer-events: none; }
+.cover-title { position: absolute; left: 0; right: 0; top: calc(22vh + var(--safe-t)); display: flex; flex-direction: column; align-items: center; z-index: 3; pointer-events: none; }
 #screen-menu .logo { font-size: clamp(52px, min(14vw, 23vh), 128px); line-height: 0.95; letter-spacing: 3px; color: transparent;
   background: linear-gradient(180deg, #fff6d0 0%, #ffd36e 42%, #ff9a6b 72%, #ff6f9e 100%); -webkit-background-clip: text; background-clip: text;
   -webkit-text-stroke: 3px #3a1430; text-shadow: none;
   filter: drop-shadow(0 3px 0 #b8325f) drop-shadow(0 4px 0 #6e1a3c) drop-shadow(0 12px 14px rgba(0, 0, 0, 0.6));
   transform: rotate(-4deg); animation: logo-drop 0.9s 0.1s cubic-bezier(.2, 1.5, .4, 1) both; }
 @keyframes logo-drop { from { transform: translateY(-120%) rotate(-12deg) scale(1.3); opacity: 0; } to { transform: rotate(-4deg); opacity: 1; } }
-.ribbon { margin: 6px 0 0; padding: 6px 34px; font-weight: 900; font-size: clamp(12px, min(2.6vw, 4.4vh), 20px); letter-spacing: 0.24em; color: #3a1430;
-  background: linear-gradient(180deg, #ffb3c9, #ff7fa6); clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%);
-  transform: rotate(-4deg); animation: fade-in 0.5s 0.8s both; }
 
-#cover-heroes { position: absolute; left: 1.5%; bottom: 0; height: 72vh; display: flex; align-items: flex-end; z-index: 2; animation: slide-l 0.7s 0.5s cubic-bezier(.2, 1.2, .4, 1) both; }
-#cover-heroes img { height: 100%; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.7)); transform-origin: 50% 100%; }
-#cover-heroes .h-marine { height: 94%; margin-right: -9%; animation: breathe 2.6s 0.4s ease-in-out infinite; }
-#cover-heroes .h-douge { animation: breathe 2.4s ease-in-out infinite; }
-#cover-chaky { position: absolute; right: 0.5%; bottom: 0; height: 74vh; aspect-ratio: 1; clip-path: inset(9% 0 0 0); /* corta los pies del cuadro de arriba de la hoja */ background: url(../assets/kidnap_sheet.webp) 0% 100% / 200% 200% no-repeat;
-  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.7)) saturate(1.1); z-index: 2; animation: slide-r 0.7s 0.6s cubic-bezier(.2, 1.2, .4, 1) both, sneak 1.6s 1.4s ease-in-out infinite; }
-@keyframes breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.025) translateY(-1px); } }
-@keyframes sneak { 0%, 100% { translate: 0 0; } 50% { translate: 6px -4px; } }
-@keyframes slide-l { from { transform: translateX(-110%); } to { transform: none; } }
-@keyframes slide-r { from { transform: translateX(110%); } to { transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 .press { position: absolute; left: 50%; bottom: calc(12% + var(--safe-b)); transform: translateX(-50%); z-index: 4; border: 0; background: rgba(16, 10, 30, 0.55); padding: 12px 26px; border-radius: 14px;
@@ -207,9 +191,7 @@ body.has-screen #level-card { display: none; }
 @keyframes pop-in { from { transform: translateX(-50%) scale(0.6); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
 
 @media (orientation: portrait) {
-  .cover-title { top: calc(64px + var(--safe-t)); }
-  #cover-heroes { height: 30vh; bottom: 23vh; left: 0; }
-  #cover-chaky { height: 26vh; bottom: 23vh; right: 0; }
+  .cover-title { top: calc(30vh + var(--safe-t)); }
   .press { bottom: calc(10% + var(--safe-b)); }
   #menu-buttons { bottom: calc(4% + var(--safe-b)); }
 }
