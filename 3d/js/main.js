@@ -202,7 +202,24 @@ function openGate(i) {
 }
 
 function updateZones() {
-  const x = game.hero.actor.position.x;
+  // Red de seguridad: nadie queda del otro lado de un portón cerrado (evita quedar trabado sin enemigos)
+  const hp = game.hero.actor.position;
+  for (const g of world.gates) {
+    if (!g.open && hp.x > g.x) {
+      hp.x = g.x - 1;
+      game.facu?.park(hp.x + 3);
+      game.banner('🚧 PASO CERRADO', 'Primero despejá la zona: la banda de BIG CHAKY te espera.');
+      break;
+    }
+  }
+  // Al llegar a un portón cerrado, explica que no se salta: hay que despejar la zona
+  for (const g of world.gates) {
+    if (!g.open && Math.abs(hp.x - g.x) < 1.2 && game.time - (game.gateHintAt ?? -99) > 6) {
+      game.gateHintAt = game.time;
+      game.banner('🚧 PASO CERRADO', 'Primero despejá la zona: la banda de BIG CHAKY te espera.');
+    }
+  }
+  const x = hp.x;
   for (const [id, trigger, gate] of [['vereda', 36, 0], ['plaza', 96, 1]]) {
     if (game.waves[id] === 'idle' && x > trigger) {
       game.waves[id] = 'active';

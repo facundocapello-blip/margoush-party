@@ -267,13 +267,17 @@ export function buildStreet(scene, assets) {
   const secret = { x: 117, halfWidth: 1.4, doorZ: BACK_Z + 0.6, found: false, sealed: true };
 
   // Mantiene una posición dentro de la calle, respetando portones y el pasaje
-  function clampPosition(pos, radius = 0.4) {
+  // prevX: dónde estaba antes de moverse. Decide de qué lado del portón queda;
+  // sin él, un paso largo que cae pasando la mitad del portón lo cruzaba.
+  function clampPosition(pos, radius = 0.4, prevX = null) {
     pos.x = Math.min(STREET.maxX, Math.max(STREET.minX, pos.x));
     const inDoor = !secret.sealed && Math.abs(pos.x - secret.x) < secret.halfWidth;
     pos.z = Math.min(STREET.maxZ, Math.max(inDoor ? secret.doorZ : STREET.minZ, pos.z));
     for (const g of gates) {
       if (g.open) continue;
-      if (pos.x > g.x - radius && pos.x < g.x + radius) pos.x = pos.x < g.x ? g.x - radius : g.x + radius;
+      const from = prevX ?? pos.x;
+      if (from < g.x && pos.x > g.x - radius) pos.x = g.x - radius;
+      else if (from >= g.x && pos.x < g.x + radius) pos.x = g.x + radius;
     }
     return pos;
   }

@@ -92,6 +92,7 @@ export function createEnemies(ctx) {
       for (let i = list.length - 1; i >= 0; i--) {
         const e = list[i];
         const a = e.actor;
+        const prevX = e.pos.x;
         if (e.state === 'dead') {
           e.dead -= dt;
           e.pos.x += e.kx * dt;
@@ -147,7 +148,7 @@ export function createEnemies(ctx) {
         }
         e.kx *= Math.max(0, 1 - dt * 7);
         e.pos.x += e.kx * dt;
-        world.clampPosition(e.pos, 0.2);
+        world.clampPosition(e.pos, 0.2, prevX);
         a.update(dt, 0);
       }
       // Separación para que no se apilen

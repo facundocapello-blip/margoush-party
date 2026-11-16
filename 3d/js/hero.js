@@ -28,7 +28,7 @@ export function createHero(id, ctx) {
     state: 'free', t: 0,
     combo: 0, comboWindow: 0, buffer: 0, swing: null, swingHit: false,
     lift: 0, vy: 0,
-    dodgeDir: 1, powerCd: 0,
+    dodgeDir: 1, powerCd: 0, dodgeCd: 0,
     knock: 0,
 
     hurt(amount, fromX) {
@@ -58,8 +58,9 @@ export function createHero(id, ctx) {
 
       if (input.consume('attack')) h.buffer = 0.2;
       if (input.consume('jump') && h.lift === 0 && h.state !== 'dodge') { h.vy = 8.5; h.lift = 0.001; ctx.audio?.sfx('jump'); }
-      if (input.consume('dodge') && h.state !== 'dodge') {
-        h.state = 'dodge'; h.t = 0.24; h.inv = Math.max(h.inv, 0.35);
+      h.dodgeCd = Math.max(0, h.dodgeCd - dt);
+      if (input.consume('dodge') && h.state !== 'dodge' && h.dodgeCd <= 0) {
+        h.state = 'dodge'; h.t = 0.24; h.inv = Math.max(h.inv, 0.35); h.dodgeCd = 0.7;
         h.dodgeDir = Math.abs(input.moveX) > 0.2 ? Math.sign(input.moveX) : actor.facing;
         fx.dust(p);
         ctx.audio?.sfx('dodge');
@@ -90,9 +91,10 @@ export function createHero(id, ctx) {
         if (h.state !== 'attack' && Math.abs(mx) > 0.15) actor.setFacing(Math.sign(mx));
       }
       h.knock *= Math.max(0, 1 - dt * 8);
+      const prevX = p.x;
       p.x += (vx + h.knock) * dt;
       p.z += vz * dt;
-      world.clampPosition(p);
+      world.clampPosition(p, 0.4, prevX);
 
       // Salto
       if (h.lift > 0) {
@@ -165,8 +167,9 @@ export function createHero(id, ctx) {
     h.swingHit = false;
     if (Math.abs(input.moveX) > 0.2) actor.setFacing(Math.sign(input.moveX));
     // pequeño avance para que el golpe tenga peso
+    const x0 = actor.position.x;
     actor.position.x += actor.facing * (h.combo === 2 ? 0.45 : 0.25);
-    world.clampPosition(actor.position);
+    world.clampPosition(actor.position, 0.4, x0);
     ctx.audio?.sfx(h.combo === 2 ? 'hitHeavy' : 'swing');
   }
 
