@@ -367,6 +367,23 @@ export function createTraps(ctx) {
       }
       updateActive(dt);
     },
+    // Hasta dónde puede llegar un patinazo que va de x0 a x1 (en z) sin caer a un bache ni meterse en el fuego del piquete
+    safeStop(x0, x1, z) {
+      const dir = Math.sign(x1 - x0);
+      if (!dir) return x1;
+      const stops = [];
+      for (const t of list) {
+        if (t.kind !== 'bache' || z <= t.z0 - 0.05 || z >= t.z1 + 0.05) continue;
+        stops.push(dir > 0 ? t.x - t.w / 2 - 0.1 : t.x + t.w / 2 + 0.1);
+      }
+      for (const g of world.gates) {
+        if (g.kind !== 'piquete' || g.open) continue;
+        stops.push(g.x + (dir > 0 ? -1 : 1) * (TIMING.fire.reach + 0.2));
+      }
+      let x = x1;
+      for (const s of stops) if (dir > 0 ? (x0 <= s && s < x) : (x0 >= s && s > x)) x = s;
+      return x;
+    },
     forceNext(kind, forced = false) { return start(kind, forced); },
     disable() { enabled = false; },
     reset() {

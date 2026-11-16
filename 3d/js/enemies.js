@@ -6,6 +6,7 @@ import { sheetPoses } from './cast.js';
 //  melee    — se acerca y pega (secuaz, patovica)
 //  bombo    — se queda a media distancia y aturde con el bombo
 //  mozo     — tira croissants desde lejos
+//  lale     — tira manteca desde lejos y a veces se resbala
 //  delivery — embiste en bici en línea recta
 export const KINDS = {
   // gait: cadence = pasos por metro, bob = altura del rebote al caminar (m)
@@ -13,6 +14,7 @@ export const KINDS = {
   patovica: { tex: 'courier_patovica', hp: 7, scale: 1.3, speed: 2.2, windup: 0.8, ai: 'melee', shove: 14, points: 'patovica', gait: { cadence: 1.1, bob: 0.06 } },
   bombo: { tex: 'courier_bombo', hp: 4, scale: 1.05, speed: 2.8, ai: 'bombo', ranged: true, points: 'bombo', gait: { cadence: 2.0, bob: 0.22 } },
   mozo: { tex: 'courier_mozo', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', ranged: true, points: 'mozo', gait: { cadence: 0, bob: 0 } },
+  lale: { tex: 'courier_lale', hp: 4, scale: 1, speed: 3.0, ai: 'lale', ranged: true, points: 'lale', name: 'LALE «MANTECOSO»', gait: { cadence: 2.0, bob: 0.1 } },
   delivery: { tex: 'courier_delivery', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', ranged: true, points: 'delivery', gait: { cadence: 0, bob: 0 } }
 };
 const LEGACY = ['secuaz', 'secuaz', 'patovica']; // tipos numéricos viejos
@@ -24,6 +26,7 @@ const TAUNTS = ['¡Vení!', '¡Dale!', '¡Jaja!'];
 const MELEE_BUSY = ['windup', 'strike', 'ring', 'charge'];
 export const BOMBO = { every: 4, windup: 0.9, radius: 3.2, stun: 1 };
 export const MOZO = { every: 2.5, flight: 0.9, hitRadius: 0.75 };
+export const LALE = { every: 3.2, flight: 0.9, keep: 6, slipChance: 0.35, windup: 0.4, slip: 1 };
 export const DELIVERY = { warn: 0.85, speed: 13, run: 14, dizzy: 1.5 };
 
 function emojiTex(emoji) {
@@ -88,7 +91,7 @@ export function createEnemies(ctx) {
       e.lane = flatMesh(new THREE.PlaneGeometry(PATOVICA.run, 1.2), laneMat);
       e.extras.push(e.lane);
     }
-    if (k.ai === 'mozo') e.cd = 1.2 + Math.random();
+    if (k.ai === 'mozo' || k.ai === 'lale') e.cd = 1.2 + Math.random();
     if (k.ai === 'delivery') {
       e.cd = 1 + Math.random();
       e.bike = buildBike();
@@ -161,6 +164,12 @@ export function createEnemies(ctx) {
       e.t = strength > 1.2 ? 0.55 : 0.32;
       e.kx = knockDir * knock * (e.kind === 'patovica' ? 0.5 : 1);
       hideTells(e);
+      // Lale pisa su propia manteca: a veces se resbala y queda en el piso
+      if (e.kind === 'lale' && e.hp > 0 && Math.random() < LALE.slipChance) {
+        e.state = 'slipped'; e.t = LALE.slip;
+        e.actor.lean = 1.2; e.actor.lift = 0; e.actor.setPose('hurt');
+        fx.popup(e.pos.clone().setY(2.9), '¡PLAF!', '#ffd23a', { size: 26, life: 0.8 });
+      }
     }
     e.actor.hit();
     e.actor.flash(0.12);
@@ -357,6 +366,32 @@ export function createEnemies(ctx) {
     } else a.offsetX *= 0.9;
   }
 
+  function lale(e, dt, hero, hp, dx) {
+    const a = e.actor;
+    a.setFacing(dx >= 0 ? 1 : -1);
+    if (e.state === 'throw') {
+      e.t -= dt;
+      a.offsetX = 0.2;
+      if (e.t <= 0) {
+        e.state = 'walk'; e.cd = LALE.every;
+        game.butter?.drop(e.throwX, e.throwZ, e.pos.clone().setY(1.7));
+        ctx.audio?.sfx('whoosh');
+      }
+      return;
+    }
+    // Mantiene distancia como el mozo
+    const side = dx > 0 ? -1 : 1;
+    const lb = world.levelBounds;
+    let wantX = hp.x + side * LALE.keep;
+    if (wantX < lb.minX + 1 || wantX > lb.maxX - 1) wantX = hp.x - side * LALE.keep;
+    approach(e, dt, wantX, hp.z + e.slotZ * 0.6, e.k.speed);
+    a.offsetX *= 0.9;
+    if (e.cd <= 0 && Math.abs(dx) < 11 && rangedFree()) {
+      e.state = 'throw'; e.t = LALE.windup;
+      e.throwX = hp.x; e.throwZ = hp.z; // apunta adonde estás ahora: moverte alcanza
+    }
+  }
+
   function updateShots(dt) {
     const hero = game.hero, hp = hero.actor.position;
     for (let i = shots.length - 1; i >= 0; i--) {
@@ -437,6 +472,7 @@ export function createEnemies(ctx) {
       for (const d of wave ? wave.spawns : []) {
         const x = Math.min(lb.maxX - 1, Math.max(lb.minX + 1, hx + d.dx));
         spawn(x, d.dz, d.kind);
+        if (d.kind === 'lale') game.banner(KINDS.lale.name, '¡Cuidado con la manteca!');
       }
     },
     spawn,
@@ -495,9 +531,14 @@ export function createEnemies(ctx) {
         } else if (e.state === 'hitstun') {
           e.t -= dt;
           if (e.t <= 0) { e.state = 'walk'; e.cd = Math.max(e.cd, 0.5); }
+        } else if (e.state === 'slipped') {
+          e.t -= dt;
+          a.lift = 0;
+          if (e.t <= 0) { e.state = 'walk'; a.lean = 0; e.cd = Math.max(e.cd, 1); }
         } else if (e.k.ai === 'melee') melee(e, dt, hero, hp, dx, dz);
         else if (e.k.ai === 'bombo') bombo(e, dt, hero, hp, dx);
         else if (e.k.ai === 'mozo') mozo(e, dt, hero, hp, dx);
+        else if (e.k.ai === 'lale') lale(e, dt, hero, hp, dx);
         else if (e.k.ai === 'delivery') delivery(e, dt, hero, hp, dx, dz);
 
         e.kx *= Math.max(0, 1 - dt * 7);

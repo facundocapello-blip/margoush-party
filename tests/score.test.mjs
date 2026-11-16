@@ -91,8 +91,8 @@ test('losing earns no hp or time bonus', () => {
 
 // Recorrido de los dos niveles sin recibir daño: todos los malos, mamaderas, secreto y jefe
 function flawless({ seconds = 300, hpLeft = 5, upToLevel = 2, won = true } = {}) {
-  const HP = { secuaz: 3, patovica: 7, bombo: 4, mozo: 3, delivery: 3 };
-  const PTS = { secuaz: 'minion', patovica: 'patovica', bombo: 'bombo', mozo: 'mozo', delivery: 'delivery' };
+  const HP = { secuaz: 3, patovica: 7, bombo: 4, mozo: 3, lale: 4, delivery: 3 };
+  const PTS = { secuaz: 'minion', patovica: 'patovica', bombo: 'bombo', mozo: 'mozo', lale: 'lale', delivery: 'delivery' };
   const s = createScore();
   let swing = 0;
   for (const w of WAVES.filter(w => w.level <= upToLevel)) for (const sp of w.spawns) {

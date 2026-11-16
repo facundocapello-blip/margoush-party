@@ -7,6 +7,7 @@ const SKINS = {
   bombo: { jacket: { h: 200, s: 0.65, l: 1.25 }, cap: { h: 0, s: 0, l: 2.2 }, paint: bombo },
   mozo: { jacket: { h: 40, s: 0.08, l: 2.3 }, cap: { h: 0, s: 0, l: 0.3 }, paint: mozo },
   delivery: { jacket: { h: 145, s: 0.7, l: 1.15 }, cap: { h: 145, s: 0.7, l: 1.0 }, paint: delivery },
+  lale: { jacket: { h: 50, s: 0.95, l: 1.5 }, cap: { h: 50, s: 0.9, l: 1.2 }, paint: lale },
   manifestante: { jacket: { h: 215, s: 0.25, l: 1.1 }, cap: { h: 30, s: 0.15, l: 1.2 }, paint: null }
 };
 
@@ -80,6 +81,18 @@ function mozo(c) {
     c.fillStyle = '#d9912f'; c.beginPath(); c.ellipse(x, y, 38, 20, -0.2, 0, Math.PI * 2); c.fill();
     c.strokeStyle = '#9a5a1a'; c.lineWidth = 4; for (let k = -1; k <= 1; k++) { c.beginPath(); c.moveTo(x + k * 14, y - 18); c.lineTo(x + k * 14 + 6, y + 18); c.stroke(); }
   }
+}
+
+function lale(c) {
+  // Paleta de pádel pintada en lugar de la caja: marco naranja, cara celeste con agujeros y mango
+  c.fillStyle = '#3a2a1a'; c.fillRect(630, 520, 26, 90);
+  c.fillStyle = '#ff7a1a'; c.beginPath(); c.ellipse(643, 450, 92, 110, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#5ec8f2'; c.beginPath(); c.ellipse(643, 450, 70, 88, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#ff7a1a';
+  for (const [x, y] of [[620, 410], [666, 410], [643, 450], [620, 490], [666, 490]]) { c.beginPath(); c.arc(x, y, 9, 0, Math.PI * 2); c.fill(); }
+  // Barra de manteca en la mano libre
+  c.fillStyle = '#ffe066'; c.beginPath(); c.roundRect(440, 470, 90, 46, 8); c.fill();
+  c.fillStyle = '#f2c230'; c.fillRect(440, 500, 90, 16);
 }
 
 function delivery(c) {

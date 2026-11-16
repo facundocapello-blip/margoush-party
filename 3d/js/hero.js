@@ -31,6 +31,7 @@ export function createHero(id, ctx) {
     dodgeDir: 1, powerCd: 0, dodgeCd: 0,
     knock: 0, knockZ: 0,
     slowT: 0, slowF: 1, stunT: 0,
+    slideT: 0, slideDir: 1, slideSpeed: 5,
 
     // Trampas y malos: andar lento (baldosa), quedar aturdido (bombo), ser empujado (grève)
     slow(seconds, factor = 0.5) { h.slowT = Math.max(h.slowT, seconds); h.slowF = factor; },
@@ -40,6 +41,12 @@ export function createHero(id, ctx) {
       h.state = 'free'; h.buffer = 0; h.swing = null;
       fx.popup(actor.position.clone().setY(2.9), '💫', '#fff', { size: 30, life: seconds, rise: 0.1 });
       return true;
+    },
+    // Patinar sobre la manteca: avanza solo, no se puede caminar; sí pegar y saltar. No da invulnerabilidad.
+    slide(dirX, seconds, speed = 5) {
+      h.slideT = seconds; h.slideDir = dirX >= 0 ? 1 : -1; h.slideSpeed = speed;
+      fx.popup(actor.position.clone().setY(2.9), '¡RESBALÓN!', '#ffd23a', { size: 24, life: 0.8 });
+      ctx.audio?.sfx('fall');
     },
     push(vx, vz) { h.knock += vx; h.knockZ += vz; },
     isDodging() { return h.state === 'dodge'; },
@@ -69,6 +76,7 @@ export function createHero(id, ctx) {
       h.buffer = Math.max(0, h.buffer - dt);
       const p = actor.position;
       h.slowT = Math.max(0, h.slowT - dt);
+      h.slideT = Math.max(0, h.slideT - dt);
       if (h.stunT > 0) {
         // Aturdido: se tambalea en el lugar y no responde a los controles
         h.stunT = Math.max(0, h.stunT - dt);
@@ -109,6 +117,8 @@ export function createHero(id, ctx) {
         vx = h.dodgeDir * 15;
         actor.setFacing(h.dodgeDir);
         if (h.t <= 0) h.state = 'free';
+      } else if (h.slideT > 0) {
+        vx = h.slideDir * h.slideSpeed;
       } else {
         const mx = input.moveX, mz = input.moveZ;
         const len = Math.max(1, Math.hypot(mx, mz));
@@ -122,6 +132,8 @@ export function createHero(id, ctx) {
       const prevX = p.x;
       p.x += (vx + h.knock) * dt;
       p.z += (vz + h.knockZ) * dt;
+      // Patinando no se cae al bache ni se mete en el fuego: frena en el borde
+      if (h.slideT > 0 && h.state !== 'dodge') p.x = game.traps?.safeStop(prevX, p.x, p.z) ?? p.x;
       world.clampPosition(p, 0.4, prevX);
 
       // Salto
@@ -136,7 +148,7 @@ export function createHero(id, ctx) {
     },
 
     reset() {
-      h.hp = h.hpMax; h.inv = 0; h.state = 'free'; h.combo = 0; h.buffer = 0; h.lift = 0; h.vy = 0; h.knock = 0; h.knockZ = 0; h.powerCd = 0; h.slowT = 0; h.stunT = 0;
+      h.hp = h.hpMax; h.inv = 0; h.state = 'free'; h.combo = 0; h.buffer = 0; h.lift = 0; h.vy = 0; h.knock = 0; h.knockZ = 0; h.powerCd = 0; h.slowT = 0; h.stunT = 0; h.slideT = 0;
       h.damageLog = [];
     }
   };
@@ -168,6 +180,9 @@ export function createHero(id, ctx) {
     } else if (h.state === 'dodge') {
       actor.setPose('run');
       actor.lean = -0.22; actor.offsetX = 0; actor.stretch = -0.06;
+    } else if (h.slideT > 0 && h.lift === 0) {
+      actor.setPose('run');
+      actor.lean = 0.3; actor.offsetX = 0; actor.stretch = 0; // patina echado para atrás
     } else if (h.lift > 0) {
       actor.setPose('run');
       actor.lean = h.vy > 0 ? 0.05 : -0.08; actor.offsetX = 0; actor.stretch = h.vy > 0 ? 0.05 : -0.02;
