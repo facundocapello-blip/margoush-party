@@ -161,5 +161,55 @@
   "frames": 0,
   "cols": 0,
   "rows": 0
+ },
+ "face_secuaz_sheet": {
+  "file": "face_secuaz_sheet.webp",
+  "w": 250,
+  "h": 400,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "skull": 73.0,
+  "foot": 0.985
+ },
+ "face_patovica_sheet": {
+  "file": "face_patovica_sheet.webp",
+  "w": 278,
+  "h": 400,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "skull": 62.0,
+  "foot": 0.985
+ },
+ "face_bombo_sheet": {
+  "file": "face_bombo_sheet.webp",
+  "w": 282,
+  "h": 400,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "skull": 96.0,
+  "foot": 0.985
+ },
+ "face_mozo_sheet": {
+  "file": "face_mozo_sheet.webp",
+  "w": 246,
+  "h": 400,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "skull": 139.0,
+  "foot": 0.985
+ },
+ "face_delivery_sheet": {
+  "file": "face_delivery_sheet.webp",
+  "w": 318,
+  "h": 400,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "skull": 198.0,
+  "foot": 0.985
  }
 }

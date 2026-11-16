@@ -2,7 +2,7 @@ import { SpriteActor } from './sprites.js';
 import { WAVES } from './level.js';
 import { sheetPoses } from './cast.js';
 
-// Tipos de malo. Todos salen del secuaz (courier) recoloreado en skins.js.
+// Tipos de malo. Cada uno tiene su propia cara (face_<tipo>_sheet); Lale sigue siendo el courier recoloreado en skins.js.
 //  melee    — se acerca y pega (secuaz, patovica)
 //  bombo    — se queda a media distancia y aturde con el bombo
 //  mozo     — tira croissants desde lejos
@@ -10,12 +10,12 @@ import { sheetPoses } from './cast.js';
 //  delivery — embiste en bici en línea recta
 export const KINDS = {
   // gait: cadence = pasos por metro, bob = altura del rebote al caminar (m)
-  secuaz: { tex: 'courier', hp: 3, scale: 1, speed: 3.2, windup: 0.55, ai: 'melee', points: 'minion', gait: { cadence: 2.2, bob: 0.14 } },
-  patovica: { tex: 'courier_patovica', hp: 7, scale: 1.3, speed: 2.2, windup: 0.8, ai: 'melee', shove: 14, points: 'patovica', gait: { cadence: 1.1, bob: 0.06 } },
-  bombo: { tex: 'courier_bombo', hp: 4, scale: 1.05, speed: 2.8, ai: 'bombo', ranged: true, points: 'bombo', gait: { cadence: 2.0, bob: 0.22 } },
-  mozo: { tex: 'courier_mozo', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', ranged: true, points: 'mozo', gait: { cadence: 0, bob: 0 } },
+  secuaz: { tex: 'face_secuaz_sheet', hp: 3, scale: 1, speed: 3.2, windup: 0.55, ai: 'melee', points: 'minion', gait: { cadence: 2.2, bob: 0.14 } },
+  patovica: { tex: 'face_patovica_sheet', hp: 7, scale: 1.3, speed: 2.2, windup: 0.8, ai: 'melee', shove: 14, points: 'patovica', gait: { cadence: 1.1, bob: 0.06 } },
+  bombo: { tex: 'face_bombo_sheet', hp: 4, scale: 1.05, speed: 2.8, ai: 'bombo', ranged: true, points: 'bombo', gait: { cadence: 2.0, bob: 0.22 } },
+  mozo: { tex: 'face_mozo_sheet', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', ranged: true, points: 'mozo', gait: { cadence: 0, bob: 0 } },
   lale: { tex: 'courier_lale', hp: 4, scale: 1, speed: 3.0, ai: 'lale', ranged: true, points: 'lale', name: 'LALE «MANTECOSO»', gait: { cadence: 2.0, bob: 0.1 } },
-  delivery: { tex: 'courier_delivery', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', ranged: true, points: 'delivery', gait: { cadence: 0, bob: 0 } }
+  delivery: { tex: 'face_delivery_sheet', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', ranged: true, points: 'delivery', gait: { cadence: 0, bob: 0 } }
 };
 const LEGACY = ['secuaz', 'secuaz', 'patovica']; // tipos numéricos viejos
 const MAX_ATTACKERS = 2;   // de cerca (secuaz, patovica) a la vez
