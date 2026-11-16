@@ -46,3 +46,8 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - Diseño: `docs/superpowers/specs/2026-11-16-margoush-3d-dos-niveles-design.md`. Plan: `docs/superpowers/plans/2026-11-16-margoush-3d-dos-niveles.md`.
 - Pruebas nuevas: `node tests/e2e/<level|enemies|traps>.e2e.mjs` (traps acepta un nombre: `node tests/e2e/traps.e2e.mjs colectivo`).
 - Pendiente igual que antes: Supabase, iPhone real, OK de Facu para `main`.
+
+## 2026-11-16 · Pendientes reportados por Facu (para el próximo chat)
+- BUG: el piquete no se puede pasar en partida real (se abre al despejar la oleada `piquete`; revisar si `enemies.alive()` cuenta malos de otras oleadas o trabados). Reproducir con bot antes de arreglar.
+- Movimiento de los NPC muy parecido entre sí; Facu acepta modelos/animaciones de otros juegos o repos. Hacer brainstorming.
+- Portada nueva con tema sintetizado: hecho (commit b41fc44).
