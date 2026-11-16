@@ -1,0 +1,146 @@
+{
+ "boss_idle": {
+  "file": "boss_idle.webp",
+  "w": 503,
+  "h": 731,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "boss_run": {
+  "file": "boss_run.webp",
+  "w": 597,
+  "h": 674,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "boss_attack": {
+  "file": "boss_attack.webp",
+  "w": 711,
+  "h": 506,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "boss_hurt": {
+  "file": "boss_hurt.webp",
+  "w": 523,
+  "h": 472,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "douge_idle": {
+  "file": "douge_idle.webp",
+  "w": 194,
+  "h": 420,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "douge_run": {
+  "file": "douge_run.webp",
+  "w": 1200,
+  "h": 400,
+  "frames": 6,
+  "cols": 6,
+  "rows": 1
+ },
+ "douge_attack": {
+  "file": "douge_attack.webp",
+  "w": 398,
+  "h": 420,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "marine_idle": {
+  "file": "marine_idle.webp",
+  "w": 168,
+  "h": 420,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "marine_run": {
+  "file": "marine_run.webp",
+  "w": 1200,
+  "h": 400,
+  "frames": 6,
+  "cols": 6,
+  "rows": 1
+ },
+ "marine_attack": {
+  "file": "marine_attack.webp",
+  "w": 390,
+  "h": 420,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chaky_run": {
+  "file": "chaky_run.webp",
+  "w": 1200,
+  "h": 400,
+  "frames": 6,
+  "cols": 6,
+  "rows": 1
+ },
+ "margot_sheet": {
+  "file": "margot_sheet.webp",
+  "w": 800,
+  "h": 800,
+  "frames": 4,
+  "cols": 2,
+  "rows": 2
+ },
+ "street_bg": {
+  "file": "street_bg.webp",
+  "w": 1024,
+  "h": 683,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "courier": {
+  "file": "courier.webp",
+  "w": 936,
+  "h": 1024,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "kidnap_sheet": {
+  "file": "kidnap_sheet.webp",
+  "w": 800,
+  "h": 800,
+  "frames": 4,
+  "cols": 2,
+  "rows": 2
+ },
+ "facu": {
+  "file": "facu.webp",
+  "w": 395,
+  "h": 783,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "music_douge": {
+  "file": "music_douge.mp3",
+  "w": 0,
+  "h": 0,
+  "frames": 0,
+  "cols": 0,
+  "rows": 0
+ },
+ "music_marine": {
+  "file": "music_marine.mp3",
+  "w": 0,
+  "h": 0,
+  "frames": 0,
+  "cols": 0,
+  "rows": 0
+ }
+}
