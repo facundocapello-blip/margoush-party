@@ -80,7 +80,7 @@ NIVEL 2 — FRANCIA
 - **Buenos Aires:** vereda de baldosas grises, plátanos, contenedores verdes, parada de colectivo, kiosco con cartel en estilo fileteado, cubiertas del piquete con fuego y humo. Se arma con piezas 3D y texturas pintadas por código (no hay pintura de BA en los recursos).
 - **Le Concept:** el local azul recortado de la pintura `street_bg` como edificio propio, más grande y adelantado, cartel 3D iluminado, mesitas y guirnalda de luces en la vereda. En el resto de las calles se usan las otras fachadas para que no se repita.
 - **Francia:** la pintura actual (estilo provenzal) + guirnaldas tricolor, faroles verdes, cartel "Boulangerie".
-- **Malos nuevos:** dibujos en el mismo estilo de las caricaturas (ver pregunta abierta 1).
+- **Malos nuevos:** el secuaz recoloreado + accesorios (ver decisión 1).
 
 ## 9. Puntaje y ranking
 
@@ -110,6 +110,7 @@ NIVEL 2 — FRANCIA
 - Si el Nivel 2 es la misma calle continuada o una calle nueva tras la transición.
 - Sonidos de cada trampa (sintetizados como los actuales).
 
-## 13. Preguntas abiertas para Facu
+## 13. Decisiones de Facu
 
-1. **Dibujos de los 4 malos nuevos:** ¿los generás vos con IA con prompts que te paso (quedan iguales a las caricaturas, pero dependen de vos), o los armo yo con el secuaz actual + accesorios (gorra, bombo, bandeja, bici; más rápido pero se nota que es el mismo muñeco)?
+1. **Dibujos de los malos nuevos:** los arma el constructor a partir del secuaz actual (`courier`): ropa recoloreada por código (cambio de tono de la campera) + accesorios dibujados (anteojos y auricular del patovica, bombo, boina y bandeja del mozo, bici del delivery) + tamaño propio. Si más adelante Facu trae dibujos hechos con IA, se reemplazan sin tocar el comportamiento.
+2. Aprobó el diseño ("armalo", 2026-11-16).
