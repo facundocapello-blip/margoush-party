@@ -58,3 +58,11 @@ test('totals are integers with fractional multipliers', () => {
   assert.ok(Number.isInteger(s.total));
   assert.equal(s.total, 130);
 });
+
+test('losing earns no hp or time bonus', () => {
+  const s = createScore();
+  s.addKill('minion');
+  const r = s.finalize({ hpLeft: 5, hpMax: 5, seconds: 10, won: false });
+  assert.equal(r.total, 100);
+  assert.deepEqual(r.breakdown, { play: 100, hpBonus: 0, timeBonus: 0 });
+});

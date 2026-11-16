@@ -9,6 +9,10 @@ import { createProps } from './props.js';
 import { createFacu } from './facu.js';
 import { createBoss } from './boss.js';
 import { createStory } from './story.js';
+import { createAudio } from './audio.js';
+import { createUi } from './ui.js';
+import { createRanking } from './ranking.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 const $ = (s) => document.querySelector(s);
 const canvas = $('#game');
@@ -37,7 +41,7 @@ const game = {
 };
 window.__game = game;
 
-let assets, world, input, fx;
+let assets, world, input, fx, audio, ui;
 let bannerTimer = 0;
 
 // ---------- combo visible ----------
@@ -95,6 +99,7 @@ function updateCamera(dt, snap = false) {
 
 function showScreen(id) {
   for (const s of document.querySelectorAll('.screen')) s.classList.toggle('hidden', s.id !== id);
+  document.body.classList.toggle('has-screen', !!id);
 }
 
 function updateHud() {
@@ -142,6 +147,8 @@ function startRun(heroId, withIntro = false) {
   updateCamera(0, true);
   resize();
   game.facu.say(game.facu.lines.intro, 5);
+  $('#boss-bar').classList.add('hidden');
+  audio.music(heroId);
   if (withIntro) { game.state = 'intro'; game.story.startIntro(); }
   else game.state = 'playing';
 }
@@ -224,19 +231,12 @@ function finish(won) {
   if (game.state !== 'playing' && game.state !== 'rescue') return;
   game.state = 'result';
   input.reset();
-  game.lastResult = { won, ...game.score.finalize({ hpLeft: game.hero.hp, hpMax: game.hero.hpMax, seconds: game.time }) };
+  game.lastResult = { won, ...game.score.finalize({ hpLeft: game.hero.hp, hpMax: game.hero.hpMax, seconds: game.time, won }) };
   $('#touch').classList.add('hidden');
-  const r = $('#screen-result');
-  r.replaceChildren();
-  const h2 = document.createElement('h2');
-  h2.textContent = won ? '¡MARGOT ESTÁ A SALVO!' : '¡Margot te necesita!';
-  const p = document.createElement('p');
-  p.textContent = `Puntaje: ${game.lastResult.total.toLocaleString('es-AR')} · Nota ${game.lastResult.rank}`;
-  const again = document.createElement('button');
-  again.className = 'big-btn'; again.textContent = 'JUGAR DE NUEVO';
-  again.onclick = () => startRun(game.heroId);
-  r.append(h2, p, again);
-  showScreen('screen-result');
+  $('#boss-bar').classList.add('hidden');
+  audio.music(null);
+  if (won) audio.sfx('fanfare');
+  ui.showResult(game.lastResult, game.heroId);
 }
 game.finish = finish;
 
@@ -245,6 +245,7 @@ function pause() {
   if (game.state !== 'playing') return;
   game.state = 'paused';
   input.reset();
+  audio.pauseMusic();
   showScreen('screen-pause');
 }
 function resume() {
@@ -252,6 +253,7 @@ function resume() {
   input.reset();
   showScreen(null);
   game.state = 'playing';
+  audio.resumeMusic();
   last = 0;
 }
 game.pause = pause;
@@ -308,7 +310,13 @@ async function boot() {
   world = buildStreet(scene, assets);
   input = createInput({ canvas, joystick: $('#joystick'), knob: $('#knob'), buttons: document.querySelectorAll('.act') });
   fx = createFx(scene, camera, $('#labels'), $('#flash'));
-  const ctx = { scene, assets, world, input, fx, camera, game, audio: null };
+  audio = createAudio(assets);
+  const ctx = { scene, assets, world, input, fx, camera, game, audio };
+  const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
+  game.ranking = ranking;
+  const goMenu = () => { game.state = 'menu'; audio.music(null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); game.facu?.refreshLabels(); showScreen('screen-menu'); };
+  ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
+  game.goMenu = goMenu;
   game.ctx = ctx;
   game.world = world;
   game.input = input;
@@ -327,7 +335,12 @@ async function boot() {
   $('#btn-pause').addEventListener('click', pause);
   $('#btn-resume').addEventListener('click', resume);
   $('#btn-restart').addEventListener('click', () => startRun(game.heroId));
-  $('#btn-home').addEventListener('click', () => { game.state = 'menu'; game.facu?.refreshLabels(); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); showScreen('screen-menu'); });
+  $('#btn-home').addEventListener('click', () => game.goMenu());
+  $('#btn-ranking').addEventListener('click', () => ui.showRanking('screen-menu'));
+  const muteBtn = $('#btn-mute');
+  const paintMute = () => { muteBtn.textContent = audio.muted ? '🔇' : '♪'; };
+  paintMute();
+  muteBtn.addEventListener('click', () => { audio.toggleMute(); paintMute(); muteBtn.blur(); });
 
   camera.position.set(6, 8, 14);
   camera.lookAt(camTarget);

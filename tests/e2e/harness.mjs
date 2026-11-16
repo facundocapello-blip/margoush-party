@@ -20,7 +20,8 @@ export async function launch({ viewport = { width: 960, height: 540 }, mobile = 
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
-  for (const [pattern, handler] of routes) await page.route(pattern, handler);
+  // Playwright prueba las rutas en orden inverso al registro: lo último registrado manda.
+  await page.route(/^(?!http:\/\/game\.local|https:\/\/cdnjs\.cloudflare\.com).*/, r => r.abort());
   await page.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname === 'cdnjs.cloudflare.com' && url.pathname.endsWith('three.min.js'))
@@ -30,7 +31,7 @@ export async function launch({ viewport = { width: 960, height: 540 }, mobile = 
     if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return route.fulfill({ status: 404, body: 'no' });
     return route.fulfill({ contentType: TYPES[path.extname(file)] || 'application/octet-stream', body: fs.readFileSync(file) });
   });
-  await page.route(/^(?!http:\/\/game\.local|https:\/\/cdnjs\.cloudflare\.com).*/, r => r.abort());
+  for (const [pattern, handler] of routes) await page.route(pattern, handler);
   return { browser, context, page, errors };
 }
 

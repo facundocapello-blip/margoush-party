@@ -19,9 +19,10 @@ export function createScore() {
     addPickup(kind) { total += PICKUP[kind]; },
     addHit() { hits++; },
     takeDamage() { hits = 0; },
-    finalize({ hpLeft, hpMax, seconds }) {
-      const hpBonus = Math.round((hpLeft / hpMax) * 3000);
-      const timeBonus = Math.round(Math.max(0, 300 - seconds) * 10);
+    // Los bonus de vida y tiempo solo cuentan si se rescató a Margot
+    finalize({ hpLeft, hpMax, seconds, won = true }) {
+      const hpBonus = won ? Math.round((hpLeft / hpMax) * 3000) : 0;
+      const timeBonus = won ? Math.round(Math.max(0, 300 - seconds) * 10) : 0;
       const sum = total + hpBonus + timeBonus;
       const rank = sum >= 15000 ? 'S' : sum >= 10000 ? 'A' : sum >= 6000 ? 'B' : 'C';
       return { total: sum, rank, breakdown: { play: total, hpBonus, timeBonus } };
