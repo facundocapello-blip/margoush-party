@@ -7,14 +7,20 @@ import { WAVES } from './level.js';
 //  mozo     — tira croissants desde lejos
 //  delivery — embiste en bici en línea recta
 export const KINDS = {
-  secuaz: { tex: 'courier', hp: 3, scale: 1, speed: 3.2, windup: 0.55, ai: 'melee', points: 'minion' },
-  patovica: { tex: 'courier_patovica', hp: 7, scale: 1.3, speed: 2.2, windup: 0.8, ai: 'melee', shove: 14, points: 'patovica' },
-  bombo: { tex: 'courier_bombo', hp: 4, scale: 1.05, speed: 2.8, ai: 'bombo', points: 'bombo' },
-  mozo: { tex: 'courier_mozo', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', points: 'mozo' },
-  delivery: { tex: 'courier_delivery', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', points: 'delivery' }
+  // gait: cadence = pasos por metro, bob = altura del rebote al caminar (m)
+  secuaz: { tex: 'courier', hp: 3, scale: 1, speed: 3.2, windup: 0.55, ai: 'melee', points: 'minion', gait: { cadence: 2.2, bob: 0.14 } },
+  patovica: { tex: 'courier_patovica', hp: 7, scale: 1.3, speed: 2.2, windup: 0.8, ai: 'melee', shove: 14, points: 'patovica', gait: { cadence: 1.1, bob: 0.06 } },
+  bombo: { tex: 'courier_bombo', hp: 4, scale: 1.05, speed: 2.8, ai: 'bombo', ranged: true, points: 'bombo', gait: { cadence: 2.0, bob: 0.22 } },
+  mozo: { tex: 'courier_mozo', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', ranged: true, points: 'mozo', gait: { cadence: 0, bob: 0 } },
+  delivery: { tex: 'courier_delivery', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', ranged: true, points: 'delivery', gait: { cadence: 0, bob: 0 } }
 };
 const LEGACY = ['secuaz', 'secuaz', 'patovica']; // tipos numéricos viejos
-const MAX_ATTACKERS = 2;
+const MAX_ATTACKERS = 2;   // de cerca (secuaz, patovica) a la vez
+export const MAX_RANGED = 1; // de lejos (bombo, mozo, delivery…) a la vez
+export const PATOVICA = { warn: 0.95, speed: 9, run: 7 };
+const WAIT = { min: 2.8, spread: 1.6, settle: 0.6, gap: 0.6 }; // anillo de espera alrededor del héroe
+const TAUNTS = ['¡Vení!', '¡Dale!', '¡Jaja!'];
+const MELEE_BUSY = ['windup', 'strike', 'ring', 'charge'];
 export const BOMBO = { every: 4, windup: 0.9, radius: 3.2, stun: 1 };
 export const MOZO = { every: 2.5, flight: 0.9, hitRadius: 0.75 };
 export const DELIVERY = { warn: 0.85, speed: 13, run: 14, dizzy: 1.5 };
@@ -69,12 +75,17 @@ export function createEnemies(ctx) {
     const actor = new SpriteActor(scene, assets, { poses: { idle: { tex: k.tex } }, heightM: 2.25 * k.scale });
     actor.position.set(x, 0, z);
     const e = { actor, pos: actor.position, kind, k, hp: k.hp, maxHp: k.hp, state: 'walk', t: 0, cd: 0.6 + Math.random(), stun: 0, kx: 0,
-      slotZ: (Math.random() - 0.5) * 1.6, seed: Math.random() * 10, dead: 0, extras: [] };
+      slotZ: (Math.random() - 0.5) * 1.6, seed: Math.random() * 10, dead: 0, extras: [],
+      walk: 0, beat: 0, engaged: false, side: 0, feint: 0, taunt: 3 + Math.random() * 2 };
     if (k.ai === 'bombo') {
       e.cd = 1.5 + Math.random();
       e.zone = flatMesh(new THREE.CircleGeometry(BOMBO.radius, 40), dangerMat);
       e.ring = flatMesh(new THREE.RingGeometry(0.85, 1, 40), ringMat);
       e.extras.push(e.zone, e.ring);
+    }
+    if (kind === 'patovica') {
+      e.lane = flatMesh(new THREE.PlaneGeometry(PATOVICA.run, 1.2), laneMat);
+      e.extras.push(e.lane);
     }
     if (k.ai === 'mozo') e.cd = 1.2 + Math.random();
     if (k.ai === 'delivery') {
@@ -87,16 +98,55 @@ export function createEnemies(ctx) {
     return e;
   }
 
-  function attackers() { return list.filter(e => e.hp > 0 && e.k.ai === 'melee' && (e.state === 'windup' || e.state === 'strike')).length; }
+  // Quiénes están atacando ahora (para los turnos)
+  function attacking() {
+    let melee = 0, ranged = 0;
+    for (const e of list) {
+      if (e.hp <= 0) continue;
+      if (e.k.ai === 'melee') { if (MELEE_BUSY.includes(e.state)) melee++; }
+      else if (e.state === 'drum' || e.state === 'ring' || e.state === 'charge' || e.state === 'throw' || shots.some(s => s.owner === e)) ranged++;
+    }
+    return { melee, ranged };
+  }
+  const rangedFree = () => attacking().ranged < MAX_RANGED;
+  let lastEngage = -9; // entre un turno y el siguiente pasa un respiro
+  const engagedCount = () => list.filter(e => e.hp > 0 && e.k.ai === 'melee' && e.engaged).length;
+
+  // Rebote al caminar, propio de cada tipo
+  function gait(e, moved, dt) {
+    const a = e.actor, g = e.k.gait;
+    if (!g || e.k.ai === 'delivery') { a.lift = 0; return; }
+    if (moved < 0.001) { a.lift = Math.max(0, a.lift - dt * 1.2); return; }
+    if (e.k.ai === 'bombo') { e.beat += dt; a.lift = Math.abs(Math.sin(e.beat * Math.PI * 2)) * g.bob; return; } // un salto cada 0,5 s
+    if (!g.bob) { a.lift = 0; return; }
+    const step = Math.floor(e.walk * g.cadence);
+    e.walk += moved;
+    a.lift = Math.abs(Math.sin(e.walk * g.cadence * Math.PI)) * g.bob;
+    if (e.kind === 'patovica' && Math.floor(e.walk * g.cadence) !== step) {
+      fx.dust(e.pos);
+      if (Math.abs(e.pos.x - game.hero.actor.position.x) < 10) fx.shake(0.04);
+    }
+  }
+
+  // ¿Este lado del héroe es caminable (dentro del nivel y sin portón cerrado en el medio)?
+  function sideFree(hx, side, dist) {
+    const x = hx + side * dist, lb = world.levelBounds;
+    if (x < lb.minX + 0.5 || x > lb.maxX - 0.5) return false;
+    return !world.gates.some(g => !g.open && (g.x - hx) * side > 0 && Math.abs(g.x - hx) < dist + 0.3);
+  }
 
   function hideTells(e) { for (const m of [e.zone, e.ring, e.lane]) if (m) m.visible = false; }
 
   function damage(e, dmg, knockDir, knock, strength) {
     e.hp -= dmg;
-    e.state = 'hitstun';
-    e.t = strength > 1.2 ? 0.55 : 0.32;
-    e.kx = knockDir * knock * (e.kind === 'patovica' ? 0.5 : 1);
-    hideTells(e);
+    // El patovica embistiendo no se frena con golpes chicos
+    const armored = e.kind === 'patovica' && e.state === 'charge' && strength <= 1.2;
+    if (!armored) {
+      e.state = 'hitstun';
+      e.t = strength > 1.2 ? 0.55 : 0.32;
+      e.kx = knockDir * knock * (e.kind === 'patovica' ? 0.5 : 1);
+      hideTells(e);
+    }
     e.actor.hit();
     e.actor.flash(0.12);
     const at = e.pos.clone().setY(1.4);
@@ -133,16 +183,35 @@ export function createEnemies(ctx) {
         e.struck = true;
         if (hero.hurt(1, e.pos.x) && e.k.shove) hero.push(a.facing * e.k.shove, 0);
       }
-      if (e.t <= 0) { e.state = 'walk'; e.cd = e.kind === 'patovica' ? 1.8 : 1.2; e.struck = false; }
+      if (e.t <= 0) { e.state = 'walk'; e.cd = e.kind === 'patovica' ? 1.8 : 1.2; e.struck = false; e.engaged = false; }
+    } else if (e.state === 'ring' || e.state === 'charge') {
+      patovicaCharge(e, dt, hero, hp);
     } else {
       a.lean = 0;
-      // Se acerca a un costado del héroe; si ya hay dos atacando, espera a distancia
-      const side = dx > 0 ? -1 : 1;
-      const busy = attackers() >= MAX_ATTACKERS;
-      const near = e.kind === 'patovica' ? 1.7 : 1.35;
-      approach(e, dt, hp.x + side * (busy ? 3.4 : near), hp.z + (busy ? e.slotZ : 0), e.k.speed);
+      // Turnos: como mucho dos encarando al héroe; el resto espera a distancia, mirándolo
+      if (!e.engaged && e.cd <= 0 && engagedCount() < MAX_ATTACKERS && game.time - lastEngage > WAIT.gap) {
+        e.engaged = true;
+        lastEngage = game.time;
+        const behind = -hero.actor.facing;
+        const near0 = e.kind === 'patovica' ? 1.7 : 1.35;
+        // El secuaz busca la espalda del héroe; los demás van por su lado
+        e.side = e.kind === 'secuaz' && sideFree(hp.x, behind, near0) ? behind : (dx > 0 ? -1 : 1);
+        e.feint = e.kind === 'secuaz' && Math.random() < 0.3 ? 1 : 0;
+      }
       a.setFacing(dx >= 0 ? 1 : -1);
-      if (!busy && e.cd <= 0 && Math.abs(dx) < near + 0.4 && Math.abs(dz) < 0.5) {
+      if (!e.engaged) { waitTurn(e, dt, hp, dx); return; }
+      e.state = 'walk';
+      // Patovica: si te tiene en su carril a media distancia, embiste
+      if (e.kind === 'patovica' && e.cd <= 0 && Math.abs(dz) < 0.8 && Math.abs(dx) >= 4 && Math.abs(dx) <= 8) {
+        e.state = 'ring'; e.t = PATOVICA.warn; e.dir = Math.sign(dx);
+        fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.6), '¡AHÍ VOY!', '#ffe08a', { size: 22, life: 0.8, rise: 0.3 });
+        return;
+      }
+      const near = e.kind === 'patovica' ? 1.7 : e.feint === 1 ? 1.0 : e.feint === 2 ? 2.5 : 1.35;
+      const d = approach(e, dt, hp.x + e.side * near, hp.z, e.k.speed);
+      if (e.feint && d < 0.25) { e.feint = e.feint === 1 ? 2 : 0; return; } // amaga: se acerca, retrocede y recién ahí pega
+      // Pega recién al llegar a su lugar (si no, el que rodea pegaba de frente al pasar)
+      if (!e.feint && e.cd <= 0 && d < 0.45 && Math.abs(dz) < 0.5) {
         e.state = 'windup';
         e.t = e.k.windup;
         fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.6), '!', '#ffe08a', { size: 30, life: 0.5, rise: 0.4 });
@@ -150,14 +219,64 @@ export function createEnemies(ctx) {
     }
   }
 
+  // Espera su turno en un anillo alrededor del héroe; no se mueve por diferencias chicas (no tiembla)
+  function waitTurn(e, dt, hp, dx) {
+    // El lado se elige al empezar a esperar y se mantiene (si no, al quedar justo a la altura del héroe va y viene)
+    if (e.state !== 'wait' || !e.waitSide) e.waitSide = dx > 0 ? -1 : 1;
+    e.state = 'wait';
+    const side = e.waitSide;
+    const dist = WAIT.min + (e.seed % 1) * WAIT.spread;
+    const lb = world.levelBounds;
+    let wx = hp.x + side * dist;
+    if (wx < lb.minX + 0.5 || wx > lb.maxX - 0.5) wx = hp.x - side * dist;
+    const wz = hp.z + e.slotZ * 2;
+    if (Math.hypot(wx - e.pos.x, wz - e.pos.z) > WAIT.settle) approach(e, dt, wx, wz, e.k.speed * 0.8);
+    else gait(e, 0, dt);
+    e.taunt -= dt;
+    if (e.taunt <= 0) {
+      e.taunt = 3 + Math.random() * 2;
+      fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.5), TAUNTS[(Math.random() * TAUNTS.length) | 0], '#ffffff', { size: 18, life: 0.7, rise: 0.3 });
+    }
+  }
+
+  function patovicaCharge(e, dt, hero, hp) {
+    const a = e.actor;
+    if (e.state === 'ring') {
+      e.t -= dt;
+      e.lane.visible = true;
+      e.lane.material.opacity = Math.floor(e.t * 12) % 2 ? 0.45 : 0.2;
+      e.lane.position.set(e.pos.x + e.dir * PATOVICA.run / 2, 0.04, e.pos.z);
+      a.setFacing(e.dir);
+      a.lean = 0.15; // toma impulso
+      if (e.t <= 0) { e.state = 'charge'; e.ran = 0; e.hitHero = false; hideTells(e); ctx.audio?.sfx('whoosh'); }
+      return;
+    }
+    const prevX = e.pos.x;
+    e.pos.x += e.dir * PATOVICA.speed * dt;
+    world.clampPosition(e.pos, 0.2, prevX);
+    const moved = Math.abs(e.pos.x - prevX);
+    e.ran += moved;
+    a.lean = -0.22;
+    gait(e, moved, dt);
+    if (!e.hitHero && Math.abs(hp.x - e.pos.x) < 1.0 && Math.abs(hp.z - e.pos.z) < 0.7 && heroCanBeHit(hero, 1.0)) {
+      e.hitHero = true;
+      if (hero.hurt(1, e.pos.x - e.dir)) hero.push(e.dir * e.k.shove, 0);
+    }
+    if (e.ran >= PATOVICA.run || moved < PATOVICA.speed * dt * 0.3) {
+      e.state = 'hitstun'; e.t = 0.5; e.cd = 2.5; e.engaged = false; a.lean = 0; // frena de golpe, tambaleando
+    }
+  }
+
   function approach(e, dt, wantX, wantZ, speed) {
     const mx = wantX - e.pos.x, mz = wantZ - e.pos.z;
     const d = Math.hypot(mx, mz);
+    let moved = 0;
     if (d > 0.15) {
-      e.pos.x += (mx / d) * Math.min(d, speed * dt);
-      e.pos.z += (mz / d) * Math.min(d, speed * dt * 0.8);
+      const sx = (mx / d) * Math.min(d, speed * dt), sz = (mz / d) * Math.min(d, speed * dt * 0.8);
+      e.pos.x += sx; e.pos.z += sz;
+      moved = Math.hypot(sx, sz);
     }
-    e.actor.lift = d > 0.2 && e.k.ai !== 'delivery' ? Math.abs(Math.sin(performance.now() / 110 + e.seed)) * 0.12 : 0;
+    gait(e, moved, dt);
     return d;
   }
 
@@ -188,7 +307,7 @@ export function createEnemies(ctx) {
     const side = dx > 0 ? -1 : 1;
     approach(e, dt, hp.x + side * 3.4, hp.z + e.slotZ, e.k.speed);
     const d = Math.hypot(hp.x - e.pos.x, hp.z - e.pos.z);
-    if (e.cd <= 0 && d < BOMBO.radius + 1.5) {
+    if (e.cd <= 0 && d < BOMBO.radius + 1.5 && rangedFree()) {
       e.state = 'drum'; e.t = 0;
       ctx.audio?.sfx('bombo');
     }
@@ -203,7 +322,7 @@ export function createEnemies(ctx) {
     let wantX = hp.x + side * 7;
     if (wantX < lb.minX + 1 || wantX > lb.maxX - 1) wantX = hp.x - side * 7;
     approach(e, dt, wantX, hp.z + e.slotZ * 0.6, e.k.speed);
-    if (e.cd <= 0 && Math.abs(dx) < 11) {
+    if (e.cd <= 0 && Math.abs(dx) < 11 && rangedFree()) {
       e.cd = MOZO.every;
       const target = new THREE.Vector3(hp.x, 0, hp.z);
       const mark = new THREE.Mesh(new THREE.CircleGeometry(MOZO.hitRadius, 24), markMat);
@@ -212,7 +331,7 @@ export function createEnemies(ctx) {
       const from = e.pos.clone().setY(1.7);
       s.position.copy(from);
       scene.add(mark, s);
-      shots.push({ from, target, t: 0, sprite: s, mark });
+      shots.push({ from, target, t: 0, sprite: s, mark, owner: e });
       a.offsetX = 0.2;
       ctx.audio?.sfx('whoosh');
     } else a.offsetX *= 0.9;
@@ -280,7 +399,7 @@ export function createEnemies(ctx) {
     if (wantX < lb.minX + 1 || wantX > lb.maxX - 1) wantX = hp.x - side * 8;
     approach(e, dt, wantX, hp.z, e.k.speed);
     a.setFacing(dx >= 0 ? 1 : -1);
-    if (e.cd <= 0 && Math.abs(dz) < 0.8 && Math.abs(dx) > 4 && Math.abs(dx) < 12) {
+    if (e.cd <= 0 && Math.abs(dz) < 0.8 && Math.abs(dx) > 4 && Math.abs(dx) < 12 && rangedFree()) {
       e.state = 'ring'; e.t = DELIVERY.warn; e.dir = Math.sign(dx);
       fx.popup(e.pos.clone().setY(2.9), '🔔', '#fff', { size: 30, life: 0.8, rise: 0.3 });
       ctx.audio?.sfx('bell');
@@ -300,6 +419,7 @@ export function createEnemies(ctx) {
       }
     },
     spawn,
+    attacking,
     alive() { return list.filter(e => e.hp > 0).length; },
 
     hitArea({ x, z, facing, reach, depth, dmg, knock, strength }) {
