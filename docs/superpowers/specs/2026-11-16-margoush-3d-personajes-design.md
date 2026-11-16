@@ -129,7 +129,7 @@ Facu deja de acompañar todo el camino. Se quitan:
 
 También se quitan (*decisión de Claude*, para que no vuelva a ser presentador): su frase al llegar a Le Concept (pasa a ser un cartel normal) y su festejo en el rescate ("¡MARGOT ESTÁ A SALVO!" queda como cartel y festejan Douge o Marine).
 
-En su lugar, **unas 5 apariciones cortas por partida si ganás** (2 en el Nivel 1, 2 en el Nivel 2 y la del resultado), siempre de golpe y en chiste, animadas por código con su dibujo actual (salto, rebote, aplastado, giro):
+En su lugar, **6 apariciones cortas por partida si ganás** (2 en cada nivel, la de Francia al cambiar de nivel y la del resultado; cada una dura pocos segundos), siempre de golpe y en chiste, animadas por código con su dibujo actual (salto, rebote, aplastado, giro):
 - **Alcantarilla:** sale de una alcantarilla con el micrófono, tira un chiste ("¡JAJAJA!") que aturde a los malos cercanos y vuelve a meterse. Así se mantiene la mecánica del chiste que aturde, pero como sorpresa. *Decisión de Claude:* aparece **una vez por nivel, garantizada**, en el primer momento en que haya 3 malos o más cerca del héroe (reemplaza la ayuda que hoy da el chiste del auto cada 12 s, para que la dificultad no salte).
 - **Auto a toda velocidad:** una vez en el Nivel 1 (en la vereda) y una vez en el Nivel 2 (en el boulevard), cruza por el carril de atrás en 1 o 2 segundos, tocando bocina y saludando. No ayuda ni molesta.
 - **Francia:** al pasar al Nivel 2 aparece con boina y baguette: "¡Allez, allez!". Reemplaza su frase actual de nivel 2.
