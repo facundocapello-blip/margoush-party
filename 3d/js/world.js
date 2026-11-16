@@ -41,13 +41,36 @@ function cobble(ctx, w, h) {
 }
 
 function warehouse(ctx, w, h) {
+  // Chapa acanalada oscura con ventanales altos encendidos
   const g = ctx.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, '#1b1530'); g.addColorStop(1, '#3a2a35');
+  g.addColorStop(0, '#241b3d'); g.addColorStop(1, '#3d2b3a');
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-  for (let x = 0; x < w; x += 16) { ctx.fillStyle = x % 32 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.18)'; ctx.fillRect(x, 0, 8, h); }
-  ctx.fillStyle = '#ff6a5c'; ctx.fillRect(0, h * 0.62, w, 10);
-  ctx.fillStyle = 'rgba(255,200,120,0.85)';
-  for (let x = 60; x < w; x += 220) { ctx.fillRect(x, h * 0.18, 120, 70); }
+  for (let x = 0; x < w; x += 12) {
+    ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(x, 0, 3, h);
+    ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(x + 6, 0, 4, h);
+  }
+  for (let x = 40; x < w; x += 256) {
+    const wg = ctx.createLinearGradient(0, h * 0.12, 0, h * 0.4);
+    wg.addColorStop(0, '#ffd79a'); wg.addColorStop(1, '#ff9f5a');
+    ctx.fillStyle = '#120c22'; ctx.fillRect(x - 6, h * 0.1 - 6, 172, h * 0.32 + 12);
+    ctx.fillStyle = wg; ctx.fillRect(x, h * 0.1, 160, h * 0.32);
+    ctx.fillStyle = '#120c22';
+    for (let i = 1; i < 4; i++) ctx.fillRect(x + i * 40 - 2, h * 0.1, 4, h * 0.32);
+    ctx.fillRect(x, h * 0.26 - 2, 160, 4);
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(0, h * 0.86, w, h * 0.14);
+}
+
+function concrete(ctx, w, h) {
+  ctx.fillStyle = '#3a3342'; ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 900; i++) {
+    const l = 40 + Math.random() * 30;
+    ctx.fillStyle = `rgba(${l + 20},${l + 10},${l + 30},0.35)`;
+    ctx.fillRect(Math.random() * w, Math.random() * h, 3, 3);
+  }
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 3;
+  for (let x = 0; x <= w; x += w / 2) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = 0; y <= h; y += h / 2) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
 }
 
 function label(text, color = '#ffd36e', w = 1024, h = 192) {
@@ -82,10 +105,40 @@ export function buildStreet(scene, assets) {
   floor.rotation.x = -Math.PI / 2;
   floor.position.set((GALPON_X - 20) / 2, 0, 5.6);
   scene.add(floor);
-  const concrete = new THREE.Mesh(new THREE.PlaneGeometry(70, 22), new THREE.MeshLambertMaterial({ color: 0x3b3446 }));
-  concrete.rotation.x = -Math.PI / 2;
-  concrete.position.set(GALPON_X + 35, 0.005, 5.6);
-  scene.add(concrete);
+  const slab = new THREE.Mesh(new THREE.PlaneGeometry(70, 22), new THREE.MeshLambertMaterial({ color: 0x8a7f96, map: canvasTex(256, 256, concrete, 14, 4) }));
+  slab.rotation.x = -Math.PI / 2;
+  slab.position.set(GALPON_X + 35, 0.005, 5.6);
+  scene.add(slab);
+  // Franja amarilla de seguridad y portón de entrada al galpón
+  const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 9), new THREE.MeshBasicMaterial({ color: 0xffc23d }));
+  stripe.rotation.x = -Math.PI / 2;
+  stripe.position.set(GALPON_X + 0.5, 0.02, -0.4);
+  scene.add(stripe);
+  const frameMat = new THREE.MeshLambertMaterial({ color: 0x2a2140 });
+  const jamb = new THREE.Mesh(new THREE.BoxGeometry(1.2, 9, 1.2), frameMat);
+  jamb.position.set(GALPON_X - 0.2, 4.5, BACK_Z + 0.4);
+  scene.add(jamb);
+  // Barriles y cajas del galpón
+  const barrelMat = new THREE.MeshLambertMaterial({ color: 0x8a3b3b });
+  const boxMat = new THREE.MeshLambertMaterial({ color: 0x9a6a3c });
+  for (const [x, z, kind] of [[GALPON_X + 4, -4.3, 'b'], [GALPON_X + 5.1, -4.5, 'b'], [GALPON_X + 13, -4.4, 'x'], [GALPON_X + 14.2, -4.4, 'x'], [GALPON_X + 13.6, -4.4, 'x2'], [GALPON_X + 30, -4.3, 'b'], [GALPON_X + 39, -4.4, 'x']]) {
+    const m = kind === 'b' ? new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.3, 14), barrelMat) : new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), boxMat);
+    m.position.set(x, kind === 'x2' ? 1.8 : kind === 'b' ? 0.65 : 0.6, z);
+    scene.add(m);
+  }
+  // Lámparas colgantes con halo
+  const lampGlow = glowTex();
+  for (const x of [GALPON_X + 10, GALPON_X + 24, GALPON_X + 38, GALPON_X + 50]) {
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3, 4), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+    cord.position.set(x, 8.5, -2);
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.5, 14, 1, true), new THREE.MeshLambertMaterial({ color: 0x2d2d3a, side: THREE.DoubleSide }));
+    shade.position.set(x, 7, -2);
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: lampGlow, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    halo.position.set(x, 6.7, -2); halo.scale.set(3, 3, 1);
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(3.2, 24), new THREE.MeshBasicMaterial({ map: lampGlow, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }));
+    pool.rotation.x = -Math.PI / 2; pool.position.set(x, 0.03, -0.8);
+    scene.add(cord, shade, halo, pool);
+  }
 
   // Vereda
   const curb = new THREE.Mesh(new THREE.BoxGeometry(GALPON_X + 20, 0.16, 1.4), new THREE.MeshLambertMaterial({ color: 0xc9a98a }));
