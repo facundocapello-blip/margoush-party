@@ -377,7 +377,13 @@ export function createEnemies(ctx) {
         const a = list[i], b = list[j];
         if (a.hp <= 0 || b.hp <= 0 || a.state === 'charge' || b.state === 'charge') continue;
         const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z, d = Math.hypot(dx, dz);
-        if (d < 0.9 && d > 0.001) { const push = (0.9 - d) / 2; a.pos.x -= dx / d * push; a.pos.z -= dz / d * push; b.pos.x += dx / d * push; b.pos.z += dz / d * push; }
+        if (d < 0.9 && d > 0.001) {
+          const push = (0.9 - d) / 2, ax = a.pos.x, bx = b.pos.x;
+          a.pos.x -= dx / d * push; a.pos.z -= dz / d * push; b.pos.x += dx / d * push; b.pos.z += dz / d * push;
+          // El empujón entre malos tampoco cruza un portón cerrado (si no, uno quedaba del otro lado del piquete y el corte no se levantaba nunca)
+          world.clampPosition(a.pos, 0.2, ax);
+          world.clampPosition(b.pos, 0.2, bx);
+        }
       }
     },
 

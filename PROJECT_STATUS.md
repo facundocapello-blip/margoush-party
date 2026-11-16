@@ -51,3 +51,9 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - BUG: el piquete no se puede pasar en partida real (se abre al despejar la oleada `piquete`; revisar si `enemies.alive()` cuenta malos de otras oleadas o trabados). Reproducir con bot antes de arreglar.
 - Movimiento de los NPC muy parecido entre sí; Facu acepta modelos/animaciones de otros juegos o repos. Hacer brainstorming.
 - Portada nueva con tema sintetizado: hecho (commit b41fc44).
+
+## 2026-11-16 · Arreglo: el piquete no se levantaba
+- Causa: el empujón entre malos (para que no se apilen) corría después del límite de portones. Con los del bombo apretados contra el fuego, uno quedaba del otro lado del piquete; seguía vivo y fuera de alcance, así que la oleada nunca se despejaba.
+- Arreglo: `3d/js/enemies.js`, el empujón también respeta los portones cerrados.
+- Prueba nueva en `tests/e2e/gates.e2e.mjs` (6 amontonamientos contra el fuego): fallaba (x=120,11) y ahora pasa (máx 117,80). Suite completa verde: `npm test` 28/28 y los 13 e2e.
+- Pendiente: confirmar jugando en el iPhone.

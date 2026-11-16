@@ -73,6 +73,20 @@ try {
   await page.waitForTimeout(600);
   const ex = await G(() => window.__game.enemies.list[0].pos.x);
   check(ex < GX, `un enemigo revoleado no cruza el portón (x=${ex.toFixed(2)})`);
+
+  // Bug del piquete: malos apretados contra el fuego se empujan entre sí y uno quedaba del otro lado
+  const PX = await G(() => window.__game.world.gates.find(g => g.kind === 'piquete').x);
+  let worst = 0;
+  for (let trial = 0; trial < 6; trial++) {
+    await G((trial) => { const g = window.__game; g.setStage('piquete'); g.traps.disable(); g.enemies.clear(); g.waves.piquete = 'active'; g.hero.hp = g.hero.hpMax = 99;
+      g.hero.actor.position.set(116 + trial * 0.15, 0, 0);
+      const a = g.enemies.spawn(117.8, 0, 'bombo'); a.slotZ = 0.05 * trial;
+      g.enemies.spawn(117.2, 0.1, 'secuaz');
+      const c = g.enemies.spawn(117.5, -0.3, 'bombo'); c.slotZ = -0.1; }, trial);
+    await page.waitForTimeout(1500);
+    worst = Math.max(worst, ...await G(() => window.__game.enemies.list.filter(e => e.hp > 0).map(e => e.pos.x)));
+  }
+  check(worst < PX, `los malos amontonados no cruzan el piquete cerrado (máx x=${worst.toFixed(2)}, fuego en ${PX})`);
   check(errors.length === 0, 'sin errores de consola ' + JSON.stringify(errors));
 } finally {
   await browser.close();
