@@ -30,7 +30,7 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
   function showResult(result, heroId) {
     resultEl.replaceChildren();
     const host = el('div', { class: 'host' }, [
-      el('img', { src: assets.url('facu'), alt: 'Facu con el micrófono' }),
+      el('img', { src: assets.url('facu'), alt: 'Facu' }),
       el('div', { class: 'host-bubble', text: '¡Señoras y señores, puntaje final!' })
     ]);
     const title = el('h2', { text: result.won ? '¡MARGOT ESTÁ A SALVO!' : '¡Margot te sigue esperando!' });

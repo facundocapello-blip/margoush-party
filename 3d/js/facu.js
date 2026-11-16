@@ -81,7 +81,7 @@ export function createFacu(ctx) {
   labels.append(tag);
   let jokeIdx = 0;
   let vx = 0, vy = 0, rolled = 0, idleT = 0;
-  let lean = 0, hopT = 0, cheer = false;
+  let lean = 0, hopT = 0, cheer = false, talkT = 0;
 
   // Hasta dónde puede avanzar el auto: no pasa barreras cerradas que estén delante del héroe
   function gateLimit(hx) {
@@ -114,10 +114,19 @@ export function createFacu(ctx) {
 
   function animateFacu(dt, moving) {
     idleT += dt;
+    talkT = Math.max(0, talkT - dt);
+    const talking = talkT > 0;
     let lift = moving ? Math.abs(Math.sin(rolled * 2.2)) * 0.05 : Math.sin(idleT * 3) * 0.015;
-    let tilt = lean;
+    // siempre se mece y respira; al hablar gesticula más y pega saltitos
+    let tilt = lean + Math.sin(idleT * 2.1) * 0.07;
+    let breath = Math.sin(idleT * 2.6) * 0.04;
+    if (talking) {
+      lift += Math.abs(Math.sin(idleT * 9)) * 0.12;
+      tilt += Math.sin(idleT * 8) * 0.1;
+      breath += Math.sin(idleT * 9) * 0.05;
+    }
     if (hopT > 0) {
-      // se para con el megáfono y se sacude de la risa
+      // se para a carcajadas y se sacude de la risa
       hopT = Math.max(0, hopT - dt);
       const k = 1 - hopT / 0.6;
       lift += Math.sin(k * Math.PI) * 0.5;
@@ -128,6 +137,7 @@ export function createFacu(ctx) {
     }
     actor.lift = lift;
     actor.lean = tilt;
+    actor.stretch = breath;
   }
 
   // ¿Hay cajones del pasaje sin romper adelante del auto?
@@ -143,7 +153,8 @@ export function createFacu(ctx) {
 
     // Facu habla por el canal único de mensajes (un cartel por vez, arriba al centro)
     say(text, seconds = 2.6) {
-      game.banner('🎤 FACU', text, seconds, { avatar: assets.url('facu') });
+      talkT = Math.max(talkT, seconds);
+      game.banner('😄 FACU', text, seconds, { avatar: assets.url('facu') });
     },
 
     update(dt) {
@@ -178,7 +189,7 @@ export function createFacu(ctx) {
       idleT += dt;
       car.userData.body.position.y = 0.6 + (Math.abs(vx) < 0.3 ? Math.sin(idleT * 30) * 0.008 : 0);
 
-      // Chiste con megáfono: aturde a los que rodean al héroe
+      // Chiste: aturde a los que rodean al héroe
       if (f.jokeCd <= 0) {
         const near = game.enemies.list.filter(e => e.hp > 0 && Math.hypot(e.pos.x - h.x, e.pos.z - h.z) < 4).length;
         if (near >= 2) {

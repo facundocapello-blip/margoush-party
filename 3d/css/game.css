@@ -198,3 +198,10 @@ body.has-screen #level-card { display: none; }
 @media (prefers-reduced-motion: reduce) {
   #screen-menu *, #screen-menu .logo { animation: none !important; }
 }
+
+/* Facu siempre en movimiento: se mece y respira, y salta cuando habla */
+@keyframes facu-sway { 0%,100% { transform: rotate(-3deg) translateY(0) scale(1); } 50% { transform: rotate(3deg) translateY(-4px) scale(1.04); } }
+@keyframes facu-bob { 0%,100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-3px) scale(1.02, 0.98); } }
+.host img { animation: facu-sway 2.4s ease-in-out infinite; transform-origin: 50% 90%; }
+#banner.with-avatar img { animation: facu-bob 0.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .host img, #banner.with-avatar img { animation: none; } }
