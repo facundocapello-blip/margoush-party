@@ -6,6 +6,7 @@ import { createFx } from './fx.js';
 import { createHero, HERO_CFG } from './hero.js';
 import { createEnemies } from './enemies.js';
 import { createProps } from './props.js';
+import { createFacu } from './facu.js';
 
 const $ = (s) => document.querySelector(s);
 const canvas = $('#game');
@@ -120,6 +121,8 @@ function startRun(heroId) {
   const ctx = game.ctx;
   game.hero = createHero(heroId, ctx);
   game.hero.actor.position.set(4, 0, 0.5);
+  game.facu?.dispose();
+  game.facu = createFacu(ctx);
   game.score = createScore();
   game.stats = { maxMult: 1 };
   game.props.reset();
@@ -133,6 +136,7 @@ function startRun(heroId) {
   game.state = 'playing';
   updateCamera(0, true);
   resize();
+  game.facu.say(game.facu.lines.intro, 5);
 }
 
 // ---------- zonas ----------
@@ -173,6 +177,7 @@ game.setStage = (id) => {
   }
   if (id === 'galpon') { openGate(0); openGate(1); game.waves.vereda = game.waves.plaza = 'cleared'; p.set(168, 0, 0); }
   $('#banner').classList.add('hidden');
+  game.facu.actor.position.set(p.x - 1.4, 0, 0.9);
   updateCamera(0, true);
 };
 
@@ -225,6 +230,7 @@ function frame(now) {
       game.time += dt;
       game.hero.update(dt);
       game.enemies.update(dt);
+      game.facu.update(dt);
       game.props.update(dt, game.time);
       updateZones();
       game.combo.update(dt);
@@ -265,7 +271,7 @@ async function boot() {
   $('#btn-pause').addEventListener('click', pause);
   $('#btn-resume').addEventListener('click', resume);
   $('#btn-restart').addEventListener('click', () => startRun(game.heroId));
-  $('#btn-home').addEventListener('click', () => { game.state = 'menu'; $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); showScreen('screen-menu'); });
+  $('#btn-home').addEventListener('click', () => { game.state = 'menu'; game.facu?.refreshLabels(); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); showScreen('screen-menu'); });
 
   camera.position.set(6, 8, 14);
   camera.lookAt(camTarget);
