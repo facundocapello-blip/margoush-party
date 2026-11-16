@@ -6,6 +6,7 @@ import { createFx } from './fx.js';
 import { createHero, HERO_CFG } from './hero.js';
 import { createEnemies } from './enemies.js';
 import { registerSkins } from './skins.js';
+import { createTraps } from './traps.js';
 import { createProps } from './props.js';
 import { createFacu } from './facu.js';
 import { createBoss } from './boss.js';
@@ -174,6 +175,7 @@ function updateHud() {
 
 function clearRun() {
   game.enemies?.clear();
+  game.traps?.reset();
   game.boss?.dispose();
   game.boss = null;
   game.story?.endIntro();
@@ -416,6 +418,7 @@ function frame(now) {
       game.time += dt;
       game.hero.update(dt);
       game.enemies.update(dt);
+      game.traps.update(dt);
       game.facu.update(dt);
       game.boss?.update(dt);
       game.props.update(dt, game.time);
@@ -478,6 +481,7 @@ async function boot() {
   game.world = world;
   game.input = input;
   game.enemies = createEnemies(ctx);
+  game.traps = createTraps(ctx);
   game.props = createProps(ctx);
   game.pickups = game.props.pickups;
   game.crates = game.props.crates;

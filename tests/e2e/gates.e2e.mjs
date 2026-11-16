@@ -13,7 +13,8 @@ try {
   check(hgt >= 2.3, `la barrera mide ${hgt.toFixed(2)} m de alto (el salto llega a 1,4 m)`);
 
   // Reproducción del reporte: correr y esquivar sin parar (clic derecho) contra el portón cerrado
-  await G(() => window.__game.hero.actor.position.set(window.__game.world.gates[0].x - 4, 0, 0));
+  // Sin oleadas en el medio: que el único cartel sea el del portón
+  await G(() => { const g = window.__game; g.waves.vereda = g.waves['vereda-2'] = 'cleared'; g.hero.actor.position.set(g.world.gates[0].x - 4, 0, 0); });
   await page.keyboard.down('ArrowRight');
   for (let i = 0; i < 40; i++) {
     await page.mouse.down({ button: 'right' }); await page.mouse.up({ button: 'right' });

@@ -48,10 +48,11 @@ export const WAVES = [
 export const TRAPS = [
   // Nivel 1 — Buenos Aires
   { kind: 'baldosa', x: 14, z: -1.2 }, { kind: 'baldosa', x: 27, z: 1.6 }, { kind: 'baldosa', x: 33, z: -2.4 },
-  { kind: 'baldosa', x: 46, z: 0.4 }, { kind: 'baldosa', x: 79, z: -0.8 }, { kind: 'baldosa', x: 98, z: 2.2 },
+  { kind: 'baldosa', x: 44, z: 2.4 }, { kind: 'baldosa', x: 79, z: -0.8 }, { kind: 'baldosa', x: 98, z: 2.2 },
   { kind: 'bache', x: 40, z0: -3.6, z1: -0.6, w: 2.2 },
   { kind: 'bache', x: 58, z0: 0.6, z1: 3.6, w: 2.2 },
-  { kind: 'bache', x: 92, z0: -1.4, z1: 1.6, w: 2.4 },
+  // (fuera del tramo del colectivo: que un bocinazo no te tire adentro de un pozo)
+  { kind: 'bache', x: 49, z0: -1.4, z1: 1.6, w: 2.4 },
   { kind: 'colectivo', from: 68, to: 116, every: 7 },
   { kind: 'boletas', from: 80, to: 116, every: 1.6 },
   // Nivel 2 — Francia
