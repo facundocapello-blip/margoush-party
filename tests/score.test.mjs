@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createScore } from '../3d/js/score.js';
+import { createScore, RANKS } from '../3d/js/score.js';
 
 test('minion is worth 100 times the multiplier', () => {
   const s = createScore();
@@ -32,9 +32,9 @@ test('finalize adds hp and time bonuses and grades', () => {
   const s = createScore();
   s.addKill('boss');
   const r = s.finalize({ hpLeft: 3, hpMax: 5, seconds: 200 });
-  assert.equal(r.total, 2000 + 1800 + 1000);
-  assert.equal(r.rank, 'B');
-  assert.deepEqual(r.breakdown, { play: 2000, hpBonus: 1800, timeBonus: 1000 });
+  // dos niveles: el bonus de tiempo cuenta hasta los 480 s
+  assert.equal(r.total, 2000 + 1800 + 2800);
+  assert.deepEqual(r.breakdown, { play: 2000, hpBonus: 1800, timeBonus: 2800 });
   assert.ok(Number.isInteger(r.total));
 });
 
@@ -44,12 +44,32 @@ test('time bonus never goes negative', () => {
 });
 
 test('rank thresholds', () => {
-  const grade = (pts) => { const s = createScore(); s.addPickup('secret'); for (let i = 1; i < pts / 500; i++) s.addPickup('secret'); return s.finalize({ hpLeft: 0, hpMax: 5, seconds: 300 }).rank; };
-  // Un recorrido perfecto real ronda los 9.300 puntos: S tiene que ser alcanzable
-  assert.equal(grade(9000), 'S');
-  assert.equal(grade(7000), 'A');
-  assert.equal(grade(4500), 'B');
-  assert.equal(grade(4000), 'C');
+  // puntos exactos con mamaderas (50 c/u); los cortes son múltiplos de 50
+  const grade = (pts) => { const s = createScore(); for (let i = 0; i < pts / 50; i++) s.addPickup('bottle'); s.addPenalty(s.total - pts); return s.finalize({ hpLeft: 0, hpMax: 5, seconds: 480, won: false }).rank; };
+  assert.ok(RANKS.S > RANKS.A && RANKS.A > RANKS.B && RANKS.B > 0);
+  assert.equal(grade(RANKS.S), 'S');
+  assert.equal(grade(RANKS.S - 1), 'A');
+  assert.equal(grade(RANKS.A), 'A');
+  assert.equal(grade(RANKS.B), 'B');
+  assert.equal(grade(RANKS.B - 1), 'C');
+});
+
+test('new enemy kinds are worth their own points, times the multiplier', () => {
+  const s = createScore();
+  s.addKill('patovica'); assert.equal(s.total, 250);
+  s.addKill('bombo'); s.addKill('mozo'); s.addKill('delivery'); assert.equal(s.total, 250 + 600);
+  for (let i = 0; i < 10; i++) s.addHit();
+  assert.equal(s.killValue('patovica'), 500);
+  assert.equal(s.killValue('boss'), 2000);
+});
+
+test('penalties (boletas) subtract but never go below zero', () => {
+  const s = createScore();
+  s.addPickup('bottle');
+  s.addPenalty(100);
+  assert.equal(s.total, 0);
+  s.addKill('minion'); s.addPenalty(30);
+  assert.equal(s.total, 70);
 });
 
 test('totals are integers with fractional multipliers', () => {
