@@ -29,7 +29,20 @@ export function createHero(id, ctx) {
     combo: 0, comboWindow: 0, buffer: 0, swing: null, swingHit: false,
     lift: 0, vy: 0,
     dodgeDir: 1, powerCd: 0, dodgeCd: 0,
-    knock: 0,
+    knock: 0, knockZ: 0,
+    slowT: 0, slowF: 1, stunT: 0,
+
+    // Trampas y malos: andar lento (baldosa), quedar aturdido (bombo), ser empujado (grève)
+    slow(seconds, factor = 0.5) { h.slowT = Math.max(h.slowT, seconds); h.slowF = factor; },
+    stun(seconds) {
+      if (h.state === 'dodge') return false;
+      h.stunT = Math.max(h.stunT, seconds);
+      h.state = 'free'; h.buffer = 0; h.swing = null;
+      fx.popup(actor.position.clone().setY(2.9), '💫', '#fff', { size: 30, life: seconds, rise: 0.1 });
+      return true;
+    },
+    push(vx, vz) { h.knock += vx; h.knockZ += vz; },
+    isDodging() { return h.state === 'dodge'; },
 
     hurt(amount, fromX) {
       if (h.inv > 0 || h.state === 'dodge' || game.state !== 'playing') return false;
@@ -55,6 +68,20 @@ export function createHero(id, ctx) {
       h.comboWindow = Math.max(0, h.comboWindow - dt);
       h.buffer = Math.max(0, h.buffer - dt);
       const p = actor.position;
+      h.slowT = Math.max(0, h.slowT - dt);
+      if (h.stunT > 0) {
+        // Aturdido: se tambalea en el lugar y no responde a los controles
+        h.stunT = Math.max(0, h.stunT - dt);
+        for (const k of ['attack', 'jump', 'dodge', 'power']) input.consume(k);
+        h.knock *= Math.max(0, 1 - dt * 8); h.knockZ *= Math.max(0, 1 - dt * 8);
+        const prevX = p.x;
+        p.x += h.knock * dt; p.z += h.knockZ * dt;
+        world.clampPosition(p, 0.4, prevX);
+        actor.setPose('idle');
+        actor.lean = Math.sin(performance.now() / 70) * 0.12;
+        actor.update(dt, 0);
+        return;
+      }
 
       if (input.consume('attack')) h.buffer = 0.2;
       if (input.consume('jump') && h.lift === 0 && h.state !== 'dodge') { h.vy = 8.5; h.lift = 0.001; ctx.audio?.sfx('jump'); }
@@ -85,15 +112,16 @@ export function createHero(id, ctx) {
       } else {
         const mx = input.moveX, mz = input.moveZ;
         const len = Math.max(1, Math.hypot(mx, mz));
-        const slow = h.state === 'attack' ? 0.25 : 1;
+        const slow = (h.state === 'attack' ? 0.25 : 1) * (h.slowT > 0 ? h.slowF : 1);
         vx = (mx / len) * h.speed * slow;
         vz = (mz / len) * h.speed * 0.7 * slow;
         if (h.state !== 'attack' && Math.abs(mx) > 0.15) actor.setFacing(Math.sign(mx));
       }
       h.knock *= Math.max(0, 1 - dt * 8);
+      h.knockZ *= Math.max(0, 1 - dt * 8);
       const prevX = p.x;
       p.x += (vx + h.knock) * dt;
-      p.z += vz * dt;
+      p.z += (vz + h.knockZ) * dt;
       world.clampPosition(p, 0.4, prevX);
 
       // Salto
@@ -108,7 +136,7 @@ export function createHero(id, ctx) {
     },
 
     reset() {
-      h.hp = h.hpMax; h.inv = 0; h.state = 'free'; h.combo = 0; h.buffer = 0; h.lift = 0; h.vy = 0; h.knock = 0; h.powerCd = 0;
+      h.hp = h.hpMax; h.inv = 0; h.state = 'free'; h.combo = 0; h.buffer = 0; h.lift = 0; h.vy = 0; h.knock = 0; h.knockZ = 0; h.powerCd = 0; h.slowT = 0; h.stunT = 0;
       h.damageLog = [];
     }
   };

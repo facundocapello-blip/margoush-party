@@ -14,6 +14,7 @@ export function createEnemies(ctx) {
   const list = [];
 
   function spawn(x, z, type) {
+    if (typeof type === 'string') type = KIND_TYPE[type];
     const t = TYPES[type];
     const actor = new SpriteActor(scene, assets, { poses: { idle: { tex: 'courier' } }, heightM: 2.25 * t.scale, tint: t.tint });
     actor.position.set(x, 0, z);
