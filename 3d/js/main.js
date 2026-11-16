@@ -42,6 +42,28 @@ const game = {
 window.__game = game;
 
 let assets, world, input, fx, audio, ui;
+
+// Rendimiento: mide la lógica por cuadro y baja la calidad si el equipo no llega a 38 FPS sostenidos
+const QUALITY_DPR = [2, 1.25, 1, 0.8];
+game.perf = (() => {
+  let frames = 0, frameMs = 0, logicMs = 0, slow = 0;
+  return {
+    level: 0,
+    reset() { frames = 0; frameMs = 0; logicMs = 0; slow = 0; },
+    record(dtMs, logic) {
+      frames++; frameMs += dtMs; logicMs += logic;
+      slow = dtMs > 1000 / 38 ? slow + dtMs / 1000 : Math.max(0, slow - dtMs / 2000);
+      if (slow > 2.5 && this.level < QUALITY_DPR.length - 1) {
+        this.level++;
+        slow = 0;
+        game.lowQuality = true;
+        resize();
+      }
+    },
+    summary() { return { frames, avgFrameMs: frameMs / Math.max(1, frames), logicMs: logicMs / Math.max(1, frames), level: this.level }; }
+  };
+})();
+game.pixelRatio = () => renderer.getPixelRatio();
 let bannerTimer = 0;
 
 // ---------- combo visible ----------
@@ -74,7 +96,7 @@ game.banner = (title, text, seconds = 3.2) => {
 
 function resize() {
   const w = innerWidth, h = innerHeight;
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, game.lowQuality ? 1 : 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, QUALITY_DPR[game.perf.level]));
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   const halfV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
@@ -264,6 +286,7 @@ function frame(now) {
   const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
   last = now;
   if (game.state === 'playing') {
+    const t0 = performance.now();
     if (input.consume('pause')) pause();
     else if (!fx.frozen(dt)) {
       game.time += dt;
@@ -277,6 +300,7 @@ function frame(now) {
       game.stats.maxMult = Math.max(game.stats.maxMult, game.score.multiplier);
     }
     updateHud();
+    if (dt > 0) game.perf.record(dt * 1000, performance.now() - t0);
   } else if (game.state === 'intro') {
     game.time = 0;
     if (game.story.updateIntro(dt)) endIntro();
