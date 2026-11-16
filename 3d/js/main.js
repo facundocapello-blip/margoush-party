@@ -1,18 +1,14 @@
 import { loadAssets } from './assets.js';
-import { SpriteActor } from './sprites.js';
 import { buildStreet } from './world.js';
 import { createInput } from './input.js';
 import { createScore } from './score.js';
+import { createFx } from './fx.js';
+import { createHero, HERO_CFG } from './hero.js';
+import { createEnemies } from './enemies.js';
+import { createProps } from './props.js';
 
 const $ = (s) => document.querySelector(s);
 const canvas = $('#game');
-
-export const HERO_CFG = {
-  douge: { name: 'DOUGE', heightM: 2.3, speed: 6.6, poses: {
-    idle: { tex: 'douge_idle' }, run: { tex: 'douge_run', h: 1.14, foot: 0.925 }, attack: { tex: 'douge_attack' } } },
-  marine: { name: 'MARINE', heightM: 2.2, speed: 7.2, poses: {
-    idle: { tex: 'marine_idle' }, run: { tex: 'marine_run', h: 1.293, foot: 0.918 }, attack: { tex: 'marine_attack' } } }
-};
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -28,20 +24,52 @@ const game = {
   heroId: 'douge',
   hero: null,
   enemies: null,
-  score: null,
+  props: null,
+  boss: null,
+  score: createScore(),
   time: 0,
-  ctx: null
+  stats: { maxMult: 1 },
+  waves: { vereda: 'idle', plaza: 'idle' },
+  lowQuality: false
 };
 window.__game = game;
 
-let assets, world, input;
+let assets, world, input, fx;
+let bannerTimer = 0;
+
+// ---------- combo visible ----------
+game.combo = (() => {
+  let n = 0, t = 0;
+  const el = $('#combo'), num = $('#combo-num');
+  return {
+    add(k) {
+      n += k; t = 1.6;
+      if (n >= 3) {
+        num.textContent = n;
+        el.classList.remove('hidden', 'bump'); void el.offsetWidth; el.classList.add('bump');
+      }
+    },
+    reset() { n = 0; t = 0; el.classList.add('hidden'); },
+    update(dt) { if (t > 0) { t -= dt; if (t <= 0) { n = 0; el.classList.add('hidden'); } } },
+    get count() { return n; }
+  };
+})();
+
+game.banner = (title, text, seconds = 3.2) => {
+  const b = $('#banner');
+  b.replaceChildren();
+  const strong = document.createElement('b');
+  strong.textContent = title;
+  b.append(strong, document.createTextNode(text));
+  b.classList.remove('hidden');
+  bannerTimer = seconds;
+};
 
 function resize() {
   const w = innerWidth, h = innerHeight;
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, game.lowQuality ? 1 : 2));
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
-  // Siempre al menos 12 m de calle a lo ancho: en vertical la cámara se aleja
   const halfV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   camDist = Math.max(BASE_DIST, 6 / (halfV * camera.aspect));
   camera.updateProjectionMatrix();
@@ -59,65 +87,153 @@ function updateCamera(dt, snap = false) {
   camTarget.z += (p.z * 0.35 - camTarget.z) * k;
   camera.position.set(camTarget.x, camTarget.y + Math.sin(PITCH) * camDist, camTarget.z + Math.cos(PITCH) * camDist);
   camera.lookAt(camTarget);
+  fx.applyShake(dt);
 }
 
 function showScreen(id) {
   for (const s of document.querySelectorAll('.screen')) s.classList.toggle('hidden', s.id !== id);
 }
 
+function updateHud() {
+  const h = game.hero;
+  const shown = Math.min(5, h.hpMax);
+  const full = Math.min(shown, Math.ceil(h.hp * shown / h.hpMax));
+  $('#hud-hearts').textContent = '❤️'.repeat(full) + '🖤'.repeat(shown - full);
+  $('#hud-score').textContent = game.score.total.toLocaleString('es-AR');
+  const m = game.score.multiplier;
+  $('#hud-mult').textContent = m > 1 ? '×' + m.toFixed(1) : '';
+  $('#act-power').classList.toggle('cooling', h.powerCd > 0);
+}
+
+function clearRun() {
+  game.enemies?.clear();
+  fx.clear();
+  game.combo.reset();
+  for (const g of world.gates) { g.open = false; g.mesh.visible = true; }
+  game.waves = { vereda: 'idle', plaza: 'idle' };
+}
+
 function startRun(heroId) {
   game.heroId = heroId;
   if (game.hero) game.hero.actor.dispose();
-  const cfg = HERO_CFG[heroId];
-  const actor = new SpriteActor(scene, assets, { poses: cfg.poses, heightM: cfg.heightM });
-  actor.position.set(4, 0, 0.5);
-  game.hero = { id: heroId, actor, speed: cfg.speed, hp: 5, hpMax: 5 };
+  clearRun();
+  const ctx = game.ctx;
+  game.hero = createHero(heroId, ctx);
+  game.hero.actor.position.set(4, 0, 0.5);
   game.score = createScore();
+  game.stats = { maxMult: 1 };
+  game.props.reset();
   game.time = 0;
   input.reset();
   showScreen(null);
   $('#hud').classList.remove('hidden');
-  $('#hud-name').textContent = cfg.name;
-  $('#hud-portrait').style.backgroundImage = `url(${assets.url(cfg.poses.idle.tex)})`;
+  $('#hud-name').textContent = HERO_CFG[heroId].name;
+  $('#hud-portrait').style.backgroundImage = `url(${assets.url(HERO_CFG[heroId].poses.idle.tex)})`;
   if (matchMedia('(pointer: coarse)').matches) $('#touch').classList.remove('hidden');
   game.state = 'playing';
   updateCamera(0, true);
   resize();
 }
 
-function updateHeroBasic(dt) {
-  const h = game.hero;
-  const mx = input.moveX, mz = input.moveZ;
-  const len = Math.hypot(mx, mz) || 1;
-  const vx = (mx / Math.max(1, len)) * h.speed;
-  const vz = (mz / Math.max(1, len)) * h.speed * 0.7;
-  const p = h.actor.position;
-  p.x += vx * dt;
-  p.z += vz * dt;
-  world.clampPosition(p);
-  if (Math.abs(mx) > 0.1) h.actor.setFacing(Math.sign(mx));
-  const speed = Math.hypot(vx, vz);
-  h.actor.setPose(speed > 0.3 ? 'run' : 'idle');
-  h.actor.update(dt, speed);
+// ---------- zonas ----------
+function openGate(i) {
+  const g = world.gates[i];
+  if (g.open) return;
+  g.open = true;
+  g.mesh.visible = false;
+  game.banner('¡ZONA DESPEJADA!', 'Seguí hacia la derecha →');
+  game.ctx.audio?.sfx('clear');
 }
 
-function heroScreen() {
-  const v = game.hero.actor.position.clone();
-  v.y += 1;
-  v.project(camera);
-  return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 };
+function updateZones() {
+  const x = game.hero.actor.position.x;
+  for (const [id, trigger, gate] of [['vereda', 36, 0], ['plaza', 96, 1]]) {
+    if (game.waves[id] === 'idle' && x > trigger) {
+      game.waves[id] = 'active';
+      game.enemies.spawnWave(id);
+      game.banner(id === 'vereda' ? 'LA VEREDA' : 'LA PLAZA', '¡Llegó la banda de BIG CHAKY!');
+    } else if (game.waves[id] === 'active' && game.enemies.alive() === 0) {
+      game.waves[id] = 'cleared';
+      openGate(gate);
+    }
+  }
 }
-game.heroScreen = heroScreen;
-game.quickStart = (heroId) => startRun(heroId);
+
+// Atajo para pruebas y para saltar a una parte del nivel
+game.setStage = (id) => {
+  clearRun();
+  game.props.reset();
+  const p = game.hero.actor.position;
+  game.state = 'playing';
+  if (id === 'vereda') { p.set(38, 0, 0); game.waves.vereda = 'active'; game.enemies.spawnWave('vereda'); }
+  if (id === 'plaza' || id === 'plaza-quiet') {
+    openGate(0); game.waves.vereda = 'cleared';
+    p.set(110, 0, 0);
+    if (id === 'plaza') { game.waves.plaza = 'active'; game.enemies.spawnWave('plaza'); } else game.waves.plaza = 'cleared';
+  }
+  if (id === 'galpon') { openGate(0); openGate(1); game.waves.vereda = game.waves.plaza = 'cleared'; p.set(168, 0, 0); }
+  $('#banner').classList.add('hidden');
+  updateCamera(0, true);
+};
+
+game.onHeroDown = () => finish(false);
+
+function finish(won) {
+  if (game.state !== 'playing') return;
+  game.state = 'result';
+  input.reset();
+  game.lastResult = { won, ...game.score.finalize({ hpLeft: game.hero.hp, hpMax: game.hero.hpMax, seconds: game.time }) };
+  $('#touch').classList.add('hidden');
+  const r = $('#screen-result');
+  r.replaceChildren();
+  const h2 = document.createElement('h2');
+  h2.textContent = won ? '¡MARGOT ESTÁ A SALVO!' : '¡Margot te necesita!';
+  const p = document.createElement('p');
+  p.textContent = `Puntaje: ${game.lastResult.total.toLocaleString('es-AR')} · Nota ${game.lastResult.rank}`;
+  const again = document.createElement('button');
+  again.className = 'big-btn'; again.textContent = 'JUGAR DE NUEVO';
+  again.onclick = () => startRun(game.heroId);
+  r.append(h2, p, again);
+  showScreen('screen-result');
+}
+game.finish = finish;
+
+// ---------- pausa ----------
+function pause() {
+  if (game.state !== 'playing') return;
+  game.state = 'paused';
+  input.reset();
+  showScreen('screen-pause');
+}
+function resume() {
+  if (game.state !== 'paused') return;
+  input.reset();
+  showScreen(null);
+  game.state = 'playing';
+  last = 0;
+}
+game.pause = pause;
+game.resume = resume;
 
 let last = 0;
 function frame(now) {
   const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
   last = now;
   if (game.state === 'playing') {
-    game.time += dt;
-    updateHeroBasic(dt);
+    if (input.consume('pause')) pause();
+    else if (!fx.frozen(dt)) {
+      game.time += dt;
+      game.hero.update(dt);
+      game.enemies.update(dt);
+      game.props.update(dt, game.time);
+      updateZones();
+      game.combo.update(dt);
+      game.stats.maxMult = Math.max(game.stats.maxMult, game.score.multiplier);
+    }
+    updateHud();
   }
+  if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0) $('#banner').classList.add('hidden'); }
+  fx.update(dt);
   updateCamera(dt);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
@@ -127,13 +243,29 @@ async function boot() {
   resize();
   addEventListener('resize', resize);
   addEventListener('orientationchange', () => setTimeout(resize, 200));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+  addEventListener('blur', pause);
   assets = await loadAssets('assets/manifest.json', (f) => { $('#load-fill').style.width = Math.round(f * 100) + '%'; });
   world = buildStreet(scene, assets);
   input = createInput({ canvas, joystick: $('#joystick'), knob: $('#knob'), buttons: document.querySelectorAll('.act') });
-  game.ctx = { scene, assets, world, input, camera };
+  fx = createFx(scene, camera, $('#labels'), $('#flash'));
+  const ctx = { scene, assets, world, input, fx, camera, game, audio: null };
+  game.ctx = ctx;
+  game.world = world;
+  game.input = input;
+  game.enemies = createEnemies(ctx);
+  game.props = createProps(ctx);
+  game.pickups = game.props.pickups;
+  game.crates = game.props.crates;
+  game.heroScreen = () => { const v = game.hero.actor.position.clone(); v.y += 1; v.project(camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 }; };
+  game.quickStart = (heroId) => startRun(heroId);
 
   $('#btn-play').addEventListener('click', () => showScreen('screen-select'));
   for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => startRun(card.dataset.hero));
+  $('#btn-pause').addEventListener('click', pause);
+  $('#btn-resume').addEventListener('click', resume);
+  $('#btn-restart').addEventListener('click', () => startRun(game.heroId));
+  $('#btn-home').addEventListener('click', () => { game.state = 'menu'; $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); showScreen('screen-menu'); });
 
   camera.position.set(6, 8, 14);
   camera.lookAt(camTarget);
