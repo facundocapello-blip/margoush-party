@@ -38,6 +38,9 @@ export async function launch({ viewport = { width: 960, height: 540 }, mobile = 
 export async function open(page) {
   await page.goto('http://game.local/3d/index.html');
   await page.waitForFunction(() => window.__game && window.__game.state === 'menu', null, { timeout: 20000 });
+  // Portada: "tocá para empezar"
+  await page.evaluate(() => document.querySelector('#press-start')?.click());
+  await page.waitForTimeout(500);
 }
 
 // Del menú a jugar con el héroe elegido, saltando la intro si existe.

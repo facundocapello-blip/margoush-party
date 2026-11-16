@@ -476,7 +476,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.state = 'menu'; audio.music(null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); game.facu?.refreshLabels(); showScreen('screen-menu'); };
+  const goMenu = () => { game.state = 'menu'; audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); game.facu?.refreshLabels(); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -493,13 +493,26 @@ async function boot() {
   game.heroScreen = () => { const v = game.hero.actor.position.clone(); v.y += 1; v.project(camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 }; };
   game.quickStart = (heroId) => startRun(heroId);
 
-  $('#btn-play').addEventListener('click', () => showScreen('screen-select'));
+  // Portada: el primer toque habilita el sonido (Safari) y arranca la música
+  const startCover = () => {
+    if (game.coverStarted || game.state !== 'menu') return;
+    game.coverStarted = true;
+    game.coverStartedAt = performance.now();
+    $('#screen-menu').classList.add('started');
+    audio.primeSpeech();
+    audio.music('menu');
+  };
+  // En click (no en pointerdown): así el mismo toque no cae sobre ¡JUGAR! cuando aparece
+  $('#screen-menu').addEventListener('click', startCover);
+  addEventListener('keydown', (e) => { if (game.state === 'menu' && !game.coverStarted && !e.repeat) startCover(); });
+  const justStarted = () => performance.now() - (game.coverStartedAt || 0) < 450;
+  $('#btn-play').addEventListener('click', () => { if (!justStarted()) showScreen('screen-select'); });
   for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => { audio.primeSpeech(); startRun(card.dataset.hero, true); });
   $('#btn-pause').addEventListener('click', pause);
   $('#btn-resume').addEventListener('click', resume);
   $('#btn-restart').addEventListener('click', () => startRun(game.heroId));
   $('#btn-home').addEventListener('click', () => game.goMenu());
-  $('#btn-ranking').addEventListener('click', () => ui.showRanking('screen-menu'));
+  $('#btn-ranking').addEventListener('click', () => { if (!justStarted()) ui.showRanking('screen-menu'); });
   const muteBtn = $('#btn-mute');
   const paintMute = () => { muteBtn.textContent = audio.muted ? '🔇' : '♪'; };
   paintMute();

@@ -9,9 +9,8 @@ export function createAudio(assets) {
     douge: Object.assign(new Audio(assets.url('music_douge')), { loop: true, volume: 0.4, preload: 'none' }),
     marine: Object.assign(new Audio(assets.url('music_marine')), { loop: true, volume: 0.4, preload: 'none' })
   };
-  let current = null; // 'douge' | 'marine' | 'boss' | null
+  let current = null; // 'douge' | 'marine' | 'boss' | 'menu' | null
   let paused = false;
-  let bossTimer = null, bossStep = 0, bossNext = 0;
 
   function ensure() {
     if (!ac) {
@@ -92,28 +91,56 @@ export function createAudio(assets) {
   };
 
   // Tema del jefe: pulso grave rápido sintetizado
-  function bossTick() {
-    if (!ac || current !== 'boss' || paused) { bossNext = ac ? ac.currentTime + 0.1 : 0; return; }
-    const step = 0.18;
-    if (bossNext < ac.currentTime) bossNext = ac.currentTime + 0.05;
-    const bass = [110, 110, 131, 98];
-    while (bossNext < ac.currentTime + 0.3) {
-      const d = bossNext - ac.currentTime, i = bossStep % 16, bar = Math.floor(bossStep / 16) % 4;
+  // Temas sintetizados: el del jefe y el de la portada. Cada uno arma un paso de su compás.
+  const NOTE = { A2: 110, F2: 87.31, C3: 130.81, G2: 98, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880 };
+  const MENU_CHORDS = [[NOTE.A2, [220, 261.63, 329.63]], [NOTE.F2, [174.61, 220, 261.63]], [NOTE.C3, [261.63, 329.63, 392]], [NOTE.G2, [196, 246.94, 293.66]]];
+  const MENU_LEAD = [
+    [[0, NOTE.E5, 6], [6, NOTE.D5, 2], [8, NOTE.E5, 4], [12, NOTE.A5, 4]],
+    [[0, NOTE.F5, 6], [6, NOTE.E5, 2], [8, NOTE.C5, 8]],
+    [[0, NOTE.G5, 6], [6, NOTE.F5, 2], [8, NOTE.E5, 4], [12, NOTE.D5, 4]],
+    [[0, NOTE.D5, 8], [8, NOTE.B4, 4], [12, NOTE.D5, 4]]
+  ];
+  const SYNTH = {
+    boss: { step: 0.18, play(n, d) {
+      const bass = [110, 110, 131, 98];
+      const i = n % 16, bar = Math.floor(n / 16) % 4;
       if (i % 4 === 0) { tone('sine', 120, 45, 0.16, 0.45, d); }
-      if (i % 2 === 0) tone('triangle', bass[bar], bass[bar], step * 1.6, 0.18, d);
+      if (i % 2 === 0) tone('triangle', bass[bar], bass[bar], 0.18 * 1.6, 0.18, d);
       if (i % 4 === 2) hiss(0.05, 0.12, 6000, 1.5, d);
       if (i === 6 || i === 14) tone('square', bass[bar] * 4, bass[bar] * 4, 0.1, 0.05, d);
-      bossStep++; bossNext += step;
+    } },
+    // Portada: épico en La menor (Am–F–C–G), 8 compases; la melodía entra en el compás 5
+    menu: { step: 0.125, play(n, d) {
+      const step = 0.125, i = n % 16, bar = Math.floor(n / 16) % 8;
+      const [root, triad] = MENU_CHORDS[bar % 4];
+      if (i === 0 || i === 8 || (i === 10 && bar % 2)) tone('sine', 140, 45, 0.18, 0.5, d);
+      if (i === 4 || i === 12) { hiss(0.12, 0.26, 1800, 0.7, d); tone('triangle', 220, 170, 0.08, 0.08, d); }
+      if (i % 2 === 0) hiss(0.03, 0.05, 8000, 2, d);
+      if (i % 2 === 0) { const f = i % 4 === 2 ? root * 2 : root; tone('sawtooth', f, f, step * 1.8, 0.07, d); }
+      if (i === 0) for (const f of triad) tone('triangle', f * 2, f * 2, step * 15, 0.03, d);
+      if (bar < 4 && i % 4 === 0) { const f = triad[(i / 4) % 3] * 4; tone('triangle', f, f, step * 1.5, 0.03, d); }
+      if (bar >= 4) for (const [at, f, len] of MENU_LEAD[bar % 4]) if (at === i) { tone('square', f, f, len * step * 0.95, 0.045, d); tone('triangle', f, f, len * step, 0.05, d); }
+    } }
+  };
+  let synthTimer = null, synthStep = 0, synthNext = 0;
+  function synthTick() {
+    const theme = SYNTH[current];
+    if (!ac || !theme || paused) { synthNext = ac ? ac.currentTime + 0.1 : 0; return; }
+    if (synthNext < ac.currentTime) synthNext = ac.currentTime + 0.05;
+    while (synthNext < ac.currentTime + 0.3) {
+      theme.play(synthStep, synthNext - ac.currentTime);
+      synthStep++; synthNext += theme.step;
     }
   }
 
   function stopAll() {
     for (const t of Object.values(themes)) t.pause();
-    if (bossTimer) { clearInterval(bossTimer); bossTimer = null; }
+    if (synthTimer) { clearInterval(synthTimer); synthTimer = null; }
   }
 
   return {
     get muted() { return muted; },
+    get current() { return current; },
     toggleMute() {
       muted = !muted;
       try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (_) {}
@@ -131,10 +158,10 @@ export function createAudio(assets) {
       current = name;
       paused = false;
       if (!name) return;
-      if (name === 'boss') {
+      if (SYNTH[name]) {
         if (!ensure()) return;
-        bossStep = 0; bossNext = ac.currentTime + 0.1;
-        bossTimer = setInterval(bossTick, 90);
+        synthStep = 0; synthNext = ac.currentTime + 0.1;
+        synthTimer = setInterval(synthTick, 90);
         return;
       }
       const t = themes[name];
@@ -149,7 +176,7 @@ export function createAudio(assets) {
     },
     resumeMusic() {
       paused = false;
-      if (current && current !== 'boss') themes[current].play().catch(() => {});
+      if (current && themes[current]) themes[current].play().catch(() => {});
     },
     // iOS: la voz solo funciona si se arrancó una vez dentro de un toque
     primeSpeech() {
