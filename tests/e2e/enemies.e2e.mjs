@@ -139,6 +139,31 @@ try {
   }));
   check(hops >= 3, `el bombo salta al ritmo (${hops} saltos en 2 s)`);
 
+  // ---------- Poses por hoja (dibujos nuevos) ----------
+  // Una hoja de prueba de 4 cuadros para el secuaz: el juego la usa en lugar del dibujo viejo
+  await G(() => {
+    const c = document.createElement('canvas'); c.width = 400; c.height = 100;
+    const x = c.getContext('2d'); ['#f00', '#0f0', '#00f', '#ff0'].forEach((col, i) => { x.fillStyle = col; x.fillRect(i * 100 + 30, 10, 40, 90); });
+    window.__game.ctx.assets.add('secuaz_sheet', new THREE.CanvasTexture(c), { file: 'x', w: 400, h: 100, frames: 4, cols: 4, rows: 1 });
+  });
+  const posesSeen = async (ms) => G((ms) => new Promise((res) => { const e = window.__game.enemies.list[0], seen = new Set();
+    const id = setInterval(() => seen.add(e.actor.pose), 16); setTimeout(() => { clearInterval(id); res([...seen]); }, ms); }), ms);
+  await solo('secuaz', 9);
+  check(await G(() => Object.keys(window.__game.enemies.list[0].actor.poses).join()) === 'idle,step,strike,hurt', 'con hoja nueva, el secuaz tiene sus 4 poses');
+  await G(() => { window.__game.hero.inv = 999; });
+  const walkPoses = await posesSeen(900);
+  check(walkPoses.includes('idle') && walkPoses.includes('step'), `caminando alterna parado y paso (${walkPoses})`);
+  await until(() => window.__game.enemies.list[0].state === 'windup', null, 6000);
+  check(await G(() => { const e = window.__game.enemies.list[0]; return e.actor.pose === 'idle' && e.actor.lean > 0; }), 'al anunciar el golpe toma impulso para atrás');
+  await until(() => window.__game.enemies.list[0].state === 'strike', null, 3000);
+  check(await G(() => window.__game.enemies.list[0].actor.pose) === 'strike', 'al pegar usa la pose de golpe');
+  await G(() => { const g = window.__game, e = g.enemies.list[0]; e.hp = 99; g.enemies.hitArea({ x: e.pos.x - 1, z: e.pos.z, facing: 1, reach: 2, depth: 1, dmg: 1, knock: 0, strength: 1 }); });
+  await page.waitForTimeout(50);
+  check(await G(() => window.__game.enemies.list[0].actor.pose) === 'hurt', 'golpeado usa la pose de golpeado');
+  await G(() => { const g = window.__game; g.enemies.clear(); g.hero.inv = 0; });
+  check(await G(() => Object.keys(window.__game.enemies.spawn(170, 0, 'mozo').actor.poses).length) === 4 && await G(() => window.__game.enemies.list[0].actor.poses.idle.tex.image === window.__game.enemies.list[0].actor.poses.strike.tex.image), 'sin hoja nueva, el mozo sigue con su dibujo de siempre');
+  await G(() => window.__game.enemies.clear());
+
   // Puntos por tipo
   const pts = await G(() => {
     const g = window.__game, out = {};

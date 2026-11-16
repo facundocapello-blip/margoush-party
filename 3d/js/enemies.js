@@ -1,5 +1,6 @@
 import { SpriteActor } from './sprites.js';
 import { WAVES } from './level.js';
+import { sheetPoses } from './cast.js';
 
 // Tipos de malo. Todos salen del secuaz (courier) recoloreado en skins.js.
 //  melee    — se acerca y pega (secuaz, patovica)
@@ -72,7 +73,7 @@ export function createEnemies(ctx) {
   function spawn(x, z, kind = 'secuaz') {
     if (typeof kind === 'number') kind = LEGACY[kind] || 'secuaz';
     const k = KINDS[kind];
-    const actor = new SpriteActor(scene, assets, { poses: { idle: { tex: k.tex } }, heightM: 2.25 * k.scale });
+    const actor = new SpriteActor(scene, assets, { poses: sheetPoses(assets, kind, k.tex), heightM: 2.25 * k.scale });
     actor.position.set(x, 0, z);
     const e = { actor, pos: actor.position, kind, k, hp: k.hp, maxHp: k.hp, state: 'walk', t: 0, cd: 0.6 + Math.random(), stun: 0, kx: 0,
       slotZ: (Math.random() - 0.5) * 1.6, seed: Math.random() * 10, dead: 0, extras: [],
@@ -115,17 +116,31 @@ export function createEnemies(ctx) {
   // Rebote al caminar, propio de cada tipo
   function gait(e, moved, dt) {
     const a = e.actor, g = e.k.gait;
+    const step = Math.floor(e.walk * (g?.cadence || 2));
+    e.walk += moved;
+    e.moving = moved > 0.001;
     if (!g || e.k.ai === 'delivery') { a.lift = 0; return; }
     if (moved < 0.001) { a.lift = Math.max(0, a.lift - dt * 1.2); return; }
     if (e.k.ai === 'bombo') { e.beat += dt; a.lift = Math.abs(Math.sin(e.beat * Math.PI * 2)) * g.bob; return; } // un salto cada 0,5 s
     if (!g.bob) { a.lift = 0; return; }
-    const step = Math.floor(e.walk * g.cadence);
-    e.walk += moved;
     a.lift = Math.abs(Math.sin(e.walk * g.cadence * Math.PI)) * g.bob;
     if (e.kind === 'patovica' && Math.floor(e.walk * g.cadence) !== step) {
       fx.dust(e.pos);
       if (Math.abs(e.pos.x - game.hero.actor.position.x) < 10) fx.shake(0.04);
     }
+  }
+
+  // Qué pose mostrar según lo que está haciendo
+  const STRIKE_STATES = ['strike', 'charge', 'drum', 'throw'];
+  function choosePose(e) {
+    const a = e.actor, st = e.state;
+    let pose = 'idle';
+    if (st === 'dead' || st === 'hitstun' || st === 'slipped') pose = 'hurt';
+    else if (STRIKE_STATES.includes(st) || a.offsetX > 0.05) pose = 'strike';
+    else if (st === 'windup' || st === 'ring' || e.stun > 0) pose = 'idle';
+    else if (e.k.ai === 'bombo' && a.lift > 0.02) pose = Math.floor(e.beat * 2) % 2 ? 'step' : 'idle';
+    else if (e.k.ai !== 'mozo' && e.moving) pose = Math.floor(e.walk * (e.k.gait?.cadence || 2)) % 2 ? 'step' : 'idle';
+    a.setPose(pose);
   }
 
   // ¿Este lado del héroe es caminable (dentro del nivel y sin portón cerrado en el medio)?
@@ -173,8 +188,9 @@ export function createEnemies(ctx) {
     const a = e.actor;
     if (e.state === 'windup') {
       e.t -= dt;
+      a.lean = 0.18; // toma impulso
       a.material.color.setHex(Math.floor(e.t * 20) % 2 ? 0xff8080 : 0xffffff);
-      if (e.t <= 0) { e.state = 'strike'; e.t = 0.15; a.material.color.setHex(0xffffff); }
+      if (e.t <= 0) { e.state = 'strike'; e.t = 0.15; a.lean = -0.12; a.material.color.setHex(0xffffff); }
     } else if (e.state === 'strike') {
       e.t -= dt;
       const ex = (hp.x - e.pos.x) * a.facing;
@@ -374,6 +390,7 @@ export function createEnemies(ctx) {
       world.clampPosition(e.pos, 0.2, prevX);
       const moved = Math.abs(e.pos.x - prevX);
       e.ran += moved;
+      gait(e, moved, dt);
       a.lean = -0.18;
       if (!e.hitHero && Math.abs(hp.x - e.pos.x) < 0.9 && Math.abs(hp.z - e.pos.z) < 0.7 && heroCanBeHit(hero, 1.0)) {
         e.hitHero = true;
@@ -459,6 +476,7 @@ export function createEnemies(ctx) {
           e.pos.x += e.kx * dt;
           a.lift = Math.max(0, a.lift + (e.dead > 0.3 ? 4 : -6) * dt);
           a.lean = (1 - e.dead / 0.6) * -e.kx * 0.12;
+          choosePose(e);
           a.update(dt, 0);
           if (e.bike) e.bike.position.set(e.pos.x, 0, e.pos.z);
           if (e.dead <= 0) { remove(e); list.splice(i, 1); }
@@ -489,6 +507,7 @@ export function createEnemies(ctx) {
           const roll = e.state === 'charge' ? DELIVERY.speed : e.state === 'walk' ? e.k.speed : 0;
           for (const w of e.bike.children.slice(0, 2)) w.rotation.z -= roll * dt / 0.42 * a.facing;
         }
+        choosePose(e);
         a.update(dt, 0);
       }
       updateShots(dt);
