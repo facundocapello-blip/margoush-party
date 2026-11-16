@@ -14,16 +14,16 @@ try {
   check(after.total === 50, 'la mamadera suma 50 puntos');
 
   // Pasaje sellado hasta romper los cajones
-  await G(() => { const g = window.__game; g.setStage('plaza-quiet'); g.hero.actor.position.set(117, 0, -3.0); });
+  await G(() => { const g = window.__game; g.setStage('plaza-quiet'); g.hero.actor.position.set(g.world.secret.x, 0, -3.0); });
   await page.keyboard.down('ArrowUp'); await page.waitForTimeout(900); await page.keyboard.up('ArrowUp');
   check(await G(() => window.__game.hero.actor.position.z) >= -3.61, 'el pasaje está cerrado con cajones');
   for (let i = 0; i < 24 && await G(() => window.__game.world.secret.sealed); i++) {
-    const cx = await G(() => { const c = window.__game.crates.list.find(c => !c.broken); return c ? c.x : 117; });
+    const cx = await G(() => { const c = window.__game.crates.list.find(c => !c.broken); return c ? c.x : window.__game.world.secret.x; });
     await G((x) => { const p = window.__game.hero.actor.position; p.x = x - 1.0; p.z = -3.5; window.__game.hero.actor.setFacing(1); }, cx);
     await page.keyboard.press('KeyJ'); await page.waitForTimeout(260);
   }
   check(!(await G(() => window.__game.world.secret.sealed)), 'romper los cajones abre el pasaje');
-  await G(() => window.__game.hero.actor.position.set(117, 0, -3.4));
+  await G(() => window.__game.hero.actor.position.set(window.__game.world.secret.x, 0, -3.4));
   const before = await G(() => window.__game.score.total);
   await page.keyboard.down('ArrowUp'); await page.waitForTimeout(1200); await page.keyboard.up('ArrowUp');
   const s1 = await G(() => window.__game.score.total);
@@ -69,7 +69,12 @@ try {
   if (held) await page.keyboard.up(held);
   const res = await G(() => ({ wave: window.__game.waves.vereda, total: window.__game.score.total, maxMult: window.__game.stats.maxMult, gate: window.__game.world.gates[0].open }));
   check(res.wave === 'cleared', `el bot despeja la vereda en ${(Date.now() - t0) / 1000 | 0} s`);
-  check(res.gate, 'despejar la zona abre el portón');
+  check(!res.gate, 'la primera oleada no abre el portón: falta el patovica');
+  await G(() => { const g = window.__game; g.hero.actor.position.set(52, 0, 0); });
+  await page.waitForFunction(() => window.__game.waves['vereda-2'] === 'active', null, { timeout: 4000 });
+  await G(() => window.__game.enemies.list.forEach(e => { e.hp = 0; }));
+  await page.waitForFunction(() => window.__game.world.gates[0].open, null, { timeout: 4000 });
+  check(true, 'despejar la oleada del portón lo abre');
   check(res.total > 0 && res.maxMult > 1, `suma puntos (${res.total}) y el multiplicador sube (${res.maxMult})`);
 
   // Minimizar la app pausa y suelta los controles

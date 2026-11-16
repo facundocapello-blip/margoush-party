@@ -1,14 +1,80 @@
 // La calle: recorre +X de izquierda a derecha, con profundidad en Z (−3.6 atrás … 3.6 adelante).
-export const STREET = { minX: 1, maxX: 218, minZ: -3.6, maxZ: 3.6 };
+// Primera mitad Buenos Aires, Le Concept en el medio, segunda mitad Francia y el galpón al final.
+import { LE_CONCEPT_X, BORDER_X, GALPON_X, SECRET_X, STREET_MAX_X, GATES, LEVELS } from './level.js';
+
+export const STREET = { minX: 1, maxX: STREET_MAX_X, minZ: -3.6, maxZ: 3.6 };
 export const ZONES = [
-  { id: 'le-concept', startX: 0, endX: 30 },
-  { id: 'vereda', startX: 30, endX: 90 },
-  { id: 'plaza', startX: 90, endX: 140 },
-  { id: 'pasaje', startX: 112, endX: 122 },
-  { id: 'galpon', startX: 170, endX: 220 }
+  { id: 'buenos-aires', startX: 0, endX: BORDER_X },
+  { id: 'le-concept', startX: LE_CONCEPT_X - 8, endX: LE_CONCEPT_X + 8 },
+  { id: 'francia', startX: BORDER_X, endX: GALPON_X },
+  { id: 'pasaje', startX: SECRET_X - 5, endX: SECRET_X + 5 },
+  { id: 'galpon', startX: GALPON_X, endX: STREET_MAX_X }
 ];
 const BACK_Z = -5.2;
-const GALPON_X = 165;
+const SHOPS = ['KIOSCO', 'PIZZERÍA', 'FARMACIA', 'PARRILLA', 'ALMACÉN', 'VERDULERÍA', 'HELADERÍA', 'LIBRERÍA'];
+const WALLS = ['#d9c3a0', '#c98f7a', '#b9b6ad', '#d8cfb4', '#9fb3a8', '#c7a56c', '#b98f9e'];
+
+// Fachada porteña pintada por código: balcones, persianas y un local con cartel fileteado
+function porteno(i) {
+  return (ctx, w, h) => {
+    const wall = WALLS[i % WALLS.length];
+    ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(0, 0, w, 26);            // cornisa
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(0, 26, w, 6);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(0, 0, 10, h); ctx.fillRect(w - 10, 0, 10, h);
+    const floors = 3, shopTop = h * 0.66;
+    for (let f = 0; f < floors; f++) {
+      const y = 50 + f * ((shopTop - 70) / floors);
+      for (let k = 0; k < 3; k++) {
+        const x = 40 + k * ((w - 80) / 3) + 14, ww = (w - 80) / 3 - 28, wh = 96;
+        const lit = (i * 7 + f * 3 + k) % 4 !== 0;
+        const g = ctx.createLinearGradient(0, y, 0, y + wh);
+        g.addColorStop(0, lit ? '#ffd889' : '#34304a'); g.addColorStop(1, lit ? '#f39a4d' : '#221f33');
+        ctx.fillStyle = '#3a2a22'; ctx.fillRect(x - 5, y - 5, ww + 10, wh + 10);
+        ctx.fillStyle = g; ctx.fillRect(x, y, ww, wh);
+        // persianas de madera abiertas a los costados
+        ctx.fillStyle = ['#4f6b4a', '#6b4a33', '#3f5a6b'][(i + f) % 3];
+        for (const sx of [x - 26, x + ww + 6]) { ctx.fillRect(sx, y - 4, 20, wh + 8); ctx.fillStyle = 'rgba(0,0,0,0.25)'; for (let yy = y; yy < y + wh; yy += 9) ctx.fillRect(sx, yy, 20, 3); ctx.fillStyle = ['#4f6b4a', '#6b4a33', '#3f5a6b'][(i + f) % 3]; }
+        // balcón de hierro
+        ctx.fillStyle = '#1e1b22'; ctx.fillRect(x - 12, y + wh - 2, ww + 24, 6);
+        for (let bx = x - 10; bx < x + ww + 12; bx += 8) ctx.fillRect(bx, y + wh - 28, 2, 28);
+        ctx.fillRect(x - 12, y + wh - 30, ww + 24, 4);
+      }
+    }
+    // Local de planta baja
+    const top = shopTop;
+    ctx.fillStyle = '#2a2230'; ctx.fillRect(16, top, w - 32, h - top);
+    const sg = ctx.createLinearGradient(0, top + 60, 0, h);
+    sg.addColorStop(0, '#ffe2a3'); sg.addColorStop(1, '#f2a35a');
+    ctx.fillStyle = sg; ctx.fillRect(30, top + 64, w * 0.55, h - top - 74);
+    ctx.fillStyle = '#4a3226'; ctx.fillRect(w * 0.62, top + 64, w * 0.3, h - top - 64);   // puerta
+    ctx.fillStyle = '#ffd36e'; ctx.fillRect(w * 0.62 + 10, top + 74, w * 0.3 - 20, 40);
+    // Cartel fileteado: fondo negro, guardas de colores y letras cremas
+    ctx.fillStyle = '#121016'; ctx.fillRect(22, top + 6, w - 44, 52);
+    ctx.lineWidth = 4;
+    for (const [c, o] of [['#d33c3c', 4], ['#2f8f5b', 10], ['#e9b949', 16]]) { ctx.strokeStyle = c; ctx.strokeRect(22 + o, top + 6 + o / 2, w - 44 - o * 2, 52 - o); }
+    ctx.fillStyle = '#e9b949';
+    for (const cx of [44, w - 44]) { ctx.beginPath(); ctx.arc(cx, top + 32, 9, 0, Math.PI * 2); ctx.fill(); }
+    ctx.font = '900 34px Georgia, "Times New Roman", serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff1d6'; ctx.fillText(SHOPS[i % SHOPS.length], w / 2, top + 34);
+  };
+}
+
+// Asfalto de la avenida, con línea central discontinua
+function asphalt(ctx, w, h) {
+  ctx.fillStyle = '#3a3640'; ctx.fillRect(0, 0, w, h);
+  for (let n = 0; n < 2600; n++) {
+    const l = 50 + Math.random() * 40;
+    ctx.fillStyle = `rgba(${l},${l - 4},${l + 6},0.5)`;
+    ctx.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+  }
+  // z = 0 está a 5,4 m del borde de atrás del piso (32 px por metro)
+  ctx.fillStyle = 'rgba(255,240,200,0.75)';
+  ctx.fillRect(20, 5.4 * 32 - 3, w * 0.55, 6);
+  ctx.fillStyle = 'rgba(255,214,90,0.55)';
+  ctx.fillRect(0, (5.4 - 3.75) * 32, w, 4);
+}
 
 function canvasTex(w, h, draw, repeatX = 1, repeatY = 1) {
   const c = document.createElement('canvas');
@@ -106,11 +172,17 @@ export function buildStreet(scene, assets) {
   sun.position.set(-20, 30, 25);
   scene.add(sun);
 
-  // Piso
-  const floorMat = new THREE.MeshLambertMaterial({ color: 0x9c8a94, map: canvasTex(512, 512, cobble, 36, 6) });
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(GALPON_X + 20, 22), floorMat);
+  // Piso: asfalto porteño hasta la frontera, adoquines franceses hasta el galpón
+  const baLen = BORDER_X + 20;
+  const asphaltFloor = new THREE.Mesh(new THREE.PlaneGeometry(baLen, 22), new THREE.MeshLambertMaterial({ color: 0xb0a8b4, map: canvasTex(256, 704, asphalt, baLen / 8, 1) }));
+  asphaltFloor.rotation.x = -Math.PI / 2;
+  asphaltFloor.position.set(BORDER_X - baLen / 2, 0, 5.6);
+  scene.add(asphaltFloor);
+  const frLen = GALPON_X - BORDER_X;
+  const floorMat = new THREE.MeshLambertMaterial({ color: 0x9c8a94, map: canvasTex(512, 512, cobble, frLen / 7, 6) });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(frLen, 22), floorMat);
   floor.rotation.x = -Math.PI / 2;
-  floor.position.set((GALPON_X - 20) / 2, 0, 5.6);
+  floor.position.set(BORDER_X + frLen / 2, 0.002, 5.6);
   scene.add(floor);
   const slab = new THREE.Mesh(new THREE.PlaneGeometry(70, 24), new THREE.MeshLambertMaterial({ color: 0xb8a39a, map: canvasTex(256, 256, concrete, 14, 4) }));
   slab.rotation.x = -Math.PI / 2;
@@ -157,21 +229,94 @@ export function buildStreet(scene, assets) {
   }
 
   // Vereda
-  const curb = new THREE.Mesh(new THREE.BoxGeometry(GALPON_X + 20, 0.16, 1.4), new THREE.MeshLambertMaterial({ color: 0xc9a98a }));
-  curb.position.set((GALPON_X - 20) / 2, 0.08, -4.5);
-  scene.add(curb);
+  // Vereda porteña de baldosas grises y vereda francesa de piedra clara
+  const tiles = canvasTex(128, 64, (c, w, h) => {
+    c.fillStyle = '#8f8c93'; c.fillRect(0, 0, w, h);
+    c.strokeStyle = '#6c6a72'; c.lineWidth = 2;
+    for (let x = 0; x <= w; x += 32) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); }
+    for (let y = 0; y <= h; y += 32) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
+    c.fillStyle = 'rgba(0,0,0,0.12)'; for (let x = 6; x < w; x += 8) for (let y = 6; y < h; y += 8) c.fillRect(x, y, 2, 2);
+  }, baLen / 2, 1);
+  const curbBA = new THREE.Mesh(new THREE.BoxGeometry(baLen, 0.16, 1.4), new THREE.MeshLambertMaterial({ map: tiles }));
+  curbBA.position.set(BORDER_X - baLen / 2, 0.08, -4.5);
+  const curbFR = new THREE.Mesh(new THREE.BoxGeometry(frLen + 20, 0.16, 1.4), new THREE.MeshLambertMaterial({ color: 0xc9a98a }));
+  curbFR.position.set(BORDER_X + (frLen + 20) / 2, 0.081, -4.5);
+  scene.add(curbBA, curbFR);
 
-  // Fachadas pintadas: el mismo fondo del 2D, en mosaico detrás de la calle
+  // Fachadas. La pintura del 2D (street_bg) tiene tres edificios: a la izquierda el del toldo rojo,
+  // en el medio el local azul (LE CONCEPT) y a la derecha el rosado. Se recortan por separado.
   const bg = assets.texture('street_bg');
   const bgMeta = assets.meta('street_bg');
-  const tileH = 13, tileW = tileH * bgMeta.w / bgMeta.h;
-  const bgMat = new THREE.MeshBasicMaterial({ map: bg, fog: false });
-  // el último mosaico termina justo donde empieza el galpón
-  const tiles = Math.ceil((GALPON_X + 20) / tileW);
-  for (let x = GALPON_X - tiles * tileW; x < GALPON_X - 1; x += tileW) {
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(tileW, tileH), bgMat);
-    p.position.set(x + tileW / 2, tileH * (0.5 - 0.165), BACK_Z);
-    scene.add(p);
+  const crop = (u0, u1, v0 = 0) => {
+    const t = bg.clone();
+    t.needsUpdate = true;
+    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+    t.offset.set(u0, v0);
+    t.repeat.set(u1 - u0, 1 - v0);
+    return t;
+  };
+  const tileH = 13, pxPerM = bgMeta.h / tileH;
+  const U_LC = [0.415, 0.752];
+
+  // Buenos Aires: edificios porteños hasta Le Concept y entre Le Concept y la frontera
+  // La cámara ve unos 4 m de fachada: el local se escala para que vidrieras y cartel entren en cuadro
+  const lcH = 9, lcW = 1.4 * lcH * ((U_LC[1] - U_LC[0]) * bgMeta.w) / (bgMeta.h * 0.835);
+  const lcLeft = LE_CONCEPT_X - lcW / 2, lcRight = LE_CONCEPT_X + lcW / 2;
+  const baSpans = [[-7, lcLeft, 15], [lcRight, BORDER_X, 1]];
+  let bi = 0;
+  for (const [a, b, n] of baSpans) {
+    const bw = (b - a) / n;
+    for (let k = 0; k < n; k++) {
+      const bh = 10.5 + ((bi * 37) % 5) * 0.5;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(bw + 0.02, bh), new THREE.MeshBasicMaterial({ map: canvasTex(512, Math.round(512 * bh / bw), porteno(bi)), fog: false }));
+      m.position.set(a + bw * (k + 0.5), bh / 2, BACK_Z);
+      scene.add(m);
+      bi++;
+    }
+  }
+
+  // LE CONCEPT: el local azul, más grande y adelantado, con cartel dorado sobre azul
+  const leConcept = new THREE.Group();
+  leConcept.userData.leConcept = true;
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(lcW, lcH), new THREE.MeshBasicMaterial({ map: crop(U_LC[0], U_LC[1], 0.165), fog: false }));
+  front.position.set(0, lcH / 2, 0);
+  const sideMat = new THREE.MeshBasicMaterial({ color: 0x1f2a44, fog: false });
+  for (const sx of [-1, 1]) {
+    const sidePanel = new THREE.Mesh(new THREE.PlaneGeometry(0.9, lcH), sideMat);
+    sidePanel.rotation.y = sx * Math.PI / 2;
+    sidePanel.position.set(sx * lcW / 2, lcH / 2, -0.45);
+    leConcept.add(sidePanel);
+  }
+  const lcSign = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.2), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 192, (c, w, h) => {
+    c.fillStyle = '#16264a'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 18); c.fill();
+    c.lineWidth = 8; c.strokeStyle = '#e9c46a'; c.stroke();
+    c.font = '700 104px Georgia, "Times New Roman", serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.shadowColor = '#ffd36e'; c.shadowBlur = 28; c.fillStyle = '#ffe6a6';
+    c.fillText('LE CONCEPT', w / 2, h / 2 + 6);
+  }), transparent: true, fog: false }));
+  lcSign.position.set(0, 3.3, 0.35);
+  const lcHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd36e, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.55 }));
+  lcHalo.scale.set(9, 3.2, 1); lcHalo.position.set(0, 3.3, 0.45);
+  // Alfombra roja hasta la puerta
+  const carpet = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.4), new THREE.MeshLambertMaterial({ color: 0xa3202e }));
+  carpet.rotation.x = -Math.PI / 2;
+  carpet.position.set(0, 0.17, 0.75);
+  leConcept.add(carpet);
+  leConcept.add(front, lcSign, lcHalo);
+  leConcept.position.set(LE_CONCEPT_X, -lcH * 0.165 * 0, BACK_Z + 0.55);
+  scene.add(leConcept);
+
+  // Francia: recortes del edificio del toldo rojo y del rosado, alternados (sin el local azul)
+  const frParts = [[0, U_LC[0]], [U_LC[1], 1]].map(([u0, u1]) => ({ mat: new THREE.MeshBasicMaterial({ map: crop(u0, u1), fog: false }), w: (u1 - u0) * bgMeta.w / pxPerM }));
+  let fx0 = BORDER_X, part = 0;
+  while (fx0 < GALPON_X - 0.5) {
+    const pt = frParts[part++ % 2];
+    const w = Math.min(pt.w, GALPON_X - fx0);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(pt.w, tileH), pt.mat);
+    m.position.set(fx0 + pt.w / 2, tileH * (0.5 - 0.165), BACK_Z - 0.02);
+    if (w < pt.w) { m.scale.x = w / pt.w; m.position.x = fx0 + w / 2; }
+    scene.add(m);
+    fx0 += w;
   }
   // Galpón del fondo
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(70, 13), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 256, warehouse, 4, 1), fog: false }));
@@ -190,8 +335,25 @@ export function buildStreet(scene, assets) {
     scene.add(m);
     return m;
   };
-  sign('LE CONCEPT', 9, 7.2, '#ffd36e');
-  sign('LA PLAZA', 115, 7.2, '#7ee0c3', 5.5);
+  sign('BUENOS AIRES', 9, 3.7, '#7ec8ff', 4.6);
+  // Arco de bienvenida sobre la calle, en la frontera
+  const archPoleMat = new THREE.MeshLambertMaterial({ color: 0x2b4fa8 });
+  for (const z of [-3.95, 3.95]) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 5.2, 10), archPoleMat);
+    pole.position.set(BORDER_X + 0.5, 2.6, z);
+    scene.add(pole);
+  }
+  const welcome = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 1.25), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 152, (c, w, h) => {
+    const third = w / 3;
+    c.fillStyle = '#2b4fa8'; c.fillRect(0, 0, third, h);
+    c.fillStyle = '#f4f1ea'; c.fillRect(third, 0, third, h);
+    c.fillStyle = '#d23a3a'; c.fillRect(third * 2, 0, third, h);
+    c.fillStyle = 'rgba(16,10,30,0.72)'; c.fillRect(0, 22, w, h - 44);
+    c.font = '900 78px Fredoka, "Arial Rounded MT Bold", Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#ffffff'; c.fillText('BIENVENUE EN FRANCE', w / 2, h / 2 + 4);
+  }), side: THREE.DoubleSide }));
+  welcome.position.set(BORDER_X + 0.5, 4.7, 0);
+  scene.add(welcome);
   sign('GALPÓN DEL FONDO', GALPON_X + 18, 7.6, '#ff7a6b', 9);
 
   // Faroles con halo
@@ -216,10 +378,54 @@ export function buildStreet(scene, assets) {
     scene.add(pool);
   }
 
-  // Macetas y bolardos sobre la vereda
+  // Buenos Aires: plátanos, contenedores verdes y una parada de colectivo
+  const barkMat = new THREE.MeshLambertMaterial({ color: 0x8a7a63 });
+  const crownMat = new THREE.MeshLambertMaterial({ color: 0x3f6b34 });
+  for (let x = 10; x < BORDER_X - 4; x += 17) {
+    if (Math.abs(x - LE_CONCEPT_X) < 9) continue;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 3.4, 8), barkMat);
+    trunk.position.set(x, 1.7, -4.75);
+    scene.add(trunk);
+    for (const [dx, dy, r] of [[0, 4.2, 1.5], [-0.9, 3.7, 1.1], [0.9, 3.8, 1.15]]) {
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), crownMat);
+      crown.position.set(x + dx, dy, -4.9);
+      scene.add(crown);
+    }
+  }
+  const binMat = new THREE.MeshLambertMaterial({ color: 0x2f7d4a });
+  for (const x of [20, 53, 87, 110]) {
+    const bin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.25, 0.9), binMat);
+    bin.position.set(x, 0.79, -4.75);
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 1.0), new THREE.MeshLambertMaterial({ color: 0x23603a }));
+    lid.position.set(x, 1.47, -4.75);
+    scene.add(bin, lid);
+  }
+  const stopPole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3, 6), postMat);
+  stopPole.position.set(70, 1.5, -4.4);
+  const stopSign = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: canvasTex(128, 128, (c, w, h) => {
+    c.fillStyle = '#f2c230'; c.beginPath(); c.arc(64, 64, 60, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#111'; c.font = '900 30px Arial'; c.textAlign = 'center'; c.fillText('PARADA', 64, 58); c.font = '900 34px Arial'; c.fillText('60', 64, 94);
+  }), transparent: true }));
+  stopSign.position.set(70, 3.1, -4.35);
+  scene.add(stopPole, stopSign);
+
+  // Guirnaldas tricolor en Francia
+  const flagCols = [0x2b4fa8, 0xf4f1ea, 0xd23a3a];
+  const flagGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.22, 0, 0), new THREE.Vector3(0.22, 0, 0), new THREE.Vector3(0, -0.45, 0)]);
+  const flagMats = flagCols.map(c => new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
+  for (let a = BORDER_X + 6; a < GALPON_X - 8; a += 22) {
+    for (let k = 0; k <= 22; k++) {
+      const t = k / 22, x = a + t * 18, y = 4.35 - Math.sin(t * Math.PI) * 0.7;
+      const f = new THREE.Mesh(flagGeo, flagMats[k % 3]);
+      f.position.set(x, y, -4.7);
+      scene.add(f);
+    }
+  }
+
+  // Macetas sobre la vereda francesa
   const potMat = new THREE.MeshLambertMaterial({ color: 0xb4643c });
   const leafMat = new THREE.MeshLambertMaterial({ color: 0x4f7a3c });
-  for (let x = 13; x < GALPON_X; x += 15) {
+  for (let x = BORDER_X + 8; x < GALPON_X; x += 15) {
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), potMat);
     pot.position.set(x, 0.41, -5.0);
     const bush = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 8), leafMat);
@@ -227,24 +433,38 @@ export function buildStreet(scene, assets) {
     scene.add(pot, bush);
   }
 
-  // Mesitas de Le Concept
+  // Mesitas de Le Concept en la vereda y guirnalda de lucecitas
   const tableMat = new THREE.MeshLambertMaterial({ color: 0x2d2a2a });
-  for (const x of [3.5, 7.5, 11.5]) {
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 14), tableMat);
-    top.position.set(x, 0.95, -4.95);
+  const clothMat = new THREE.MeshLambertMaterial({ color: 0xf4efe4 });
+  for (const x of [LE_CONCEPT_X - 7.5, LE_CONCEPT_X - 5.5, LE_CONCEPT_X + 5.5, LE_CONCEPT_X + 7.5]) {
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 14), clothMat);
+    top.position.set(x, 0.95, -4.45);
     const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.95, 6), tableMat);
-    leg.position.set(x, 0.47, -4.95);
+    leg.position.set(x, 0.47, -4.45);
+    for (const sx of [-0.75, 0.75]) {
+      const chair = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.9, 0.42), tableMat);
+      chair.position.set(x + sx, 0.45, -4.45);
+      scene.add(chair);
+    }
     scene.add(top, leg);
+  }
+  const bulbGlow = new THREE.SpriteMaterial({ map: glowTex(), color: 0xffe2a8, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
+  for (let k = 0; k <= 26; k++) {
+    const t = k / 26, x = LE_CONCEPT_X - 9 + t * 18, y = 6.6 - Math.sin(t * Math.PI) * 0.9;
+    const b = new THREE.Sprite(bulbGlow);
+    b.scale.set(0.55, 0.55, 1);
+    b.position.set(x, y, -4.3);
+    scene.add(b);
   }
 
   // Fuente de la plaza
   const stone = new THREE.MeshLambertMaterial({ color: 0xd8c3a5 });
   const basin = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 0.6, 24), stone);
-  basin.position.set(104, 0.3, -6.6);
+  basin.position.set(220, 0.3, -6.6);
   const water = new THREE.Mesh(new THREE.CircleGeometry(2.0, 24), new THREE.MeshBasicMaterial({ color: 0x6fc7e8 }));
-  water.rotation.x = -Math.PI / 2; water.position.set(104, 0.62, -6.6);
+  water.rotation.x = -Math.PI / 2; water.position.set(220, 0.62, -6.6);
   const column = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 2.2, 10), stone);
-  column.position.set(104, 1.4, -6.6);
+  column.position.set(220, 1.4, -6.6);
   scene.add(basin, water, column);
 
   // Entrada del pasaje secreto (sellada por cajones en Task 5)
@@ -256,9 +476,9 @@ export function buildStreet(scene, assets) {
   const right = left.clone(); right.position.x = 1.8;
   const lintel = new THREE.Mesh(new THREE.BoxGeometry(4, 0.4, 0.4), archMat); lintel.position.set(0, 4.6, 0.1);
   door.add(dark, left, right, lintel);
-  door.position.set(117, 0, BACK_Z + 0.25);
+  door.position.set(SECRET_X, 0, BACK_Z + 0.25);
   scene.add(door);
-  const pasajeSign = sign('PASAJE DEL CORTADO', 117, 5.4, '#c084fc', 4.4);
+  const pasajeSign = sign('PASSAGE SECRET', SECRET_X, 5.4, '#c084fc', 4.4);
   pasajeSign.position.z = BACK_Z + 0.5;
 
   // Barricadas de cajones y tambores (2,4 m): no se saltan; al despejar la zona se derrumban
@@ -280,9 +500,51 @@ export function buildStreet(scene, assets) {
   const signMat = new THREE.MeshBasicMaterial({ map: tagTex });
   const crateGeo = new THREE.BoxGeometry(1.15, 1.15, 1.15);
   const drumGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.15, 14);
-  const gates = [88, 150].map((x) => {
+  // Piquete: cubiertas apiladas con fuego y humo
+  const tireGeo = new THREE.TorusGeometry(0.42, 0.2, 8, 18);
+  const tireMat = new THREE.MeshLambertMaterial({ color: 0x1b1b1f });
+  const fireMat = new THREE.SpriteMaterial({ map: canvasTex(64, 128, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h * 0.75, 2, w / 2, h * 0.6, h * 0.6);
+    g.addColorStop(0, 'rgba(255,250,200,1)'); g.addColorStop(0.3, 'rgba(255,170,40,0.95)'); g.addColorStop(0.7, 'rgba(230,60,20,0.5)'); g.addColorStop(1, 'rgba(200,30,10,0)');
+    c.fillStyle = g; c.beginPath(); c.moveTo(w / 2, 0); c.quadraticCurveTo(w, h * 0.6, w / 2, h); c.quadraticCurveTo(0, h * 0.6, w / 2, 0); c.fill();
+  }), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
+  const smokeMat = new THREE.SpriteMaterial({ map: glowTex(), color: 0x2a2630, transparent: true, opacity: 0.5, depthWrite: false });
+  const corteTex = canvasTex(256, 128, (c, w, h) => {
+    c.fillStyle = '#c8a46a'; c.fillRect(0, 0, w, h);
+    c.strokeStyle = '#7a5a30'; c.lineWidth = 6; c.strokeRect(6, 6, w - 12, h - 12);
+    c.font = '900 56px "Comic Sans MS", Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#222';
+    c.fillText('CORTE', w / 2, h / 2 + 4);
+  });
+  function buildPiquete(g, pieces, fires) {
+    for (let z = -3.4; z <= 3.5; z += 0.95) {
+      for (let row = 0; row < 3; row++) {
+        const m = new THREE.Mesh(tireGeo, tireMat);
+        m.rotation.x = Math.PI / 2;
+        m.position.set((Math.random() - 0.5) * 0.15, 0.2 + row * 0.4, z);
+        g.add(m);
+        pieces.push({ mesh: m, base: m.position.clone(), baseRot: m.rotation.clone(), v: new THREE.Vector3(), spin: new THREE.Vector3() });
+      }
+      const f = new THREE.Sprite(fireMat);
+      f.position.set(0, 1.75, z); f.scale.set(1.1, 1.9, 1);
+      const sm = new THREE.Sprite(smokeMat.clone());
+      sm.position.set(0, 3.2, z); sm.scale.set(2.2, 2.2, 1);
+      g.add(f, sm);
+      fires.push({ fire: f, smoke: sm, seed: Math.random() * 10, z });
+    }
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), new THREE.MeshBasicMaterial({ map: corteTex }));
+    sign.position.set(-0.6, 1.6, 2.6);
+    sign.rotation.set(-0.15, 0, 0.08);
+    g.add(sign);
+    pieces.push({ mesh: sign, base: sign.position.clone(), baseRot: sign.rotation.clone(), v: new THREE.Vector3(), spin: new THREE.Vector3() });
+  }
+
+  const gates = GATES.map(({ x, kind }) => {
     const g = new THREE.Group();
     const pieces = [];
+    const fires = [];
+    g.position.x = x;
+    scene.add(g);
+    if (kind === 'piquete') { buildPiquete(g, pieces, fires); return { x, kind, open: false, mesh: g, pieces, fires, t: 0 }; }
     let i = 0;
     for (let z = -3.4; z <= 3.5; z += 1.15) {
       for (let row = 0; row < 2; row++) {
@@ -299,14 +561,24 @@ export function buildStreet(scene, assets) {
     sign.rotation.x = -0.25;
     g.add(sign);
     pieces.push({ mesh: sign, base: sign.position.clone(), baseRot: sign.rotation.clone(), v: new THREE.Vector3(), spin: new THREE.Vector3() });
-    g.position.x = x;
-    scene.add(g);
-    return { x, open: false, mesh: g, pieces, t: 0 };
+    return { x, kind, open: false, mesh: g, pieces, fires, t: 0 };
   });
 
   // Animación del derrumbe (se llama en cada cuadro)
+  let fireClock = 0;
   function updateGates(dt) {
+    fireClock += dt;
     for (const g of gates) {
+      // El fuego del piquete titila mientras el corte sigue; al levantarse se apaga
+      for (const f of g.fires) {
+        const k = g.open ? Math.max(0, 1 - g.t * 1.5) : 1;
+        const flick = 0.85 + Math.sin(fireClock * 13 + f.seed) * 0.12 + Math.sin(fireClock * 29 + f.seed * 2) * 0.06;
+        f.fire.scale.set(1.1 * k, 1.9 * flick * k, 1);
+        f.fire.material.opacity = k;
+        const rise = (fireClock * 0.6 + f.seed) % 1;
+        f.smoke.position.y = 2.6 + rise * 2.4;
+        f.smoke.material.opacity = 0.45 * (1 - rise) * k;
+      }
       if (!g.open || !g.mesh.visible) continue;
       if (g.t === 0) {
         for (const p of g.pieces) {
@@ -333,13 +605,16 @@ export function buildStreet(scene, assets) {
     }
   }
 
-  const secret = { x: 117, halfWidth: 1.4, doorZ: BACK_Z + 0.6, found: false, sealed: true };
+  const secret = { x: SECRET_X, halfWidth: 1.4, doorZ: BACK_Z + 0.6, found: false, sealed: true };
 
   // Mantiene una posición dentro de la calle, respetando portones y el pasaje
   // prevX: dónde estaba antes de moverse. Decide de qué lado del portón queda;
   // sin él, un paso largo que cae pasando la mitad del portón lo cruzaba.
+  // Límites del nivel actual: en el Nivel 1 no se cruza a Francia; en el 2 no se vuelve
+  const bounds = { ...STREET, minX: LEVELS[0].minX, maxX: LEVELS[0].maxX };
+  function setLevelBounds(minX, maxX) { bounds.minX = minX; bounds.maxX = maxX; }
   function clampPosition(pos, radius = 0.4, prevX = null) {
-    pos.x = Math.min(STREET.maxX, Math.max(STREET.minX, pos.x));
+    pos.x = Math.min(bounds.maxX, Math.max(bounds.minX, pos.x));
     const inDoor = !secret.sealed && Math.abs(pos.x - secret.x) < secret.halfWidth;
     pos.z = Math.min(STREET.maxZ, Math.max(inDoor ? secret.doorZ : STREET.minZ, pos.z));
     for (const g of gates) {
@@ -351,5 +626,5 @@ export function buildStreet(scene, assets) {
     return pos;
   }
 
-  return { bounds: STREET, zones: ZONES, colliders: [], gates, secret, clampPosition, updateGates, resetGates, galponX: GALPON_X };
+  return { bounds: STREET, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
 }

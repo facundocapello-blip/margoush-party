@@ -1,14 +1,12 @@
 import { SpriteActor } from './sprites.js';
+import { WAVES } from './level.js';
 
 const TYPES = [
   { tint: 0xffffff, hp: 3, scale: 1 },
   { tint: 0xbfe3ff, hp: 3, scale: 1 },
   { tint: 0xffc7a6, hp: 5, scale: 1.14 } // el grandote
 ];
-const WAVES = {
-  vereda: [{ dx: 9, dz: -1.5, type: 0 }, { dx: 11, dz: 1.8, type: 1 }, { dx: -8, dz: 0.5, type: 0 }],
-  plaza: [{ dx: 9, dz: -2, type: 0 }, { dx: 10, dz: 2, type: 1 }, { dx: 12, dz: 0, type: 2 }, { dx: -8, dz: -1.5, type: 1 }, { dx: -9, dz: 1.8, type: 0 }]
-};
+const KIND_TYPE = { secuaz: 0, patovica: 2, bombo: 1, mozo: 1, delivery: 1 }; // provisorio hasta los malos nuevos
 const MAX_ATTACKERS = 2;
 
 export function createEnemies(ctx) {
@@ -53,9 +51,11 @@ export function createEnemies(ctx) {
     list,
     spawnWave(zoneId) {
       const hx = game.hero.actor.position.x;
-      for (const d of WAVES[zoneId] || []) {
-        const x = Math.min(world.bounds.maxX - 1, Math.max(world.bounds.minX + 1, hx + d.dx));
-        spawn(x, d.dz, d.type);
+      const wave = WAVES.find(w => w.id === zoneId);
+      const lb = world.levelBounds;
+      for (const d of wave ? wave.spawns : []) {
+        const x = Math.min(lb.maxX - 1, Math.max(lb.minX + 1, hx + d.dx));
+        spawn(x, d.dz, KIND_TYPE[d.kind]);
       }
     },
     spawn,

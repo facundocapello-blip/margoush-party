@@ -13,6 +13,9 @@ import { createAudio } from './audio.js';
 import { createUi } from './ui.js';
 import { createRanking } from './ranking.js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { LEVELS, WAVES, SECRET_X, GALPON_X } from './level.js';
+
+const freshWaves = () => Object.fromEntries(WAVES.map(w => [w.id, 'idle']));
 
 const $ = (s) => document.querySelector(s);
 const canvas = $('#game');
@@ -36,7 +39,8 @@ const game = {
   score: createScore(),
   time: 0,
   stats: { maxMult: 1 },
-  waves: { vereda: 'idle', plaza: 'idle' },
+  waves: freshWaves(),
+  level: 1,
   lowQuality: false,
   timeScale: 1 // para revisar animaciones en cámara lenta
 };
@@ -176,7 +180,15 @@ function clearRun() {
   fx.clear();
   game.combo.reset();
   world.resetGates();
-  game.waves = { vereda: 'idle', plaza: 'idle' };
+  game.waves = freshWaves();
+  setLevel(1);
+  $('#level-card')?.classList.add('hidden');
+}
+
+function setLevel(n) {
+  game.level = n;
+  const L = LEVELS[n - 1];
+  world.setLevelBounds(L.minX, L.maxX);
 }
 
 function startRun(heroId, withIntro = false) {
@@ -185,7 +197,7 @@ function startRun(heroId, withIntro = false) {
   clearRun();
   const ctx = game.ctx;
   game.hero = createHero(heroId, ctx);
-  game.hero.actor.position.set(4, 0, 0.5);
+  game.hero.actor.position.set(LEVELS[0].start, 0, 0.5);
   game.facu?.dispose();
   game.facu = createFacu(ctx);
   game.score = createScore();
@@ -247,18 +259,60 @@ function updateZones() {
     }
   }
   const x = hp.x;
-  for (const [id, trigger, gate] of [['vereda', 36, 0], ['plaza', 96, 1]]) {
-    if (game.waves[id] === 'idle' && x > trigger) {
-      game.waves[id] = 'active';
-      game.enemies.spawnWave(id);
-      game.banner(id === 'vereda' ? 'LA VEREDA' : 'LA PLAZA', '¡Llegó la banda de BIG CHAKY!');
-    } else if (game.waves[id] === 'active' && game.enemies.alive() === 0) {
-      game.waves[id] = 'cleared';
-      openGate(gate);
+  for (const w of WAVES) {
+    if (w.level !== game.level) continue;
+    const st = game.waves[w.id];
+    if (st === 'idle' && x > w.trigger) {
+      game.waves[w.id] = 'active';
+      game.enemies.spawnWave(w.id);
+      game.banner(w.title, w.text);
+      break;
+    }
+    if (st === 'active' && game.enemies.alive() === 0) {
+      game.waves[w.id] = 'cleared';
+      if (w.gate != null) openGate(w.gate);
+      if (w.endsLevel) { startTransition(); return; }
     }
   }
-  if (!game.boss && game.waves.plaza === 'cleared' && x > world.galponX + 6) spawnBoss();
+  const last = WAVES[WAVES.length - 1];
+  if (!game.boss && game.level === 2 && game.waves[last.id] === 'cleared' && x > world.galponX + 6) spawnBoss();
 }
+
+// ---------- cambio de nivel ----------
+const TRANSITION_S = 4.2;
+function startTransition() {
+  game.state = 'transition';
+  game.transT = 0;
+  input.reset();
+  clearBanners();
+  game.combo.reset();
+  const done = LEVELS[game.level - 1], next = LEVELS[game.level];
+  $('#level-done').textContent = `NIVEL ${done.id} COMPLETO`;
+  $('#level-name').textContent = done.name;
+  $('#level-pts').textContent = game.score.total.toLocaleString('es-AR') + ' puntos';
+  $('#level-next').textContent = `→ NIVEL ${next.id}: ${next.name}`;
+  $('#level-card').classList.remove('hidden');
+  game.facu.say(game.facu.lines.level2, 3.4);
+  audio.sfx('clear');
+}
+
+function endTransition() {
+  setLevel(game.level + 1);
+  const L = LEVELS[game.level - 1];
+  const h = game.hero;
+  game.enemies.clear();
+  h.actor.position.set(L.start, 0, 0);
+  h.actor.setFacing(1);
+  h.hp = Math.min(h.hpMax, h.hp + 2);
+  h.inv = 0;
+  game.facu.park(L.start + 3);
+  $('#level-card').classList.add('hidden');
+  game.state = 'playing';
+  input.reset();
+  updateCamera(0, true);
+  game.banner('NIVEL 2: FRANCIA', 'Seguí hasta el galpón de BIG CHAKY →');
+}
+game.startTransition = startTransition;
 
 function spawnBoss() {
   game.boss = createBoss(game.ctx, world.bounds.maxX - 14);
@@ -281,19 +335,35 @@ game.onBossDown = () => {
   game.ctx.audio?.sfx('fanfare');
 };
 
-// Atajo para pruebas y para saltar a una parte del nivel
+// Atajo para pruebas y para saltar a una parte del recorrido
+const STAGES = {
+  vereda: { wave: 'vereda', at: 24 },
+  avenida: { wave: 'avenida', at: 74 },
+  piquete: { wave: 'piquete', at: 108 },
+  'le-concept': { wave: 'le-concept', at: 128 },
+  francia: { wave: 'francia', at: 164 },
+  'francia-quiet': { upTo: 'francia', at: 170 },
+  boulevard: { wave: 'boulevard', at: 214 },
+  'boulevard-quiet': { upTo: 'boulevard', at: SECRET_X - 6 },
+  galpon: { upTo: WAVES[WAVES.length - 1].id, at: GALPON_X + 8, boss: true }
+};
+const ALIASES = { plaza: 'avenida', 'plaza-quiet': 'boulevard-quiet' };
 game.setStage = (id) => {
+  const st = STAGES[ALIASES[id] || id];
   clearRun();
   game.props.reset();
   const p = game.hero.actor.position;
   game.state = 'playing';
-  if (id === 'vereda') { p.set(38, 0, 0); game.waves.vereda = 'active'; game.enemies.spawnWave('vereda'); }
-  if (id === 'plaza' || id === 'plaza-quiet') {
-    openGate(0); game.waves.vereda = 'cleared';
-    p.set(110, 0, 0);
-    if (id === 'plaza') { game.waves.plaza = 'active'; game.enemies.spawnWave('plaza'); } else game.waves.plaza = 'cleared';
-  }
-  if (id === 'galpon') { openGate(0); openGate(1); game.waves.vereda = game.waves.plaza = 'cleared'; p.set(world.galponX + 8, 0, 0); spawnBoss(); }
+  // Todo lo anterior queda despejado (y sus portones abiertos)
+  const stop = WAVES.findIndex(w => w.id === (st.wave || st.upTo));
+  const target = WAVES[stop];
+  WAVES.forEach((w, i) => {
+    if (i < stop || (st.upTo && i === stop)) { game.waves[w.id] = 'cleared'; if (w.gate != null) openGate(w.gate); }
+  });
+  setLevel(target.level);
+  p.set(st.at, 0, 0);
+  if (st.wave) { game.waves[st.wave] = 'active'; game.enemies.spawnWave(st.wave); }
+  if (st.boss) spawnBoss();
   clearBanners();
   game.facu.park(p.x + 3);
   updateCamera(0, true);
@@ -358,6 +428,12 @@ function frame(now) {
     if (game.story.updateIntro(dt)) endIntro();
     game.hero.actor.update(dt, 0);
     game.facu.refreshLabels();
+  } else if (game.state === 'transition') {
+    game.transT += dt;
+    game.hero.actor.update(dt, 0);
+    game.facu.celebrate(dt);
+    game.facu.refreshLabels();
+    if (game.transT > TRANSITION_S) endTransition();
   } else if (game.state === 'rescue') {
     game.rescueT += dt;
     game.story.updateRescue(dt, game.rescueT);

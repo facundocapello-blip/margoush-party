@@ -45,10 +45,10 @@ try {
   check(stunned >= 2, `el chiste aturde a ${stunned} enemigos`);
   const hop = await G(async () => { let m = 0; const t0 = performance.now(); while (performance.now() - t0 < 600) { m = Math.max(m, window.__game.facu.actor.lift - window.__game.facu.car.position.y); await new Promise(r => setTimeout(r, 30)); } return m; });
   check(hop > 0.25, `Facu se para en el auto al contar el chiste (${hop.toFixed(2)} m)`);
-  check(await G(() => window.__game.facu.lines.intro.startsWith('Buenas noches, Le Concept')), 'Facu sigue presentando la partida');
+  check(await G(() => window.__game.facu.lines.intro.startsWith('¡Buenas noches, Buenos Aires')), 'Facu sigue presentando la partida');
 
   // Salta los cajones del pasaje en vez de atravesarlos
-  await G(() => { const g = window.__game; g.setStage('plaza-quiet'); g.hero.actor.position.set(112, 0, 0); g.facu.car.position.x = 113; });
+  await G(() => { const g = window.__game; g.setStage('plaza-quiet'); g.hero.actor.position.set(g.world.secret.x - 5, 0, 0); g.facu.car.position.x = g.world.secret.x - 4; });
   await page.keyboard.down('ArrowRight');
   let maxLift = 0;
   for (let i = 0; i < 10; i++) { await page.waitForTimeout(150); maxLift = Math.max(maxLift, await G(() => window.__game.facu.car.position.y)); }

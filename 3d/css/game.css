@@ -151,3 +151,14 @@ body.has-screen #labels, body.has-screen #combo, body.has-screen #hud, body.has-
 
 /* Con controles táctiles el mensaje va como subtítulo entre el joystick y los botones */
 @media (pointer: coarse) { #banner { max-width: min(420px, 46vw); font-size: 13px; bottom: calc(70px + var(--safe-b)); } #banner.with-avatar img { width: 36px; height: 36px; } }
+
+/* Cartel de cambio de nivel */
+#level-card { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: clamp(10px, 3vh, 22px) clamp(20px, 4vw, 34px); border-radius: 22px; max-height: 56vh; background: rgba(18, 12, 34, 0.9); border: 3px solid #ffd36e; color: #fff4dc; text-align: center;
+  box-shadow: 0 0 40px rgba(255, 211, 110, 0.35); animation: level-in 0.45s cubic-bezier(.2, 1.4, .4, 1) both; z-index: 6; }
+#level-card small { font-size: 14px; letter-spacing: 0.18em; color: #7ee0c3; font-weight: 800; }
+#level-card b { font-size: clamp(24px, min(6vw, 8vh), 46px); line-height: 1.05; letter-spacing: 0.04em; }
+#level-card span { font-size: 18px; color: #ffd36e; font-weight: 700; }
+#level-card em { font-style: normal; font-size: 16px; font-weight: 800; color: #ffffff; opacity: 0.9; }
+@keyframes level-in { from { transform: translate(-50%, -50%) scale(0.6); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+body.has-screen #level-card { display: none; }

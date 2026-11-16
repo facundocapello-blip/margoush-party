@@ -1,7 +1,8 @@
 import { SpriteActor } from './sprites.js';
 
 export const FACU_LINES = {
-  intro: 'Buenas noches, Le Concept. ¡Aplausos para nuestro héroe!',
+  intro: '¡Buenas noches, Buenos Aires! ¡Aplausos para nuestro héroe!',
+  level2: '¡Nivel 2: Francia! Allez, allez!',
   result: '¡Señoras y señores, puntaje final!',
   jokes: ['¡JAJAJA!', '¡No da más!', '¡Qué chiste, che!']
 };

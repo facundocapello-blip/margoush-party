@@ -1,5 +1,5 @@
 // Mamaderas, cajones del pasaje y el secreto.
-const BOTTLES_X = [20, 45, 62, 80, 100, 128, 145, 160];
+const BOTTLES_X = [18, 47, 70, 96, 124, 170, 196, 248];
 
 function emojiTexture(emoji) {
   const c = document.createElement('canvas'); c.width = c.height = 128;
