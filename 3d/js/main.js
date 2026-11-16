@@ -5,6 +5,7 @@ import { createScore } from './score.js';
 import { createFx } from './fx.js';
 import { createHero, HERO_CFG } from './hero.js';
 import { createEnemies } from './enemies.js';
+import { registerSkins } from './skins.js';
 import { createProps } from './props.js';
 import { createFacu } from './facu.js';
 import { createBoss } from './boss.js';
@@ -354,6 +355,7 @@ game.setStage = (id) => {
   game.props.reset();
   const p = game.hero.actor.position;
   game.state = 'playing';
+  Object.assign(game.hero, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free' });
   // Todo lo anterior queda despejado (y sus portones abiertos)
   const stop = WAVES.findIndex(w => w.id === (st.wave || st.upTo));
   const target = WAVES[stop];
@@ -461,6 +463,7 @@ async function boot() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
   addEventListener('blur', pause);
   assets = await loadAssets('assets/manifest.json', (f) => { $('#load-fill').style.width = Math.round(f * 100) + '%'; });
+  registerSkins(assets);
   world = buildStreet(scene, assets);
   input = createInput({ canvas, joystick: $('#joystick'), knob: $('#knob'), buttons: document.querySelectorAll('.act') });
   fx = createFx(scene, camera, $('#labels'), $('#flash'));

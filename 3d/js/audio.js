@@ -73,7 +73,22 @@ export function createAudio(assets) {
     slam: () => { tone('sine', 90, 30, 0.5, 0.7); hiss(0.4, 0.5, 200, 0.5); },
     roar: () => { tone('sawtooth', 110, 55, 0.6, 0.35); tone('sawtooth', 160, 70, 0.6, 0.18); },
     laugh: () => [0, 0.12, 0.24].forEach((d) => tone('triangle', 520, 380, 0.1, 0.18, d)),
-    fanfare: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone('triangle', f, f, 0.45, 0.22, i * 0.12))
+    fanfare: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone('triangle', f, f, 0.45, 0.22, i * 0.12)),
+    // Malos nuevos y trampas
+    bombo: () => [0, 0.3, 0.6].forEach((d) => { tone('sine', 95, 45, 0.22, 0.6, d); hiss(0.08, 0.3, 180, 0.8, d); }),
+    bom: () => { tone('sine', 70, 30, 0.5, 0.8); hiss(0.3, 0.45, 160, 0.6); },
+    bell: () => [0, 0.16].forEach((d) => { tone('sine', 1760, 1760, 0.12, 0.18, d); tone('sine', 2640, 2640, 0.1, 0.08, d); }),
+    whoosh: () => hiss(0.3, 0.25, 1200, 0.6),
+    splash: () => { hiss(0.35, 0.4, 900, 0.5); tone('sine', 400, 120, 0.2, 0.12); },
+    fall: () => { tone('sine', 520, 90, 0.5, 0.3); hiss(0.2, 0.3, 300, 0.8, 0.4); },
+    horn: () => { tone('sawtooth', 330, 330, 0.55, 0.22); tone('sawtooth', 415, 415, 0.55, 0.14); },
+    engine: () => { tone('sawtooth', 70, 140, 0.9, 0.2); hiss(0.9, 0.2, 250, 0.5); },
+    paper: () => hiss(0.15, 0.2, 3200, 1.2),
+    coin: () => { tone('square', 300, 150, 0.18, 0.15); },
+    scooter: () => { tone('square', 600, 900, 0.5, 0.06); hiss(0.4, 0.12, 2500, 1); },
+    flap: () => [0, 0.07, 0.14, 0.21, 0.28].forEach((d) => hiss(0.06, 0.25, 1400, 1.5, d)),
+    crowd: () => { hiss(1.2, 0.3, 700, 0.4); [0, 0.4, 0.8].forEach((d) => tone('triangle', 260, 240, 0.25, 0.12, d)); },
+    fire: () => hiss(0.4, 0.25, 600, 0.6)
   };
 
   // Tema del jefe: pulso grave rápido sintetizado

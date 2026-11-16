@@ -19,6 +19,8 @@ export async function loadAssets(manifestUrl, onProgress = () => {}) {
     manifest,
     texture: (name) => textures[name],
     meta: (name) => manifest[name],
-    url: (name) => base + manifest[name].file
+    url: (name) => base + manifest[name].file,
+    // Texturas hechas por código (p. ej. los malos recoloreados)
+    add(name, tex, meta) { textures[name] = tex; manifest[name] = meta; }
   };
 }
