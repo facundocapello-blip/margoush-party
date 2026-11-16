@@ -19,7 +19,7 @@ const LEGACY = ['secuaz', 'secuaz', 'patovica']; // tipos numéricos viejos
 const MAX_ATTACKERS = 2;   // de cerca (secuaz, patovica) a la vez
 export const MAX_RANGED = 1; // de lejos (bombo, mozo, delivery…) a la vez
 export const PATOVICA = { warn: 0.95, speed: 9, run: 7 };
-const WAIT = { min: 2.8, spread: 1.6, settle: 0.6, gap: 0.6 }; // anillo de espera alrededor del héroe
+const WAIT = { min: 2.8, spread: 1.6, settle: 0.6, gap: 0.4 }; // anillo de espera alrededor del héroe
 const TAUNTS = ['¡Vení!', '¡Dale!', '¡Jaja!'];
 const MELEE_BUSY = ['windup', 'strike', 'ring', 'charge'];
 export const BOMBO = { every: 4, windup: 0.9, radius: 3.2, stun: 1 };
@@ -212,6 +212,8 @@ export function createEnemies(ctx) {
         const near0 = e.kind === 'patovica' ? 1.7 : 1.35;
         // El secuaz busca la espalda del héroe; los demás van por su lado
         e.side = e.kind === 'secuaz' && sideFree(hp.x, behind, near0) ? behind : (dx > 0 ? -1 : 1);
+        // Dos encarando del mismo lado se empujan entre sí y ninguno llega a pegar: el segundo va por el otro
+        if (list.some(o => o !== e && o.hp > 0 && o.engaged && o.side === e.side) && sideFree(hp.x, -e.side, near0)) e.side = -e.side;
         e.feint = e.kind === 'secuaz' && Math.random() < 0.3 ? 1 : 0;
       }
       a.setFacing(dx >= 0 ? 1 : -1);
@@ -224,10 +226,11 @@ export function createEnemies(ctx) {
         return;
       }
       const near = e.kind === 'patovica' ? 1.7 : e.feint === 1 ? 1.0 : e.feint === 2 ? 2.5 : 1.35;
-      const d = approach(e, dt, hp.x + e.side * near, hp.z, e.k.speed);
+      // El secuaz encara rápido (rodea y amaga sin que la pelea se haga lenta)
+      const d = approach(e, dt, hp.x + e.side * near, hp.z, e.k.speed * (e.kind === 'secuaz' ? 1.35 : 1));
       if (e.feint && d < 0.25) { e.feint = e.feint === 1 ? 2 : 0; return; } // amaga: se acerca, retrocede y recién ahí pega
       // Pega recién al llegar a su lugar (si no, el que rodea pegaba de frente al pasar)
-      if (!e.feint && e.cd <= 0 && d < 0.45 && Math.abs(dz) < 0.5) {
+      if (!e.feint && e.cd <= 0 && d < 0.45 && Math.abs(dx) < near + 0.15 && Math.abs(dz) < 0.5) {
         e.state = 'windup';
         e.t = e.k.windup;
         fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.6), '!', '#ffe08a', { size: 30, life: 0.5, rise: 0.4 });
@@ -246,7 +249,8 @@ export function createEnemies(ctx) {
     let wx = hp.x + side * dist;
     if (wx < lb.minX + 0.5 || wx > lb.maxX - 0.5) wx = hp.x - side * dist;
     const wz = hp.z + e.slotZ * 2;
-    if (Math.hypot(wx - e.pos.x, wz - e.pos.z) > WAIT.settle) approach(e, dt, wx, wz, e.k.speed * 0.8);
+    const far = Math.hypot(wx - e.pos.x, wz - e.pos.z);
+    if (far > WAIT.settle) approach(e, dt, wx, wz, e.k.speed * (far > 2 ? 1 : 0.8)); // lejos llega rápido; cerca se acomoda tranquilo
     else gait(e, 0, dt);
     e.taunt -= dt;
     if (e.taunt <= 0) {

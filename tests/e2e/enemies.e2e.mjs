@@ -129,6 +129,23 @@ try {
   }
   check(behind >= 1, 'el secuaz rodea para pegar por la espalda');
 
+  // Dos secuaces encarando a la vez no se traban buscando la misma espalda: los dos llegan a pegar
+  await G(() => { const g = window.__game; g.setStage('francia-quiet'); g.traps.disable(); g.enemies.clear(); g.facu.jokeCd = 99;
+    g.hero.hp = 99; g.hero.inv = 999; g.hero.actor.position.set(170, 0, 0); g.hero.actor.setFacing(1);
+    for (const x of [173, 173.6]) { const e = g.enemies.spawn(x, 0, 'secuaz'); e.cd = 0; }
+    window.__rnd = Math.random; Math.random = () => 0.1; }); // los dos amagan: el caso que se trababa
+  const pair = await G(() => new Promise((res) => { const g = window.__game, seen = new Set();
+    const id = setInterval(() => g.enemies.list.forEach((e, i) => { if (e.state === 'windup') seen.add(i); }), 16);
+    setTimeout(() => { clearInterval(id); Math.random = window.__rnd; res(seen.size); }, 5000); }));
+  check(pair === 2, `dos secuaces juntos llegan a pegar los dos (${pair})`);
+
+  // Nadie anuncia un golpe desde donde no llega a pegar
+  await G(() => { const g = window.__game; g.setStage('vereda'); g.traps.disable(); g.facu.jokeCd = 99; g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 999; });
+  const far = await G(() => new Promise((res) => { const g = window.__game, h = g.hero.actor.position, bad = [], prev = new Map();
+    const id = setInterval(() => g.enemies.list.forEach((e) => { if (e.state === 'windup' && prev.get(e) !== 'windup') { const reach = e.kind === 'patovica' ? 2.1 : 1.7; const ex = Math.abs(h.x - e.pos.x); if (ex > reach - 0.1) bad.push(+ex.toFixed(2)); } prev.set(e, e.state); }), 16);
+    setTimeout(() => { clearInterval(id); res(bad); }, 8000); }));
+  check(far.length === 0, `los golpes se anuncian siempre al alcance (lejos: ${JSON.stringify(far)})`);
+
   // El del bombo camina a los saltos, al ritmo
   await solo('bombo', 10);
   await G(() => { window.__game.enemies.list[0].cd = 99; });
