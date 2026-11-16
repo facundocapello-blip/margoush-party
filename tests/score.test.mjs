@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createScore, RANKS } from '../3d/js/score.js';
+import { WAVES } from '../3d/js/level.js';
 
 test('minion is worth 100 times the multiplier', () => {
   const s = createScore();
@@ -86,4 +87,28 @@ test('losing earns no hp or time bonus', () => {
   const r = s.finalize({ hpLeft: 5, hpMax: 5, seconds: 10, won: false });
   assert.equal(r.total, 100);
   assert.deepEqual(r.breakdown, { play: 100, hpBonus: 0, timeBonus: 0 });
+});
+
+// Recorrido de los dos niveles sin recibir daño: todos los malos, mamaderas, secreto y jefe
+function flawless({ seconds = 300, hpLeft = 5, upToLevel = 2, won = true } = {}) {
+  const HP = { secuaz: 3, patovica: 7, bombo: 4, mozo: 3, delivery: 3 };
+  const PTS = { secuaz: 'minion', patovica: 'patovica', bombo: 'bombo', mozo: 'mozo', delivery: 'delivery' };
+  const s = createScore();
+  let swing = 0;
+  for (const w of WAVES.filter(w => w.level <= upToLevel)) for (const sp of w.spawns) {
+    let hp = HP[sp.kind];
+    while (hp > 0) { hp -= [1, 1, 2][swing++ % 3]; s.addHit(); }
+    s.addKill(PTS[sp.kind]);
+  }
+  if (won) { for (let i = 0; i < 8; i++) s.addPickup('bottle'); s.addPickup('secret'); for (let i = 0; i < 20; i++) s.addHit(); s.addKill('boss'); }
+  return s.finalize({ hpLeft, hpMax: 5, seconds, won });
+}
+
+test('ranks are calibrated for two levels', () => {
+  const perfect = flawless();
+  assert.equal(perfect.rank, 'S');
+  // S pide jugar muy bien (≈80 % de un recorrido sin daño), no ser perfecto
+  assert.ok(RANKS.S <= perfect.total * 0.82 && RANKS.S >= perfect.total * 0.75, `S=${RANKS.S} vs perfecto ${perfect.total}`);
+  // Perder en el Nivel 1 es C
+  assert.equal(flawless({ upToLevel: 1, won: false }).rank, 'C');
 });

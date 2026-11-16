@@ -141,6 +141,8 @@ try {
     };
     const m1 = await march(false);
     check(m1.dx < -1.5 && m1.hp === 5, `la grève te empuja para atrás sin lastimar (Δx ${m1.dx.toFixed(1)})`);
+    const dir = await G(() => { const g = window.__game; g.setStage('boulevard-quiet'); g.traps.disable(); g.hero.actor.position.set(250, 0, 0); return g.traps.forceNext('greve', true).dir; });
+    check(dir === 1, 'con el portón cerrado adelante, la grève viene desde atrás');
     const m2 = await march(true);
     check(Math.abs(m2.dx) < 0.5 && m2.hp === 5, `por el hueco de la fila se pasa (Δx ${m2.dx.toFixed(1)})`);
   }

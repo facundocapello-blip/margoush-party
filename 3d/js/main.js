@@ -268,7 +268,8 @@ function updateZones() {
     if (st === 'idle' && x > w.trigger) {
       game.waves[w.id] = 'active';
       game.enemies.spawnWave(w.id);
-      game.banner(w.title, w.text);
+      if (w.facu) game.facu.say(w.facu, 3.4);
+      else game.banner(w.title, w.text);
       break;
     }
     if (st === 'active' && game.enemies.alive() === 0) {
@@ -304,6 +305,7 @@ function endTransition() {
   const L = LEVELS[game.level - 1];
   const h = game.hero;
   game.enemies.clear();
+  game.traps.reset(); // nada de Buenos Aires (un colectivo en camino) pasa a Francia
   h.actor.position.set(L.start, 0, 0);
   h.actor.setFacing(1);
   h.hp = Math.min(h.hpMax, h.hp + 2);

@@ -172,7 +172,9 @@ export function createTraps(ctx) {
       const T = TIMING.greve;
       const lb = world.levelBounds;
       let dir = -1, x0 = hp.x + T.start;
-      if (x0 > lb.maxX - 1) { dir = 1; x0 = hp.x - T.start; }
+      // Que no aparezcan del otro lado de un portón cerrado
+      const blocked = world.gates.some(g => !g.open && g.x > hp.x && g.x < x0);
+      if (x0 > lb.maxX - 1 || blocked) { dir = 1; x0 = hp.x - T.start; }
       const slots = [-3.2, -2.1, -1.0, 0.1, 1.2, 2.3, 3.4];
       const gap = 1 + ((Math.random() * (slots.length - 2)) | 0);
       const gapZ = slots[gap];

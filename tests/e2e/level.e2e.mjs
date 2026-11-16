@@ -24,7 +24,7 @@ try {
   check(xN1 <= 147, `en el Nivel 1 el héroe no cruza a Francia (x=${xN1.toFixed(1)})`);
 
   // Despejar la pelea de Le Concept termina el Nivel 1
-  await G(() => { const g = window.__game; g.hero.hp = 2; g.hero.hpMax = 5; g.hero.actor.position.set(134, 0, 0); g.enemies.list.forEach(e => { e.hp = 0; }); });
+  await G(() => { const g = window.__game; g.hero.hp = 2; g.hero.hpMax = 5; g.hero.actor.position.set(134, 0, 0); g.traps.forceNext('colectivo'); g.enemies.list.forEach(e => { e.hp = 0; }); });
   await waitFor(() => window.__game.state === 'transition', 4000);
   check(true, 'al despejar Le Concept empieza la transición');
   const text = await page.textContent('#level-card');
@@ -37,6 +37,7 @@ try {
   const s2 = await G(() => ({ x: window.__game.hero.actor.position.x, hp: window.__game.hero.hp }));
   check(s2.x >= 152, `el Nivel 2 arranca en Francia (x=${s2.x.toFixed(1)})`);
   check(s2.hp === 4, `la transición cura 2 corazones (hp ${s2.hp})`);
+  check(await G(() => window.__game.traps.active.length) === 0, 'ninguna trampa de Buenos Aires pasa a Francia');
 
   // No se puede volver a Buenos Aires
   await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(1500); await page.keyboard.up('ArrowLeft');
