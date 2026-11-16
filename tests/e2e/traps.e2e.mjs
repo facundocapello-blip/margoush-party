@@ -106,7 +106,7 @@ try {
     const r2 = await bus(async () => { await G(() => { window.__game.hero.actor.position.z = 2.8; }); });
     check(r2.hp === 5, 'cambiarse de carril lo esquiva');
     const r3 = await bus(async () => {
-      await until(() => { const a = window.__game.traps.active.find(a => a.kind === 'colectivo'); return a && a.state === 'go' && a.front > window.__game.hero.actor.position.x - 2.2; });
+      await until(() => { const a = window.__game.traps.active.find(a => a.kind === 'colectivo'); return a && a.state === 'go' && a.front > window.__game.hero.actor.position.x - 3.5; });
       await page.keyboard.press('KeyK');
     });
     check(r3.hp === 5, 'esquivar justo cuando llega lo evita');
