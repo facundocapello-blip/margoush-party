@@ -26,7 +26,8 @@ export function createRanking({ url, anonKey, fetchImpl = globalThis.fetch, stor
       const res = await fetchImpl(url + path, {
         ...opts,
         signal: ctrl.signal,
-        headers: { apikey: anonKey, Authorization: 'Bearer ' + anonKey, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+        // La clave "anon" clásica (JWT) va también como Bearer; la nueva "publishable" solo como apikey
+        headers: { apikey: anonKey, ...(anonKey.startsWith('eyJ') ? { Authorization: 'Bearer ' + anonKey } : {}), 'Content-Type': 'application/json', ...(opts.headers || {}) }
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res;

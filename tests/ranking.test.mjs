@@ -29,13 +29,13 @@ test('submit rejects invalid score or hero', async () => {
 
 test('submit posts to supabase with keys', async () => {
   const log = [];
-  const r = createRanking({ url: 'https://x.supabase.co', anonKey: 'k', fetchImpl: okFetch(log), storage: memStorage() });
+  const r = createRanking({ url: 'https://x.supabase.co', anonKey: 'eyJk', fetchImpl: okFetch(log), storage: memStorage() });
   const res = await r.submit({ nickname: ' Faca ', hero: 'marine', score: 1234 });
   assert.deepEqual(res, { ok: true, online: true });
   assert.equal(log[0].url, 'https://x.supabase.co/rest/v1/scores');
   assert.equal(log[0].opts.method, 'POST');
-  assert.equal(log[0].opts.headers.apikey, 'k');
-  assert.equal(log[0].opts.headers.Authorization, 'Bearer k');
+  assert.equal(log[0].opts.headers.apikey, 'eyJk');
+  assert.equal(log[0].opts.headers.Authorization, 'Bearer eyJk');
   assert.deepEqual(JSON.parse(log[0].opts.body), { nickname: 'Faca', hero: 'marine', score: 1234 });
 });
 
@@ -89,4 +89,12 @@ test('top falls back to local rows when the request fails', async () => {
   const res = await r.top({ period: 'all' });
   assert.equal(res.online, false);
   assert.equal(res.rows[0].nickname, 'D');
+});
+
+test('new publishable keys go only in the apikey header', async () => {
+  const log = [];
+  const r = createRanking({ url: 'https://x.supabase.co', anonKey: 'sb_publishable_abc', fetchImpl: okFetch(log), storage: memStorage() });
+  await r.submit({ nickname: 'A', hero: 'douge', score: 1 });
+  assert.equal(log[0].opts.headers.apikey, 'sb_publishable_abc');
+  assert.equal(log[0].opts.headers.Authorization, undefined);
 });
