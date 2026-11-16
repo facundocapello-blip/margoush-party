@@ -9,6 +9,7 @@ import { registerSkins } from './skins.js';
 import { createTraps } from './traps.js';
 import { createProps } from './props.js';
 import { createButter } from './butter.js';
+import { createPsycho } from './psycho.js';
 import { createFacu } from './facu.js';
 import { createBoss } from './boss.js';
 import { createStory } from './story.js';
@@ -177,6 +178,7 @@ function updateHud() {
 function clearRun() {
   game.enemies?.clear();
   game.butter?.clear();
+  game.psycho?.stop();
   game.traps?.reset();
   game.boss?.dispose();
   game.boss = null;
@@ -306,7 +308,7 @@ function endTransition() {
   setLevel(game.level + 1);
   const L = LEVELS[game.level - 1];
   const h = game.hero;
-  game.enemies.clear(); game.butter.clear();
+  game.enemies.clear(); game.butter.clear(); game.psycho.stop();
   game.traps.reset(); // nada de Buenos Aires (un colectivo en camino) pasa a Francia
   h.actor.position.set(L.start, 0, 0);
   h.actor.setFacing(1);
@@ -383,6 +385,7 @@ function finish(won) {
   if (game.state !== 'playing' && game.state !== 'rescue') return;
   game.state = 'result';
   input.reset();
+  game.psycho.stop();
   game.lastResult = { won, ...game.score.finalize({ hpLeft: game.hero.hp, hpMax: game.hero.hpMax, seconds: game.time, won }) };
   $('#touch').classList.add('hidden');
   $('#boss-bar').classList.add('hidden');
@@ -424,6 +427,7 @@ function frame(now) {
       game.enemies.update(dt);
       game.traps.update(dt);
       game.butter.update(dt);
+      game.psycho.update(dt);
       game.facu.update(dt);
       game.boss?.update(dt);
       game.props.update(dt, game.time);
@@ -488,6 +492,7 @@ async function boot() {
   game.enemies = createEnemies(ctx);
   game.traps = createTraps(ctx);
   game.butter = createButter(ctx);
+  game.psycho = createPsycho(ctx);
   game.props = createProps(ctx);
   game.pickups = game.props.pickups;
   game.crates = game.props.crates;

@@ -169,6 +169,10 @@ export function createAudio(assets) {
       try { t.currentTime = 0; } catch (_) {}
       t.play().catch(() => {});
     },
+    // Estira o acelera la música de fondo (hongo venenoso); 1 = normal
+    warp(rate) {
+      for (const t of Object.values(themes)) { try { t.preservesPitch = false; t.playbackRate = rate; } catch (_) {} }
+    },
     pauseMusic() {
       paused = true;
       for (const t of Object.values(themes)) t.pause();

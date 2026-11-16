@@ -1,7 +1,8 @@
-// Mamaderas, cajones del pasaje y el secreto.
-const BOTTLES_X = [18, 47, 70, 96, 124, 170, 196, 248];
+// Cervezas y hongos (dan vida), hongos venenosos (pantalla psicodélica), cajones del pasaje y el secreto.
+const GOOD_X = [18, 47, 70, 96, 124, 170, 196, 248]; // cerveza y hongo, alternados
+const POISON_X = [84, 232];
 
-function emojiTexture(emoji) {
+function emojiTexture(emoji, tint = null) {
   const c = document.createElement('canvas'); c.width = c.height = 128;
   const g = c.getContext('2d');
   const r = g.createRadialGradient(64, 64, 10, 64, 64, 64);
@@ -10,6 +11,14 @@ function emojiTexture(emoji) {
   g.font = '80px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
   g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillText(emoji, 64, 70);
+  if (tint) {
+    // Hongo venenoso: violeta con manchas verdes
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = 'rgba(150,60,220,0.65)'; g.fillRect(0, 0, 128, 128);
+    g.fillStyle = '#7dff3a';
+    for (const [x, y, r] of [[48, 40, 7], [74, 34, 6], [86, 52, 5], [58, 56, 5], [38, 56, 4]]) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); }
+    g.globalCompositeOperation = 'source-over';
+  }
   const t = new THREE.CanvasTexture(c);
   t.encoding = THREE.sRGBEncoding;
   return t;
@@ -17,7 +26,11 @@ function emojiTexture(emoji) {
 
 export function createProps(ctx) {
   const { scene, world, fx, game } = ctx;
-  const bottleMat = new THREE.SpriteMaterial({ map: emojiTexture('🍼'), transparent: true, depthWrite: false });
+  const mats = {
+    beer: new THREE.SpriteMaterial({ map: emojiTexture('🍺'), transparent: true, depthWrite: false }),
+    mushroom: new THREE.SpriteMaterial({ map: emojiTexture('🍄'), transparent: true, depthWrite: false }),
+    poison: new THREE.SpriteMaterial({ map: emojiTexture('🍄', true), transparent: true, depthWrite: false })
+  };
   const crateGeo = new THREE.BoxGeometry(1.1, 1.1, 1.1);
   const crateMat = new THREE.MeshLambertMaterial({ color: 0xc28a52 });
   const bandMat = new THREE.MeshLambertMaterial({ color: 0x6b4126 });
@@ -29,14 +42,15 @@ export function createProps(ctx) {
     for (const c of crates.list) scene.remove(c.mesh);
     pickups.list.length = 0;
     crates.list.length = 0;
-    BOTTLES_X.forEach((x, i) => {
-      const z = [-2, 1.5, -0.5, 2.5][i % 4];
-      const s = new THREE.Sprite(bottleMat);
+    const place = (x, z, kind, seed) => {
+      const s = new THREE.Sprite(mats[kind]);
       s.scale.set(1.1, 1.1, 1);
       s.position.set(x, 0.9, z);
       scene.add(s);
-      pickups.list.push({ x, z, taken: false, sprite: s, seed: i });
-    });
+      pickups.list.push({ x, z, kind, taken: false, sprite: s, seed });
+    };
+    GOOD_X.forEach((x, i) => place(x, [-2, 1.5, -0.5, 2.5][i % 4], i % 2 ? 'mushroom' : 'beer', i));
+    POISON_X.forEach((x, i) => place(x, [1.2, -1.2][i], 'poison', 20 + i));
     for (const dx of [-1.15, 0, 1.15]) {
       const mesh = new THREE.Mesh(crateGeo, crateMat);
       const band = new THREE.Mesh(new THREE.BoxGeometry(1.14, 0.18, 1.14), bandMat);
@@ -85,10 +99,17 @@ export function createProps(ctx) {
         if (Math.abs(p.x - b.x) < 0.9 && Math.abs(p.z - b.z) < 0.9 && h.lift < 1.2) {
           b.taken = true;
           scene.remove(b.sprite);
-          h.hp = Math.min(h.hpMax, h.hp + 1);
-          game.score.addPickup('bottle');
-          fx.popup(b.sprite.position.clone().setY(2), '+50 ❤️', '#ff9fb0', { size: 22 });
-          ctx.audio?.sfx('pickup');
+          if (b.kind === 'poison') {
+            game.psycho.start();
+            fx.popup(b.sprite.position.clone().setY(2), '¡UFF! 🌀', '#c084fc', { size: 26, life: 1.1 });
+            game.banner('🍄 ¡HONGO RARO!', 'Se te va la cabeza un ratito… pero no pasa nada.', 3);
+            ctx.audio?.sfx('secret');
+          } else {
+            h.hp = Math.min(h.hpMax, h.hp + 1);
+            game.score.addPickup('bottle');
+            fx.popup(b.sprite.position.clone().setY(2), '+50 ❤️', '#ff9fb0', { size: 22 });
+            ctx.audio?.sfx('pickup');
+          }
         }
       }
       const s = world.secret;
