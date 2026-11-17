@@ -32,7 +32,7 @@ try {
   await shot(page, 'facu-car');
 
   // Facu ya no pelea cuerpo a cuerpo
-  await G(() => { const g = window.__game; g.setStage('vereda'); g.hero.hp = g.hero.hpMax = 99; g.facu.jokeCd = 99; g.enemies.list.forEach(e => e.hp = 50); });
+  await G(() => { const g = window.__game; g.setStage('piquete'); g.traps.disable(); g.hero.hp = g.hero.hpMax = 99; g.facu.jokeCd = 99; g.enemies.list.forEach(e => e.hp = 50); });
   const start = await G(() => window.__game.enemies.list.reduce((s, e) => s + e.hp, 0));
   await page.waitForTimeout(4000);
   check(await G(() => window.__game.enemies.list.reduce((s, e) => s + e.hp, 0)) === start, 'Facu no se mete a pegar');

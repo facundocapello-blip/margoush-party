@@ -76,7 +76,7 @@ try {
 
   // ---------- Personalidad de cada malo ----------
   // Oleada grande: como mucho 2 de cerca y 1 de lejos atacando a la vez
-  await G(() => { const g = window.__game; g.setStage('boulevard'); g.traps.disable(); g.hero.hp = g.hero.hpMax = 99; g.facu.jokeCd = 99; });
+  await G(() => { const g = window.__game; g.setStage('piquete'); g.traps.disable(); g.hero.hp = g.hero.hpMax = 99; g.facu.jokeCd = 99; });
   const peak = await G(() => new Promise((res) => {
     const g = window.__game; let m = 0, r = 0; if (typeof g.enemies.attacking !== 'function') return res({ m: -1, r: -1 });
     const id = setInterval(() => { const a = g.enemies.attacking(); m = Math.max(m, a.melee); r = Math.max(r, a.ranged); }, 50);

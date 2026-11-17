@@ -1,8 +1,8 @@
 // Puntaje de una partida: valores del diseño (sección 8, Puntaje).
-const KILL = { minion: 100, patovica: 250, bombo: 200, mozo: 200, lale: 200, delivery: 200, cepi: 600, boss: 2000 };
+const KILL = { minion: 100, patovica: 250, bombo: 200, mozo: 200, lale: 200, delivery: 200, cepi: 200, cepiJefe: 600, pinky: 200, boss: 2000 };
 // Cortes de rango (múltiplos de 50). Un recorrido de los dos niveles sin recibir daño da ~22.600:
 // S ≈ 80 %, A ≈ 62 %, B ≈ 40 % de eso.
-export const RANKS = { S: 13400, A: 10400, B: 6700 };
+export const RANKS = { S: 14800, A: 11500, B: 7400 };
 const PICKUP = { bottle: 50, secret: 500 };
 const MULT_STEP = 0.1;
 const MULT_MAX = 3;

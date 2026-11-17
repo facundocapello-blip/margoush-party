@@ -105,3 +105,14 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - **Sin grève** (la fila de manifestantes que no te dejaba pasar).
 - **Menos malos (26 → 17)**, sin mozos en las oleadas (se deslizaban); paso más natural: menos pasos por metro, balanceo de lado a lado e inclinación al caminar. Rangos recalibrados (S 13.400, A 10.400, B 6.700).
 - Pendiente: que los malos caminen como Douge y Marine necesita hojas de caminata propias (hoy secuaz, patovica, bombo y delivery tienen un solo dibujo).
+
+## 2026-11-17 · La banda son los amigos (Lale, Cepi y Pinky trapito)
+- Se van de las oleadas el secuaz, el patovica, el del bombo y el delivery (el código queda). La banda de BIG CHAKY son tres amigos de Facu, 18 en total, nunca dos iguales a la vez:
+  - **Pinky «el trapito»** (cuerpo a cuerpo): hincha de Boca que te quiere cobrar el estacionamiento; frases («¿Te lo cuido, jefe?», «¡Son 2 lucas, maestro!»); si te pega te saca $100 de puntaje.
+  - **Lale «Mantecoso»**: tira barras de manteca (como antes).
+  - **Cepi «el Niño»**: tira pelotazos de pádel con sombra de aviso; en el boulevard viene **Cepi jefe** (14 de vida, tira de a tres, barra de vida).
+  - Cada uno se presenta con su cartel la primera vez que aparece; el jefe siempre.
+- Pinky ya no aparece como ayudante (cameo apagado con `PINKY.enabled = false`).
+- Rangos recalibrados (S 14.800, A 11.500, B 7.400).
+- Guía de imágenes para Facu (prompts y referencias, 19 imágenes en orden de prioridad): https://claude.ai/artifact/M1SjeUq8zr8AmHbKP4njeR
+- Pendiente: integrar las imágenes cuando lleguen (tiras de caminata de 6 cuadros para los malos, hojas de acciones, combo/acciones de los héroes, BIG CHAKY, rescate, Le Blé, Punto de Oro, HENRIS, calle porteña pintada, galpón, objetos).

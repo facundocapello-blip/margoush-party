@@ -75,18 +75,6 @@ try {
   await G(() => { const h = window.__game.hero; h.state = 'dodge'; h.t = 0.24; h.dodgeRewarded = false; h.hurt(1, h.actor.position.x + 1); });
   check(await G(() => window.__game.hero.power) > 0.1, 'esquivar justo un golpe suma poder');
 
-  // ---------- Pinky no se pisa con la oleada siguiente ----------
-  await G(() => { const g = window.__game; g.setStage('vereda'); g.enemies.clear(); g.traps.disable(); g.cameos.pinky.shown = { 1: false, 2: false }; g.hero.hp = 99; });
-  await page.waitForFunction(() => window.__game.cameos.busy, null, { timeout: 8000 });
-  await G(() => window.__game.hero.actor.position.set(window.__game.hero.actor.position.x + 30, 0, 0)); // pasa el disparador de vereda-2
-  await page.waitForTimeout(150);
-  const held = await G(() => ({ w: window.__game.waves['vereda-2'], ph: window.__game.cameos.phase }));
-  check(held.w === 'idle' && held.ph === 'party', `al llegar a la oleada, Pinky festeja el gol ya y la oleada espera (${held.w}, ${held.ph})`);
-  const tw = Date.now();
-  await page.waitForFunction(() => window.__game.waves['vereda-2'] === 'active', null, { timeout: 4000 });
-  check(Date.now() - tw < 2500, `la oleada entra enseguida, cuando Pinky se va (${Date.now() - tw} ms)`);
-  check(await G(() => Object.values(window.__game.waves).filter(v => v === 'active').length) === 1, 'nunca hay dos oleadas a la vez');
-
   // ---------- Elección de héroe: dice en qué se diferencian ----------
   const cards = await G(() => [...document.querySelectorAll('.card em')].map(e => e.textContent));
   check(cards.length === 2 && cards.every(t => t.includes('⚡')), `las cartas explican el poder: ${cards.join(' | ')}`);

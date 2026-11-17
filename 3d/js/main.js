@@ -189,6 +189,7 @@ function updateHud(dt = 0) {
 
 function clearRun() {
   game.levelExit = false;
+  game.enemies?.resetIntros?.();
   game.enemies?.clear();
   game.butter?.clear();
   game.cameos?.clear();

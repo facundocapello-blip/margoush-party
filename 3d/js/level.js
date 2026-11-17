@@ -22,29 +22,30 @@ export const GATES = [
 ];
 
 // Oleadas en orden. gate = índice del portón que abren al despejarse.
-// Pocos malos por tanda (17 en total): mejor pocos y que se muevan bien que muchos deslizándose.
+// La banda son tres amigos de Facu: Pinky el trapito (te cobra el estacionamiento), Lale (manteca) y Cepi (pelotazos de pádel).
+// Pocos por tanda (18 en total) y nunca dos iguales a la vez.
 export const WAVES = [
   { id: 'vereda', level: 1, trigger: 22, gate: null, title: 'LA VEREDA', text: '¡Llegó la banda de BIG CHAKY!',
-    spawns: [{ dx: 9, dz: -1.2, kind: 'secuaz' }, { dx: -8, dz: 1.2, kind: 'secuaz' }] },
-  { id: 'vereda-2', level: 1, trigger: 50, gate: 0, title: 'OJO CON EL PATOVICA', text: 'Grandote y lento: no te dejes agarrar.',
-    spawns: [{ dx: 8, dz: 0, kind: 'patovica' }, { dx: 9, dz: 1.2, kind: 'lale' }] },
+    spawns: [{ dx: 9, dz: -0.8, kind: 'pinky' }] },
+  { id: 'vereda-2', level: 1, trigger: 50, gate: 0, title: 'MANTECA EN LA VEREDA', text: 'Lale y Pinky te cortan el paso.',
+    spawns: [{ dx: 9, dz: 1.2, kind: 'lale' }, { dx: 8, dz: -1, kind: 'pinky' }] },
   { id: 'avenida', level: 1, trigger: 72, gate: null, title: 'LA AVENIDA', text: 'Cuidado con el colectivo: no frena.',
-    spawns: [{ dx: 9, dz: -2, kind: 'secuaz' }, { dx: -8, dz: 1.5, kind: 'secuaz' }] },
-  { id: 'piquete', level: 1, trigger: 106, gate: 1, title: '¡PIQUETE!', text: 'Vencé a los del bombo para que levanten el corte.',
-    spawns: [{ dx: 7, dz: -2, kind: 'bombo' }, { dx: 8, dz: 2, kind: 'bombo' }] },
+    spawns: [{ dx: 9, dz: -1.5, kind: 'cepi' }, { dx: -8, dz: 1.5, kind: 'pinky' }] },
+  { id: 'piquete', level: 1, trigger: 106, gate: 1, title: '¡PIQUETE!', text: 'Sacá a la banda para que levanten el corte.',
+    spawns: [{ dx: 7, dz: -2, kind: 'lale' }, { dx: 8, dz: 2, kind: 'cepi' }, { dx: 5, dz: 0, kind: 'pinky' }] },
   { id: 'le-concept', level: 1, trigger: 126, gate: null, endsLevel: true, title: '¡LLEGAMOS A LE CONCEPT!', text: 'La banda copó la puerta del restaurante.',
     facu: '¡Llegamos a Le Concept! La banda copó la puerta: ¡sacalos!',
-    spawns: [{ dx: 8, dz: 0, kind: 'patovica' }, { dx: 6, dz: 2.2, kind: 'secuaz' }] },
+    spawns: [{ dx: 8, dz: 0, kind: 'pinky' }, { dx: 9, dz: 2.2, kind: 'cepi' }] },
 
-  { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE', text: '¡Lale te siguió hasta Francia con la manteca!',
-    spawns: [{ dx: 8, dz: 0, kind: 'secuaz' }, { dx: 9, dz: -1.2, kind: 'lale' }] },
-  { id: 'francia-2', level: 2, trigger: 186, gate: 2, title: '¡DELIVERY!', text: 'Viene en bici a toda velocidad: esquivalo.',
-    spawns: [{ dx: 10, dz: 1.5, kind: 'delivery' }, { dx: 9, dz: -2, kind: 'secuaz' }] },
+  { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE', text: '¡La banda te siguió hasta Francia!',
+    spawns: [{ dx: 8, dz: 0, kind: 'pinky' }, { dx: 9, dz: -1.2, kind: 'lale' }] },
+  { id: 'francia-2', level: 2, trigger: 186, gate: 2, title: 'PELOTAZOS', text: 'Cepi y Lale tiran desde lejos: acercate rápido.',
+    spawns: [{ dx: 10, dz: 1.5, kind: 'cepi' }, { dx: 9, dz: -2, kind: 'lale' }] },
   // Mini-jefe a mitad del nivel 2: Cepi «el Niño», el hermano de Facu, viene re caliente
   { id: 'boulevard', level: 2, trigger: 212, gate: null, title: 'LE BOULEVARD', text: '¡Ojo! Viene el hermano de Facu…',
-    spawns: [{ dx: 10, dz: 0, kind: 'cepi' }] },
+    spawns: [{ dx: 10, dz: 0, kind: 'cepiJefe' }] },
   { id: 'boulevard-2', level: 2, trigger: 238, gate: 3, title: 'ÚLTIMO TRAMO', text: 'Atrás de esta barrera está el galpón.',
-    spawns: [{ dx: 8, dz: -1.5, kind: 'patovica' }, { dx: 10, dz: 1.8, kind: 'delivery' }] }
+    spawns: [{ dx: 8, dz: -1.5, kind: 'pinky' }, { dx: 10, dz: 1.8, kind: 'lale' }, { dx: 11, dz: 0, kind: 'cepi' }] }
 ];
 
 // Trampas. zone: tramo donde actúan las que aparecen solas.

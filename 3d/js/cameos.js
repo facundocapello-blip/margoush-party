@@ -4,7 +4,8 @@ import { WAVES } from './level.js';
 
 // Pinky, el hincha de Boca: una vez por nivel, cuando la zona queda despejada, viene corriendo
 // a ayudarte… escucha un gol por la radio, festeja y se va a la cancha. Nunca ayuda.
-export const PINKY = { calm: 1.5, run: 7, leave: 9, keep: 2.5, wait: 0.8, party: 1.0, heightM: 2.25 };
+// Apagado: ahora Pinky es uno de los malos (el trapito). Queda el código por si vuelve como chiste aparte.
+export const PINKY = { enabled: false, calm: 1.5, run: 7, leave: 9, keep: 2.5, wait: 0.8, party: 1.0, heightM: 2.25 };
 export const PINKY_LINES = { hello: '¡Aguantá que te ayudo!', goal: '📻 ¡GOOOL DE BOCA!', bye: '¡Me voy a la cancha!' };
 
 export function createCameos(ctx) {
@@ -14,6 +15,7 @@ export function createCameos(ctx) {
   let calm = 0;   // segundos seguidos con la zona despejada
 
   function ready() {
+    if (!PINKY.enabled) return false;
     const lvl = game.level;
     if (pinky.shown[lvl] || game.boss || game.story?.inIntro) return false;
     if (game.enemies.alive() > 0) return false;

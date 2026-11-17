@@ -16,7 +16,10 @@ export const KINDS = {
   bombo: { tex: 'face_bombo_sheet', hp: 4, scale: 1.05, speed: 2.8, ai: 'bombo', ranged: true, points: 'bombo', gait: { cadence: 2.0, bob: 0.22 } },
   mozo: { tex: 'face_mozo_sheet', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', ranged: true, points: 'mozo', gait: { cadence: 0, bob: 0 } },
   lale: { tex: 'courier_lale', hp: 4, scale: 1, speed: 3.0, ai: 'lale', ranged: true, points: 'lale', name: 'LALE «MANTECOSO»', gait: { cadence: 1.5, bob: 0.1, sway: 0.05 } },
-  cepi: { tex: 'courier_cepi', hp: 14, scale: 1.2, speed: 3.4, windup: 0.5, ai: 'melee', shove: 8, points: 'cepi', name: 'CEPI «EL NIÑO»', miniBoss: true, gait: { cadence: 1.5, bob: 0.1, sway: 0.06 } },
+  // Los malos de la banda son amigos de Facu: Lale (manteca), Cepi (pelotazos de pádel) y Pinky (trapito)
+  cepi: { tex: 'courier_cepi', hp: 4, scale: 1.05, speed: 3.0, ai: 'cepi', ranged: true, points: 'cepi', name: 'CEPI «EL NIÑO»', gait: { cadence: 1.5, bob: 0.1, sway: 0.06 } },
+  cepiJefe: { tex: 'courier_cepi', sheet: 'cepi', hp: 14, scale: 1.25, speed: 3.2, ai: 'cepi', ranged: true, burst: 3, points: 'cepiJefe', name: 'CEPI «EL NIÑO»', miniBoss: true, gait: { cadence: 1.4, bob: 0.1, sway: 0.06 } },
+  pinky: { tex: 'courier_pinky', hp: 4, scale: 1.05, speed: 3.4, windup: 0.5, ai: 'melee', fee: 100, points: 'pinky', name: 'PINKY «EL TRAPITO»', gait: { cadence: 1.6, bob: 0.12, sway: 0.07 } },
   delivery: { tex: 'face_delivery_sheet', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', ranged: true, points: 'delivery', gait: { cadence: 0, bob: 0 } }
 };
 const LEGACY = ['secuaz', 'secuaz', 'patovica']; // tipos numéricos viejos
@@ -25,7 +28,9 @@ export const MAX_RANGED = 1; // de lejos (bombo, mozo, delivery…) a la vez
 export const PATOVICA = { warn: 0.95, speed: 9, run: 7 };
 const WAIT = { min: 2.8, spread: 1.6, settle: 0.6, gap: 0.4 }; // anillo de espera alrededor del héroe
 const TAUNTS = ['¡Vení!', '¡Dale!', '¡Jaja!'];
-export const CEPI_TAUNTS = ['¡Me tenés podrido!', '¡Vení para acá!', '¡Dale que es fácil, che!', '¡Andá a jugar a la bolita!', '¡Te voy a acusar con mamá!'];
+export const CEPI_TAUNTS = ['¡Me tenés podrido!', '¡Tomá, pelotazo!', '¡Dale que es fácil, che!', '¡Andá a jugar a la bolita!', '¡Te voy a acusar con mamá!'];
+export const PINKY_TAUNTS = ['¿Te lo cuido, jefe?', '¡Son 2 lucas, maestro!', '¡Dale que te lo lavo!', '¡Acá se paga por adelantado!', '¡Aguante Boca!'];
+export const CEPI = { every: 2.6, windup: 0.45, keep: 6.5, spread: 1.4 };
 const MELEE_BUSY = ['windup', 'strike', 'ring', 'charge'];
 export const BOMBO = { every: 4, windup: 0.9, radius: 3.2, stun: 1 };
 export const MOZO = { every: 2.5, flight: 0.9, hitRadius: 0.75 };
@@ -51,6 +56,7 @@ export function createEnemies(ctx) {
   const dangerMat = new THREE.MeshBasicMaterial({ color: 0xff5a3c, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide });
   const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd36e, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide });
   const croissantMat = new THREE.SpriteMaterial({ map: emojiTex('🥐'), transparent: true, depthWrite: false });
+  const ballMat = new THREE.SpriteMaterial({ map: emojiTex('🎾'), transparent: true, depthWrite: false });
   const markMat = new THREE.MeshBasicMaterial({ color: 0xff5a3c, transparent: true, opacity: 0.5, depthWrite: false });
   const laneMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.35, depthWrite: false });
   const wheelGeo = new THREE.TorusGeometry(0.42, 0.06, 6, 18);
@@ -79,7 +85,7 @@ export function createEnemies(ctx) {
   function spawn(x, z, kind = 'secuaz') {
     if (typeof kind === 'number') kind = LEGACY[kind] || 'secuaz';
     const k = KINDS[kind];
-    const actor = new SpriteActor(scene, assets, { poses: sheetPoses(assets, kind, k.tex), heightM: 2.25 * k.scale });
+    const actor = new SpriteActor(scene, assets, { poses: sheetPoses(assets, k.sheet || kind, k.tex), heightM: 2.25 * k.scale });
     actor.position.set(x, 0, z);
     const e = { actor, pos: actor.position, kind, k, hp: k.hp, maxHp: k.hp, state: 'walk', t: 0, cd: 0.6 + Math.random(), stun: 0, kx: 0,
       slotZ: (Math.random() - 0.5) * 1.6, seed: Math.random() * 10, dead: 0, extras: [],
@@ -94,7 +100,7 @@ export function createEnemies(ctx) {
       e.lane = flatMesh(new THREE.PlaneGeometry(PATOVICA.run, 1.2), laneMat);
       e.extras.push(e.lane);
     }
-    if (k.ai === 'mozo' || k.ai === 'lale') e.cd = 1.2 + Math.random();
+    if (k.ai === 'mozo' || k.ai === 'lale' || k.ai === 'cepi') e.cd = 1.2 + Math.random();
     if (k.ai === 'delivery') {
       e.cd = 1 + Math.random();
       e.bike = buildBike();
@@ -214,14 +220,22 @@ export function createEnemies(ctx) {
       const reach = e.kind === 'patovica' ? 2.1 : 1.7;
       if (!e.struck && ex > -0.3 && ex < reach && Math.abs(dz) < 0.65 && hero.lift < 0.8) {
         e.struck = true;
-        if (hero.hurt(1, e.pos.x) && e.k.shove) hero.push(a.facing * e.k.shove, 0);
+        if (hero.hurt(1, e.pos.x)) {
+          if (e.k.shove) hero.push(a.facing * e.k.shove, 0);
+          // El trapito te cobra el estacionamiento
+          if (e.k.fee) {
+            game.score.addPenalty(e.k.fee);
+            fx.popup(hp.clone().setY(3.1), '-$' + e.k.fee + ' ¡ESTACIONAMIENTO!', '#ffb347', { size: 22, life: 1.2 });
+            ctx.audio?.sfx('coin');
+          }
+        }
       }
       if (e.t <= 0) { e.state = 'walk'; e.cd = e.kind === 'patovica' ? 1.8 : 1.2; e.struck = false; e.engaged = false; }
     } else if (e.state === 'ring' || e.state === 'charge') {
       patovicaCharge(e, dt, hero, hp);
     } else {
       a.lean = 0;
-      if (e.kind === 'cepi') cepiTaunt(e, dt);
+      if (e.kind === 'pinky') taunt(e, dt, PINKY_TAUNTS, '#ffe08a');
       // Turnos: como mucho dos encarando al héroe; el resto espera a distancia, mirándolo
       if (!e.engaged && e.cd <= 0 && engagedCount() < MAX_ATTACKERS && game.time - lastEngage > WAIT.gap) {
         e.engaged = true;
@@ -257,12 +271,12 @@ export function createEnemies(ctx) {
   }
 
   // Cepi grita mientras te busca (y su barra de vida usa la del jefe)
-  function cepiTaunt(e, dt) {
-    e.taunt = (e.taunt ?? 1) - dt;
+  function taunt(e, dt, lines, color) {
+    e.taunt = (e.taunt ?? 1 + Math.random() * 2) - dt;
     if (e.taunt > 0) return;
-    e.taunt = 2.6 + Math.random();
-    const line = CEPI_TAUNTS[Math.floor(Math.random() * CEPI_TAUNTS.length)];
-    fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.7), line, '#ff9b8a', { size: 20, life: 1.4, rise: 0.25 });
+    e.taunt = 3.2 + Math.random() * 1.5;
+    const line = lines[Math.floor(Math.random() * lines.length)];
+    fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.7), line, color, { size: 19, life: 1.4, rise: 0.25 });
   }
   function miniBossBar(e) {
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
@@ -421,6 +435,48 @@ export function createEnemies(ctx) {
     }
   }
 
+  // Cepi: se queda a distancia y te tira pelotazos de pádel (el jefe tira de a tres, abiertos)
+  function cepi(e, dt, hero, hp, dx) {
+    const a = e.actor;
+    a.setFacing(dx >= 0 ? 1 : -1);
+    taunt(e, dt, CEPI_TAUNTS, '#ff9b8a');
+    if (e.state === 'throw') {
+      e.t -= dt;
+      a.offsetX = 0.2;
+      if (e.t <= 0) {
+        e.state = 'walk'; e.cd = CEPI.every * (e.k.miniBoss ? 0.8 : 1);
+        const n = e.k.burst || 1;
+        for (let i = 0; i < n; i++) {
+          const off = n > 1 ? (i - (n - 1) / 2) * CEPI.spread : 0;
+          throwShot(e, new THREE.Vector3(e.throwX + (n > 1 ? off * 0.5 : 0), 0, Math.max(-3.2, Math.min(3.2, e.throwZ + off))), ballMat, 0.55);
+        }
+        ctx.audio?.sfx('swing');
+      }
+      return;
+    }
+    const side = dx > 0 ? -1 : 1;
+    const lb = world.levelBounds;
+    let wantX = hp.x + side * CEPI.keep;
+    if (wantX < lb.minX + 1 || wantX > lb.maxX - 1) wantX = hp.x - side * CEPI.keep;
+    approach(e, dt, wantX, hp.z + e.slotZ * 0.6, e.k.speed);
+    a.offsetX *= 0.9;
+    if (e.cd <= 0 && Math.abs(dx) < 11 && (e.k.miniBoss || rangedFree())) {
+      e.state = 'throw'; e.t = CEPI.windup;
+      e.throwX = hp.x; e.throwZ = hp.z;
+      fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.4), '🎾', '#fff', { size: 26, life: 0.5, rise: 0.3 });
+    }
+  }
+
+  function throwShot(e, target, mat, size) {
+    const mark = new THREE.Mesh(new THREE.CircleGeometry(MOZO.hitRadius, 24), markMat);
+    mark.rotation.x = -Math.PI / 2; mark.position.set(target.x, 0.05, target.z);
+    const sp = new THREE.Sprite(mat); sp.scale.set(size, size, 1);
+    const from = e.pos.clone().setY(1.7);
+    sp.position.copy(from);
+    scene.add(mark, sp);
+    shots.push({ from, target, t: 0, sprite: sp, mark, owner: e });
+  }
+
   function updateShots(dt) {
     const hero = game.hero, hp = hero.actor.position;
     for (let i = shots.length - 1; i >= 0; i--) {
@@ -491,9 +547,18 @@ export function createEnemies(ctx) {
     }
   }
 
+  const introduced = new Set();
+  const INTROS = {
+    lale: [KINDS.lale.name, 'Tira barras de manteca: ¡no las pises!'],
+    cepi: [KINDS.cepi.name, 'Te tira pelotazos de pádel: movete de la sombra.'],
+    cepiJefe: ['😡 ' + KINDS.cepiJefe.name + ' (JEFE)', 'El hermano de Facu vino re caliente: ¡aguantalo!'],
+    pinky: [KINDS.pinky.name, 'Te quiere cobrar el estacionamiento: si te pega, te saca plata.']
+  };
+
   return {
     list,
     shots,
+    resetIntros() { introduced.clear(); },
     spawnWave(zoneId) {
       const hx = game.hero.actor.position.x;
       const wave = WAVES.find(w => w.id === zoneId);
@@ -501,12 +566,10 @@ export function createEnemies(ctx) {
       for (const d of wave ? wave.spawns : []) {
         const x = Math.min(lb.maxX - 1, Math.max(lb.minX + 1, hx + d.dx));
         spawn(x, d.dz, d.kind);
-        if (d.kind === 'lale') game.banner(KINDS.lale.name, '¡Cuidado con la manteca!');
-        if (d.kind === 'cepi') {
-          game.banner('😡 ' + KINDS.cepi.name, 'El hermano de Facu vino re caliente: ¡aguantalo!', 3.4);
-          miniBossBar(list[list.length - 1]);
-          ctx.audio?.sfx('boo');
-        }
+        // Cada amigo se presenta con su cartel la primera vez que aparece en la partida
+        const intro = INTROS[d.kind];
+        if (intro && (!introduced.has(d.kind) || KINDS[d.kind].miniBoss)) { introduced.add(d.kind); game.banner(intro[0], intro[1], 3.2); }
+        if (KINDS[d.kind]?.miniBoss) { miniBossBar(list[list.length - 1]); ctx.audio?.sfx('boo'); }
       }
     },
     spawn,
@@ -580,6 +643,7 @@ export function createEnemies(ctx) {
         else if (e.k.ai === 'bombo') bombo(e, dt, hero, hp, dx);
         else if (e.k.ai === 'mozo') mozo(e, dt, hero, hp, dx);
         else if (e.k.ai === 'lale') lale(e, dt, hero, hp, dx);
+        else if (e.k.ai === 'cepi') cepi(e, dt, hero, hp, dx);
         else if (e.k.ai === 'delivery') delivery(e, dt, hero, hp, dx, dz);
 
         e.kx *= Math.max(0, 1 - dt * 7);
