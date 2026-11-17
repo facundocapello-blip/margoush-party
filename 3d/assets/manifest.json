@@ -211,5 +211,35 @@
   "rows": 1,
   "skull": 198.0,
   "foot": 0.985
+ },
+ "pinky_sheet": {
+  "file": "pinky_sheet.webp",
+  "w": 1112,
+  "h": 400,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 131.0,
+  "foot": 0.985
+ },
+ "cepi_sheet": {
+  "file": "cepi_sheet.webp",
+  "w": 904,
+  "h": 400,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 164.0,
+  "foot": 0.985
+ },
+ "lale_sheet": {
+  "file": "lale_sheet.webp",
+  "w": 952,
+  "h": 400,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 125.0,
+  "foot": 0.985
  }
 }

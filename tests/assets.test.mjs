@@ -7,7 +7,8 @@ const dir = new URL('../3d/assets/', import.meta.url).pathname;
 const NAMES = ['douge_idle','douge_run','douge_attack','marine_idle','marine_run','marine_attack','chaky_run',
   'boss_idle','boss_run','boss_attack','boss_hurt','margot_sheet','kidnap_sheet','courier','street_bg','facu',
   'music_douge','music_marine',
-  'face_secuaz_sheet','face_patovica_sheet','face_bombo_sheet','face_mozo_sheet','face_delivery_sheet'];
+  'face_secuaz_sheet','face_patovica_sheet','face_bombo_sheet','face_mozo_sheet','face_delivery_sheet',
+  'pinky_sheet','cepi_sheet','lale_sheet'];
 
 test('manifest lists every asset and each file exists', () => {
   const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
