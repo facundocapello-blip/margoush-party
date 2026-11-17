@@ -560,7 +560,7 @@ async function boot() {
   for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => {
     audio.primeSpeech();
     // Chiste: al elegir a Marine dice «¡Messi Goku!» (en vez de «merci beaucoup»)
-    if (card.dataset.hero === 'marine') { audio.sfx('messigoku'); audio.say('Messi Goku !', 'fr-FR'); }
+    if (card.dataset.hero === 'marine') audio.messiGoku();
     startRun(card.dataset.hero, true);
   });
   $('#btn-pause').addEventListener('click', pause);

@@ -30,34 +30,36 @@ export function punch(ac, out, noise, t, power = 1) {
   if (power > 1.2) noiseBurst(ac, out, noise, t + 0.01, 0.22, 0.25, 'lowpass', 260, 0.8, 0.01);
 }
 
-// Voz de dibujito «¡Diuuuuushbag!» sintetizada por formantes (sin archivos).
+// «¡DIUSHBAG!» gritado corto y explosivo, estilo «¡Hadouken!»: sintetizado por formantes (sin archivos).
+// Medio segundo: «DIU» que sube, «SH» cortante y «BAG!» acentuado con estallido y ráfaga de bola de fuego.
 // pitch: 1 normal, <1 voz grave, >1 voz finita. Devuelve cuánto dura.
-const FORMANTS = { i: [270, 2290, 3010], u: [310, 870, 2240], ae: [680, 1720, 2410] };
+const FORMANTS = { i: [300, 2300, 3000], u: [330, 900, 2240], ae: [720, 1700, 2450] };
+export const DIUSH = { u: 0.05, uEnd: 0.2, sh: 0.19, shEnd: 0.3, b: 0.31, ae: 0.34, g: 0.5 };
 export function diushbag(ac, out, noise, t, pitch = 1) {
-  const p = pitch;
-  const tU = t + 0.16, tUend = t + 0.82, tSh = t + 0.8, tShEnd = t + 1.04, tB = t + 1.06, tAE = t + 1.1, tG = t + 1.3;
+  const p = pitch, T = DIUSH;
+  const tU = t + T.u, tUend = t + T.uEnd, tSh = t + T.sh, tShEnd = t + T.shEnd, tB = t + T.b, tAE = t + T.ae, tG = t + T.g;
   const src = ac.createOscillator(); src.type = 'sawtooth';
   const f = src.frequency;
-  f.setValueAtTime(180 * p, t);
-  f.linearRampToValueAtTime(290 * p, tU);
-  f.linearRampToValueAtTime(330 * p, t + 0.5);
-  f.linearRampToValueAtTime(230 * p, tUend);
-  f.setValueAtTime(210 * p, tB);
-  f.linearRampToValueAtTime(150 * p, tG);
-  // vibrato que crece en la «uuuu»
-  const lfo = ac.createOscillator(); lfo.frequency.value = 7;
-  const lg = ac.createGain();
-  lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(18 * p, t + 0.5); lg.gain.setValueAtTime(0, tUend);
-  lfo.connect(lg); lg.connect(f);
+  // grito: arranca alto, sube en la «U» y el «BAG» cae con fuerza
+  f.setValueAtTime(260 * p, t);
+  f.linearRampToValueAtTime(350 * p, tU);
+  f.linearRampToValueAtTime(380 * p, tUend);
+  f.setValueAtTime(400 * p, tB);
+  f.exponentialRampToValueAtTime(240 * p, tG);
   const vg = ac.createGain();
   const G = vg.gain;
-  G.setValueAtTime(0, t); G.linearRampToValueAtTime(1, t + 0.03);
-  G.setValueAtTime(1, tUend - 0.1); G.linearRampToValueAtTime(0, tUend);
-  G.setValueAtTime(0, tB); G.linearRampToValueAtTime(1.15, tAE);
-  G.setValueAtTime(1.15, tG - 0.04); G.linearRampToValueAtTime(0, tG);
-  src.connect(vg);
-  const mix = ac.createGain(); mix.gain.value = 0.5;
-  [[6, 1], [10, 0.7], [12, 0.4]].forEach(([q, amp], k) => {
+  G.setValueAtTime(0, t); G.linearRampToValueAtTime(0.7, t + 0.012);
+  G.setValueAtTime(0.7, tUend - 0.03); G.linearRampToValueAtTime(0, tUend);
+  G.setValueAtTime(0, tB); G.linearRampToValueAtTime(2.4, tB + 0.015);
+  G.setValueAtTime(2.4, tG - 0.05); G.linearRampToValueAtTime(0, tG);
+  // un poco de saturación: suena a grito y no a robot
+  const sat = ac.createWaveShaper();
+  const curve = new Float32Array(256);
+  for (let i = 0; i < 256; i++) { const x = i / 128 - 1; curve[i] = Math.tanh(x * 2.6); }
+  sat.curve = curve;
+  src.connect(vg); vg.connect(sat);
+  const mix = ac.createGain(); mix.gain.value = 0.62;
+  [[5, 1], [9, 0.75], [11, 0.45]].forEach(([q, amp], k) => {
     const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q;
     const F = bp.frequency;
     F.setValueAtTime(FORMANTS.i[k], t);
@@ -65,28 +67,48 @@ export function diushbag(ac, out, noise, t, pitch = 1) {
     F.setValueAtTime(FORMANTS.u[k], tUend);
     F.setValueAtTime(FORMANTS.ae[k] * 0.6, tB);
     F.linearRampToValueAtTime(FORMANTS.ae[k], tAE);
-    F.setValueAtTime(FORMANTS.ae[k], tG - 0.06);
+    F.setValueAtTime(FORMANTS.ae[k], tG - 0.05);
     F.linearRampToValueAtTime(k === 1 ? 2100 : FORMANTS.ae[k] * 0.8, tG);
-    const a = ac.createGain(); a.gain.value = amp * 2.2;
-    vg.connect(bp); bp.connect(a); a.connect(mix);
+    const a = ac.createGain(); a.gain.value = amp * 2.4;
+    sat.connect(bp); bp.connect(a); a.connect(mix);
   });
   mix.connect(out);
-  noiseBurst(ac, out, noise, t, 0.03, 0.25, 'bandpass', 3200, 1.2, 0.001); // D
-  // SH
+  noiseBurst(ac, out, noise, t, 0.025, 0.35, 'bandpass', 3200, 1.2, 0.001); // D
+  // SH cortante
   const s = ac.createBufferSource(); s.buffer = noise;
-  const sf = ac.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 2700; sf.Q.value = 1.6;
+  const sf = ac.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 3000; sf.Q.value = 1.4;
   const sg = ac.createGain();
-  sg.gain.setValueAtTime(0, tSh); sg.gain.linearRampToValueAtTime(0.55, tSh + 0.05);
-  sg.gain.setValueAtTime(0.55, tShEnd - 0.05); sg.gain.linearRampToValueAtTime(0, tShEnd);
+  sg.gain.setValueAtTime(0, tSh); sg.gain.linearRampToValueAtTime(0.75, tSh + 0.02);
+  sg.gain.setValueAtTime(0.75, tShEnd - 0.03); sg.gain.linearRampToValueAtTime(0, tShEnd);
   s.connect(sf); sf.connect(sg); sg.connect(out);
   s.start(tSh); s.stop(tShEnd + 0.02);
-  noiseBurst(ac, out, noise, tG, 0.04, 0.3, 'bandpass', 1700, 2, 0.002); // G
-  src.start(t); lfo.start(t);
-  src.stop(tG + 0.1); lfo.stop(tG + 0.1);
-  return tG + 0.1 - t;
+  // B: golpe seco + estallido grave, y la «bola de fuego» que sale silbando
+  punch(ac, out, noise, tB, 2.2);
+  const boom = ac.createOscillator(); boom.type = 'sine';
+  boom.frequency.setValueAtTime(140, tB); boom.frequency.exponentialRampToValueAtTime(42, tB + 0.35);
+  const bg = ac.createGain(); bg.gain.setValueAtTime(0.0001, tB); bg.gain.exponentialRampToValueAtTime(0.9, tB + 0.01); bg.gain.exponentialRampToValueAtTime(0.001, tB + 0.4);
+  boom.connect(bg); bg.connect(out); boom.start(tB); boom.stop(tB + 0.42);
+  const w = ac.createBufferSource(); w.buffer = noise;
+  const wf = ac.createBiquadFilter(); wf.type = 'bandpass'; wf.Q.value = 2.5;
+  wf.frequency.setValueAtTime(500, tG - 0.06); wf.frequency.exponentialRampToValueAtTime(3800, tG + 0.4);
+  const wg = ac.createGain(); wg.gain.setValueAtTime(0, tG - 0.06); wg.gain.linearRampToValueAtTime(0.5, tG + 0.05); wg.gain.linearRampToValueAtTime(0, tG + 0.42);
+  w.connect(wf); wf.connect(wg); wg.connect(out); w.start(tG - 0.06); w.stop(tG + 0.45);
+  noiseBurst(ac, out, noise, tG, 0.03, 0.35, 'bandpass', 1700, 2, 0.002); // G
+  src.start(t); src.stop(tG + 0.05);
+  return tG + 0.45 - t;
+}
+
+// Voz de Marine: una voz francesa de mujer, dulce (si el celu la tiene). «Messi Gokou» suena a «merci beaucoup».
+const FEMALE_FR = ['Amélie', 'Audrey', 'Aurélie', 'Marie', 'Virginie', 'Julie', 'Hortense', 'Denise', 'Céline', 'Léa', 'Chantal', 'Google français', 'Microsoft Denise'];
+const MALE_FR = ['Thomas', 'Jacques', 'Daniel', 'Nicolas', 'Paul', 'Henri', 'Claude', 'Microsoft Paul'];
+export function pickFemaleFrench(voices) {
+  const fr = voices.filter(v => /^fr/i.test(v.lang));
+  for (const name of FEMALE_FR) { const v = fr.find(x => x.name.includes(name)); if (v) return v; }
+  return fr.find(v => /female|femme|woman/i.test(v.name)) || fr.find(v => !MALE_FR.some(m => v.name.includes(m))) || fr[0] || null;
 }
 
 export function createAudio(assets) {
+  if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); speechSynthesis.addEventListener?.('voiceschanged', () => speechSynthesis.getVoices()); } catch (_) {} }
   let muted = false;
   try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (_) {}
   let ac = null, master = null, noise = null;
@@ -305,13 +327,24 @@ export function createAudio(assets) {
       if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
       try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (_) {}
     },
-    say(text, lang) {
+    // opts: { female: true } = voz francesa de mujer, dulce y encantadora (más aguda y un poco más lenta)
+    say(text, lang, opts = {}) {
       if (muted || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang;
-      u.volume = 0.9;
+      u.volume = 1;
+      if (opts.female) {
+        const v = pickFemaleFrench(speechSynthesis.getVoices());
+        if (v) { u.voice = v; u.lang = v.lang; }
+        u.pitch = 1.35; u.rate = 0.92;
+      }
       speechSynthesis.speak(u);
+    },
+    // Marine dice «¡Messi Goku!» como un «merci beaucoup» encantador
+    messiGoku() {
+      this.sfx('messigoku');
+      this.say('Messi Gokou !', 'fr-FR', { female: true });
     }
   };
 }
