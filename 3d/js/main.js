@@ -4,7 +4,6 @@ import { createInput } from './input.js';
 import { createScore } from './score.js';
 import { createFx } from './fx.js';
 import { createHero, HERO_CFG, POWER } from './hero.js';
-import { createCoach } from './coach.js';
 import { createEnemies } from './enemies.js';
 import { registerSkins } from './skins.js';
 import { createTraps } from './traps.js';
@@ -33,6 +32,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
 const PITCH = THREE.MathUtils.degToRad(30);
 const BASE_DIST = 11.5;
+const PORTRAIT = { fov: 60, halfWidth: 4.0 };
 let camDist = BASE_DIST;
 const camTarget = new THREE.Vector3(6, 1.2, 0);
 
@@ -53,7 +53,7 @@ const game = {
 };
 window.__game = game;
 
-let assets, world, input, fx, audio, ui, coach;
+let assets, world, input, fx, audio, ui;
 const TOUCH = matchMedia('(pointer: coarse)').matches;
 
 // Rendimiento: mide la lógica por cuadro y baja la calidad si el equipo no llega a 38 FPS sostenidos
@@ -136,21 +136,18 @@ function resize() {
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, QUALITY_DPR[game.perf.level]));
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
+  // Celu parado: lente más abierta y menos calle a lo ancho, para que los personajes no queden chiquitos
+  game.portrait = camera.aspect < 0.9;
+  camera.fov = game.portrait ? PORTRAIT.fov : 40;
   const halfV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  camDist = Math.max(BASE_DIST, 6 / (halfV * camera.aspect));
+  camDist = Math.max(BASE_DIST, (game.portrait ? PORTRAIT.halfWidth : 6) / (halfV * camera.aspect));
+  document.body.classList.toggle('portrait', game.portrait);
   camera.updateProjectionMatrix();
   updateRotateHint();
 }
 
-// "Girá el celular": solo jugando en un celular en vertical
-function updateRotateHint() {
-  const touch = matchMedia('(pointer: coarse)').matches;
-  const show = touch && innerHeight > innerWidth && (game.state === 'playing' || game.state === 'intro');
-  $('#rotate-hint').classList.toggle('hidden', !show);
-  // En vertical el juego se frena (nadie te pega mientras girás el celu)
-  game.portraitBlock = show;
-  if (show) input?.reset();
-}
+// Se juega igual con el celu parado o acostado (la cámara se adapta en resize)
+function updateRotateHint() {}
 
 function updateCamera(dt, snap = false) {
   if (!game.hero) return;
@@ -188,10 +185,10 @@ function updateHud(dt = 0) {
   atk.style.setProperty('--hold', Math.min(1, h.holdT / POWER.hold).toFixed(3));
   atk.classList.toggle('ready', ready);
   atk.classList.toggle('charging', ready && h.holdT > 0.08);
-  coach.update(dt);
 }
 
 function clearRun() {
+  game.levelExit = false;
   game.enemies?.clear();
   game.butter?.clear();
   game.cameos?.clear();
@@ -243,7 +240,6 @@ function startRun(heroId, withIntro = false) {
   audio.music(heroId);
   if (withIntro) { game.state = 'intro'; game.story.startIntro(); }
   else game.state = 'playing';
-  coach.reset();
   updateRotateHint();
 }
 
@@ -300,7 +296,20 @@ function updateZones() {
     if (st === 'active' && game.enemies.alive() === 0) {
       game.waves[w.id] = 'cleared';
       if (w.gate != null) openGate(w.gate);
-      if (w.endsLevel) { startTransition(); return; }
+      if (w.endsLevel) {
+        // El nivel termina al llegar al final de la calle, no apenas cae el último malo
+        game.levelExit = true;
+        game.banner('¡LE CONCEPT ES NUESTRO!', 'Seguí hasta el final de la calle para pasar a Francia →', 3.2);
+      }
+    }
+  }
+  if (game.levelExit && game.level < LEVELS.length) {
+    const end = LEVELS[game.level - 1].maxX - 2.5;
+    if (x >= end) { game.levelExit = false; startTransition(); return; }
+    // Flecha que te marca el camino, cada tanto
+    if (game.time - (game.exitHintAt ?? -99) > 2.2) {
+      game.exitHintAt = game.time;
+      fx.popup(new THREE.Vector3(Math.min(end, x + 4), 2.6, hp.z), 'FRANCIA →', '#7ee0c3', { size: 26, life: 1.6, rise: 0.2 });
     }
   }
   const last = WAVES[WAVES.length - 1];
@@ -308,7 +317,7 @@ function updateZones() {
 }
 
 // ---------- cambio de nivel ----------
-const TRANSITION_S = 4.2;
+const TRANSITION_S = 3.2;
 function startTransition() {
   game.state = 'transition';
   game.transT = 0;
@@ -384,7 +393,6 @@ game.setStage = (id) => {
   clearRun();
   // Saltar a una etapa (solo pruebas): Pinky no se cruza salvo que la prueba lo pida
   game.cameos.pinky.shown = { 1: true, 2: true };
-  coach?.hide();
   game.props.reset();
   const p = game.hero.actor.position;
   game.state = 'playing';
@@ -444,9 +452,7 @@ let last = 0;
 function frame(now) {
   const dt = Math.min(0.05, last ? (now - last) / 1000 : 0) * game.timeScale;
   last = now;
-  if (game.portraitBlock && (game.state === 'playing' || game.state === 'intro')) {
-    // en pausa hasta que gires el celu
-  } else if (game.state === 'playing') {
+  if (game.state === 'playing') {
     const t0 = performance.now();
     if (input.consume('pause')) pause();
     else if (!fx.frozen(dt)) {
@@ -520,15 +526,13 @@ async function boot() {
   game.traps = createTraps(ctx);
   game.butter = createButter(ctx);
   game.cameos = createCameos(ctx);
-  coach = createCoach({ game, el: $('#coach'), touch: TOUCH });
-  game.coach = coach;
   game.psycho = createPsycho(ctx);
   game.powers = createPowers(ctx);
   game.props = createProps(ctx);
   game.pickups = game.props.pickups;
   game.crates = game.props.crates;
   game.story = createStory(ctx);
-  for (const el of [canvas, $('#stick-zone')]) el.addEventListener('pointerdown', () => { if (game.state === 'intro' && !game.portraitBlock) endIntro(); });
+  for (const el of [canvas, $('#stick-zone')]) el.addEventListener('pointerdown', () => { if (game.state === 'intro') endIntro(); });
   addEventListener('keydown', () => { if (game.state === 'intro') endIntro(); });
   game.heroScreen = () => { const v = game.hero.actor.position.clone(); v.y += 1; v.project(camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 }; };
   game.quickStart = (heroId) => startRun(heroId);

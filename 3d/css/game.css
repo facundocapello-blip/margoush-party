@@ -75,17 +75,10 @@ button { font: inherit; cursor: pointer; touch-action: none; }
 #act-attack.charging .ring { background: conic-gradient(#fff calc(var(--hold, 0) * 360deg), var(--gold) 0); }
 @keyframes power-ready { 0%, 100% { box-shadow: 0 4px 10px #0007, 0 0 0 0 rgba(255, 211, 110, 0.7); } 50% { box-shadow: 0 4px 10px #0007, 0 0 0 10px rgba(255, 211, 110, 0); } }
 
-/* Vertical: el juego se frena y pide girar el celu */
-#rotate-hint { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; background: rgba(16, 10, 30, 0.88); z-index: 9; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 22px; text-align: center; padding: 24px; }
-#rotate-hint b { font-size: 64px; line-height: 1; color: var(--gold); animation: rotate-nudge 1.6s ease-in-out infinite; }
-#rotate-hint small { font-family: Nunito, sans-serif; font-size: 14px; color: #d9cff5; }
-@keyframes rotate-nudge { 0%, 40% { transform: rotate(0); } 70%, 100% { transform: rotate(90deg); } }
-
-/* Indicaciones de la primera partida */
-#coach { position: absolute; left: 50%; top: calc(74px + var(--safe-t)); transform: translateX(-50%); z-index: 6; pointer-events: none; display: flex; gap: 8px; align-items: center; background: rgba(16, 10, 30, 0.86); border: 2px solid var(--mint); border-radius: 999px; padding: 7px 16px 7px 10px; font-weight: 900; font-size: 15px; white-space: nowrap; box-shadow: 0 6px 16px #0007; }
-#coach .k { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 9px; background: var(--mint); color: #10241e; font-size: 16px; }
-#coach.done { border-color: var(--gold); }
-#coach.done .k { background: var(--gold); }
+/* Celu parado: carteles arriba de los botones y barra del jefe debajo del HUD */
+body.portrait #banner { bottom: calc(225px + var(--safe-b)); max-width: 92vw; }
+body.portrait #boss-bar { bottom: auto; top: calc(100px + var(--safe-t)); width: 70vw; }
+body.portrait #combo { top: 24%; }
 
 /* Barra de poder del HUD */
 #hud-power { position: relative; margin-top: 3px; width: 104px; height: 16px; border-radius: 8px; background: #0009; border: 1.5px solid rgba(255, 211, 110, 0.55); overflow: hidden; }
@@ -173,7 +166,7 @@ h2 { margin: 0; font-family: Fredoka, sans-serif; font-size: clamp(24px, 5vw, 38
 }
 
 /* Con una pantalla abierta no se ven el HUD ni los carteles del juego */
-body.has-screen #labels, body.has-screen #combo, body.has-screen #hud, body.has-screen #banner, body.has-screen #boss-bar, body.has-screen #touch, body.has-screen #rotate-hint { visibility: hidden; }
+body.has-screen #labels, body.has-screen #combo, body.has-screen #hud, body.has-screen #banner, body.has-screen #boss-bar, body.has-screen #touch { visibility: hidden; }
 
 #banner.with-avatar { display: flex; align-items: center; gap: 10px; text-align: left; padding: 6px 16px 6px 6px; }
 #banner.with-avatar img { width: 46px; height: 46px; object-fit: cover; object-position: top; border-radius: 12px; background: #2c2350; border: 2px solid var(--gold); flex: 0 0 auto; }

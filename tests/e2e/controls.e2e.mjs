@@ -26,10 +26,8 @@ try {
     check(b.width >= 44 && b.height >= 44, `${s} mide ${Math.round(b.width)}×${Math.round(b.height)} (≥ 44 px)`);
   }
 
-  // ---------- Indicaciones de la primera partida ----------
-  const c0 = await G(() => document.querySelector('#coach').textContent);
-  check(/pulgar/i.test(c0), `primera indicación: «${c0}»`);
-  await shot(page, 'controls-coach');
+  // ---------- Sin carteles de ayuda tapando la imagen ----------
+  check(await G(() => !document.querySelector('#coach')), 'no hay ayuda de botones encima de la imagen');
 
   // ---------- Joystick flotante: tocás en cualquier lado de la mitad izquierda y caminás ----------
   const x0 = await G(() => window.__game.hero.actor.position.x);
@@ -43,8 +41,6 @@ try {
   check(x1 - x0 > 2, `el héroe camina (${(x1 - x0).toFixed(1)} m)`);
   const jh = await box('#joystick');
   check(jh.x < 80, 'al soltar, el joystick vuelve a su lugar');
-  await page.waitForTimeout(900);
-  check(/3 veces/.test(await G(() => document.querySelector('#coach').textContent)), 'después de caminar enseña el combo');
 
   // ---------- Puntería automática: el malo de atrás recibe el golpe ----------
   await quiet();

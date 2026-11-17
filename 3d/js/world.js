@@ -12,52 +12,63 @@ export const ZONES = [
 ];
 const BACK_Z = -5.2;
 const SHOPS = ['KIOSCO', 'PIZZERÍA', 'FARMACIA', 'PARRILLA', 'ALMACÉN', 'VERDULERÍA', 'HELADERÍA', 'LIBRERÍA'];
-const WALLS = ['#d9c3a0', '#c98f7a', '#b9b6ad', '#d8cfb4', '#9fb3a8', '#c7a56c', '#b98f9e'];
 
-// Fachada porteña pintada por código: balcones, persianas y un local con cartel fileteado
+// Fachada porteña pintada por código, estilo Caminito (La Boca): chapa acanalada de colores fuertes,
+// marcos de otro color, balcones de hierro y un local con cartel fileteado
+const CHAPA = ['#d8343f', '#f2b705', '#1f7ae0', '#22a05a', '#ff7a1f', '#8a4fd6', '#e0567a', '#14a3a8'];
+const MARCO = ['#f2b705', '#1f7ae0', '#d8343f', '#ff7a1f', '#22a05a', '#f2b705', '#1f7ae0', '#f4efe4'];
 function porteno(i) {
   return (ctx, w, h) => {
-    const wall = WALLS[i % WALLS.length];
+    const wall = CHAPA[i % CHAPA.length], trim = MARCO[(i + 3) % MARCO.length];
     ctx.fillStyle = wall; ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(0, 0, w, 26);            // cornisa
-    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(0, 26, w, 6);
-    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(0, 0, 10, h); ctx.fillRect(w - 10, 0, 10, h);
-    const floors = 3, shopTop = h * 0.66;
-    for (let f = 0; f < floors; f++) {
-      const y = 50 + f * ((shopTop - 70) / floors);
-      for (let k = 0; k < 3; k++) {
-        const x = 40 + k * ((w - 80) / 3) + 14, ww = (w - 80) / 3 - 28, wh = 96;
-        const lit = (i * 7 + f * 3 + k) % 4 !== 0;
+    // chapa acanalada
+    for (let x = 0; x < w; x += 14) {
+      ctx.fillStyle = 'rgba(255,255,255,0.13)'; ctx.fillRect(x, 0, 4, h);
+      ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.fillRect(x + 8, 0, 5, h);
+    }
+    // techo de chapa a dos aguas y cornisa
+    ctx.fillStyle = '#5b4a44'; ctx.beginPath(); ctx.moveTo(-10, 46); ctx.lineTo(w / 2, 0); ctx.lineTo(w + 10, 46); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = trim; ctx.fillRect(0, 44, w, 12);
+    const shopTop = h * 0.62;
+    for (let f = 0; f < 2; f++) {
+      const y = 92 + f * ((shopTop - 120) / 2);
+      for (let k = 0; k < 2; k++) {
+        const ww = w * 0.28, wh = 120, x = w * (k ? 0.6 : 0.12);
+        const lit = (i * 5 + f * 3 + k) % 3 !== 0;
         const g = ctx.createLinearGradient(0, y, 0, y + wh);
-        g.addColorStop(0, lit ? '#ffd889' : '#34304a'); g.addColorStop(1, lit ? '#f39a4d' : '#221f33');
-        ctx.fillStyle = '#3a2a22'; ctx.fillRect(x - 5, y - 5, ww + 10, wh + 10);
+        g.addColorStop(0, lit ? '#ffe3a1' : '#2f3550'); g.addColorStop(1, lit ? '#f39a4d' : '#1d2238');
+        ctx.fillStyle = trim; ctx.fillRect(x - 9, y - 9, ww + 18, wh + 18);
         ctx.fillStyle = g; ctx.fillRect(x, y, ww, wh);
-        // persianas de madera abiertas a los costados
-        ctx.fillStyle = ['#4f6b4a', '#6b4a33', '#3f5a6b'][(i + f) % 3];
-        for (const sx of [x - 26, x + ww + 6]) { ctx.fillRect(sx, y - 4, 20, wh + 8); ctx.fillStyle = 'rgba(0,0,0,0.25)'; for (let yy = y; yy < y + wh; yy += 9) ctx.fillRect(sx, yy, 20, 3); ctx.fillStyle = ['#4f6b4a', '#6b4a33', '#3f5a6b'][(i + f) % 3]; }
+        ctx.fillStyle = trim; ctx.fillRect(x + ww / 2 - 3, y, 6, wh); ctx.fillRect(x, y + wh * 0.45, ww, 5);
+        // macetas con malvones en el balcón
+        ctx.fillStyle = '#b4643c'; ctx.fillRect(x + 4, y + wh - 16, 22, 12); ctx.fillRect(x + ww - 26, y + wh - 16, 22, 12);
+        ctx.fillStyle = '#e8394a'; for (const fx of [x + 10, x + 18, x + ww - 20, x + ww - 12]) { ctx.beginPath(); ctx.arc(fx, y + wh - 20, 5, 0, Math.PI * 2); ctx.fill(); }
         // balcón de hierro
-        ctx.fillStyle = '#1e1b22'; ctx.fillRect(x - 12, y + wh - 2, ww + 24, 6);
-        for (let bx = x - 10; bx < x + ww + 12; bx += 8) ctx.fillRect(bx, y + wh - 28, 2, 28);
-        ctx.fillRect(x - 12, y + wh - 30, ww + 24, 4);
+        ctx.fillStyle = '#1e1b22'; ctx.fillRect(x - 16, y + wh + 2, ww + 32, 6);
+        for (let bx = x - 14; bx < x + ww + 16; bx += 9) ctx.fillRect(bx, y + wh - 24, 3, 28);
+        ctx.fillRect(x - 16, y + wh - 28, ww + 32, 5);
       }
     }
     // Local de planta baja
     const top = shopTop;
-    ctx.fillStyle = '#2a2230'; ctx.fillRect(16, top, w - 32, h - top);
-    const sg = ctx.createLinearGradient(0, top + 60, 0, h);
+    ctx.fillStyle = '#2a2230'; ctx.fillRect(12, top, w - 24, h - top);
+    const sg = ctx.createLinearGradient(0, top + 70, 0, h);
     sg.addColorStop(0, '#ffe2a3'); sg.addColorStop(1, '#f2a35a');
-    ctx.fillStyle = sg; ctx.fillRect(30, top + 64, w * 0.55, h - top - 74);
-    ctx.fillStyle = '#4a3226'; ctx.fillRect(w * 0.62, top + 64, w * 0.3, h - top - 64);   // puerta
-    ctx.fillStyle = '#ffd36e'; ctx.fillRect(w * 0.62 + 10, top + 74, w * 0.3 - 20, 40);
-    // Cartel fileteado: fondo negro, guardas de colores y letras cremas
-    ctx.fillStyle = '#121016'; ctx.fillRect(22, top + 6, w - 44, 52);
+    ctx.fillStyle = sg; ctx.fillRect(26, top + 78, w * 0.52, h - top - 90);
+    ctx.fillStyle = '#4a3226'; ctx.fillRect(w * 0.62, top + 78, w * 0.3, h - top - 78);
+    ctx.fillStyle = trim; ctx.fillRect(w * 0.62 + 10, top + 88, w * 0.3 - 20, 36);
+    // persiana metálica a medio bajar
+    ctx.fillStyle = '#8d8a92'; ctx.fillRect(26, top + 78, w * 0.52, 34);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)'; for (let yy = top + 82; yy < top + 112; yy += 6) ctx.fillRect(26, yy, w * 0.52, 2);
+    // Cartel fileteado: fondo negro, guardas de colores, rulos y letras cremas
+    ctx.fillStyle = '#121016'; ctx.fillRect(16, top + 6, w - 32, 64);
     ctx.lineWidth = 4;
-    for (const [c, o] of [['#d33c3c', 4], ['#2f8f5b', 10], ['#e9b949', 16]]) { ctx.strokeStyle = c; ctx.strokeRect(22 + o, top + 6 + o / 2, w - 44 - o * 2, 52 - o); }
-    ctx.fillStyle = '#e9b949';
-    for (const cx of [44, w - 44]) { ctx.beginPath(); ctx.arc(cx, top + 32, 9, 0, Math.PI * 2); ctx.fill(); }
+    for (const [c, o] of [['#d33c3c', 4], ['#2f8f5b', 10], ['#e9b949', 16]]) { ctx.strokeStyle = c; ctx.strokeRect(16 + o, top + 6 + o / 2, w - 32 - o * 2, 64 - o); }
+    ctx.strokeStyle = '#e9b949'; ctx.lineWidth = 3;
+    for (const cx of [40, w - 40]) { ctx.beginPath(); ctx.arc(cx, top + 38, 10, 0, Math.PI * 1.6); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, top + 38, 4, 0, Math.PI * 2); ctx.fill(); }
     ctx.font = '900 34px Georgia, "Times New Roman", serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#fff1d6'; ctx.fillText(SHOPS[i % SHOPS.length], w / 2, top + 34);
+    ctx.fillStyle = '#fff1d6'; ctx.fillText(SHOPS[i % SHOPS.length], w / 2, top + 40);
   };
 }
 
@@ -174,7 +185,7 @@ export function buildStreet(scene, assets) {
 
   // Piso: asfalto porteño hasta la frontera, adoquines franceses hasta el galpón
   const baLen = BORDER_X + 20;
-  const asphaltFloor = new THREE.Mesh(new THREE.PlaneGeometry(baLen, 22), new THREE.MeshLambertMaterial({ color: 0x9c8a94, map: canvasTex(512, 512, cobble, baLen / 7, 6) }));
+  const asphaltFloor = new THREE.Mesh(new THREE.PlaneGeometry(baLen, 22), new THREE.MeshLambertMaterial({ color: 0xbdb6c4, map: canvasTex(512, 704, asphalt, baLen / 16, 1) }));
   asphaltFloor.rotation.x = -Math.PI / 2;
   asphaltFloor.position.set(BORDER_X - baLen / 2, 0, 5.6);
   scene.add(asphaltFloor);
@@ -237,7 +248,7 @@ export function buildStreet(scene, assets) {
     for (let y = 0; y <= h; y += 32) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
     c.fillStyle = 'rgba(0,0,0,0.12)'; for (let x = 6; x < w; x += 8) for (let y = 6; y < h; y += 8) c.fillRect(x, y, 2, 2);
   }, baLen / 2, 1);
-  const curbBA = new THREE.Mesh(new THREE.BoxGeometry(baLen, 0.16, 1.4), new THREE.MeshLambertMaterial({ color: 0xc9a98a }));
+  const curbBA = new THREE.Mesh(new THREE.BoxGeometry(baLen, 0.16, 1.4), new THREE.MeshLambertMaterial({ color: 0xc8c4cc, map: tiles }));
   curbBA.position.set(BORDER_X - baLen / 2, 0.08, -4.5);
   const curbFR = new THREE.Mesh(new THREE.BoxGeometry(frLen + 20, 0.16, 1.4), new THREE.MeshLambertMaterial({ color: 0xc9a98a }));
   curbFR.position.set(BORDER_X + (frLen + 20) / 2, 0.081, -4.5);
@@ -262,22 +273,41 @@ export function buildStreet(scene, assets) {
   // La cámara ve unos 4 m de fachada: el local se escala para que vidrieras y cartel entren en cuadro
   const lcH = 9, lcW = 1.4 * lcH * ((U_LC[1] - U_LC[0]) * bgMeta.w) / (bgMeta.h * 0.835);
   const lcLeft = LE_CONCEPT_X - lcW / 2, lcRight = LE_CONCEPT_X + lcW / 2;
-  // Las fachadas del Nivel 1 usan los mismos recortes pintados que Francia
-  const paintedParts = [[0, U_LC[0]], [U_LC[1], 1]].map(([u0, u1]) => ({ mat: new THREE.MeshBasicMaterial({ map: crop(u0, u1), fog: false }), w: (u1 - u0) * bgMeta.w / pxPerM }));
-  function paintedRun(from, to, start = 0) {
-    let x0 = from, part = start;
+  // Nivel 1: casitas porteñas de chapa de colores (Buenos Aires ya no se parece a Francia)
+  const baMats = Array.from({ length: CHAPA.length }, (_, i) => new THREE.MeshBasicMaterial({ map: canvasTex(512, 768, porteno(i)), fog: false }));
+  function portenoRun(from, to, k = 0) {
+    const BW = 6.2, BH = 9.3;
+    let x0 = from;
     while (x0 < to - 0.01) {
-      const pt = paintedParts[part++ % 2];
-      const w = Math.min(pt.w, to - x0);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(pt.w, tileH), pt.mat);
-      m.position.set(x0 + pt.w / 2, tileH * (0.5 - 0.165), BACK_Z - 0.02);
-      if (w < pt.w) { m.scale.x = w / pt.w; m.position.x = x0 + w / 2; }
+      const w = Math.min(BW, to - x0);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), baMats[k++ % baMats.length]);
+      m.position.set(x0 + w / 2, BH / 2, BACK_Z - 0.02);
+      if (w < BW) m.scale.x = w / BW;
       scene.add(m);
       x0 += w;
     }
+    return k;
   }
-  paintedRun(-7, lcLeft);
-  paintedRun(lcRight, BORDER_X, 1);
+  const kBA = portenoRun(-7, lcLeft);
+  portenoRun(lcRight, BORDER_X, kBA);
+  // Cielo porteño detrás de las casitas (más bajas que los edificios de París) y el Obelisco a lo lejos
+  const baSky = new THREE.Mesh(new THREE.PlaneGeometry(BORDER_X + 30, 18), new THREE.MeshBasicMaterial({ map: canvasTex(64, 256, (c, w, h) => {
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2b3f8f'); g.addColorStop(0.55, '#e0768a'); g.addColorStop(1, '#ffb36b');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+  }), fog: false }));
+  baSky.position.set((BORDER_X - 30) / 2 + 10, 9, BACK_Z - 3);
+  scene.add(baSky);
+  const obeliscoMat = new THREE.MeshBasicMaterial({ color: 0xf1e9dc, fog: false });
+  const obelisco = new THREE.Group();
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.1, 13, 4), obeliscoMat);
+  shaft.rotation.y = Math.PI / 4; shaft.position.y = 6.5;
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.78, 1.6, 4), obeliscoMat);
+  tip.rotation.y = Math.PI / 4; tip.position.y = 13.8;
+  const win = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.45), new THREE.MeshBasicMaterial({ color: 0x2b2440, fog: false }));
+  win.position.set(0, 12.4, 0.62);
+  obelisco.add(shaft, tip, win);
+  obelisco.position.set(96, 0, BACK_Z - 2.6);
+  scene.add(obelisco);
 
   // LE CONCEPT: el local azul, más grande y adelantado, con cartel dorado sobre azul
   const leConcept = new THREE.Group();
@@ -417,11 +447,14 @@ export function buildStreet(scene, assets) {
   const flagCols = [0x2b4fa8, 0xf4f1ea, 0xd23a3a];
   const flagGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.22, 0, 0), new THREE.Vector3(0.22, 0, 0), new THREE.Vector3(0, -0.45, 0)]);
   const flagMats = flagCols.map(c => new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
+  // En Buenos Aires los banderines son celestes y blancos (como la bandera)
+  const baFlagMats = [0x74b9e8, 0xf4f1ea].map(c => new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
   for (let a = 6; a < GALPON_X - 8; a += 22) {
     if (a + 18 > LE_CONCEPT_X - 11 && a < LE_CONCEPT_X + 11) continue;
+    const inBA = a + 18 < BORDER_X;
     for (let k = 0; k <= 22; k++) {
       const t = k / 22, x = a + t * 18, y = 4.35 - Math.sin(t * Math.PI) * 0.7;
-      const f = new THREE.Mesh(flagGeo, flagMats[k % 3]);
+      const f = new THREE.Mesh(flagGeo, inBA ? baFlagMats[k % 2] : flagMats[k % 3]);
       f.position.set(x, y, -4.7);
       scene.add(f);
     }
@@ -430,8 +463,7 @@ export function buildStreet(scene, assets) {
   // Macetas sobre la vereda francesa
   const potMat = new THREE.MeshLambertMaterial({ color: 0xb4643c });
   const leafMat = new THREE.MeshLambertMaterial({ color: 0x4f7a3c });
-  for (let x = 8; x < GALPON_X; x += 15) {
-    if (Math.abs(x - LE_CONCEPT_X) < 11) continue;
+  for (let x = BORDER_X + 4; x < GALPON_X; x += 15) {
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), potMat);
     pot.position.set(x, 0.41, -5.0);
     const bush = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 8), leafMat);

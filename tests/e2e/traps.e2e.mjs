@@ -115,23 +115,8 @@ try {
     check(d2.after === d2.before, 'correrse de la sombra la esquiva');
   }
 
-  // ---------- Grève ----------
-  if (!ONLY || ONLY === 'greve') {
-    const march = async (inGap) => {
-      await G((inGap) => { const g = window.__game; g.setStage('boulevard-quiet'); g.traps.disable(); g.enemies.clear(); g.hero.hp = 5; g.hero.inv = 0; g.hero.actor.position.set(222, 0, 0);
-        const a = g.traps.forceNext('greve', true); if (inGap) g.hero.actor.position.z = a.gapZ; else g.hero.actor.position.z = a.gapZ > 0 ? -2.5 : 2.5; }, inGap);
-      const x0 = (await H()).x;
-      await until(() => !window.__game.traps.active.some(a => a.kind === 'greve'), null, 15000);
-      const h = await H();
-      return { dx: h.x - x0, hp: h.hp };
-    };
-    const m1 = await march(false);
-    check(m1.dx < -1.5 && m1.hp === 5, `la grève te empuja para atrás sin lastimar (Δx ${m1.dx.toFixed(1)})`);
-    const dir = await G(() => { const g = window.__game; g.setStage('boulevard-quiet'); g.traps.disable(); g.hero.actor.position.set(250, 0, 0); return g.traps.forceNext('greve', true).dir; });
-    check(dir === 1, 'con el portón cerrado adelante, la grève viene desde atrás');
-    const m2 = await march(true);
-    check(Math.abs(m2.dx) < 0.5 && m2.hp === 5, `por el hueco de la fila se pasa (Δx ${m2.dx.toFixed(1)})`);
-  }
+  // ---------- Sin grève ----------
+  check(await G(() => !window.__game.traps.list.some(t => t.kind === 'greve')), 'no hay fila de grève que no te deje pasar');
 
   // ---------- Trottinette ----------
   if (!ONLY || ONLY === 'trottinette') {

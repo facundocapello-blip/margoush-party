@@ -10,22 +10,23 @@ try {
   await page.tap('#btn-play');
   await page.tap('#pick-marine');
   check(await G(() => window.__spoken) > 0, 'la voz queda habilitada con el toque de elegir héroe');
-  await page.waitForTimeout(300);
-  check(await visible('#rotate-hint'), 'en vertical aparece "Girá el celu" al empezar');
-  const t0 = await G(() => window.__game.story.inIntro ? 'intro' : window.__game.state);
-  await page.waitForTimeout(1500);
-  check(await G(() => window.__game.portraitBlock === true) && t0 === 'intro' && await G(() => window.__game.story.inIntro), 'en vertical el juego espera (la intro no avanza)');
-  await page.setViewportSize({ width: 844, height: 390 });
-  await page.waitForTimeout(300);
-  check(!(await visible('#rotate-hint')), 'al girar el celu el aviso se va');
   await page.tap('#game');
   await page.waitForFunction(() => window.__game.state === 'playing');
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.waitForTimeout(300);
-  check(await visible('#rotate-hint'), 'si se vuelve a poner vertical, vuelve el aviso');
+  check(!(await G(() => document.querySelector('#rotate-hint'))), 'con el celu parado se juega directo (sin aviso de girar)');
+  // En vertical: los personajes se ven grandes, el cartel y la barra del jefe no tapan los botones
+  const hero = await G(() => { const g = window.__game, a = g.hero.actor; const top = a.position.clone(); top.y += a.heightM; const v = top.project(g.ctx.camera), b = a.position.clone().project(g.ctx.camera); return (v.y - b.y) / 2 * innerHeight; });
+  check(hero > 844 * 0.1, `el héroe mide ${Math.round(hero)} px de alto en vertical`);
+  await G(() => { const g = window.__game; g.hero.hp = 99; g.banner('PRUEBA', 'Cartel de prueba para ver dónde cae', 5); g.setStage('galpon'); g.banner('PRUEBA', 'Cartel de prueba para ver dónde cae', 5); });
+  await page.waitForTimeout(500);
+  const ov = (a, b) => a && b && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  const r = await G(() => Object.fromEntries(['#banner', '#boss-bar', '#joystick', '#act-attack', '#act-jump', '#act-dodge', '#hud-score'].map(s => [s, document.querySelector(s).getBoundingClientRect().toJSON()])));
+  for (const c of ['#joystick', '#act-attack', '#act-jump', '#act-dodge']) {
+    check(!ov(r['#banner'], r[c]) && !ov(r['#boss-bar'], r[c]), `en vertical, cartel y barra del jefe no tapan ${c}`);
+  }
+  check(!ov(r['#banner'], r['#boss-bar']) && !ov(r['#boss-bar'], r['#hud-score']), 'en vertical, cartel, barra y puntaje no se pisan');
+  await page.screenshot({ path: new URL('./out/mobile-portrait.png', import.meta.url).pathname });
   await G(() => window.__game.finish(false));
   await page.waitForTimeout(100);
-  check(!(await visible('#rotate-hint')), 'el aviso se oculta en la pantalla de resultado');
 
   // Un toque perdido no debe dejar trabado el botón de golpe
   await G(() => window.__game.quickStart('douge'));

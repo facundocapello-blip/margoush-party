@@ -25,8 +25,11 @@ try {
 
   // Despejar la pelea de Le Concept termina el Nivel 1
   await G(() => { const g = window.__game; g.hero.hp = 2; g.hero.hpMax = 5; g.hero.actor.position.set(134, 0, 0); g.traps.forceNext('colectivo'); g.enemies.list.forEach(e => { e.hp = 0; }); });
+  await page.waitForTimeout(1200);
+  check(await G(() => window.__game.state) === 'playing' && await G(() => window.__game.levelExit), 'al despejar Le Concept todavía no cambia de nivel: hay que llegar al final');
+  await G(() => window.__game.hero.actor.position.set(144, 0, 0));
   await waitFor(() => window.__game.state === 'transition', 4000);
-  check(true, 'al despejar Le Concept empieza la transición');
+  check(true, 'al llegar al final de la calle empieza la transición');
   const text = await page.textContent('#level-card');
   check(/NIVEL 1/.test(text) && /FRANCIA/i.test(text), `cartel de transición: "${text.replace(/\s+/g, ' ').trim()}"`);
   await shot(page, 'level-transition');
@@ -47,6 +50,8 @@ try {
 
   // Curar nunca pasa del máximo
   await G(() => { const g = window.__game; g.setStage('le-concept'); g.hero.hp = 5; g.enemies.list.forEach(e => { e.hp = 0; }); });
+  await waitFor(() => window.__game.levelExit === true, 6000);
+  await G(() => window.__game.hero.actor.position.set(144, 0, 0));
   await waitFor(() => window.__game.state === 'playing' && window.__game.level === 2, 12000);
   check(await G(() => window.__game.hero.hp) === 5, 'la cura no pasa del máximo');
 

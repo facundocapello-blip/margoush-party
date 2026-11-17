@@ -11,12 +11,12 @@ import { sheetPoses } from './cast.js';
 //  delivery — embiste en bici en línea recta
 export const KINDS = {
   // gait: cadence = pasos por metro, bob = altura del rebote al caminar (m)
-  secuaz: { tex: 'face_secuaz_sheet', hp: 3, scale: 1, speed: 3.2, windup: 0.55, ai: 'melee', points: 'minion', gait: { cadence: 2.2, bob: 0.14 } },
-  patovica: { tex: 'face_patovica_sheet', hp: 7, scale: 1.3, speed: 2.2, windup: 0.8, ai: 'melee', shove: 14, points: 'patovica', gait: { cadence: 1.1, bob: 0.06 } },
+  secuaz: { tex: 'face_secuaz_sheet', hp: 3, scale: 1, speed: 3.2, windup: 0.55, ai: 'melee', points: 'minion', gait: { cadence: 1.5, bob: 0.12, sway: 0.07 } },
+  patovica: { tex: 'face_patovica_sheet', hp: 7, scale: 1.3, speed: 2.2, windup: 0.8, ai: 'melee', shove: 14, points: 'patovica', gait: { cadence: 1.1, bob: 0.06, sway: 0.05 } },
   bombo: { tex: 'face_bombo_sheet', hp: 4, scale: 1.05, speed: 2.8, ai: 'bombo', ranged: true, points: 'bombo', gait: { cadence: 2.0, bob: 0.22 } },
   mozo: { tex: 'face_mozo_sheet', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', ranged: true, points: 'mozo', gait: { cadence: 0, bob: 0 } },
-  lale: { tex: 'courier_lale', hp: 4, scale: 1, speed: 3.0, ai: 'lale', ranged: true, points: 'lale', name: 'LALE «MANTECOSO»', gait: { cadence: 2.0, bob: 0.1 } },
-  cepi: { tex: 'courier_cepi', hp: 14, scale: 1.2, speed: 3.4, windup: 0.5, ai: 'melee', shove: 8, points: 'cepi', name: 'CEPI «EL NIÑO»', miniBoss: true, gait: { cadence: 2.4, bob: 0.12 } },
+  lale: { tex: 'courier_lale', hp: 4, scale: 1, speed: 3.0, ai: 'lale', ranged: true, points: 'lale', name: 'LALE «MANTECOSO»', gait: { cadence: 1.5, bob: 0.1, sway: 0.05 } },
+  cepi: { tex: 'courier_cepi', hp: 14, scale: 1.2, speed: 3.4, windup: 0.5, ai: 'melee', shove: 8, points: 'cepi', name: 'CEPI «EL NIÑO»', miniBoss: true, gait: { cadence: 1.5, bob: 0.1, sway: 0.06 } },
   delivery: { tex: 'face_delivery_sheet', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', ranged: true, points: 'delivery', gait: { cadence: 0, bob: 0 } }
 };
 const LEGACY = ['secuaz', 'secuaz', 'patovica']; // tipos numéricos viejos
@@ -126,10 +126,14 @@ export function createEnemies(ctx) {
     e.walk += moved;
     e.moving = moved > 0.001;
     if (!g || e.k.ai === 'delivery') { a.lift = 0; return; }
-    if (moved < 0.001) { a.lift = Math.max(0, a.lift - dt * 1.2); return; }
+    if (moved < 0.001) { a.lift = Math.max(0, a.lift - dt * 1.2); a.stretch = 0; return; }
     if (e.k.ai === 'bombo') { e.beat += dt; a.lift = Math.abs(Math.sin(e.beat * Math.PI * 2)) * g.bob; return; } // un salto cada 0,5 s
     if (!g.bob) { a.lift = 0; return; }
-    a.lift = Math.abs(Math.sin(e.walk * g.cadence * Math.PI)) * g.bob;
+    // Paso: rebote con cada pisada, balanceo de lado a lado y un poco de inclinación hacia donde camina
+    const ph = e.walk * g.cadence * Math.PI;
+    a.lift = Math.abs(Math.sin(ph)) * g.bob;
+    if (g.sway && e.state !== 'windup' && e.state !== 'strike') a.lean = Math.sin(ph) * g.sway - 0.04;
+    a.stretch = Math.abs(Math.cos(ph)) * 0.035;
     if (e.kind === 'patovica' && Math.floor(e.walk * g.cadence) !== step) {
       fx.dust(e.pos);
       if (Math.abs(e.pos.x - game.hero.actor.position.x) < 10) fx.shake(0.04);

@@ -22,28 +22,29 @@ export const GATES = [
 ];
 
 // Oleadas en orden. gate = índice del portón que abren al despejarse.
+// Pocos malos por tanda (17 en total): mejor pocos y que se muevan bien que muchos deslizándose.
 export const WAVES = [
   { id: 'vereda', level: 1, trigger: 22, gate: null, title: 'LA VEREDA', text: '¡Llegó la banda de BIG CHAKY!',
-    spawns: [{ dx: 9, dz: -1.5, kind: 'secuaz' }, { dx: 11, dz: 1.8, kind: 'secuaz' }, { dx: -8, dz: 0.5, kind: 'secuaz' }] },
+    spawns: [{ dx: 9, dz: -1.2, kind: 'secuaz' }, { dx: -8, dz: 1.2, kind: 'secuaz' }] },
   { id: 'vereda-2', level: 1, trigger: 50, gate: 0, title: 'OJO CON EL PATOVICA', text: 'Grandote y lento: no te dejes agarrar.',
-    spawns: [{ dx: 8, dz: 0, kind: 'patovica' }, { dx: 10, dz: -2, kind: 'secuaz' }, { dx: 9, dz: 1.2, kind: 'lale' }] },
+    spawns: [{ dx: 8, dz: 0, kind: 'patovica' }, { dx: 9, dz: 1.2, kind: 'lale' }] },
   { id: 'avenida', level: 1, trigger: 72, gate: null, title: 'LA AVENIDA', text: 'Cuidado con el colectivo: no frena.',
-    spawns: [{ dx: 9, dz: -2, kind: 'secuaz' }, { dx: 10, dz: 2, kind: 'secuaz' }, { dx: -8, dz: -1.5, kind: 'patovica' }] },
+    spawns: [{ dx: 9, dz: -2, kind: 'secuaz' }, { dx: -8, dz: 1.5, kind: 'secuaz' }] },
   { id: 'piquete', level: 1, trigger: 106, gate: 1, title: '¡PIQUETE!', text: 'Vencé a los del bombo para que levanten el corte.',
-    spawns: [{ dx: 7, dz: -2, kind: 'bombo' }, { dx: 8, dz: 2, kind: 'bombo' }, { dx: 5, dz: 0, kind: 'secuaz' }] },
+    spawns: [{ dx: 7, dz: -2, kind: 'bombo' }, { dx: 8, dz: 2, kind: 'bombo' }] },
   { id: 'le-concept', level: 1, trigger: 126, gate: null, endsLevel: true, title: '¡LLEGAMOS A LE CONCEPT!', text: 'La banda copó la puerta del restaurante.',
     facu: '¡Llegamos a Le Concept! La banda copó la puerta: ¡sacalos!',
-    spawns: [{ dx: 8, dz: 0, kind: 'patovica' }, { dx: 9, dz: -2.2, kind: 'bombo' }, { dx: 6, dz: 2.2, kind: 'secuaz' }, { dx: -7, dz: -1, kind: 'secuaz' }] },
+    spawns: [{ dx: 8, dz: 0, kind: 'patovica' }, { dx: 6, dz: 2.2, kind: 'secuaz' }] },
 
-  { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE', text: 'Los mozos tiran croissants: acercate rápido.',
-    spawns: [{ dx: 11, dz: -2, kind: 'mozo' }, { dx: 12, dz: 2, kind: 'mozo' }, { dx: 7, dz: 0, kind: 'secuaz' }, { dx: 9, dz: -1.2, kind: 'lale' }] },
+  { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE', text: '¡Lale te siguió hasta Francia con la manteca!',
+    spawns: [{ dx: 8, dz: 0, kind: 'secuaz' }, { dx: 9, dz: -1.2, kind: 'lale' }] },
   { id: 'francia-2', level: 2, trigger: 186, gate: 2, title: '¡DELIVERY!', text: 'Viene en bici a toda velocidad: esquivalo.',
-    spawns: [{ dx: 10, dz: 1.5, kind: 'delivery' }, { dx: 9, dz: -2, kind: 'secuaz' }, { dx: 12, dz: 0, kind: 'mozo' }] },
+    spawns: [{ dx: 10, dz: 1.5, kind: 'delivery' }, { dx: 9, dz: -2, kind: 'secuaz' }] },
   // Mini-jefe a mitad del nivel 2: Cepi «el Niño», el hermano de Facu, viene re caliente
-  { id: 'boulevard', level: 2, trigger: 212, gate: null, title: 'LE BOULEVARD', text: 'Grève: pasá por el hueco de la fila.',
-    spawns: [{ dx: 10, dz: 0, kind: 'cepi' }, { dx: 11, dz: -2, kind: 'delivery' }, { dx: 12, dz: 2, kind: 'mozo' }] },
+  { id: 'boulevard', level: 2, trigger: 212, gate: null, title: 'LE BOULEVARD', text: '¡Ojo! Viene el hermano de Facu…',
+    spawns: [{ dx: 10, dz: 0, kind: 'cepi' }] },
   { id: 'boulevard-2', level: 2, trigger: 238, gate: 3, title: 'ÚLTIMO TRAMO', text: 'Atrás de esta barrera está el galpón.',
-    spawns: [{ dx: 8, dz: -1.5, kind: 'patovica' }, { dx: 10, dz: 1.8, kind: 'delivery' }, { dx: 11, dz: 0, kind: 'mozo' }, { dx: -7, dz: -2, kind: 'secuaz' }] }
+    spawns: [{ dx: 8, dz: -1.5, kind: 'patovica' }, { dx: 10, dz: 1.8, kind: 'delivery' }] }
 ];
 
 // Trampas. zone: tramo donde actúan las que aparecen solas.
@@ -56,6 +57,6 @@ export const TRAPS = [
   { kind: 'boletas', from: 80, to: 116, every: 1.6 },
   // Nivel 2 — Francia
   { kind: 'trottinette', from: 158, to: 252, every: 3.2 },
-  { kind: 'palomas', from: 165, to: 255, every: 11 },
-  { kind: 'greve', from: 214, to: 252, every: 9 }
+  { kind: 'palomas', from: 165, to: 255, every: 11 }
+  // (sin grève: la fila que cruzaba la calle no se entendía y no te dejaba pasar)
 ];
