@@ -129,3 +129,8 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - `import_art.py` ahora vuelve dorados los brillos que quedaban verdosos al sacar el fondo (poder de Douge) y guarda los fondos a 1280 px (calidad 74) para no pasar los 6 MB: total 5,8 MB.
 - Las originales del kit no se suben al repo (pesan mucho); se pueden volver a importar desde el zip.
 - Pruebas ajustadas: `enemy_faces` y `cepi_pinky` esperan las hojas nuevas. Suite completa verde.
+
+## 2026-11-17 · Versión en un solo HTML y publicación
+- `node tools/build_single.mjs` arma `dist/margoush-3d.html` (~9 MB): código, Three.js, imágenes y música adentro (`window.__EMBED`; `assets.js` lo usa si existe). Funciona abriéndolo desde el disco o subiéndolo a cualquier hosting; solo las tipografías vienen de Google Fonts (si no hay internet usa las de respaldo). Probado en Chrome sin GPU: menú, elección, juego con las hojas nuevas, sin errores.
+- `dist/` no se sube al repo.
+- GitHub Pages publica `main`: se abrió un pull request `feat-3d` → `main` (avance directo, `main` ya está contenido en `feat-3d`; fuera de `3d/` solo cambian `.gitignore`, `PROJECT_STATUS.md` y `package.json`, el Chupete Rush de la raíz no se toca). Al aprobarlo queda en https://facundocapello-blip.github.io/margoush-party/3d/ . Rollback: volver `main` a `fdf6f3b`.
