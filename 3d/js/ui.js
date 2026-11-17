@@ -15,6 +15,8 @@ const el = (tag, props = {}, children = []) => {
   for (const c of [].concat(children)) if (c) n.append(c);
   return n;
 };
+// Si perdiste, en vez de Facu aparece Cepi «el Niño», el hermano, enojadísimo y tirando trompadas
+export const CEPI_LINES = ['¡¿Perdiste?! ¡No te lo puedo creer!', '¡Dale, que es fácil, che!', '¡Andá a jugar a la bolita!', '¡Hasta Margot lo hacía mejor!'];
 const fmt = (n) => Math.round(n).toLocaleString('es-AR');
 
 export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, audio }) {
@@ -29,10 +31,19 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
 
   function showResult(result, heroId) {
     resultEl.replaceChildren();
-    const host = el('div', { class: 'host' }, [
-      el('img', { src: assets.url('facu'), alt: 'Facu' }),
-      el('div', { class: 'host-bubble', text: '¡Señoras y señores, puntaje final!' })
-    ]);
+    const cepiSheet = assets.has?.('cepi_sheet');
+    const host = result.won
+      ? el('div', { class: 'host' }, [
+        el('img', { src: assets.url('facu'), alt: 'Facu' }),
+        el('div', { class: 'host-bubble', text: '¡Señoras y señores, puntaje final!' })
+      ])
+      : el('div', { id: 'cepi', class: 'host cepi' + (cepiSheet ? '' : ' no-sheet') }, [
+        cepiSheet
+          ? el('div', { class: 'cepi-sprite', role: 'img', 'aria-label': 'Cepi, enojado', style: `background-image:url("${assets.url('cepi_sheet')}")` })
+          : el('img', { src: assets.url('courier'), alt: 'Cepi, enojado' }),
+        el('div', { class: 'host-bubble', text: CEPI_LINES[Math.floor(Math.random() * CEPI_LINES.length)] })
+      ]);
+    if (!result.won) audio?.sfx('boo');
     const title = el('h2', { text: result.won ? '¡MARGOT ESTÁ A SALVO!' : '¡Margot te sigue esperando!' });
     const rank = el('div', { id: 'result-rank', class: 'rank rank-' + result.rank, text: result.rank });
     const total = el('div', { id: 'result-total', class: 'total', text: '0' });

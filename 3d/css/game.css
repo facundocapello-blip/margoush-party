@@ -205,3 +205,17 @@ body.has-screen #level-card { display: none; }
 .host img { animation: facu-sway 2.4s ease-in-out infinite; transform-origin: 50% 90%; }
 #banner.with-avatar img { animation: facu-bob 0.5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .host img, #banner.with-avatar img { animation: none; } }
+
+/* Cepi «el Niño» en la pantalla de derrota: entra desde la derecha y tira trompadas (golpe ↔ parado) */
+.host.cepi { animation: cepi-in 0.25s ease-out both; }
+.cepi-sprite { height: min(46vh, 300px); aspect-ratio: 226 / 400; background-size: 400% 100%; background-repeat: no-repeat;
+  background-position: 66.667% 0; filter: drop-shadow(0 10px 16px #000a); animation: cepi-punch 0.6s steps(1) infinite; }
+.host.cepi .host-bubble { background: #ffe1db; border: 3px solid #e2412b; }
+@keyframes cepi-in { from { transform: translateX(60vw); } to { transform: none; } }
+@keyframes cepi-punch {
+  0% { background-position: 66.667% 0; transform: translateX(14px); }
+  50% { background-position: 0% 0; transform: translateX(0); }
+}
+@media (max-width: 640px) { .cepi-sprite { height: 18vh; } }
+@media (max-height: 460px) { .cepi-sprite { height: 62vh; } }
+@media (prefers-reduced-motion: reduce) { .host.cepi, .cepi-sprite { animation: none; } }

@@ -12,6 +12,7 @@ import { createButter } from './butter.js';
 import { createPsycho } from './psycho.js';
 import { createPowers } from './powers.js';
 import { createFacu } from './facu.js';
+import { createCameos } from './cameos.js';
 import { createBoss } from './boss.js';
 import { createStory } from './story.js';
 import { createAudio } from './audio.js';
@@ -179,6 +180,7 @@ function updateHud() {
 function clearRun() {
   game.enemies?.clear();
   game.butter?.clear();
+  game.cameos?.clear();
   game.psycho?.stop();
   game.powers?.clear();
   game.traps?.reset();
@@ -311,6 +313,7 @@ function endTransition() {
   const L = LEVELS[game.level - 1];
   const h = game.hero;
   game.enemies.clear(); game.butter.clear(); game.psycho.stop(); game.powers.clear();
+  game.cameos.onLevelStart();
   game.traps.reset(); // nada de Buenos Aires (un colectivo en camino) pasa a Francia
   h.actor.position.set(L.start, 0, 0);
   h.actor.setFacing(1);
@@ -362,6 +365,8 @@ const ALIASES = { plaza: 'avenida', 'plaza-quiet': 'boulevard-quiet' };
 game.setStage = (id) => {
   const st = STAGES[ALIASES[id] || id];
   clearRun();
+  // Saltar a una etapa (solo pruebas): Pinky no se cruza salvo que la prueba lo pida
+  game.cameos.pinky.shown = { 1: true, 2: true };
   game.props.reset();
   const p = game.hero.actor.position;
   game.state = 'playing';
@@ -387,6 +392,7 @@ function finish(won) {
   if (game.state !== 'playing' && game.state !== 'rescue') return;
   game.state = 'result';
   input.reset();
+  game.cameos.onLevelStart();
   game.psycho.stop();
   game.lastResult = { won, ...game.score.finalize({ hpLeft: game.hero.hp, hpMax: game.hero.hpMax, seconds: game.time, won }) };
   $('#touch').classList.add('hidden');
@@ -432,6 +438,7 @@ function frame(now) {
       game.psycho.update(dt);
       game.powers.update(dt);
       game.facu.update(dt);
+      game.cameos.update(dt);
       game.boss?.update(dt);
       game.props.update(dt, game.time);
       updateZones();
@@ -483,7 +490,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.state = 'menu'; audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => { game.cameos?.onLevelStart(); game.state = 'menu'; audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -492,6 +499,7 @@ async function boot() {
   game.enemies = createEnemies(ctx);
   game.traps = createTraps(ctx);
   game.butter = createButter(ctx);
+  game.cameos = createCameos(ctx);
   game.psycho = createPsycho(ctx);
   game.powers = createPowers(ctx);
   game.props = createProps(ctx);

@@ -14,7 +14,7 @@ try {
 
   // Reproducción del reporte: correr y esquivar sin parar (clic derecho) contra el portón cerrado
   // Sin oleadas en el medio: que el único cartel sea el del portón
-  await G(() => { const g = window.__game; g.waves.vereda = g.waves['vereda-2'] = 'cleared'; g.hero.actor.position.set(g.world.gates[0].x - 4, 0, 0); });
+  await G(() => { const g = window.__game; g.waves.vereda = g.waves['vereda-2'] = 'cleared'; g.cameos.pinky.shown[1] = true; g.hero.actor.position.set(g.world.gates[0].x - 4, 0, 0); });
   await page.keyboard.down('ArrowRight');
   for (let i = 0; i < 40; i++) {
     await page.mouse.down({ button: 'right' }); await page.mouse.up({ button: 'right' });

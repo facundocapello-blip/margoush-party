@@ -39,8 +39,9 @@ export const WAVES = [
     spawns: [{ dx: 11, dz: -2, kind: 'mozo' }, { dx: 12, dz: 2, kind: 'mozo' }, { dx: 7, dz: 0, kind: 'secuaz' }, { dx: 9, dz: -1.2, kind: 'lale' }] },
   { id: 'francia-2', level: 2, trigger: 186, gate: 2, title: '¡DELIVERY!', text: 'Viene en bici a toda velocidad: esquivalo.',
     spawns: [{ dx: 10, dz: 1.5, kind: 'delivery' }, { dx: 9, dz: -2, kind: 'secuaz' }, { dx: 12, dz: 0, kind: 'mozo' }] },
+  // Mini-jefe a mitad del nivel 2: Cepi «el Niño», el hermano de Facu, viene re caliente
   { id: 'boulevard', level: 2, trigger: 212, gate: null, title: 'LE BOULEVARD', text: 'Grève: pasá por el hueco de la fila.',
-    spawns: [{ dx: 10, dz: 0, kind: 'patovica' }, { dx: 11, dz: -2, kind: 'delivery' }, { dx: 12, dz: 2, kind: 'mozo' }] },
+    spawns: [{ dx: 10, dz: 0, kind: 'cepi' }, { dx: 11, dz: -2, kind: 'delivery' }, { dx: 12, dz: 2, kind: 'mozo' }] },
   { id: 'boulevard-2', level: 2, trigger: 238, gate: 3, title: 'ÚLTIMO TRAMO', text: 'Atrás de esta barrera está el galpón.',
     spawns: [{ dx: 8, dz: -1.5, kind: 'patovica' }, { dx: 10, dz: 1.8, kind: 'delivery' }, { dx: 11, dz: 0, kind: 'mozo' }, { dx: -7, dz: -2, kind: 'secuaz' }] }
 ];

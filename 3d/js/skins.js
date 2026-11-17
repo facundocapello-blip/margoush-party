@@ -8,6 +8,9 @@ const SKINS = {
   mozo: { jacket: { h: 40, s: 0.08, l: 2.3 }, cap: { h: 0, s: 0, l: 0.3 }, paint: mozo },
   delivery: { jacket: { h: 145, s: 0.7, l: 1.15 }, cap: { h: 145, s: 0.7, l: 1.0 }, paint: delivery },
   lale: { jacket: { h: 50, s: 0.95, l: 1.5 }, cap: { h: 50, s: 0.9, l: 1.2 }, paint: lale },
+  // Respaldo por si faltan sus hojas de poses
+  cepi: { jacket: { h: 0, s: 0, l: 0.3 }, cap: { h: 0, s: 0, l: 0.3 }, paint: null },
+  pinky: { jacket: { h: 222, s: 0.85, l: 0.9 }, cap: { h: 48, s: 0.95, l: 1.3 }, paint: null },
   manifestante: { jacket: { h: 215, s: 0.25, l: 1.1 }, cap: { h: 30, s: 0.15, l: 1.2 }, paint: null }
 };
 

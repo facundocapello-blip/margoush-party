@@ -12,6 +12,7 @@ export function createBoss(ctx, x) {
   actor.setFacing(-1);
   const bar = document.querySelector('#boss-bar');
   const fill = document.querySelector('#boss-fill');
+  bar.querySelector('span').textContent = 'BIG CHAKY';
   bar.classList.remove('hidden');
   fill.style.width = '100%';
 

@@ -7,6 +7,7 @@ import { sheetPoses } from './cast.js';
 //  bombo    — se queda a media distancia y aturde con el bombo
 //  mozo     — tira croissants desde lejos
 //  lale     — tira manteca desde lejos y a veces se resbala
+//  cepi     — mini-jefe del nivel 2: el hermano de Facu, enojadísimo; aguanta mucho y empuja
 //  delivery — embiste en bici en línea recta
 export const KINDS = {
   // gait: cadence = pasos por metro, bob = altura del rebote al caminar (m)
@@ -15,6 +16,7 @@ export const KINDS = {
   bombo: { tex: 'face_bombo_sheet', hp: 4, scale: 1.05, speed: 2.8, ai: 'bombo', ranged: true, points: 'bombo', gait: { cadence: 2.0, bob: 0.22 } },
   mozo: { tex: 'face_mozo_sheet', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', ranged: true, points: 'mozo', gait: { cadence: 0, bob: 0 } },
   lale: { tex: 'courier_lale', hp: 4, scale: 1, speed: 3.0, ai: 'lale', ranged: true, points: 'lale', name: 'LALE «MANTECOSO»', gait: { cadence: 2.0, bob: 0.1 } },
+  cepi: { tex: 'courier_cepi', hp: 14, scale: 1.2, speed: 3.4, windup: 0.5, ai: 'melee', shove: 8, points: 'cepi', name: 'CEPI «EL NIÑO»', miniBoss: true, gait: { cadence: 2.4, bob: 0.12 } },
   delivery: { tex: 'face_delivery_sheet', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', ranged: true, points: 'delivery', gait: { cadence: 0, bob: 0 } }
 };
 const LEGACY = ['secuaz', 'secuaz', 'patovica']; // tipos numéricos viejos
@@ -23,6 +25,7 @@ export const MAX_RANGED = 1; // de lejos (bombo, mozo, delivery…) a la vez
 export const PATOVICA = { warn: 0.95, speed: 9, run: 7 };
 const WAIT = { min: 2.8, spread: 1.6, settle: 0.6, gap: 0.4 }; // anillo de espera alrededor del héroe
 const TAUNTS = ['¡Vení!', '¡Dale!', '¡Jaja!'];
+export const CEPI_TAUNTS = ['¡Me tenés podrido!', '¡Vení para acá!', '¡Dale que es fácil, che!', '¡Andá a jugar a la bolita!', '¡Te voy a acusar con mamá!'];
 const MELEE_BUSY = ['windup', 'strike', 'ring', 'charge'];
 export const BOMBO = { every: 4, windup: 0.9, radius: 3.2, stun: 1 };
 export const MOZO = { every: 2.5, flight: 0.9, hitRadius: 0.75 };
@@ -179,6 +182,7 @@ export function createEnemies(ctx) {
     game.score.addHit();
     game.combo.add(1);
     ctx.audio?.sfx(strength > 1.2 ? 'hitHeavy' : 'hit');
+    if (e.k.miniBoss) miniBossBar(e);
     if (e.hp <= 0) {
       e.state = 'dead';
       e.dead = 0.6;
@@ -213,6 +217,7 @@ export function createEnemies(ctx) {
       patovicaCharge(e, dt, hero, hp);
     } else {
       a.lean = 0;
+      if (e.kind === 'cepi') cepiTaunt(e, dt);
       // Turnos: como mucho dos encarando al héroe; el resto espera a distancia, mirándolo
       if (!e.engaged && e.cd <= 0 && engagedCount() < MAX_ATTACKERS && game.time - lastEngage > WAIT.gap) {
         e.engaged = true;
@@ -245,6 +250,24 @@ export function createEnemies(ctx) {
         fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.6), '!', '#ffe08a', { size: 30, life: 0.5, rise: 0.4 });
       }
     }
+  }
+
+  // Cepi grita mientras te busca (y su barra de vida usa la del jefe)
+  function cepiTaunt(e, dt) {
+    e.taunt = (e.taunt ?? 1) - dt;
+    if (e.taunt > 0) return;
+    e.taunt = 2.6 + Math.random();
+    const line = CEPI_TAUNTS[Math.floor(Math.random() * CEPI_TAUNTS.length)];
+    fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.7), line, '#ff9b8a', { size: 20, life: 1.4, rise: 0.25 });
+  }
+  function miniBossBar(e) {
+    const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
+    if (!bar || !fill) return;
+    if (e.hp > 0) {
+      bar.querySelector('span').textContent = e.k.name;
+      bar.classList.remove('hidden');
+      fill.style.width = (e.hp / e.maxHp) * 100 + '%';
+    } else bar.classList.add('hidden');
   }
 
   // Espera su turno en un anillo alrededor del héroe; no se mueve por diferencias chicas (no tiembla)
@@ -475,6 +498,11 @@ export function createEnemies(ctx) {
         const x = Math.min(lb.maxX - 1, Math.max(lb.minX + 1, hx + d.dx));
         spawn(x, d.dz, d.kind);
         if (d.kind === 'lale') game.banner(KINDS.lale.name, '¡Cuidado con la manteca!');
+        if (d.kind === 'cepi') {
+          game.banner('😡 ' + KINDS.cepi.name, 'El hermano de Facu vino re caliente: ¡aguantalo!', 3.4);
+          miniBossBar(list[list.length - 1]);
+          ctx.audio?.sfx('boo');
+        }
       }
     },
     spawn,
@@ -581,6 +609,7 @@ export function createEnemies(ctx) {
     },
 
     clear() {
+      if (list.some(e => e.k.miniBoss)) document.querySelector('#boss-bar')?.classList.add('hidden');
       for (const e of list) remove(e);
       list.length = 0;
       for (const s of shots) { scene.remove(s.sprite, s.mark); s.mark.geometry.dispose(); }

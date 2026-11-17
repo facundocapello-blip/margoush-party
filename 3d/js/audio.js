@@ -87,7 +87,10 @@ export function createAudio(assets) {
     scooter: () => { tone('square', 600, 900, 0.5, 0.06); hiss(0.4, 0.12, 2500, 1); },
     flap: () => [0, 0.07, 0.14, 0.21, 0.28].forEach((d) => hiss(0.06, 0.25, 1400, 1.5, d)),
     crowd: () => { hiss(1.2, 0.3, 700, 0.4); [0, 0.4, 0.8].forEach((d) => tone('triangle', 260, 240, 0.25, 0.12, d)); },
-    fire: () => hiss(0.4, 0.25, 600, 0.6)
+    fire: () => hiss(0.4, 0.25, 600, 0.6),
+    // Cepi enojado (abucheo grave) y el gol que escucha Pinky por la radio
+    boo: () => { tone('sawtooth', 180, 120, 0.55, 0.22); tone('sawtooth', 186, 118, 0.55, 0.14); hiss(0.5, 0.15, 500, 0.6); },
+    goal: () => { hiss(1.3, 0.35, 900, 0.4); [523, 659, 784].forEach((f, i) => tone('square', f, f, 0.22, 0.1, 0.2 + i * 0.14)); }
   };
 
   // Tema del jefe: pulso grave rápido sintetizado
