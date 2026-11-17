@@ -72,6 +72,68 @@ function porteno(i) {
   };
 }
 
+// Locales famosos de Buenos Aires (Le Blé, Punto de Oro, HENRIS). Mientras no llegue la pintura de la guía,
+// se dibujan por código con su cartel.
+const LANDMARKS = [
+  { id: 'punto_de_oro', x: 34, w: 7.5 },
+  { id: 'le_ble', x: 86, w: 7.5 },
+  { id: 'henris', x: 103, w: 7.5 }
+];
+function landmarkPainter(id) {
+  return (c, w, h) => {
+    const sign = (text, y, bg, fg, font, border) => {
+      c.fillStyle = bg; c.beginPath(); c.roundRect(w * 0.12, y, w * 0.76, 110, 16); c.fill();
+      if (border) { c.lineWidth = 8; c.strokeStyle = border; c.stroke(); }
+      c.font = font; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.shadowColor = fg; c.shadowBlur = 18; c.fillStyle = fg; c.fillText(text, w / 2, y + 60); c.shadowBlur = 0;
+    };
+    if (id === 'le_ble') {
+      c.fillStyle = '#efe3c8'; c.fillRect(0, 0, w, h);
+      c.fillStyle = 'rgba(120,90,50,0.15)'; for (let y = 0; y < h; y += 40) c.fillRect(0, y, w, 3);
+      // toldo a rayas
+      for (let x = 0; x < w; x += 64) { c.fillStyle = (x / 64) % 2 ? '#f4efe4' : '#2f5d43'; c.fillRect(x, h * 0.53, 64, 44); }
+      c.fillStyle = 'rgba(0,0,0,0.2)'; c.fillRect(0, h * 0.53 + 40, w, 8);
+      // vidriera con panes
+      const vg = c.createLinearGradient(0, h * 0.56, 0, h); vg.addColorStop(0, '#ffe7b0'); vg.addColorStop(1, '#f0a85a');
+      c.fillStyle = '#4a3226'; c.fillRect(20, h * 0.62, w - 40, h * 0.38);
+      c.fillStyle = vg; c.fillRect(40, h * 0.65, w * 0.56, h * 0.31);
+      c.font = '64px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; c.textAlign = 'center';
+      for (const [k, e] of ['🥖', '🥐', '🍞', '🥐', '🎂', '🥖'].entries()) c.fillText(e, 90 + (k % 3) * (w * 0.17), h * 0.77 + Math.floor(k / 3) * 70);
+      c.fillStyle = '#6b4a33'; c.fillRect(w * 0.68, h * 0.65, w * 0.24, h * 0.35);
+      sign('Le Blé', h * 0.3, '#2f5d43', '#fff3d6', 'italic 700 86px Georgia, "Times New Roman", serif', '#e9c46a');
+    } else if (id === 'punto_de_oro') {
+      c.fillStyle = '#1d2b3a'; c.fillRect(0, 0, w, h);
+      // alambrado y luces de las canchas
+      c.strokeStyle = 'rgba(200,220,230,0.35)'; c.lineWidth = 2;
+      for (let x = -h; x < w; x += 26) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x + h * 0.45, h * 0.45); c.stroke(); c.beginPath(); c.moveTo(x + h * 0.45, 0); c.lineTo(x, h * 0.45); c.stroke(); }
+      for (const lx of [w * 0.15, w * 0.85]) { c.fillStyle = '#ddd'; c.fillRect(lx - 4, 20, 8, h * 0.4); const g = c.createRadialGradient(lx, 40, 4, lx, 40, 90); g.addColorStop(0, 'rgba(255,255,230,1)'); g.addColorStop(1, 'rgba(255,255,230,0)'); c.fillStyle = g; c.fillRect(lx - 90, 0, 180, 140); }
+      c.fillStyle = '#e8e4da'; c.fillRect(0, h * 0.45, w, h * 0.55);
+      c.fillStyle = '#2e8b57'; c.fillRect(0, h * 0.45, w, 18);
+      c.fillStyle = '#3a3a44'; c.fillRect(w * 0.3, h * 0.66, w * 0.4, h * 0.34);
+      c.fillStyle = 'rgba(255,255,255,0.1)'; for (let x = w * 0.3; x < w * 0.7; x += 18) c.fillRect(x, h * 0.66, 4, h * 0.34);
+      c.font = '70px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; c.textAlign = 'center';
+      c.fillText('🎾', w * 0.15, h * 0.82); c.fillText('🏓', w * 0.85, h * 0.82);
+      sign('Punto de Oro', h * 0.36, '#121a24', '#ffd36e', '900 74px Fredoka, "Arial Rounded MT Bold", Arial, sans-serif', '#ffd36e');
+    } else {
+      c.fillStyle = '#2a2433'; c.fillRect(0, 0, w, h);
+      c.fillStyle = 'rgba(255,255,255,0.06)'; for (let y = 30; y < h; y += 60) c.fillRect(0, y, w, 6);
+      // ventanales con cuadros de marco dorado
+      for (let k = 0; k < 2; k++) {
+        const x = 40 + k * (w * 0.5), y = h * 0.56, ww = w * 0.42, hh = h * 0.42;
+        c.fillStyle = '#ffe9c2'; c.fillRect(x, y, ww, hh);
+        const pal = [['#c8553d', '#2a6f97'], ['#588157', '#e9c46a']][k];
+        for (let j = 0; j < 2; j++) {
+          const fx = x + 20 + j * ww / 2, fy = y + 26, fw = ww / 2 - 40, fh = hh * 0.6;
+          c.fillStyle = '#c9a227'; c.fillRect(fx - 8, fy - 8, fw + 16, fh + 16);
+          c.fillStyle = pal[j]; c.fillRect(fx, fy, fw, fh);
+          c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.arc(fx + fw * 0.5, fy + fh * 0.45, fh * 0.22, 0, Math.PI * 2); c.fill();
+        }
+      }
+      sign('HENRIS', h * 0.3, '#15111c', '#f1d48a', '700 92px Georgia, "Times New Roman", serif', '#c9a227');
+    }
+  };
+}
+
 // Asfalto de la avenida, con línea central discontinua
 function asphalt(ctx, w, h) {
   ctx.fillStyle = '#3a3640'; ctx.fillRect(0, 0, w, h);
@@ -136,6 +198,13 @@ function warehouse(ctx, w, h) {
     ctx.fillRect(x, h * 0.26 - 2, 160, 4);
   }
   ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(0, h * 0.86, w, h * 0.14);
+}
+
+// Pintura del galpón de la guía, repetida a lo ancho de la pared
+function galponTex(assets) {
+  const t = assets.texture('galpon').clone();
+  t.needsUpdate = true; t.wrapS = THREE.RepeatWrapping; t.repeat.set(70 / (13 * assets.meta('galpon').w / assets.meta('galpon').h), 1);
+  return t;
 }
 
 function concrete(ctx, w, h) {
@@ -288,8 +357,34 @@ export function buildStreet(scene, assets) {
     }
     return k;
   }
-  const kBA = portenoRun(-7, lcLeft);
-  portenoRun(lcRight, BORDER_X, kBA);
+  if (assets.has?.('calle_buenos_aires')) {
+    // Pintura de la guía (tres casitas en una imagen): se repite a lo largo de la calle
+    const t = assets.texture('calle_buenos_aires'), m = assets.meta('calle_buenos_aires');
+    const PH = 9.3, PW = PH * m.w / m.h, mat = new THREE.MeshBasicMaterial({ map: t, fog: false });
+    for (const [from, to] of [[-7, lcLeft], [lcRight, BORDER_X]]) {
+      for (let x0 = from; x0 < to - 0.01; x0 += PW) {
+        const w = Math.min(PW, to - x0);
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), mat);
+        mesh.position.set(x0 + w / 2, PH / 2, BACK_Z - 0.02);
+        if (w < PW) mesh.scale.x = w / PW;
+        scene.add(mesh);
+      }
+    }
+  } else {
+    const kBA = portenoRun(-7, lcLeft);
+    portenoRun(lcRight, BORDER_X, kBA);
+  }
+  // Locales famosos, un poco adelante de las casitas
+  for (const L of LANDMARKS) {
+    const painted = assets.has?.(L.id);
+    const tex = painted ? assets.texture(L.id) : canvasTex(768, 512, landmarkPainter(L.id));
+    const aspect = painted ? assets.meta(L.id).w / assets.meta(L.id).h : 1.5;
+    const H = L.w / aspect;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(L.w, H), new THREE.MeshBasicMaterial({ map: tex, fog: false }));
+    m.position.set(L.x, H / 2, BACK_Z + 0.3);
+    m.userData.landmark = L.id;
+    scene.add(m);
+  }
   // Cielo porteño detrás de las casitas (más bajas que los edificios de París) y el Obelisco a lo lejos
   const baSky = new THREE.Mesh(new THREE.PlaneGeometry(BORDER_X + 30, 18), new THREE.MeshBasicMaterial({ map: canvasTex(64, 256, (c, w, h) => {
     const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2b3f8f'); g.addColorStop(0.55, '#e0768a'); g.addColorStop(1, '#ffb36b');
@@ -353,7 +448,7 @@ export function buildStreet(scene, assets) {
     fx0 += w;
   }
   // Galpón del fondo
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(70, 13), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 256, warehouse, 4, 1), fog: false }));
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(70, 13), new THREE.MeshBasicMaterial({ map: assets.has?.('galpon') ? galponTex(assets) : canvasTex(1024, 256, warehouse, 4, 1), fog: false }));
   wall.position.set(GALPON_X + 35, 4.5, -6.8); // el galpón es más profundo: deja lugar a barriles detrás del carril del auto
   scene.add(wall);
   // Pared lateral que cierra la esquina entre la fachada y el fondo del galpón

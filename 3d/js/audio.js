@@ -1,5 +1,6 @@
 // Música (temas del 2D + uno sintetizado para el jefe) y efectos sintetizados.
 const MUTE_KEY = 'margoush3d_muted';
+export const MUSIC_GAIN = 0.42; // la música por debajo de golpes y voces
 
 function noiseBurst(ac, out, noise, t, dur, vol, type, freq, q = 1, attack = 0.002) {
   const s = ac.createBufferSource(); s.buffer = noise;
@@ -109,6 +110,16 @@ export function createAudio(assets) {
       noise = ac.createBuffer(1, len, ac.sampleRate);
       const d = noise.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      // iOS no deja cambiar el volumen de un <audio>: la música pasa por la mezcla de Web Audio
+      // con su propio volumen (y el botón de silencio la apaga junto con los efectos)
+      for (const t of Object.values(themes)) {
+        try {
+          const src = ac.createMediaElementSource(t);
+          const g = ac.createGain(); g.gain.value = MUSIC_GAIN;
+          src.connect(g); g.connect(master);
+          t.volume = 1; t.routed = true;
+        } catch (_) {}
+      }
     }
     if (ac.state === 'suspended') ac.resume().catch(() => {});
     return true;
@@ -251,7 +262,7 @@ export function createAudio(assets) {
       muted = !muted;
       try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (_) {}
       if (master) master.gain.value = muted ? 0 : 0.8;
-      for (const t of Object.values(themes)) t.muted = muted;
+      for (const t of Object.values(themes)) t.muted = muted && !t.routed;
       if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
       return muted;
     },
@@ -270,8 +281,9 @@ export function createAudio(assets) {
         synthTimer = setInterval(synthTick, 90);
         return;
       }
+      ensure();
       const t = themes[name];
-      t.muted = muted;
+      t.muted = muted && !t.routed;
       try { t.currentTime = 0; } catch (_) {}
       t.play().catch(() => {});
     },

@@ -61,7 +61,7 @@ def split_columns(alpha, frames):
     return [(round(i * step), round((i + 1) * step)) for i in range(frames)]
 
 
-def cut(src, ident, frames=4, bg='auto', assets='3d/assets'):
+def cut(src, ident, frames=4, bg='auto', assets='3d/assets', cell_h=CELL_H):
     im = Image.open(src).convert('RGBA')
     arr = remove_background(im, bg)
     pieces = []
@@ -72,20 +72,20 @@ def cut(src, ident, frames=4, bg='auto', assets='3d/assets'):
         ys, xs = np.nonzero(cell[:, :, 3] > 40)
         pieces.append(Image.fromarray(cell).crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)))
     # Misma escala para las 4 poses: la más alta ocupa la celda
-    scale = (CELL_H - FOOT_PAD - 4) / max(p.height for p in pieces)
+    scale = (cell_h - FOOT_PAD - 4) / max(p.height for p in pieces)
     pieces = [p.resize((max(1, round(p.width * scale)), max(1, round(p.height * scale))), Image.LANCZOS) for p in pieces]
     cw = max(p.width for p in pieces) + 8
     cw += (-cw) % 2
-    sheet = Image.new('RGBA', (cw * frames, CELL_H), (0, 0, 0, 0))
+    sheet = Image.new('RGBA', (cw * frames, cell_h), (0, 0, 0, 0))
     for k, p in enumerate(pieces):
-        sheet.alpha_composite(p, (k * cw + (cw - p.width) // 2, CELL_H - FOOT_PAD - p.height))
+        sheet.alpha_composite(p, (k * cw + (cw - p.width) // 2, cell_h - FOOT_PAD - p.height))
     name = ident + '_sheet'
     sheet.save(os.path.join(assets, name + '.webp'), 'WEBP', quality=82, method=6)
     path = os.path.join(assets, 'manifest.json')
     man = json.load(open(path, encoding='utf-8'))
     man[name] = {'file': name + '.webp', 'w': sheet.width, 'h': sheet.height, 'frames': frames,
                  'cols': frames, 'rows': 1, 'skull': round(skull_width(sheet, frames, 1), 1),
-                 'foot': round((CELL_H - FOOT_PAD) / CELL_H, 3)}
+                 'foot': round((cell_h - FOOT_PAD) / cell_h, 3)}
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(man, f, indent=1, ensure_ascii=False)
     return man[name]

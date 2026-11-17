@@ -236,9 +236,9 @@ function startRun(heroId, withIntro = false) {
   updateCamera(0, true);
   resize();
   clearBanners();
-  game.facu.say(game.facu.lines.intro, 2.6);
   $('#boss-bar').classList.add('hidden');
-  audio.music(heroId);
+  // En la intro no suena el tema del héroe (solo los efectos del secuestro); arranca al empezar a jugar
+  audio.music(withIntro ? null : heroId);
   if (withIntro) { game.state = 'intro'; game.story.startIntro(); }
   else game.state = 'playing';
   updateRotateHint();
@@ -247,6 +247,7 @@ function startRun(heroId, withIntro = false) {
 function endIntro() {
   game.story.endIntro();
   game.state = 'playing';
+  audio.music(game.heroId);
   input.reset();
   game.banner('¡SALVÁ A MARGOT!', 'Seguí la calle hasta el galpón de BIG CHAKY →');
 }
@@ -270,7 +271,6 @@ function updateZones() {
   for (const g of world.gates) {
     if (!g.open && hp.x > g.x) {
       hp.x = g.x - 1;
-      game.facu?.park(hp.x + 3);
       game.banner('🚧 PASO CERRADO', 'Primero despejá la zona: la banda de BIG CHAKY te espera.');
       break;
     }
@@ -331,7 +331,6 @@ function startTransition() {
   $('#level-pts').textContent = game.score.total.toLocaleString('es-AR') + ' puntos';
   $('#level-next').textContent = `→ NIVEL ${next.id}: ${next.name}`;
   $('#level-card').classList.remove('hidden');
-  game.facu.say(game.facu.lines.level2, 3.4);
   audio.sfx('clear');
 }
 
@@ -346,7 +345,8 @@ function endTransition() {
   h.actor.setFacing(1);
   h.hp = Math.min(h.hpMax, h.hp + 2);
   h.inv = 0;
-  game.facu.park(L.start + 3);
+  game.facu.reset();
+  game.facu.france(L.start + 4); // Facu con boina y baguette: «¡Allez, allez!»
   $('#level-card').classList.add('hidden');
   game.state = 'playing';
   input.reset();
@@ -358,6 +358,7 @@ game.startTransition = startTransition;
 function spawnBoss() {
   game.boss = createBoss(game.ctx, world.bounds.maxX - 14);
   game.banner('👑 BIG CHAKY', '«¡De acá no pasa nadie! ¡La nena se queda conmigo!»');
+  game.banner('CÓMO GANARLE', 'Casi no siente los golpes: pegale cuando brilla (después de embestir o pisotear).', 3.6);
   game.ctx.audio?.music('boss');
   game.ctx.audio?.sfx('roar');
 }
@@ -365,14 +366,12 @@ function spawnBoss() {
 game.onBossDown = () => {
   game.state = 'rescue';
   game.rescueT = 0;
+  audio.music(null); // se corta la música del jefe: suena solo la fanfarria del rescate
   input.reset();
-  const h = game.hero.actor;
-  h.position.set(world.bounds.maxX - 9, 0, -0.6);
-  h.setFacing(1);
-  h.setPose('idle');
-  game.facu.park(world.bounds.maxX - 14);
-  game.facu.say('¡MARGOT ESTÁ A SALVO! ¡Un aplauso para ' + HERO_CFG[game.heroId].name + '!', 3.5);
-  game.banner('🎉 ¡RESCATADA!', 'Margot vuelve a casa.', 3.4);
+  clearBanners();
+  game.photo = null;
+  // El rescate es una escena: el héroe corre a la jaula, alza a Margot, llega la banda aplaudiendo y foto familiar
+  game.story.startRescue(game.hero, HERO_CFG[game.heroId].name);
   game.ctx.audio?.sfx('fanfare');
 };
 
@@ -409,7 +408,8 @@ game.setStage = (id) => {
   if (st.wave) { game.waves[st.wave] = 'active'; game.enemies.spawnWave(st.wave); }
   if (st.boss) spawnBoss();
   clearBanners();
-  game.facu.park(p.x + 3);
+  // Saltar a una etapa (solo pruebas): Facu no aparece salvo que la prueba lo pida
+  game.facu.reset(); game.facu.jokeCd = 99;
   updateCamera(0, true);
 };
 
@@ -421,7 +421,7 @@ function finish(won) {
   input.reset();
   game.cameos.onLevelStart();
   game.psycho.stop();
-  game.lastResult = { won, ...game.score.finalize({ hpLeft: game.hero.hp, hpMax: game.hero.hpMax, seconds: game.time, won }) };
+  game.lastResult = { won, ...game.score.finalize({ hpLeft: game.hero.hp, hpMax: game.hero.hpMax, seconds: game.time, won }), photo: won ? game.photo : null };
   $('#touch').classList.add('hidden');
   $('#boss-bar').classList.add('hidden');
   audio.music(null);
@@ -485,20 +485,19 @@ function frame(now) {
     if (game.transT > TRANSITION_S) endTransition();
   } else if (game.state === 'rescue') {
     game.rescueT += dt;
-    game.story.updateRescue(dt, game.rescueT);
+    const step = game.story.updateRescue(dt, game.rescueT);
     game.boss?.update(dt);
-    game.facu.celebrate(dt);
-    for (const [a, ph] of [[game.hero.actor, 0]]) {
-      a.lift = Math.abs(Math.sin(game.rescueT * 7 + ph)) * 0.6;
-      a.update(dt, 0);
-    }
-    if (game.rescueT > 3.6) finish(true);
+    game.facu.update(dt);
+    if (step === 'photo') game.wantPhoto = true;
+    if (step === 'done') finish(true);
   }
   if (bannerCurrent) { bannerTimer -= dt; if (bannerTimer <= 0) nextBanner(); }
   world.updateGates(dt);
   fx.update(dt);
   updateCamera(dt);
   renderer.render(scene, camera);
+  // Foto familiar del rescate: se saca justo después de dibujar el cuadro
+  if (game.wantPhoto) { game.wantPhoto = false; try { game.photo = canvas.toDataURL('image/jpeg', 0.85); } catch (_) { game.photo = null; } }
   requestAnimationFrame(frame);
 }
 

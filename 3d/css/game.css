@@ -244,3 +244,18 @@ body.has-screen #level-card { display: none; }
 @media (max-width: 640px) { .cepi-sprite { height: 18vh; } }
 @media (max-height: 460px) { .cepi-sprite { height: 62vh; } }
 @media (prefers-reduced-motion: reduce) { .host.cepi, .cepi-sprite { animation: none; } }
+
+/* Facu en el resultado (si ganaste): asoma de golpe por el costado, dice su frase y se va */
+.host.peek { animation: facu-peek 4.2s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes facu-peek {
+  0% { transform: translateX(-120vw) rotate(-14deg); }
+  12% { transform: translateX(0) rotate(4deg); }
+  16%, 78% { transform: translateX(0) rotate(0); }
+  100% { transform: translateX(-120vw) rotate(-10deg); }
+}
+@media (prefers-reduced-motion: reduce) { .host.peek { animation: none; } }
+
+/* Foto familiar del rescate en la pantalla de resultado */
+.photo-row { display: flex; align-items: center; gap: 12px; justify-content: center; }
+.photo-row img { width: 112px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 10px; border: 3px solid #fff; box-shadow: 0 6px 14px #0008; transform: rotate(-3deg); }
+@media (max-height: 460px) { .photo-row img { width: 84px; } }

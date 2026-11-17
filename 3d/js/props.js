@@ -1,3 +1,4 @@
+import { itemMat } from './items.js';
 // Cervezas y hongos (dan vida), hongos venenosos (pantalla psicodélica), cajones del pasaje y el secreto.
 const GOOD_X = [18, 47, 70, 96, 124, 170, 196, 248]; // cerveza y hongo, alternados
 const POISON_X = [84, 232];
@@ -25,11 +26,11 @@ function emojiTexture(emoji, tint = null) {
 }
 
 export function createProps(ctx) {
-  const { scene, world, fx, game } = ctx;
+  const { scene, world, fx, game, assets } = ctx;
   const mats = {
-    beer: new THREE.SpriteMaterial({ map: emojiTexture('🍺'), transparent: true, depthWrite: false }),
-    mushroom: new THREE.SpriteMaterial({ map: emojiTexture('🍄'), transparent: true, depthWrite: false }),
-    poison: new THREE.SpriteMaterial({ map: emojiTexture('🍄', true), transparent: true, depthWrite: false })
+    beer: assets.has?.('objetos_sheet') ? itemMat(assets, 'cerveza', '🍺') : new THREE.SpriteMaterial({ map: emojiTexture('🍺'), transparent: true, depthWrite: false }),
+    mushroom: assets.has?.('objetos_sheet') ? itemMat(assets, 'hongo', '🍄') : new THREE.SpriteMaterial({ map: emojiTexture('🍄'), transparent: true, depthWrite: false }),
+    poison: assets.has?.('objetos_sheet') ? itemMat(assets, 'hongo_veneno', '🍄') : new THREE.SpriteMaterial({ map: emojiTexture('🍄', true), transparent: true, depthWrite: false })
   };
   const crateGeo = new THREE.BoxGeometry(1.1, 1.1, 1.1);
   const crateMat = new THREE.MeshLambertMaterial({ color: 0xc28a52 });

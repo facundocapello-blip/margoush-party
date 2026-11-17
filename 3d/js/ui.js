@@ -1,4 +1,5 @@
 import { sanitizeNickname } from './ranking.js';
+import { FACU_LINES } from './facu.js';
 
 const NICK_KEY = 'margoush3d_nick';
 const HERO_NAME = { douge: 'Douge', marine: 'Marine' };
@@ -33,9 +34,10 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
     resultEl.replaceChildren();
     const cepiSheet = assets.has?.('cepi_sheet');
     const host = result.won
-      ? el('div', { class: 'host' }, [
+      // Facu asoma de golpe por un costado, dice una frase y se va (ya no presenta el puntaje)
+      ? el('div', { class: 'host peek' }, [
         el('img', { src: assets.url('facu'), alt: 'Facu' }),
-        el('div', { class: 'host-bubble', text: '¡Señoras y señores, puntaje final!' })
+        el('div', { class: 'host-bubble', text: FACU_LINES.result[Math.floor(Math.random() * FACU_LINES.result.length)] })
       ])
       : el('div', { id: 'cepi', class: 'host cepi' + (cepiSheet ? '' : ' no-sheet') }, [
         cepiSheet
@@ -87,8 +89,25 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
     toRank.addEventListener('click', () => showRanking('screen-result'));
     menu.addEventListener('click', onMenu);
 
+    // Foto familiar del rescate (si ganaste): se puede guardar o compartir
+    let photoRow = null;
+    if (result.won && result.photo) {
+      const shareBtn = el('button', { id: 'btn-photo', class: 'ghost-btn', text: '📸 Guardar la foto' });
+      shareBtn.addEventListener('click', async () => {
+        try {
+          const blob = await (await fetch(result.photo)).blob();
+          const file = new File([blob], 'margoush-foto-familiar.jpg', { type: 'image/jpeg' });
+          if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: 'MARGOUSH: ¡Margot está a salvo!' }); return; }
+        } catch (_) {}
+        const a = el('a', { href: result.photo, download: 'margoush-foto-familiar.jpg' });
+        document.body.append(a); a.click(); a.remove();
+      });
+      photoRow = el('div', { class: 'photo-row' }, [el('img', { id: 'result-photo', src: result.photo, alt: 'Foto familiar del rescate' }), shareBtn]);
+    }
+
     const card = el('div', { class: 'result-card' }, [
       title,
+      photoRow,
       el('div', { class: 'score-row' }, [rank, el('div', {}, [el('small', { text: 'PUNTAJE' }), total])]),
       rows,
       el('div', { class: 'save-row' }, [nick, save]),

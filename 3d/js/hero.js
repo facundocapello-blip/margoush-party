@@ -23,7 +23,14 @@ export const AIM = { reach: 2.8, depth: 1.3, snapZ: 0.45 };
 export function createHero(id, ctx) {
   const cfg = HERO_CFG[id];
   const { input, world, fx, game } = ctx;
-  const actor = new SpriteActor(ctx.scene, ctx.assets, { poses: cfg.poses, heightM: cfg.heightM, scaleRef: cfg.scaleRef });
+  // Hojas nuevas de la guía AAA, si ya están: combo (3 golpes) y acciones (salto, esquive, golpeado, poder)
+  const poses = { ...cfg.poses };
+  const A = ctx.assets;
+  if (A.has?.(id + '_combo_sheet')) for (let i = 0; i < 3; i++) poses['attack' + (i + 1)] = { tex: id + '_combo_sheet', cell: i };
+  if (A.has?.('rescate_sheet')) poses.carry = { tex: 'rescate_sheet', cell: id === 'douge' ? 0 : 1 };
+  if (A.has?.(id + '_actions_sheet')) ['jump', 'dodge', 'hurt', 'power'].forEach((n, i) => { poses[n] = { tex: id + '_actions_sheet', cell: i }; });
+  const actor = new SpriteActor(ctx.scene, ctx.assets, { poses, heightM: cfg.heightM, scaleRef: cfg.scaleRef });
+  const has = (n) => !!actor.poses[n];
 
   const h = {
     id, actor, hp: 5, hpMax: 5, speed: cfg.speed,
@@ -92,6 +99,7 @@ export function createHero(id, ctx) {
     update(dt) {
       h.inv = Math.max(0, h.inv - dt);
       h.comboWindow = Math.max(0, h.comboWindow - dt);
+      h.powerT = Math.max(0, (h.powerT || 0) - dt);
       h.buffer = Math.max(0, h.buffer - dt);
       const p = actor.position;
       h.slowT = Math.max(0, h.slowT - dt);
@@ -197,21 +205,27 @@ export function createHero(id, ctx) {
       } else {
         const k = Math.min(1, (h.t - s.hitAt) / 0.08);
         const settle = Math.max(0, 1 - (h.t - s.hitAt) / (s.dur - s.hitAt));
-        actor.setPose('attack');
+        actor.setPose(has('attack' + (h.combo + 1)) ? 'attack' + (h.combo + 1) : 'attack');
         actor.lean = -0.1 * settle;
         actor.offsetX = (0.25 * k) * settle;
         actor.stretch = 0.06 * settle;
         // el remate sale con un saltito
         if (h.combo === 2) hop = Math.sin(Math.min(1, (h.t - s.hitAt) / (s.dur - s.hitAt)) * Math.PI) * 0.45;
       }
+    } else if (h.powerT > 0 && has('power')) {
+      actor.setPose('power');
+      actor.lean = 0; actor.offsetX = 0; actor.stretch = 0.04;
+    } else if (h.inv > INVULN - 0.3 && has('hurt')) {
+      actor.setPose('hurt');
+      actor.lean = 0.12; actor.offsetX = 0; actor.stretch = 0;
     } else if (h.state === 'dodge') {
-      actor.setPose('run');
+      actor.setPose(has('dodge') ? 'dodge' : 'run');
       actor.lean = -0.22; actor.offsetX = 0; actor.stretch = -0.06;
     } else if (h.slideT > 0 && h.lift === 0) {
       actor.setPose('run');
       actor.lean = 0.3; actor.offsetX = 0; actor.stretch = 0; // patina echado para atrás
     } else if (h.lift > 0) {
-      actor.setPose('run');
+      actor.setPose(has('jump') ? 'jump' : 'run');
       actor.lean = h.vy > 0 ? 0.05 : -0.08; actor.offsetX = 0; actor.stretch = h.vy > 0 ? 0.05 : -0.02;
     } else if (speed > 0.3) {
       actor.setPose('run');
@@ -281,7 +295,7 @@ export function createHero(id, ctx) {
   // Douge: «¡VERDADES A LOS GRITOS!» — onda en círculo que voltea a todos alrededor.
   // Marine: «¡FLAMBÉ!» — giro con la sartén en llamas que quema y aturde, y un croissant que cura 1 corazón.
   function usePower() {
-    h.power = 0; h.holdT = 0;
+    h.power = 0; h.holdT = 0; h.powerT = 0.6;
     const p = actor.position;
     h.state = 'free'; h.swing = null;
     h.inv = Math.max(h.inv, 0.6);

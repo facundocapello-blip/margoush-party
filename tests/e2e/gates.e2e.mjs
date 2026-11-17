@@ -26,8 +26,6 @@ try {
   check((await page.textContent('#banner')).includes('PASO CERRADO'), 'al chocar el portón avisa que hay que despejar la zona');
   check(x1 < GX, `esquivando sin parar no se atraviesa el portón cerrado (x=${x1.toFixed(2)})`);
 
-  const cx = await G(() => window.__game.facu.car.position.x);
-  check(cx + 1.3 < GX, `el auto de Facu frena antes de la barrera (frente en ${(cx + 1.3).toFixed(2)})`);
 
   // Un esquive pegado al portón tampoco lo cruza, aunque el cuadro sea largo
   await G(() => { const g = window.__game; g.timeScale = 3; g.hero.actor.position.set(g.world.gates[0].x - 0.5, 0, 0); g.hero.actor.setFacing(1); });

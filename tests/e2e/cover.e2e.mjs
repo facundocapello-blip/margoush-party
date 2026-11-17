@@ -33,6 +33,9 @@ for (const [w, h, name] of [[844, 390, 'acostado'], [390, 844, 'parado']]) {
     await page.tap('#btn-play');
     await page.tap('#pick-marine');
     await page.waitForTimeout(400);
+    check(await page.evaluate(() => window.__game.ctx.audio.current) === null, `${name}: en la intro no suena el tema (solo los efectos)`);
+    await page.tap('#game');
+    await page.waitForFunction(() => window.__game.state === 'playing');
     check(await page.evaluate(() => window.__game.ctx.audio.current) === 'marine', `${name}: al jugar suena el tema del héroe`);
     await page.evaluate(() => window.__game.goMenu());
     await page.waitForTimeout(500);

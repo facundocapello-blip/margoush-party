@@ -8,7 +8,7 @@ try {
   await open(page);
   await page.tap('#btn-play');
   await page.tap('#pick-douge');
-  // Intro: un solo mensaje por vez, primero Facu y después el secuestro
+  // Intro: un solo mensaje por vez; Facu ya no presenta: el primero es el secuestro
   const seen = [];
   let maxBoxes = 0;
   for (let i = 0; i < 40; i++) {
@@ -23,7 +23,7 @@ try {
   }
   check(maxBoxes <= 1, `en la intro nunca hay dos carteles a la vez (máx ${maxBoxes})`);
   const iFacu = seen.findIndex(t => t.includes('FACU')), iKid = seen.findIndex(t => t.includes('SE LLEVÓ A MARGOT'));
-  check(iFacu >= 0 && iKid > iFacu, 'primero habla Facu y después aparece el secuestro: ' + JSON.stringify(seen));
+  check(iFacu < 0 && iKid >= 0, 'en la intro Facu no presenta y aparece el secuestro: ' + JSON.stringify(seen));
   check(seen.every(t => t.length < 110), 'los mensajes son cortos (menos de 110 caracteres)');
 
   // Jugando: nada tapa el puntaje
@@ -33,8 +33,6 @@ try {
   const score = await rect('#hud-score'), banner = await rect('#banner');
   check(!overlap(score, banner), 'el mensaje de Facu no tapa el puntaje');
   for (const c of ['#joystick', '#act-attack', '#act-jump', '#act-dodge']) check(!overlap(banner, await rect(c)), `el mensaje no tapa ${c}`);
-  const car = await G(() => { const g = window.__game; const v = g.facu.car.position.clone(); v.y += 1.2; v.project(g.ctx.camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight }; });
-  check(!(car.x > banner.left && car.x < banner.right && car.y > banner.top && car.y < banner.bottom), 'el mensaje no tapa el auto de Facu');
 
   // Barra del jefe abajo al centro, sin chocar con los controles
   await G(() => window.__game.setStage('galpon'));

@@ -1,3 +1,4 @@
+import { itemMat } from './items.js';
 // Poderes (se lanzan con la barra llena, manteniendo apretado el golpe). No hay que apuntar: actúan alrededor del héroe.
 //  Douge  «¡VERDADES A LOS GRITOS!»: trompazo al piso, onda en círculo que voltea a todos y les grita verdades.
 //  Marine «¡FLAMBÉ!»: giro con la sartén en llamas que quema y aturde; queda fuego en el piso y sale un croissant que cura 1 corazón.
@@ -24,7 +25,7 @@ export function createPowers(ctx) {
   const waves = [], spins = [], fires = [], treats = [];
   const made = { wave: 0, flambe: 0 };
   const mat = (emoji) => new THREE.SpriteMaterial({ map: emojiTex(emoji), transparent: true, depthWrite: false });
-  const panMat = mat('🍳'), flameMat = mat('🔥'), croissantMat = mat('🥐');
+  const panMat = itemMat(ctx.assets, 'sarten', '🍳'), flameMat = mat('🔥'), croissantMat = itemMat(ctx.assets, 'medialuna', '🥐');
   const ringGeo = new THREE.RingGeometry(0.82, 1, 48);
   const fireDisc = new THREE.CircleGeometry(1, 32);
 

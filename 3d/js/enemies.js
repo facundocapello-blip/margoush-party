@@ -1,6 +1,7 @@
 import { SpriteActor } from './sprites.js';
 import { WAVES } from './level.js';
 import { sheetPoses } from './cast.js';
+import { itemMat } from './items.js';
 
 // Tipos de malo. Cada uno tiene su propia cara (face_<tipo>_sheet); Lale sigue siendo el courier recoloreado en skins.js.
 //  melee    — se acerca y pega (secuaz, patovica)
@@ -55,8 +56,8 @@ export function createEnemies(ctx) {
   // Telegrafías compartidas
   const dangerMat = new THREE.MeshBasicMaterial({ color: 0xff5a3c, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide });
   const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd36e, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide });
-  const croissantMat = new THREE.SpriteMaterial({ map: emojiTex('🥐'), transparent: true, depthWrite: false });
-  const ballMat = new THREE.SpriteMaterial({ map: emojiTex('🎾'), transparent: true, depthWrite: false });
+  const croissantMat = itemMat(assets, 'medialuna', '🥐');
+  const ballMat = itemMat(assets, 'pelota', '🎾');
   const markMat = new THREE.MeshBasicMaterial({ color: 0xff5a3c, transparent: true, opacity: 0.5, depthWrite: false });
   const laneMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.35, depthWrite: false });
   const wheelGeo = new THREE.TorusGeometry(0.42, 0.06, 6, 18);
@@ -131,6 +132,9 @@ export function createEnemies(ctx) {
     const step = Math.floor(e.walk * (g?.cadence || 2));
     e.walk += moved;
     e.moving = moved > 0.001;
+    e.walkSpeed = dt > 0 ? moved / dt : 0;
+    // Con tira de caminata dibujada el paso lo hace el dibujo: sin rebote ni balanceo por código
+    if (e.actor.poses.walk) { a.lift = 0; a.stretch = 0; if (e.state === 'walk') a.lean = 0; return; }
     if (!g || e.k.ai === 'delivery') { a.lift = 0; return; }
     if (moved < 0.001) { a.lift = Math.max(0, a.lift - dt * 1.2); a.stretch = 0; return; }
     if (e.k.ai === 'bombo') { e.beat += dt; a.lift = Math.abs(Math.sin(e.beat * Math.PI * 2)) * g.bob; return; } // un salto cada 0,5 s
@@ -151,10 +155,12 @@ export function createEnemies(ctx) {
   function choosePose(e) {
     const a = e.actor, st = e.state;
     let pose = 'idle';
-    if (st === 'dead' || st === 'hitstun' || st === 'slipped') pose = 'hurt';
+    if (st === 'dead' && a.poses.ko && e.dead < 0.45) pose = 'ko';
+    else if (st === 'dead' || st === 'hitstun' || st === 'slipped') pose = 'hurt';
     else if (STRIKE_STATES.includes(st) || a.offsetX > 0.05) pose = 'strike';
     else if (st === 'windup' || st === 'ring' || e.stun > 0) pose = 'idle';
     else if (e.k.ai === 'bombo' && a.lift > 0.02) pose = Math.floor(e.beat * 2) % 2 ? 'step' : 'idle';
+    else if (e.moving && a.poses.walk) pose = 'walk';
     else if (e.k.ai !== 'mozo' && e.moving) pose = Math.floor(e.walk * (e.k.gait?.cadence || 2)) % 2 ? 'step' : 'idle';
     a.setPose(pose);
   }
@@ -658,7 +664,7 @@ export function createEnemies(ctx) {
           for (const w of e.bike.children.slice(0, 2)) w.rotation.z -= roll * dt / 0.42 * a.facing;
         }
         choosePose(e);
-        a.update(dt, 0);
+        a.update(dt, a.pose === 'walk' ? (e.walkSpeed || 0) : 0);
       }
       updateShots(dt);
       // Separación para que no se apilen

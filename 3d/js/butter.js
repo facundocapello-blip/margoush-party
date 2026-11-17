@@ -1,3 +1,4 @@
+import { itemMat } from './items.js';
 // Manteca de Lale «Mantecoso»: la barra viaja con sombra creciente (aviso) y deja una mancha
 // amarilla donde cae. Pisar la mancha hace patinar al héroe, sin dañarlo.
 export const BUTTER = { life: 6, radius: 0.7, slide: 0.5, speed: 5, flight: 0.9 };
@@ -15,7 +16,7 @@ function emojiTex(emoji) {
 export function createButter(ctx) {
   const { scene, game, fx } = ctx;
   const list = [];
-  const barMat = new THREE.SpriteMaterial({ map: emojiTex('🧈'), transparent: true, depthWrite: false });
+  const barMat = itemMat(ctx.assets, 'manteca', '🧈');
   const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, depthWrite: false });
   const puddleMat = new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.8, depthWrite: false });
   const disc = new THREE.CircleGeometry(BUTTER.radius, 28);

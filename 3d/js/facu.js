@@ -1,15 +1,19 @@
 import { SpriteActor } from './sprites.js';
 
+// Facu ya no acompaña toda la partida: aparece de golpe y en chiste, unos segundos por vez.
+//  - Alcantarilla: una vez por nivel, cuando te rodean 2 malos o más, sale de una alcantarilla,
+//    tira un chiste que los aturde y se vuelve a meter.
+//  - Auto a toda velocidad: una vez por nivel cruza por el carril de atrás tocando bocina y saludando.
+//  - Francia: al pasar al Nivel 2 aparece con boina y baguette («¡Allez, allez!») y desaparece.
+//  - Resultado (si ganás): asoma por un costado de la pantalla (eso está en ui.js).
 export const FACU_LINES = {
-  intro: '¡Buenas noches, Buenos Aires! ¡Aplausos para nuestro héroe!',
-  level2: '¡Nivel 2: Francia! Allez, allez!',
-  result: '¡Señoras y señores, puntaje final!',
-  jokes: ['¡JAJAJA!', '¡No da más!', '¡Qué chiste, che!']
+  level2: '¡Allez, allez!',
+  jokes: ['¡JAJAJA! ¡No da más!', '¡Chiste malísimo! ¡JAJAJA!', '¡JAJAJA! ¡Qué chiste, che!'],
+  honk: ['¡BIP BIP! ¡Aguante Margot!', '¡BIP BIP! ¡Voy a buscar facturas!'],
+  result: ['¡Ni yo lo hacía tan rápido!', '¡Esto lo subo a Instagram!', '¡Aplausos para el héroe!']
 };
-const JOKE_EVERY = 12;
-const LANE_Z = -4.25; // carril de atrás, sobre la vereda: arriba en pantalla, fuera de la pelea
-const AHEAD = 3; // va un poco adelante del héroe
-const MAX_SPEED = 10;
+export const FACU = { nearFoes: 2, nearR: 4, stun: 1.6, rise: 0.45, stay: 1.2, driveSpeed: 15, driveAt: { 1: 34, 2: 196 } };
+const LANE_Z = -4.25; // carril de atrás, sobre la vereda
 
 // Autito descapotable de Facu
 function buildCar() {
@@ -67,157 +71,151 @@ function buildCar() {
   return car;
 }
 
+function emojiTex(emoji, size = 128) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.font = `${size * 0.78}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(emoji, size / 2, size * 0.56);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+  return t;
+}
+
 export function createFacu(ctx) {
-  const { scene, assets, world, fx, game } = ctx;
+  const { scene, assets, fx, game } = ctx;
   const car = buildCar();
+  car.visible = false;
   scene.add(car);
-  // Facu sentado: la carrocería tapa las piernas
-  const actor = new SpriteActor(scene, assets, { poses: { idle: { tex: 'facu' } }, heightM: 1.9, shadow: 0 });
-  actor.shadow.visible = false;
-  let jokeIdx = 0;
-  let vx = 0, vy = 0, rolled = 0, idleT = 0;
-  let lean = 0, hopT = 0, cheer = false, talkT = 0;
+  const actor = new SpriteActor(scene, assets, { poses: { idle: { tex: 'facu' } }, heightM: 1.9, shadow: 0.4 });
+  actor.mesh.visible = false; actor.shadow.visible = false;
+  // Alcantarilla (disco oscuro con borde) y accesorios de Francia
+  const hole = new THREE.Group();
+  const rim = new THREE.Mesh(new THREE.CircleGeometry(0.85, 28), new THREE.MeshLambertMaterial({ color: 0x55545c }));
+  const pit = new THREE.Mesh(new THREE.CircleGeometry(0.68, 28), new THREE.MeshBasicMaterial({ color: 0x0b0a10 }));
+  rim.rotation.x = pit.rotation.x = -Math.PI / 2; rim.position.y = 0.03; pit.position.y = 0.035;
+  hole.add(rim, pit); hole.visible = false; scene.add(hole);
+  const baguette = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('🥖'), transparent: true, depthWrite: false }));
+  baguette.scale.set(0.9, 0.9, 1); baguette.visible = false; scene.add(baguette);
+  const beret = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.12, 18), new THREE.MeshLambertMaterial({ color: 0x1b1b24 }));
+  beret.visible = false; scene.add(beret);
 
-  // Hasta dónde puede avanzar el auto: no pasa barreras cerradas que estén delante del héroe
-  function gateLimit(hx) {
-    let lim = Infinity;
-    for (const g of world.gates) if (!g.open && hx < g.x) lim = Math.min(lim, g.x - 1.6);
-    return lim;
+  let act = null;          // aparición en curso: { kind, t, ... }
+  let jokeIdx = 0, idleT = 0, talkT = 0;
+  const shown = { hole: {}, drive: {} };
+
+  function show(on) { actor.mesh.visible = on; actor.shadow.visible = on && act?.kind !== 'drive'; }
+  function end() {
+    act = null; show(false); car.visible = false; hole.visible = false; baguette.visible = false; beret.visible = false;
+    actor.lift = 0; actor.lean = 0; actor.stretch = 0;
   }
 
-  function place() {
-    const h = game.hero.actor.position;
-    car.position.set(Math.min(world.bounds.maxX - 2, h.x + AHEAD, gateLimit(h.x)), 0, LANE_Z);
-    vx = 0; vy = 0;
+  function startHole(h) {
+    shown.hole[game.level] = true;
+    const side = game.hero.actor.facing;
+    const x = h.x + side * 2.2, z = Math.max(-3, Math.min(3, h.z + 1.2));
+    hole.position.set(x, 0, z); hole.visible = true;
+    actor.position.set(x, 0, z); actor.setFacing(-side);
+    act = { kind: 'hole', t: 0, x, z, joked: false };
+    show(true); fx.dust(actor.position);
   }
-  place();
-
-  function syncActor() {
-    actor.position.set(car.position.x - 0.35, car.position.y + 0.1, LANE_Z);
-    actor.setFacing(1);
-  }
-
-  function animateFacu(dt, moving) {
-    idleT += dt;
-    talkT = Math.max(0, talkT - dt);
-    const talking = talkT > 0;
-    let lift = moving ? Math.abs(Math.sin(rolled * 2.2)) * 0.05 : Math.sin(idleT * 3) * 0.015;
-    // siempre se mece y respira; al hablar gesticula más y pega saltitos
-    let tilt = lean + Math.sin(idleT * 2.1) * 0.07;
-    let breath = Math.sin(idleT * 2.6) * 0.04;
-    if (talking) {
-      lift += Math.abs(Math.sin(idleT * 9)) * 0.12;
-      tilt += Math.sin(idleT * 8) * 0.1;
-      breath += Math.sin(idleT * 9) * 0.05;
-    }
-    if (hopT > 0) {
-      // se para a carcajadas y se sacude de la risa
-      hopT = Math.max(0, hopT - dt);
-      const k = 1 - hopT / 0.6;
-      lift += Math.sin(k * Math.PI) * 0.5;
-      tilt += Math.sin(k * Math.PI * 6) * 0.12;
-    } else if (cheer) {
-      lift += Math.abs(Math.sin(idleT * 7)) * 0.45;
-      tilt += Math.sin(idleT * 7) * 0.08;
-    }
-    actor.lift = lift;
-    actor.lean = tilt;
-    actor.stretch = breath;
-  }
-
-  // ¿Hay cajones del pasaje sin romper adelante del auto?
-  function cratesAhead(x) {
-    return game.props.crates.list.some(c => !c.broken && c.x > x + 0.5 && c.x < x + 2.6);
+  function startDrive(h) {
+    shown.drive[game.level] = true;
+    car.visible = true;
+    car.position.set(h.x - 14, 0, LANE_Z);
+    act = { kind: 'drive', t: 0, honked: false };
+    show(true);
+    ctx.audio?.sfx('engine');
   }
 
   const f = {
     actor, car,
     lines: FACU_LINES,
-    jokeCd: 6,
+    jokeCd: 0,           // las pruebas lo suben para que no aparezca
     lastJokeStuns: 0,
+    get appearing() { return act?.kind || null; },
 
-    // Facu habla por el canal único de mensajes (un cartel por vez, arriba al centro)
+    // Facu habla por el canal único de mensajes (un cartel por vez)
     say(text, seconds = 2.6) {
       talkT = Math.max(talkT, seconds);
       game.banner('😄 FACU', text, seconds, { avatar: assets.url('facu') });
     },
 
+    // Francia: aparece con boina y baguette al empezar el Nivel 2
+    france(x) {
+      end();
+      act = { kind: 'france', t: 0, x };
+      actor.position.set(x, 0, -1.6); actor.setFacing(-1);
+      show(true);
+      baguette.visible = beret.visible = true;
+      fx.dust(actor.position);
+      fx.popup(actor.position.clone().setY(2.7), FACU_LINES.level2, '#7ec8ff', { size: 26, life: 1.6, rise: 0.3 });
+      ctx.audio?.say('Allez, allez !', 'fr-FR');
+    },
+
     update(dt) {
-      const h = game.hero.actor.position;
-      const p = car.position;
-      f.jokeCd = Math.max(0, f.jokeCd - dt);
-      if (Math.abs(h.x - p.x) > 16) { place(); fx.dust(p); }
-
-      // Siempre para adelante: alcanza al héroe y lo espera; solo vuelve si quedó muy lejos
-      // frena antes de una barrera cerrada (y retrocede si quedó encima)
-      const limit = gateLimit(h.x);
-      const target = Math.min(world.bounds.maxX - 2, h.x + AHEAD, limit);
-      const diff = target - p.x;
-      const want = p.x > limit + 0.05 ? -3 : diff > 0.2 ? Math.min(MAX_SPEED, diff * 2.5) : (diff < -7 ? -2 : 0);
-      const prevVx = vx;
-      vx += (want - vx) * Math.min(1, dt * 5);
-      if (want >= 0) vx = Math.max(0, vx);
-      else if (want === -3) vx = Math.min(vx, 0);
-      p.x += vx * dt;
-
-      // Saltito sobre los cajones del pasaje
-      if (p.y === 0 && vx > 0.5 && cratesAhead(p.x)) vy = 6.5;
-      if (p.y > 0 || vy > 0) {
-        vy -= 22 * dt;
-        p.y = Math.max(0, p.y + vy * dt);
-        if (p.y === 0) { vy = 0; fx.dust(p.clone().setX(p.x - 1)); }
-      }
-      car.rotation.z = p.y > 0 ? vy * 0.02 : 0;
-      rolled += vx * dt;
-      for (const w of car.userData.wheels) w.rotation.z = -rolled / 0.3;
-      // Traqueteo del motor con el auto parado
       idleT += dt;
-      car.userData.body.position.y = 0.6 + (Math.abs(vx) < 0.3 ? Math.sin(idleT * 30) * 0.008 : 0);
-
-      // Chiste: aturde a los que rodean al héroe
-      if (f.jokeCd <= 0) {
-        const near = game.enemies.list.filter(e => e.hp > 0 && Math.hypot(e.pos.x - h.x, e.pos.z - h.z) < 4).length;
-        if (near >= 2) {
-          f.jokeCd = JOKE_EVERY;
-          f.lastJokeStuns = game.enemies.stunAround(h.x, h.z, 4, 1.5);
-          const line = FACU_LINES.jokes[jokeIdx++ % FACU_LINES.jokes.length];
-          hopT = 0.6;
-          fx.popup(h.clone().setY(3.2), line, '#ffe08a', { size: 26, life: 1.1 });
+      f.jokeCd = Math.max(0, f.jokeCd - dt);
+      const h = game.hero.actor.position;
+      if (!act && game.state === 'playing') {
+        const near = game.enemies.list.filter(e => e.hp > 0 && e.state !== 'dead' && Math.hypot(e.pos.x - h.x, e.pos.z - h.z) < FACU.nearR).length;
+        if (f.jokeCd <= 0 && !shown.hole[game.level] && near >= FACU.nearFoes) startHole(h);
+        else if (f.jokeCd <= 0 && !shown.drive[game.level] && h.x > FACU.driveAt[game.level] && game.enemies.alive() === 0) startDrive(h);
+      }
+      if (!act) return;
+      act.t += dt;
+      if (act.kind === 'hole') {
+        // sube, cuenta el chiste (aturde), se ríe y se vuelve a meter
+        const R = FACU.rise, S = FACU.stay, t = act.t;
+        const up = t < R ? t / R : t < R + S ? 1 : Math.max(0, 1 - (t - R - S) / R);
+        actor.lift = -1.9 * (1 - up);
+        actor.stretch = Math.sin(idleT * 9) * 0.05;
+        actor.lean = Math.sin(idleT * 8) * 0.1;
+        if (!act.joked && t >= R) {
+          act.joked = true;
+          f.lastJokeStuns = game.enemies.stunAround(h.x, h.z, FACU.nearR + 0.5, FACU.stun);
+          fx.popup(actor.position.clone().setY(2.6), FACU_LINES.jokes[jokeIdx++ % FACU_LINES.jokes.length], '#ffe08a', { size: 22, life: 1.5, rise: 0.3 });
           ctx.audio?.sfx('laugh');
         }
+        if (t > R * 2 + S) { fx.dust(actor.position); end(); return; }
+      } else if (act.kind === 'drive') {
+        // cruza a toda velocidad por atrás, tocando bocina y saludando
+        car.position.x += FACU.driveSpeed * dt;
+        car.position.y = Math.abs(Math.sin(act.t * 18)) * 0.05;
+        for (const w of car.userData.wheels) w.rotation.z -= FACU.driveSpeed * dt / 0.3;
+        actor.position.set(car.position.x - 0.35, car.position.y + 0.1, LANE_Z);
+        actor.setFacing(1);
+        actor.lean = Math.sin(idleT * 10) * 0.12;
+        actor.lift = Math.abs(Math.sin(idleT * 8)) * 0.1;
+        if (!act.honked && car.position.x > h.x - 2) {
+          act.honked = true;
+          fx.popup(new THREE.Vector3(car.position.x, 3, LANE_Z), FACU_LINES.honk[game.level === 2 ? 1 : 0], '#ffe08a', { size: 22, life: 1.3, rise: 0.2 });
+          ctx.audio?.sfx('horn');
+        }
+        if (car.position.x > h.x + 16) { end(); return; }
+      } else if (act.kind === 'france') {
+        const t = act.t;
+        actor.lift = t < 0.35 ? Math.sin(t / 0.35 * Math.PI) * 0.7 : Math.abs(Math.sin(idleT * 5)) * 0.08;
+        actor.lean = Math.sin(idleT * 4) * 0.08;
+        const p = actor.position;
+        beret.position.set(p.x + 0.02, actor.lift + 1.93, p.z + 0.05);
+        baguette.position.set(p.x - 0.55, actor.lift + 1.05, p.z + 0.1);
+        baguette.material.rotation = Math.sin(idleT * 6) * 0.5;
+        if (t > 2.6) { fx.dust(p); end(); return; }
       }
-
-      syncActor();
-      // Movimientos de Facu: se va para atrás al acelerar, para adelante al frenar, rebota con el empedrado
-      const accel = dt > 0 ? (vx - prevVx) / dt : 0;
-      lean += (Math.max(-0.28, Math.min(0.28, accel * 0.025)) - lean) * Math.min(1, dt * 8);
-      animateFacu(dt, Math.abs(vx) > 0.3);
       actor.update(dt, 0);
     },
 
-    // Festejo del rescate: salta en el asiento
-    celebrate(dt) {
-      cheer = true;
-      animateFacu(dt, false);
-      actor.update(dt, 0);
-    },
-
-    // Para escenas: estaciona el auto en un lugar fijo
-    park(x) {
-      car.position.set(x, 0, LANE_Z);
-      vx = 0; vy = 0;
-      syncActor();
-      actor.update(0, 0);
-    },
-
+    // Compatibilidad: escenas que antes estacionaban el auto (ya no hay auto que acompañe)
+    park() {},
+    celebrate() {},
+    reset() { end(); shown.hole = {}; shown.drive = {}; },
 
     dispose() {
-      scene.remove(car);
+      end();
+      scene.remove(car, hole, baguette, beret);
       car.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       actor.dispose();
     }
   };
-  syncActor();
-  actor.update(0, 0);
   return f;
 }

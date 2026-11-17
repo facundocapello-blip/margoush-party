@@ -1,13 +1,20 @@
 import { SpriteActor } from './sprites.js';
 
 const HP = 30;
+// Defensa: fuera de sus momentos expuestos BIG CHAKY casi no siente los golpes (apretar golpe sin parar no alcanza).
+// Queda expuesto después de cada embestida y, sobre todo, después del pisotón (o si lo aturdís).
+export const BOSS = { guard: 0.34, exposed: 1.5, afterSlam: 1.8, afterLunge: 1.0 };
 const POSES = {
   idle: { tex: 'boss_idle' }, run: { tex: 'boss_run' }, attack: { tex: 'boss_attack' }, hurt: { tex: 'boss_hurt' }
 };
 
 export function createBoss(ctx, x) {
   const { scene, assets, world, fx, game } = ctx;
-  const actor = new SpriteActor(scene, assets, { poses: POSES, heightM: 3.6, shadow: 0.8, scaleRef: 'boss_idle' });
+  // Hojas nuevas de la guía AAA, si ya están: caminata de 6 cuadros y acciones (parado, pisotón, golpe, KO)
+  const poses = { ...POSES };
+  if (assets.has?.('chaky_walk_sheet')) poses.run = { tex: 'chaky_walk_sheet', stride: 0.32 };
+  if (assets.has?.('chaky_actions_sheet')) ['idle', 'stomp', 'attack', 'ko'].forEach((n, i) => { poses[n] = { tex: 'chaky_actions_sheet', cell: i }; });
+  const actor = new SpriteActor(scene, assets, { poses, heightM: 3.6, shadow: 0.8, scaleRef: 'boss_idle' });
   actor.position.set(x, 0, 0);
   actor.setFacing(-1);
   const bar = document.querySelector('#boss-bar');
@@ -34,14 +41,23 @@ export function createBoss(ctx, x) {
   const b = {
     actor, pos: actor.position, hp: HP, hpMax: HP, phase: 1,
     state: 'enter', t: 1.2, cd: 1.5, attacks: 0, dir: -1, kx: 0, inv: 0, stun: 0, hurtT: 0,
-    wave: null, struck: false, chain: 0, dead: false,
+    wave: null, struck: false, chain: 0, dead: false, exposedT: 0,
+    get exposed() { return b.exposedT > 0 || b.stun > 0; },
+    expose(seconds) {
+      if (b.dead) return;
+      const was = b.exposedT > 0;
+      b.exposedT = Math.max(b.exposedT, seconds);
+      if (!was) fx.popup(b.pos.clone().setY(4.4), '¡AHORA! ¡PEGALE!', '#7ee0c3', { size: 28, life: Math.min(1.2, seconds), rise: 0.3 });
+    },
 
     hitArea({ x, z, facing, reach, depth, dmg, strength }) {
       if (b.dead || b.inv > 0) return 0;
       const dx = (b.pos.x - x) * facing;
       if (dx < -0.6 || dx > reach + 0.8 || Math.abs(b.pos.z - z) > depth + 0.4) return 0;
       b.inv = 0.12;
-      b.hp = Math.max(0, b.hp - dmg);
+      const mult = b.exposed ? BOSS.exposed : BOSS.guard;
+      b.hp = Math.max(0, b.hp - dmg * mult);
+      if (!b.exposed && Math.random() < 0.3) fx.popup(b.pos.clone().setY(4.6), ['¡NI COSQUILLAS!', '¡JA! ¿ESO ES TODO?', '¡BLOQUEADO!'][Math.floor(Math.random() * 3)], '#ff9b8f', { size: 20, life: 0.8, rise: 0.3 });
       b.hurtT = 0.22;
       actor.hit();
       actor.flash(0.12);
@@ -49,7 +65,7 @@ export function createBoss(ctx, x) {
       if (strength > 1.2 && b.state === 'windup') { b.state = 'recover'; b.t = 0.5; lane.visible = false; }
       const at = b.pos.clone().setY(2.2);
       fx.hit(at, strength + 0.3);
-      fx.popup(at.clone().setY(4), String(dmg * 10), '#ffd36e', { size: 24, life: 0.6 });
+      fx.popup(at.clone().setY(4), String(Math.round(dmg * mult * 10)), b.exposed ? '#ffd36e' : '#b9b3c9', { size: b.exposed ? 28 : 18, life: 0.6 });
       game.score.addHit();
       game.combo.add(1);
       ctx.audio?.sfx(strength > 1.2 ? 'hitHeavy' : 'hit');
@@ -63,6 +79,7 @@ export function createBoss(ctx, x) {
       if (b.dead || Math.hypot(b.pos.x - x, b.pos.z - z) > r) return 0;
       b.stun = 0.8;
       if (b.state === 'windup') { b.state = 'recover'; b.t = 0.4; lane.visible = false; }
+      b.expose(0.8);
       return 1;
     },
 
@@ -70,13 +87,17 @@ export function createBoss(ctx, x) {
       const hero = game.hero;
       const hp = hero.actor.position;
       b.inv = Math.max(0, b.inv - dt);
+      b.exposedT = Math.max(0, b.exposedT - dt);
+      // expuesto: brilla y se tambalea, para que se note que es el momento
+      if (b.exposedT > 0 && !b.dead) actor.material.color.setHex(Math.floor(b.exposedT * 8) % 2 ? 0xfff2a8 : 0xffffff);
+      else if (b.state !== 'windup') actor.material.color.setHex(0xffffff);
       b.hurtT = Math.max(0, b.hurtT - dt);
       b.cd = Math.max(0, b.cd - dt);
       b.kx *= Math.max(0, 1 - dt * 6);
       b.pos.x += b.kx * dt;
 
       if (b.wave) updateWave(dt, hero);
-      if (b.dead) { actor.setPose('hurt'); actor.update(dt, 0); return; }
+      if (b.dead) { actor.setPose(actor.poses.ko ? 'ko' : 'hurt'); actor.update(dt, 0); return; }
       if (b.stun > 0) { b.stun -= dt; actor.lean = Math.sin(performance.now() / 80) * 0.06; actor.setPose('hurt'); actor.update(dt, 0); return; }
       actor.lean = 0;
 
@@ -107,7 +128,8 @@ export function createBoss(ctx, x) {
             ring.visible = true;
             fx.shake(0.45);
             ctx.audio?.sfx('slam');
-            b.state = 'recover'; b.t = b.phase === 2 ? 0.7 : 1.0;
+            b.state = 'recover'; b.t = b.phase === 2 ? 1.2 : 1.6;
+            b.expose(BOSS.afterSlam);
           } else {
             b.state = 'lunge'; b.t = 0.38; b.struck = false;
             ctx.audio?.sfx('swing');
@@ -123,7 +145,7 @@ export function createBoss(ctx, x) {
         }
         if (b.t <= 0) {
           if (b.phase === 2 && b.chain === 0) { b.chain = 1; startLunge(0.35); }
-          else { b.chain = 0; b.state = 'recover'; b.t = b.phase === 2 ? 0.55 : 0.8; }
+          else { b.chain = 0; b.state = 'recover'; b.t = b.phase === 2 ? 0.8 : 1.0; b.expose(BOSS.afterLunge); }
         }
       } else if (b.state === 'recover') {
         b.t -= dt;
@@ -133,9 +155,10 @@ export function createBoss(ctx, x) {
       b.pos.x = Math.max(world.galponX + 2, b.pos.x);
 
       if (b.hurtT > 0) actor.setPose('hurt');
+      else if (b.state === 'windup' && b.kind === 'slam' && actor.poses.stomp) actor.setPose('stomp');
       else if (b.state === 'windup' || b.state === 'lunge') actor.setPose('attack');
       else actor.setPose(speed > 0.2 ? 'run' : 'idle');
-      actor.lift = speed > 0.2 && b.state === 'walk' ? Math.abs(Math.sin(performance.now() / 140)) * 0.15 : 0;
+      actor.lift = speed > 0.2 && b.state === 'walk' && !assets.has?.('chaky_walk_sheet') ? Math.abs(Math.sin(performance.now() / 140)) * 0.15 : 0;
       actor.update(dt, speed);
     },
 
@@ -160,7 +183,7 @@ export function createBoss(ctx, x) {
 
   function startAttack() {
     b.attacks++;
-    if (b.attacks % 3 === 0) {
+    if (b.attacks % (b.phase === 2 ? 2 : 3) === 0) {
       b.kind = 'slam';
       b.state = 'windup';
       b.t = 0.7;
@@ -186,7 +209,7 @@ export function createBoss(ctx, x) {
     b.phase = 2;
     fx.flash('#ff4d5e', 0.35);
     fx.shake(0.5);
-    game.banner('👑 BIG CHAKY — ¡FURIOSO!', 'Embiste dos veces seguidas. Saltá la onda del pisotón.');
+    game.banner('👑 BIG CHAKY — ¡FURIOSO!', 'Pisotea más seguido: saltá la onda y pegale cuando queda expuesto.');
     ctx.audio?.sfx('roar');
   }
 
