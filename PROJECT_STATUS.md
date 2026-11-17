@@ -134,3 +134,9 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - `node tools/build_single.mjs` arma `dist/margoush-3d.html` (~9 MB): código, Three.js, imágenes y música adentro (`window.__EMBED`; `assets.js` lo usa si existe). Funciona abriéndolo desde el disco o subiéndolo a cualquier hosting; solo las tipografías vienen de Google Fonts (si no hay internet usa las de respaldo). Probado en Chrome sin GPU: menú, elección, juego con las hojas nuevas, sin errores.
 - `dist/` no se sube al repo.
 - GitHub Pages publica `main`: se abrió un pull request `feat-3d` → `main` (avance directo, `main` ya está contenido en `feat-3d`; fuera de `3d/` solo cambian `.gitignore`, `PROJECT_STATUS.md` y `package.json`, el Chupete Rush de la raíz no se toca). Al aprobarlo queda en https://facundocapello-blip.github.io/margoush-party/3d/ . Rollback: volver `main` a `fdf6f3b`.
+
+## 2026-11-17 · Arreglos de lo que vio Facu en el iPhone (GitHub Pages)
+- PR #1 aprobado: el juego está en https://facundocapello-blip.github.io/margoush-party/3d/
+- **Carteles**: ya no van en el medio del juego. Son un aviso chico arriba al centro, debajo del puntaje (en vertical, debajo de la barra del jefe); duran 2,6 s como máximo, si llega otro el actual se apura (~1 s), no se repiten carteles iguales y el tiempo corre con el reloj real (no se frena con los golpes ni con la cámara lenta), así que no se quedan trabados.
+- **Foto del héroe en el HUD**: el cuadradito muestra solo la cara (recorte del dibujo de cuerpo entero).
+- Suite completa verde.
