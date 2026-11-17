@@ -19,7 +19,8 @@ button { font: inherit; cursor: pointer; touch-action: none; }
 /* HUD */
 #hud { position: absolute; top: calc(8px + var(--safe-t)); left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r)); display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 5; }
 .hud-left { display: flex; gap: 8px; align-items: center; background: rgba(16, 10, 30, 0.7); border: 2px solid rgba(255, 211, 110, 0.5); border-radius: 16px; padding: 5px 12px 5px 5px; }
-#hud-portrait { width: 44px; height: 44px; border-radius: 12px; background: #2c2350 center/cover no-repeat; border: 2px solid var(--gold); }
+/* Solo la cara del héroe (recorte de su dibujo de cuerpo entero) */
+#hud-portrait { width: 44px; height: 44px; border-radius: 12px; background: #2c2350 no-repeat; background-size: auto 270%; background-position: 50% 3%; border: 2px solid var(--gold); }
 #hud-name { font-family: Fredoka, sans-serif; font-weight: 700; color: var(--gold); font-size: 15px; letter-spacing: 1px; }
 #hud-hearts { font-size: 15px; letter-spacing: 1px; }
 .hud-center { text-align: center; }
@@ -32,7 +33,9 @@ button { font: inherit; cursor: pointer; touch-action: none; }
 #boss-bar .track { height: 10px; border-radius: 6px; background: #000a; border: 2px solid #fff4; overflow: hidden; margin-top: 2px; }
 #boss-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff4d5e, #ff9b6b); transition: width 0.15s; }
 
-#banner { position: absolute; left: 50%; bottom: calc(74px + var(--safe-b)); transform: translateX(-50%); max-width: min(560px, 88vw); background: var(--panel); border: 2px solid var(--gold); border-radius: 18px; padding: 10px 18px; text-align: center; z-index: 6; pointer-events: none; font-size: clamp(13px, 2.6vw, 17px); box-shadow: 0 10px 30px #0008; }
+/* Carteles: aviso chico arriba al centro, debajo del puntaje (nunca tapa a los personajes ni los botones) */
+#banner { position: absolute; left: 50%; top: calc(92px + var(--safe-t)); transform: translateX(-50%); max-width: min(460px, 56vw); background: var(--panel); border: 2px solid var(--gold); border-radius: 14px; padding: 6px 14px; text-align: center; z-index: 6; pointer-events: none; font-size: 13px; line-height: 1.3; box-shadow: 0 6px 18px #0007; animation: banner-in 0.18s ease-out; }
+@keyframes banner-in { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
 #banner b { display: block; color: var(--gold); font-family: Fredoka, sans-serif; font-size: max(12px, 0.85em); letter-spacing: 2px; margin-bottom: 2px; }
 
 #combo { position: absolute; right: calc(18px + var(--safe-r)); top: 34%; z-index: 5; text-align: right; pointer-events: none; text-shadow: 0 3px 0 #000a, 0 0 18px #ffd36e99; }
@@ -76,7 +79,7 @@ button { font: inherit; cursor: pointer; touch-action: none; }
 @keyframes power-ready { 0%, 100% { box-shadow: 0 4px 10px #0007, 0 0 0 0 rgba(255, 211, 110, 0.7); } 50% { box-shadow: 0 4px 10px #0007, 0 0 0 10px rgba(255, 211, 110, 0); } }
 
 /* Celu parado: carteles arriba de los botones y barra del jefe debajo del HUD */
-body.portrait #banner { bottom: calc(225px + var(--safe-b)); max-width: 92vw; }
+body.portrait #banner { top: calc(150px + var(--safe-t)); max-width: 88vw; }
 body.portrait #boss-bar { bottom: auto; top: calc(100px + var(--safe-t)); width: 70vw; }
 body.portrait #combo { top: 24%; }
 
@@ -172,7 +175,7 @@ body.has-screen #labels, body.has-screen #combo, body.has-screen #hud, body.has-
 #banner.with-avatar img { width: 46px; height: 46px; object-fit: cover; object-position: top; border-radius: 12px; background: #2c2350; border: 2px solid var(--gold); flex: 0 0 auto; }
 
 /* Con controles táctiles el mensaje va como subtítulo entre el joystick y los botones */
-@media (pointer: coarse) { #banner { max-width: min(420px, 46vw); font-size: 13px; bottom: calc(70px + var(--safe-b)); } #banner.with-avatar img { width: 36px; height: 36px; } }
+@media (pointer: coarse) { #banner.with-avatar img { width: 32px; height: 32px; } }
 
 /* Cartel de cambio de nivel */
 #level-card { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 6px;

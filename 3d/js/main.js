@@ -100,10 +100,14 @@ game.combo = (() => {
 // Un solo canal de mensajes: se muestran de a uno, en orden
 const bannerQueue = [];
 let bannerCurrent = null;
-game.banner = (title, text, seconds = 3.2, opts = {}) => {
-  if (bannerQueue.length >= 3) bannerQueue.shift();
-  bannerQueue.push({ title, text, seconds, avatar: opts.avatar || null });
+// Carteles: aviso chico arriba (no en el medio del juego), cortos, y si hay otro esperando el actual se apura
+const BANNER = { max: 2.6, hurry: 1.1, queue: 2 };
+game.banner = (title, text, seconds = BANNER.max, opts = {}) => {
+  if (bannerCurrent?.title === title || bannerQueue.some(b => b.title === title)) return; // sin repetidos
+  if (bannerQueue.length >= BANNER.queue) bannerQueue.shift();
+  bannerQueue.push({ title, text, seconds: Math.min(seconds, BANNER.max), avatar: opts.avatar || null });
   if (!bannerCurrent) nextBanner();
+  else bannerTimer = Math.min(bannerTimer, BANNER.hurry);
 };
 function nextBanner() {
   const b = $('#banner');
@@ -122,7 +126,7 @@ function nextBanner() {
   b.append(body);
   b.classList.toggle('with-avatar', !!bannerCurrent.avatar);
   b.classList.remove('hidden');
-  bannerTimer = bannerCurrent.seconds;
+  bannerTimer = bannerQueue.length ? Math.min(bannerCurrent.seconds, BANNER.hurry + 0.6) : bannerCurrent.seconds;
 }
 function clearBanners() {
   bannerQueue.length = 0;
@@ -451,7 +455,8 @@ game.resume = resume;
 
 let last = 0;
 function frame(now) {
-  const dt = Math.min(0.05, last ? (now - last) / 1000 : 0) * game.timeScale;
+  const realDt = Math.min(0.1, last ? (now - last) / 1000 : 0);
+  const dt = Math.min(0.05, realDt) * game.timeScale;
   last = now;
   if (game.state === 'playing') {
     const t0 = performance.now();
@@ -491,7 +496,8 @@ function frame(now) {
     if (step === 'photo') game.wantPhoto = true;
     if (step === 'done') finish(true);
   }
-  if (bannerCurrent) { bannerTimer -= dt; if (bannerTimer <= 0) nextBanner(); }
+  // el cartel corre con el reloj real (no se frena con los golpes ni con la cámara lenta)
+  if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
   world.updateGates(dt);
   fx.update(dt);
   updateCamera(dt);
@@ -554,7 +560,7 @@ async function boot() {
   for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => {
     audio.primeSpeech();
     // Chiste: al elegir a Marine dice «¡Messi Goku!» (en vez de «merci beaucoup»)
-    if (card.dataset.hero === 'marine') { audio.sfx('messigoku'); audio.say('Messi Goku !', 'fr-FR'); }
+    if (card.dataset.hero === 'marine') audio.messiGoku();
     startRun(card.dataset.hero, true);
   });
   $('#btn-pause').addEventListener('click', pause);

@@ -303,11 +303,12 @@ export function createHero(id, ctx) {
       game.powers.truthWave(p.x, p.z);
       fx.popup(p.clone().setY(4.6), '¡VERDADES A LOS GRITOS!', '#ffd36e', { size: 24, life: 1.1 });
       fx.shake(0.5); fx.hitstop(0.12);
+      ctx.audio?.sfx('diushbag'); // el grito tipo «¡Hadouken!» acompaña la onda
     } else {
       game.powers.flambe(p.x, p.z, h);
       fx.popup(p.clone().setY(4.4), '¡FLAMBÉ! OH LÀ LÀ !', '#ff9fd0', { size: 24, life: 1.1 });
       fx.shake(0.35); fx.hitstop(0.1);
-      ctx.audio?.say('Oh là là !', 'fr-FR');
+      ctx.audio?.say('Oh là là !', 'fr-FR', { female: true });
     }
     ctx.audio?.sfx('power');
   }
