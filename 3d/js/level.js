@@ -30,19 +30,19 @@ export const WAVES = [
   { id: 'avenida', level: 1, trigger: 72, gate: null, title: 'LA AVENIDA', text: 'Cuidado con el colectivo: no frena.',
     spawns: [{ dx: 9, dz: -2, kind: 'secuaz' }, { dx: 10, dz: 2, kind: 'secuaz' }, { dx: -8, dz: -1.5, kind: 'patovica' }] },
   { id: 'piquete', level: 1, trigger: 106, gate: 1, title: '¡PIQUETE!', text: 'Vencé a los del bombo para que levanten el corte.',
-    spawns: [{ dx: 7, dz: -2, kind: 'bombo' }, { dx: 8, dz: 2, kind: 'bombo' }, { dx: 5, dz: 0, kind: 'secuaz' }, { dx: -7, dz: 1, kind: 'secuaz' }] },
+    spawns: [{ dx: 7, dz: -2, kind: 'bombo' }, { dx: 8, dz: 2, kind: 'bombo' }, { dx: 5, dz: 0, kind: 'secuaz' }] },
   { id: 'le-concept', level: 1, trigger: 126, gate: null, endsLevel: true, title: '¡LLEGAMOS A LE CONCEPT!', text: 'La banda copó la puerta del restaurante.',
     facu: '¡Llegamos a Le Concept! La banda copó la puerta: ¡sacalos!',
-    spawns: [{ dx: 8, dz: 0, kind: 'patovica' }, { dx: 9, dz: -2.2, kind: 'bombo' }, { dx: 6, dz: 2.2, kind: 'secuaz' }, { dx: -7, dz: -1, kind: 'secuaz' }, { dx: 10, dz: 1.5, kind: 'secuaz' }] },
+    spawns: [{ dx: 8, dz: 0, kind: 'patovica' }, { dx: 9, dz: -2.2, kind: 'bombo' }, { dx: 6, dz: 2.2, kind: 'secuaz' }, { dx: -7, dz: -1, kind: 'secuaz' }] },
 
   { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE', text: 'Los mozos tiran croissants: acercate rápido.',
-    spawns: [{ dx: 11, dz: -2, kind: 'mozo' }, { dx: 12, dz: 2, kind: 'mozo' }, { dx: 7, dz: 0, kind: 'secuaz' }, { dx: -7, dz: 1.5, kind: 'secuaz' }, { dx: 9, dz: -1.2, kind: 'lale' }] },
+    spawns: [{ dx: 11, dz: -2, kind: 'mozo' }, { dx: 12, dz: 2, kind: 'mozo' }, { dx: 7, dz: 0, kind: 'secuaz' }, { dx: 9, dz: -1.2, kind: 'lale' }] },
   { id: 'francia-2', level: 2, trigger: 186, gate: 2, title: '¡DELIVERY!', text: 'Viene en bici a toda velocidad: esquivalo.',
     spawns: [{ dx: 10, dz: 1.5, kind: 'delivery' }, { dx: 9, dz: -2, kind: 'secuaz' }, { dx: 12, dz: 0, kind: 'mozo' }] },
   { id: 'boulevard', level: 2, trigger: 212, gate: null, title: 'LE BOULEVARD', text: 'Grève: pasá por el hueco de la fila.',
-    spawns: [{ dx: 10, dz: 0, kind: 'patovica' }, { dx: 11, dz: -2, kind: 'delivery' }, { dx: 12, dz: 2, kind: 'mozo' }, { dx: -7, dz: 1, kind: 'secuaz' }] },
+    spawns: [{ dx: 10, dz: 0, kind: 'patovica' }, { dx: 11, dz: -2, kind: 'delivery' }, { dx: 12, dz: 2, kind: 'mozo' }] },
   { id: 'boulevard-2', level: 2, trigger: 238, gate: 3, title: 'ÚLTIMO TRAMO', text: 'Atrás de esta barrera está el galpón.',
-    spawns: [{ dx: 8, dz: -1.5, kind: 'patovica' }, { dx: 10, dz: 1.8, kind: 'delivery' }, { dx: 11, dz: 0, kind: 'mozo' }, { dx: -7, dz: -2, kind: 'secuaz' }, { dx: 7, dz: 2.5, kind: 'secuaz' }] }
+    spawns: [{ dx: 8, dz: -1.5, kind: 'patovica' }, { dx: 10, dz: 1.8, kind: 'delivery' }, { dx: 11, dz: 0, kind: 'mozo' }, { dx: -7, dz: -2, kind: 'secuaz' }] }
 ];
 
 // Trampas. zone: tramo donde actúan las que aparecen solas.

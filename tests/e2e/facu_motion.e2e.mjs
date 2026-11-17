@@ -37,5 +37,7 @@ try {
   const host = await G(() => { const d = document.createElement('div'); d.className = 'host'; d.innerHTML = '<img>'; document.body.append(d); const a = getComputedStyle(d.querySelector('img')).animationName; d.remove(); return a; });
   check(host !== 'none', `el Facu de la pantalla final se mueve (animación ${host})`);
   check(!/micr[oó]fono/i.test(fs.readFileSync(new URL('../../3d/js/ui.js', import.meta.url), 'utf8')), 'ui.js no habla de micrófono');
+  const tagText = await G(() => [...document.querySelectorAll('#labels .tag-name')].map(e => e.textContent));
+  check(!tagText.includes('FACU'), 'el cartelito FACU sobre el mini Facu ya no está: ' + JSON.stringify(tagText));
   check(errors.length === 0, 'sin errores en consola: ' + errors.join(' | '));
 } finally { await browser.close(); }

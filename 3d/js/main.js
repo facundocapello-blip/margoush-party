@@ -444,12 +444,10 @@ function frame(now) {
     game.time = 0;
     if (game.story.updateIntro(dt)) endIntro();
     game.hero.actor.update(dt, 0);
-    game.facu.refreshLabels();
   } else if (game.state === 'transition') {
     game.transT += dt;
     game.hero.actor.update(dt, 0);
     game.facu.celebrate(dt);
-    game.facu.refreshLabels();
     if (game.transT > TRANSITION_S) endTransition();
   } else if (game.state === 'rescue') {
     game.rescueT += dt;
@@ -460,7 +458,6 @@ function frame(now) {
       a.lift = Math.abs(Math.sin(game.rescueT * 7 + ph)) * 0.6;
       a.update(dt, 0);
     }
-    game.facu.refreshLabels();
     if (game.rescueT > 3.6) finish(true);
   }
   if (bannerCurrent) { bannerTimer -= dt; if (bannerTimer <= 0) nextBanner(); }
@@ -486,7 +483,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.state = 'menu'; audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); game.facu?.refreshLabels(); showScreen('screen-menu'); };
+  const goMenu = () => { game.state = 'menu'; audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;

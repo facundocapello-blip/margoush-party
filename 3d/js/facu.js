@@ -74,11 +74,6 @@ export function createFacu(ctx) {
   // Facu sentado: la carrocería tapa las piernas
   const actor = new SpriteActor(scene, assets, { poses: { idle: { tex: 'facu' } }, heightM: 1.9, shadow: 0 });
   actor.shadow.visible = false;
-  const labels = document.querySelector('#labels');
-  const tag = document.createElement('div');
-  tag.className = 'tag-name';
-  tag.textContent = 'FACU';
-  labels.append(tag);
   let jokeIdx = 0;
   let vx = 0, vy = 0, rolled = 0, idleT = 0;
   let lean = 0, hopT = 0, cheer = false, talkT = 0;
@@ -96,16 +91,6 @@ export function createFacu(ctx) {
     vx = 0; vy = 0;
   }
   place();
-
-  const project = (el, y) => {
-    const v = actor.position.clone();
-    v.y += y;
-    v.project(ctx.camera);
-    const vis = v.z < 1 && (game.state === 'playing' || game.state === 'rescue' || game.state === 'intro');
-    el.style.display = vis ? '' : 'none';
-    el.style.left = ((v.x + 1) / 2) * innerWidth + 'px';
-    el.style.top = ((1 - v.y) / 2) * innerHeight + 'px';
-  };
 
   function syncActor() {
     actor.position.set(car.position.x - 0.35, car.position.y + 0.1, LANE_Z);
@@ -208,7 +193,6 @@ export function createFacu(ctx) {
       lean += (Math.max(-0.28, Math.min(0.28, accel * 0.025)) - lean) * Math.min(1, dt * 8);
       animateFacu(dt, Math.abs(vx) > 0.3);
       actor.update(dt, 0);
-      f.refreshLabels();
     },
 
     // Festejo del rescate: salta en el asiento
@@ -216,7 +200,6 @@ export function createFacu(ctx) {
       cheer = true;
       animateFacu(dt, false);
       actor.update(dt, 0);
-      f.refreshLabels();
     },
 
     // Para escenas: estaciona el auto en un lugar fijo
@@ -227,13 +210,11 @@ export function createFacu(ctx) {
       actor.update(0, 0);
     },
 
-    refreshLabels() { project(tag, actor.heightM + 0.3); },
 
     dispose() {
       scene.remove(car);
       car.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       actor.dispose();
-      tag.remove();
     }
   };
   syncActor();
