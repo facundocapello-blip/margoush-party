@@ -109,6 +109,12 @@ export function createProps(ctx) {
             game.score.addPickup('bottle');
             fx.popup(b.sprite.position.clone().setY(2), '+50 ❤️', '#ff9fb0', { size: 22 });
             ctx.audio?.sfx('pickup');
+            // Chiste: Marine no dice «merci beaucoup», dice «¡Messi Goku!»
+            if (game.heroId === 'marine') {
+              fx.popup(b.sprite.position.clone().setY(2.8), '¡MESSI GOKU! ⚽🐉', '#ffd166', { size: 24, life: 1.2 });
+              ctx.audio?.sfx('messigoku');
+              ctx.audio?.say('Messi Goku !', 'fr-FR');
+            }
           }
         }
       }

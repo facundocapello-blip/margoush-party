@@ -1,6 +1,90 @@
 // Música (temas del 2D + uno sintetizado para el jefe) y efectos sintetizados.
 const MUTE_KEY = 'margoush3d_muted';
 
+function noiseBurst(ac, out, noise, t, dur, vol, type, freq, q = 1, attack = 0.002) {
+  const s = ac.createBufferSource(); s.buffer = noise;
+  const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(out);
+  s.start(t, Math.random() * 0.1); s.stop(t + dur + 0.05);
+}
+
+// Piña en capas: chasquido + cuerpo + bombo grave. Cada golpe sale un poco distinto.
+export function punch(ac, out, noise, t, power = 1) {
+  const p = 0.86 + Math.random() * 0.28;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(170 * p, t);
+  o.frequency.exponentialRampToValueAtTime(40 * p, t + 0.1 + 0.08 * power);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.5 + 0.2 * power, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14 + 0.12 * power);
+  o.connect(g); g.connect(out);
+  o.start(t); o.stop(t + 0.4);
+  noiseBurst(ac, out, noise, t, 0.025, 0.4, 'highpass', 2600 * p, 0.7, 0.001);
+  noiseBurst(ac, out, noise, t, 0.07 + 0.06 * power, 0.25 + 0.12 * power, 'bandpass', 750 * p, 1.1);
+  if (power > 1.2) noiseBurst(ac, out, noise, t + 0.01, 0.22, 0.25, 'lowpass', 260, 0.8, 0.01);
+}
+
+// Voz de dibujito «¡Diuuuuushbag!» sintetizada por formantes (sin archivos).
+// pitch: 1 normal, <1 voz grave, >1 voz finita. Devuelve cuánto dura.
+const FORMANTS = { i: [270, 2290, 3010], u: [310, 870, 2240], ae: [680, 1720, 2410] };
+export function diushbag(ac, out, noise, t, pitch = 1) {
+  const p = pitch;
+  const tU = t + 0.16, tUend = t + 0.82, tSh = t + 0.8, tShEnd = t + 1.04, tB = t + 1.06, tAE = t + 1.1, tG = t + 1.3;
+  const src = ac.createOscillator(); src.type = 'sawtooth';
+  const f = src.frequency;
+  f.setValueAtTime(180 * p, t);
+  f.linearRampToValueAtTime(290 * p, tU);
+  f.linearRampToValueAtTime(330 * p, t + 0.5);
+  f.linearRampToValueAtTime(230 * p, tUend);
+  f.setValueAtTime(210 * p, tB);
+  f.linearRampToValueAtTime(150 * p, tG);
+  // vibrato que crece en la «uuuu»
+  const lfo = ac.createOscillator(); lfo.frequency.value = 7;
+  const lg = ac.createGain();
+  lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(18 * p, t + 0.5); lg.gain.setValueAtTime(0, tUend);
+  lfo.connect(lg); lg.connect(f);
+  const vg = ac.createGain();
+  const G = vg.gain;
+  G.setValueAtTime(0, t); G.linearRampToValueAtTime(1, t + 0.03);
+  G.setValueAtTime(1, tUend - 0.1); G.linearRampToValueAtTime(0, tUend);
+  G.setValueAtTime(0, tB); G.linearRampToValueAtTime(1.15, tAE);
+  G.setValueAtTime(1.15, tG - 0.04); G.linearRampToValueAtTime(0, tG);
+  src.connect(vg);
+  const mix = ac.createGain(); mix.gain.value = 0.5;
+  [[6, 1], [10, 0.7], [12, 0.4]].forEach(([q, amp], k) => {
+    const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q;
+    const F = bp.frequency;
+    F.setValueAtTime(FORMANTS.i[k], t);
+    F.linearRampToValueAtTime(FORMANTS.u[k], tU);
+    F.setValueAtTime(FORMANTS.u[k], tUend);
+    F.setValueAtTime(FORMANTS.ae[k] * 0.6, tB);
+    F.linearRampToValueAtTime(FORMANTS.ae[k], tAE);
+    F.setValueAtTime(FORMANTS.ae[k], tG - 0.06);
+    F.linearRampToValueAtTime(k === 1 ? 2100 : FORMANTS.ae[k] * 0.8, tG);
+    const a = ac.createGain(); a.gain.value = amp * 2.2;
+    vg.connect(bp); bp.connect(a); a.connect(mix);
+  });
+  mix.connect(out);
+  noiseBurst(ac, out, noise, t, 0.03, 0.25, 'bandpass', 3200, 1.2, 0.001); // D
+  // SH
+  const s = ac.createBufferSource(); s.buffer = noise;
+  const sf = ac.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 2700; sf.Q.value = 1.6;
+  const sg = ac.createGain();
+  sg.gain.setValueAtTime(0, tSh); sg.gain.linearRampToValueAtTime(0.55, tSh + 0.05);
+  sg.gain.setValueAtTime(0.55, tShEnd - 0.05); sg.gain.linearRampToValueAtTime(0, tShEnd);
+  s.connect(sf); sf.connect(sg); sg.connect(out);
+  s.start(tSh); s.stop(tShEnd + 0.02);
+  noiseBurst(ac, out, noise, tG, 0.04, 0.3, 'bandpass', 1700, 2, 0.002); // G
+  src.start(t); lfo.start(t);
+  src.stop(tG + 0.1); lfo.stop(tG + 0.1);
+  return tG + 0.1 - t;
+}
+
 export function createAudio(assets) {
   let muted = false;
   try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (_) {}
@@ -56,12 +140,31 @@ export function createAudio(assets) {
     s.start(t); s.stop(t + dur + 0.05);
   }
 
+  // «¡Diuuuuushbag!»: sale a veces, nunca dos seguidas (mínimo 3 s entre una y otra)
+  let lastVoice = -10;
+  function voice(delay = 0) {
+    const pitch = [0.72, 1, 1, 1.32][Math.floor(Math.random() * 4)];
+    lastVoice = ac.currentTime;
+    diushbag(ac, master, noise, ac.currentTime + delay, pitch);
+  }
+  function maybeVoice(chance, delay) {
+    if (ac.currentTime - lastVoice < 3 || Math.random() > chance) return;
+    voice(delay);
+  }
+
   const SFX = {
     swing: () => hiss(0.12, 0.25, 1800, 0.8),
-    hit: () => { tone('triangle', 170, 50, 0.14, 0.4); hiss(0.07, 0.3, 900); },
-    hitHeavy: () => { tone('triangle', 130, 38, 0.24, 0.55); hiss(0.14, 0.4, 600); },
+    hit: () => punch(ac, master, noise, ac.currentTime, 1),
+    hitHeavy: () => { punch(ac, master, noise, ac.currentTime, 1.6); maybeVoice(0.1, 0.1); },
     hurt: () => { tone('sawtooth', 220, 90, 0.22, 0.3); hiss(0.1, 0.25, 500); },
-    ko: () => { tone('square', 320, 80, 0.3, 0.18); hiss(0.2, 0.25, 400); },
+    ko: () => { punch(ac, master, noise, ac.currentTime, 1.4); tone('square', 320, 80, 0.3, 0.12, 0.05); maybeVoice(0.4, 0.15); },
+    diushbag: () => voice(0),
+    // Remate de «¡Messi Goku!»: carga de poder que sube + brillitos
+    messigoku: () => {
+      tone('sawtooth', 110, 880, 0.7, 0.12); tone('square', 220, 1760, 0.7, 0.05);
+      hiss(0.7, 0.18, 1500, 0.5);
+      [1319, 1568, 2093].forEach((f, i) => tone('sine', f, f, 0.18, 0.12, 0.62 + i * 0.07));
+    },
     jump: () => tone('sine', 320, 640, 0.15, 0.18),
     dodge: () => hiss(0.18, 0.25, 2200, 0.7),
     power: () => { tone('sawtooth', 240, 60, 0.4, 0.35); hiss(0.35, 0.35, 300, 0.6); },

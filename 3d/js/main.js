@@ -525,7 +525,12 @@ async function boot() {
   addEventListener('keydown', (e) => { if (game.state === 'menu' && !game.coverStarted && !e.repeat) startCover(); });
   const justStarted = () => performance.now() - (game.coverStartedAt || 0) < 450;
   $('#btn-play').addEventListener('click', () => { if (!justStarted()) showScreen('screen-select'); });
-  for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => { audio.primeSpeech(); startRun(card.dataset.hero, true); });
+  for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => {
+    audio.primeSpeech();
+    // Chiste: al elegir a Marine dice «¡Messi Goku!» (en vez de «merci beaucoup»)
+    if (card.dataset.hero === 'marine') { audio.sfx('messigoku'); audio.say('Messi Goku !', 'fr-FR'); }
+    startRun(card.dataset.hero, true);
+  });
   $('#btn-pause').addEventListener('click', pause);
   $('#btn-resume').addEventListener('click', resume);
   $('#btn-restart').addEventListener('click', () => startRun(game.heroId));
