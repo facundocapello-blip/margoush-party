@@ -241,5 +241,194 @@
   "rows": 1,
   "skull": 125.0,
   "foot": 0.985
+ },
+ "calle_buenos_aires": {
+  "file": "calle_buenos_aires.webp",
+  "w": 1280,
+  "h": 853,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "cepi_actions_sheet": {
+  "file": "cepi_actions_sheet.webp",
+  "w": 2400,
+  "h": 512,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 205.0,
+  "foot": 0.988
+ },
+ "cepi_walk_sheet": {
+  "file": "cepi_walk_sheet.webp",
+  "w": 1956,
+  "h": 512,
+  "frames": 6,
+  "cols": 6,
+  "rows": 1,
+  "skull": 221.5,
+  "foot": 0.988
+ },
+ "chaky_actions_sheet": {
+  "file": "chaky_actions_sheet.webp",
+  "w": 1696,
+  "h": 512,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 120.0,
+  "foot": 0.988
+ },
+ "chaky_walk_sheet": {
+  "file": "chaky_walk_sheet.webp",
+  "w": 2064,
+  "h": 512,
+  "frames": 6,
+  "cols": 6,
+  "rows": 1,
+  "skull": 129.5,
+  "foot": 0.988
+ },
+ "douge_actions_sheet": {
+  "file": "douge_actions_sheet.webp",
+  "w": 2016,
+  "h": 512,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 188.0,
+  "foot": 0.988
+ },
+ "douge_combo_sheet": {
+  "file": "douge_combo_sheet.webp",
+  "w": 1272,
+  "h": 512,
+  "frames": 3,
+  "cols": 3,
+  "rows": 1,
+  "skull": 187.0,
+  "foot": 0.988
+ },
+ "galpon": {
+  "file": "galpon.webp",
+  "w": 1280,
+  "h": 853,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "henris": {
+  "file": "henris.webp",
+  "w": 1280,
+  "h": 853,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "lale_actions_sheet": {
+  "file": "lale_actions_sheet.webp",
+  "w": 1680,
+  "h": 512,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 154.0,
+  "foot": 0.988
+ },
+ "lale_walk_sheet": {
+  "file": "lale_walk_sheet.webp",
+  "w": 1560,
+  "h": 512,
+  "frames": 6,
+  "cols": 6,
+  "rows": 1,
+  "skull": 153.0,
+  "foot": 0.988
+ },
+ "le_ble": {
+  "file": "le_ble.webp",
+  "w": 1280,
+  "h": 853,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "marine_actions_sheet": {
+  "file": "marine_actions_sheet.webp",
+  "w": 1440,
+  "h": 512,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 90.0,
+  "foot": 0.988
+ },
+ "marine_combo_sheet": {
+  "file": "marine_combo_sheet.webp",
+  "w": 1428,
+  "h": 512,
+  "frames": 3,
+  "cols": 3,
+  "rows": 1,
+  "skull": 163.0,
+  "foot": 0.988
+ },
+ "objetos_sheet": {
+  "file": "objetos_sheet.webp",
+  "w": 768,
+  "h": 768,
+  "frames": 9,
+  "cols": 3,
+  "rows": 3,
+  "names": [
+   "manteca",
+   "pelota",
+   "ticket",
+   "cerveza",
+   "hongo",
+   "hongo_veneno",
+   "medialuna",
+   "sarten",
+   "corazon"
+  ]
+ },
+ "pinky_actions_sheet": {
+  "file": "pinky_actions_sheet.webp",
+  "w": 1864,
+  "h": 512,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 159.5,
+  "foot": 0.988
+ },
+ "pinky_walk_sheet": {
+  "file": "pinky_walk_sheet.webp",
+  "w": 2268,
+  "h": 512,
+  "frames": 6,
+  "cols": 6,
+  "rows": 1,
+  "skull": 154.0,
+  "foot": 0.988
+ },
+ "punto_de_oro": {
+  "file": "punto_de_oro.webp",
+  "w": 1280,
+  "h": 853,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "rescate_sheet": {
+  "file": "rescate_sheet.webp",
+  "w": 620,
+  "h": 512,
+  "frames": 2,
+  "cols": 2,
+  "rows": 1,
+  "skull": 152.0,
+  "foot": 0.988
  }
 }

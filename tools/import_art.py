@@ -5,7 +5,7 @@ Uso: python3 -I tools/import_art.py <imagen> [<imagen> ...] [--assets 3d/assets]
 El nombre del archivo dice qué es (lale_camina.png, douge_combo.png, le_ble.png, objetos.png…).
 - Personajes: se les saca el fondo verde y se cortan en cuadros iguales → <id>_sheet.webp (512 px de alto).
 - Objetos: grilla de 3×3 → objetos_sheet.webp (9 cuadros).
-- Fondos: se achican a 2048 px de ancho como máximo → <id>.webp.
+- Fondos: se achican a 1280 px de ancho como máximo → <id>.webp.
 Cada uno queda anotado en manifest.json; el juego lo usa solo si existe.
 """
 import argparse
@@ -44,11 +44,11 @@ def update_manifest(assets, name, entry):
         json.dump(man, f, indent=1, ensure_ascii=False)
 
 
-def background(src, ident, assets, max_w=2048):
+def background(src, ident, assets, max_w=1280):
     im = Image.open(src).convert('RGB')
     if im.width > max_w:
         im = im.resize((max_w, round(im.height * max_w / im.width)), Image.LANCZOS)
-    im.save(os.path.join(assets, ident + '.webp'), 'WEBP', quality=84, method=6)
+    im.save(os.path.join(assets, ident + '.webp'), 'WEBP', quality=74, method=6)
     update_manifest(assets, ident, {'file': ident + '.webp', 'w': im.width, 'h': im.height, 'frames': 1, 'cols': 1, 'rows': 1})
 
 
@@ -71,11 +71,24 @@ def objects(src, assets, cell=256):
     update_manifest(assets, 'objetos_sheet', {'file': 'objetos_sheet.webp', 'w': out.width, 'h': out.height, 'frames': 9, 'cols': 3, 'rows': 3, 'names': OBJECT_NAMES})
 
 
+def unspill(path, quality=80):
+    """Los brillos semitransparentes sobre el verde quedan verdosos: los vuelve dorados y re-guarda liviano."""
+    im = Image.open(path).convert('RGBA')
+    a = np.array(im).astype(np.int32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    green = (g > r + 18) & (g > b + 18) & (a[..., 3] > 0)
+    a[..., 0] = np.where(green, np.maximum(r, g), r)
+    a[..., 1] = np.where(green, np.minimum(g, (np.maximum(r, g) * 0.82).astype(np.int32)), g)
+    Image.fromarray(a.clip(0, 255).astype(np.uint8)).save(path, 'WEBP', quality=quality, method=6)
+
+
 def import_one(src, assets):
     stem = os.path.splitext(os.path.basename(src))[0].lower()
     if stem in SHEETS:
         ident, frames = SHEETS[stem]
-        return ident + '_sheet', cut(src, ident, frames, 'auto', assets, cell_h=CELL_H)
+        meta = cut(src, ident, frames, 'auto', assets, cell_h=CELL_H)
+        unspill(os.path.join(assets, ident + '_sheet.webp'))
+        return ident + '_sheet', meta
     if stem in BACKGROUNDS:
         background(src, stem, assets)
         return stem, None

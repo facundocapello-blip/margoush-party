@@ -41,7 +41,7 @@ def test_import_art(tmp_path):
     assert sheet.getpixel((1, 1))[3] == 0
     o = man['objetos_sheet']
     assert o['cols'] == 3 and o['rows'] == 3 and len(o['names']) == 9
-    assert man['le_ble']['w'] == 2048
+    assert man['le_ble']['w'] == 1280
 
 
 if __name__ == '__main__':

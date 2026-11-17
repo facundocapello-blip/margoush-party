@@ -32,7 +32,7 @@ try {
   check(c.hp >= 12, `Cepi aguanta como mini-jefe (vida ${c.hp})`);
   check(c.banners.some(t => t.includes('CEPI')), 'sale el cartel de CEPI «EL NIÑO»');
   check(c.bar && c.barName.includes('CEPI'), 'se ve la barra de vida con su nombre');
-  check(c.sheet.includes('cepi_sheet'), 'Cepi usa su hoja de poses');
+  check(/cepi_(actions_)?sheet/.test(c.sheet), 'Cepi usa su hoja de poses');
   await page.waitForTimeout(1500);
   await shot(page, 'cepi-miniboss');
   await G(() => window.__game.enemies.clear());
@@ -45,7 +45,7 @@ try {
   await page.waitForFunction(() => window.__game.hero.hp < 99, null, { timeout: 12000 });
   const fee = await G(() => window.__s0 - window.__game.score.total);
   check(fee === 100, `el trapito te saca $100 de puntaje cuando te pega (${fee})`);
-  check(await G(() => window.__p.actor.poses.idle.tex.image.src.includes('pinky_sheet')), 'Pinky usa su hoja de poses');
+  check(await G(() => /pinky_(actions_)?sheet/.test(window.__p.actor.poses.idle.tex.image.src)), 'Pinky usa su hoja de poses');
   check(await G(() => window.__game.cameos.pinky.actor === null), 'Pinky ya no aparece como ayudante');
 
   // ---------- Cepi tira pelotazos de pádel ----------

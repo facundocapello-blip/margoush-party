@@ -17,10 +17,10 @@ try {
   check(new Set(texs).size === KINDS.length, 'cada tipo usa un dibujo distinto: ' + texs.join(', '));
   for (const i of info) check(/^face_/.test(i.tex), `${i.kind} usa su propia cara (${i.tex})`);
   check(info.every(i => i.tex !== 'courier'), 'ninguno usa el courier base');
-  // Lale usa su hoja de 4 poses (idle, paso, golpe, daño), no una sola imagen
+  // Lale usa sus hojas de la guía AAA: acciones (parado, tiro, golpeado, KO) y caminata de 6 cuadros
   const lale = await G(() => { const e = window.__game.enemies.spawn(44, 0, 'lale'); const p = e.actor.poses;
-    return { cells: ['idle', 'step', 'strike', 'hurt'].map(n => p[n] && p[n].cell), cols: p.idle && p.idle.cols }; });
-  check(lale.cols === 4 && lale.cells.join() === '0,1,2,3', 'Lale usa su hoja de 4 poses: ' + JSON.stringify(lale));
+    return { cells: ['idle', 'strike', 'hurt', 'ko'].map(n => p[n] && p[n].cell), cols: p.idle && p.idle.cols, walk: p.walk && p.walk.frames }; });
+  check(lale.cols === 4 && lale.cells.join() === '0,1,2,3' && lale.walk === 6, 'Lale usa sus hojas de acciones y caminata: ' + JSON.stringify(lale));
   check(errors.length === 0, 'sin errores en consola: ' + errors.join(' | '));
   console.log('OK enemy_faces');
 } finally {
