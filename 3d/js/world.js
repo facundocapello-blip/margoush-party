@@ -174,7 +174,7 @@ export function buildStreet(scene, assets) {
 
   // Piso: asfalto porteño hasta la frontera, adoquines franceses hasta el galpón
   const baLen = BORDER_X + 20;
-  const asphaltFloor = new THREE.Mesh(new THREE.PlaneGeometry(baLen, 22), new THREE.MeshLambertMaterial({ color: 0xb0a8b4, map: canvasTex(256, 704, asphalt, baLen / 8, 1) }));
+  const asphaltFloor = new THREE.Mesh(new THREE.PlaneGeometry(baLen, 22), new THREE.MeshLambertMaterial({ color: 0x9c8a94, map: canvasTex(512, 512, cobble, baLen / 7, 6) }));
   asphaltFloor.rotation.x = -Math.PI / 2;
   asphaltFloor.position.set(BORDER_X - baLen / 2, 0, 5.6);
   scene.add(asphaltFloor);
@@ -237,7 +237,7 @@ export function buildStreet(scene, assets) {
     for (let y = 0; y <= h; y += 32) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
     c.fillStyle = 'rgba(0,0,0,0.12)'; for (let x = 6; x < w; x += 8) for (let y = 6; y < h; y += 8) c.fillRect(x, y, 2, 2);
   }, baLen / 2, 1);
-  const curbBA = new THREE.Mesh(new THREE.BoxGeometry(baLen, 0.16, 1.4), new THREE.MeshLambertMaterial({ map: tiles }));
+  const curbBA = new THREE.Mesh(new THREE.BoxGeometry(baLen, 0.16, 1.4), new THREE.MeshLambertMaterial({ color: 0xc9a98a }));
   curbBA.position.set(BORDER_X - baLen / 2, 0.08, -4.5);
   const curbFR = new THREE.Mesh(new THREE.BoxGeometry(frLen + 20, 0.16, 1.4), new THREE.MeshLambertMaterial({ color: 0xc9a98a }));
   curbFR.position.set(BORDER_X + (frLen + 20) / 2, 0.081, -4.5);
@@ -262,18 +262,22 @@ export function buildStreet(scene, assets) {
   // La cámara ve unos 4 m de fachada: el local se escala para que vidrieras y cartel entren en cuadro
   const lcH = 9, lcW = 1.4 * lcH * ((U_LC[1] - U_LC[0]) * bgMeta.w) / (bgMeta.h * 0.835);
   const lcLeft = LE_CONCEPT_X - lcW / 2, lcRight = LE_CONCEPT_X + lcW / 2;
-  const baSpans = [[-7, lcLeft, 15], [lcRight, BORDER_X, 1]];
-  let bi = 0;
-  for (const [a, b, n] of baSpans) {
-    const bw = (b - a) / n;
-    for (let k = 0; k < n; k++) {
-      const bh = 10.5 + ((bi * 37) % 5) * 0.5;
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(bw + 0.02, bh), new THREE.MeshBasicMaterial({ map: canvasTex(512, Math.round(512 * bh / bw), porteno(bi)), fog: false }));
-      m.position.set(a + bw * (k + 0.5), bh / 2, BACK_Z);
+  // Las fachadas del Nivel 1 usan los mismos recortes pintados que Francia
+  const paintedParts = [[0, U_LC[0]], [U_LC[1], 1]].map(([u0, u1]) => ({ mat: new THREE.MeshBasicMaterial({ map: crop(u0, u1), fog: false }), w: (u1 - u0) * bgMeta.w / pxPerM }));
+  function paintedRun(from, to, start = 0) {
+    let x0 = from, part = start;
+    while (x0 < to - 0.01) {
+      const pt = paintedParts[part++ % 2];
+      const w = Math.min(pt.w, to - x0);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(pt.w, tileH), pt.mat);
+      m.position.set(x0 + pt.w / 2, tileH * (0.5 - 0.165), BACK_Z - 0.02);
+      if (w < pt.w) { m.scale.x = w / pt.w; m.position.x = x0 + w / 2; }
       scene.add(m);
-      bi++;
+      x0 += w;
     }
   }
+  paintedRun(-7, lcLeft);
+  paintedRun(lcRight, BORDER_X, 1);
 
   // LE CONCEPT: el local azul, más grande y adelantado, con cartel dorado sobre azul
   const leConcept = new THREE.Group();
@@ -413,7 +417,8 @@ export function buildStreet(scene, assets) {
   const flagCols = [0x2b4fa8, 0xf4f1ea, 0xd23a3a];
   const flagGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.22, 0, 0), new THREE.Vector3(0.22, 0, 0), new THREE.Vector3(0, -0.45, 0)]);
   const flagMats = flagCols.map(c => new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
-  for (let a = BORDER_X + 6; a < GALPON_X - 8; a += 22) {
+  for (let a = 6; a < GALPON_X - 8; a += 22) {
+    if (a + 18 > LE_CONCEPT_X - 11 && a < LE_CONCEPT_X + 11) continue;
     for (let k = 0; k <= 22; k++) {
       const t = k / 22, x = a + t * 18, y = 4.35 - Math.sin(t * Math.PI) * 0.7;
       const f = new THREE.Mesh(flagGeo, flagMats[k % 3]);
@@ -425,7 +430,8 @@ export function buildStreet(scene, assets) {
   // Macetas sobre la vereda francesa
   const potMat = new THREE.MeshLambertMaterial({ color: 0xb4643c });
   const leafMat = new THREE.MeshLambertMaterial({ color: 0x4f7a3c });
-  for (let x = BORDER_X + 8; x < GALPON_X; x += 15) {
+  for (let x = 8; x < GALPON_X; x += 15) {
+    if (Math.abs(x - LE_CONCEPT_X) < 11) continue;
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), potMat);
     pot.position.set(x, 0.41, -5.0);
     const bush = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 8), leafMat);
