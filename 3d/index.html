@@ -19,6 +19,7 @@
         <div>
           <div id="hud-name">DOUGE</div>
           <div id="hud-hearts"></div>
+          <div id="hud-power" aria-label="Poder"><div id="hud-power-fill"></div><span id="hud-power-text">PODER</span></div>
         </div>
       </div>
       <div class="hud-center">
@@ -38,16 +39,17 @@
     <div id="flash"></div>
 
     <div id="touch" class="hidden">
+      <div id="stick-zone" aria-hidden="true"></div>
       <div id="joystick"><div id="knob"></div></div>
       <div id="actions">
-        <button class="act" id="act-attack" data-action="attack" aria-label="Golpe">👊</button>
-        <button class="act" id="act-jump" data-action="jump" aria-label="Salto">SALTO</button>
-        <button class="act" id="act-dodge" data-action="dodge" aria-label="Esquivar">ESQUIVE</button>
-        <button class="act" id="act-power" data-action="power" aria-label="Poder">⚡</button>
+        <button class="act" id="act-attack" data-action="attack" aria-label="Golpe (mantené para el poder)"><span class="ico">👊</span><i class="ring"></i></button>
+        <button class="act" id="act-jump" data-action="jump" aria-label="Salto"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l7 8h-4.5v8h-5v-8H5z"/></svg><small>SALTO</small></button>
+        <button class="act" id="act-dodge" data-action="dodge" aria-label="Esquivar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h11a3 3 0 1 0-3-3" /><path d="M3 12h16a3 3 0 1 1-3 3" /><path d="M3 16h7" /></svg><small>ESQUIVE</small></button>
       </div>
     </div>
 
-    <div id="rotate-hint" class="hidden">Girá el celular para jugar mejor ↻</div>
+    <div id="rotate-hint" class="hidden"><b>↻</b>Girá el celu para jugar<small>El juego te espera</small></div>
+    <div id="coach" class="hidden"></div>
 
     <!-- Pantallas -->
     <section id="screen-loading" class="screen">
@@ -72,8 +74,8 @@
     <section id="screen-select" class="screen hidden">
       <h2>Elegí tu héroe</h2>
       <div class="cards">
-        <button class="card" id="pick-douge" data-hero="douge"><img src="assets/douge_idle.webp" alt="Douge"><span>DOUGE</span><small>Puño de VERDADES</small></button>
-        <button class="card" id="pick-marine" data-hero="marine"><img src="assets/marine_idle.webp" alt="Marine"><span>MARINE</span><small>Oh là là!</small></button>
+        <button class="card" id="pick-douge" data-hero="douge"><img src="assets/douge_idle.webp" alt="Douge"><span>DOUGE</span><small>Pega fuerte</small><em>⚡ Verdades a los gritos: los vuela a todos</em></button>
+        <button class="card" id="pick-marine" data-hero="marine"><img src="assets/marine_idle.webp" alt="Marine"><span>MARINE</span><small>Más rápida</small><em>⚡ Flambé: los quema y te cura 🥐</em></button>
       </div>
     </section>
 

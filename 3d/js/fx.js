@@ -141,7 +141,9 @@ export function createFx(scene, camera, labelsEl, flashEl) {
         p.life -= dt;
         p.pos.y += p.rise * dt;
         const v = p.pos.clone().project(camera);
-        p.el.style.left = ((v.x + 1) / 2) * w + 'px';
+        // que los textos largos no se corten en el borde de la pantalla
+        const half = (p.halfW ??= p.el.offsetWidth / 2);
+        p.el.style.left = Math.min(w - half - 6, Math.max(half + 6, ((v.x + 1) / 2) * w)) + 'px';
         p.el.style.top = ((1 - v.y) / 2) * h + 'px';
         p.el.style.opacity = Math.min(1, p.life / (p.max * 0.4));
         if (p.life <= 0) { p.el.remove(); pops.splice(i, 1); }

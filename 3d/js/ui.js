@@ -61,6 +61,8 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
     const toRank = el('button', { id: 'btn-show-ranking', class: 'ghost-btn', text: '🏆 Ver ranking' });
     const menu = el('button', { id: 'btn-result-menu', class: 'ghost-btn', text: 'Menú' });
 
+    // Sin puntos no hay nada para guardar
+    if (result.total <= 0) { save.disabled = true; save.textContent = 'Sin puntos todavía'; nick.disabled = true; }
     let saving = false;
     save.addEventListener('click', async () => {
       if (saving) return;

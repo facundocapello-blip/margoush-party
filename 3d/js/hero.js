@@ -15,7 +15,10 @@ const SWINGS = [
   { dur: 0.4, hitAt: 0.14, reach: 2.3, dmg: 2, knock: 8, strength: 1.6 }
 ];
 const INVULN = 0.7;
-const POWER_CD = 7;
+// Poder: se carga pegando (no con un reloj). Se lanza manteniendo apretado el golpe o con L/E.
+export const POWER = { start: 1, hit: 0.07, finisher: 0.12, kill: 0.08, dodge: 0.15, hold: 0.45 };
+// Puntería automática: al pegar, se da vuelta hacia el malo más cercano
+export const AIM = { reach: 2.8, depth: 1.3, snapZ: 0.45 };
 
 export function createHero(id, ctx) {
   const cfg = HERO_CFG[id];
@@ -28,7 +31,7 @@ export function createHero(id, ctx) {
     state: 'free', t: 0,
     combo: 0, comboWindow: 0, buffer: 0, swing: null, swingHit: false,
     lift: 0, vy: 0,
-    dodgeDir: 1, powerCd: 0, dodgeCd: 0,
+    dodgeDir: 1, power: POWER.start, holdT: 0, holdUsed: false, dodgeCd: 0,
     knock: 0, knockZ: 0,
     slowT: 0, slowF: 1, stunT: 0,
     slideT: 0, slideDir: 1, slideSpeed: 5,
@@ -51,7 +54,24 @@ export function createHero(id, ctx) {
     push(vx, vz) { h.knock += vx; h.knockZ += vz; },
     isDodging() { return h.state === 'dodge'; },
 
+    // Suma a la barra de poder (pegar, rematar, voltear, esquivar justo)
+    charge(k) {
+      const was = h.power >= 1;
+      h.power = Math.min(1, h.power + k);
+      if (!was && h.power >= 1) {
+        fx.popup(actor.position.clone().setY(3.1), '⚡ ¡PODER LISTO!', '#ffd36e', { size: 22, life: 1.1, rise: 0.4 });
+        ctx.audio?.sfx('pickup');
+      }
+    },
+    get powerReady() { return h.power >= 1; },
+
     hurt(amount, fromX) {
+      // Esquive justo: el golpe te pasa por al lado y suma poder
+      if (h.state === 'dodge' && game.state === 'playing' && !h.dodgeRewarded) {
+        h.dodgeRewarded = true;
+        h.charge(POWER.dodge);
+        fx.popup(actor.position.clone().setY(2.8), '¡JUSTO!', '#9ad7ff', { size: 22, life: 0.7 });
+      }
       if (h.inv > 0 || h.state === 'dodge' || game.state !== 'playing') return false;
       h.hp = Math.max(0, h.hp - amount);
       h.inv = INVULN;
@@ -71,7 +91,6 @@ export function createHero(id, ctx) {
 
     update(dt) {
       h.inv = Math.max(0, h.inv - dt);
-      h.powerCd = Math.max(0, h.powerCd - dt);
       h.comboWindow = Math.max(0, h.comboWindow - dt);
       h.buffer = Math.max(0, h.buffer - dt);
       const p = actor.position;
@@ -91,16 +110,24 @@ export function createHero(id, ctx) {
         return;
       }
 
-      if (input.consume('attack')) h.buffer = 0.2;
+      if (input.consume('attack')) { h.buffer = 0.2; h.holdT = 0; h.holdUsed = false; }
+      // Mantener apretado el golpe con la barra llena = poder
+      if (input.pressed('attack')) {
+        h.holdT += dt;
+        if (!h.holdUsed && h.power >= 1 && h.holdT >= POWER.hold) { h.holdUsed = true; h.buffer = 0; usePower(); }
+      } else h.holdT = 0;
       if (input.consume('jump') && h.lift === 0 && h.state !== 'dodge') { h.vy = 8.5; h.lift = 0.001; ctx.audio?.sfx('jump'); }
       h.dodgeCd = Math.max(0, h.dodgeCd - dt);
       if (input.consume('dodge') && h.state !== 'dodge' && h.dodgeCd <= 0) {
-        h.state = 'dodge'; h.t = 0.24; h.inv = Math.max(h.inv, 0.35); h.dodgeCd = 0.7;
+        h.state = 'dodge'; h.t = 0.24; h.inv = Math.max(h.inv, 0.35); h.dodgeCd = 0.7; h.dodgeRewarded = false;
         h.dodgeDir = Math.abs(input.moveX) > 0.2 ? Math.sign(input.moveX) : actor.facing;
         fx.dust(p);
         ctx.audio?.sfx('dodge');
       }
-      if (input.consume('power') && h.powerCd <= 0) usePower();
+      if (input.consume('power')) {
+        if (h.power >= 1) usePower();
+        else fx.popup(actor.position.clone().setY(3), 'Cargá el poder pegando 👊', '#d9cff5', { size: 16, life: 0.9, rise: 0.2 });
+      }
 
       // Golpes
       if (h.state === 'free' && h.buffer > 0) startSwing();
@@ -148,7 +175,7 @@ export function createHero(id, ctx) {
     },
 
     reset() {
-      h.hp = h.hpMax; h.inv = 0; h.state = 'free'; h.combo = 0; h.buffer = 0; h.lift = 0; h.vy = 0; h.knock = 0; h.knockZ = 0; h.powerCd = 0; h.slowT = 0; h.stunT = 0; h.slideT = 0;
+      h.hp = h.hpMax; h.inv = 0; h.state = 'free'; h.combo = 0; h.buffer = 0; h.lift = 0; h.vy = 0; h.knock = 0; h.knockZ = 0; h.power = POWER.start; h.holdT = 0; h.slowT = 0; h.stunT = 0; h.slideT = 0;
       h.damageLog = [];
     }
   };
@@ -209,6 +236,7 @@ export function createHero(id, ctx) {
     h.t = 0;
     h.swingHit = false;
     if (Math.abs(input.moveX) > 0.2) actor.setFacing(Math.sign(input.moveX));
+    autoAim();
     // pequeño avance para que el golpe tenga peso
     const x0 = actor.position.x;
     actor.position.x += actor.facing * (h.combo === 2 ? 0.45 : 0.25);
@@ -216,32 +244,58 @@ export function createHero(id, ctx) {
     ctx.audio?.sfx(h.combo === 2 ? 'hitHeavy' : 'swing');
   }
 
+  // Se da vuelta hacia el malo más cercano (y se acomoda un poco de carril) para no pegarle al aire
+  function autoAim() {
+    const p = actor.position;
+    let best = null, bd = Infinity;
+    const cands = game.enemies.list.filter(e => e.hp > 0 && e.state !== 'dead').map(e => e.pos);
+    if (game.boss && !game.boss.dead) cands.push(game.boss.pos);
+    for (const q of cands) {
+      const dx = Math.abs(q.x - p.x), dz = Math.abs(q.z - p.z);
+      if (dx > AIM.reach || dz > AIM.depth) continue;
+      const d = dx + dz * 1.5;
+      if (d < bd) { bd = d; best = q; }
+    }
+    if (!best) return;
+    if (Math.abs(best.x - p.x) > 0.15) actor.setFacing(Math.sign(best.x - p.x));
+    const dz = best.z - p.z;
+    p.z += Math.sign(dz) * Math.min(Math.abs(dz), AIM.snapZ);
+  }
+
   function landSwing() {
     const s = h.swing;
     const area = { x: actor.position.x, z: actor.position.z, facing: actor.facing, reach: s.reach, depth: 0.75, dmg: s.dmg, knock: s.knock, strength: s.strength, airborne: h.lift > 0.5 };
     fx.slash(new THREE.Vector3(actor.position.x, 1.25, actor.position.z), actor.facing, ['short', 'long', 'finisher'][h.combo]);
-    const hits = game.enemies.hitArea(area) + (game.boss ? game.boss.hitArea(area) : 0) + game.props.hitArea(area);
-    if (hits > 0 && s.strength > 1.2) { fx.hitstop(0.08); fx.shake(0.28); }
+    const alive0 = game.enemies.alive();
+    const foes = game.enemies.hitArea(area) + (game.boss ? game.boss.hitArea(area) : 0);
+    const hits = foes + game.props.hitArea(area);
+    if (foes > 0) {
+      h.charge(s.strength > 1.2 ? POWER.finisher : POWER.hit);
+      const ko = Math.max(0, alive0 - game.enemies.alive());
+      if (ko) h.charge(POWER.kill * ko);
+      fx.hitstop(s.strength > 1.2 ? 0.08 : 0.03);
+    }
+    if (hits > 0 && s.strength > 1.2) fx.shake(0.28);
   }
 
+  // Douge: «¡VERDADES A LOS GRITOS!» — onda en círculo que voltea a todos alrededor.
+  // Marine: «¡FLAMBÉ!» — giro con la sartén en llamas que quema y aturde, y un croissant que cura 1 corazón.
   function usePower() {
-    h.powerCd = POWER_CD;
+    h.power = 0; h.holdT = 0;
     const p = actor.position;
+    h.state = 'free'; h.swing = null;
+    h.inv = Math.max(h.inv, 0.6);
     if (id === 'douge') {
-      game.powers.launchFists(p.x, p.z, actor.facing);
-      game.props.hitArea({ x: p.x, z: p.z, facing: actor.facing, reach: 3.8, depth: 1.1 });
-      fx.popup(p.clone().setY(3.2).setX(p.x + actor.facing * 1.5), '¡VERDADES!', '#ffd36e', { size: 28, life: 1 });
-      fx.shake(0.4); fx.hitstop(0.1);
-      ctx.audio?.sfx('power');
+      game.powers.truthWave(p.x, p.z);
+      fx.popup(p.clone().setY(4.6), '¡VERDADES A LOS GRITOS!', '#ffd36e', { size: 24, life: 1.1 });
+      fx.shake(0.5); fx.hitstop(0.12);
     } else {
-      game.powers.throwPan(p.x, p.z, actor.facing);
-      const hit = 0;
-      fx.popup(p.clone().setY(3.3), 'OH LÀ LÀ !', '#ff9fd0', { size: 28, life: 1 });
-      fx.shake(0.25);
-      ctx.audio?.sfx('power');
+      game.powers.flambe(p.x, p.z, h);
+      fx.popup(p.clone().setY(4.4), '¡FLAMBÉ! OH LÀ LÀ !', '#ff9fd0', { size: 24, life: 1.1 });
+      fx.shake(0.35); fx.hitstop(0.1);
       ctx.audio?.say('Oh là là !', 'fr-FR');
-      if (hit) fx.hitstop(0.06);
     }
+    ctx.audio?.sfx('power');
   }
 
   return h;

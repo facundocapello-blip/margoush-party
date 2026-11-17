@@ -3,7 +3,8 @@ import { buildStreet } from './world.js';
 import { createInput } from './input.js';
 import { createScore } from './score.js';
 import { createFx } from './fx.js';
-import { createHero, HERO_CFG } from './hero.js';
+import { createHero, HERO_CFG, POWER } from './hero.js';
+import { createCoach } from './coach.js';
 import { createEnemies } from './enemies.js';
 import { registerSkins } from './skins.js';
 import { createTraps } from './traps.js';
@@ -52,7 +53,8 @@ const game = {
 };
 window.__game = game;
 
-let assets, world, input, fx, audio, ui;
+let assets, world, input, fx, audio, ui, coach;
+const TOUCH = matchMedia('(pointer: coarse)').matches;
 
 // Rendimiento: mide la lógica por cuadro y baja la calidad si el equipo no llega a 38 FPS sostenidos
 const QUALITY_DPR = [2, 1.25, 1, 0.8];
@@ -145,6 +147,9 @@ function updateRotateHint() {
   const touch = matchMedia('(pointer: coarse)').matches;
   const show = touch && innerHeight > innerWidth && (game.state === 'playing' || game.state === 'intro');
   $('#rotate-hint').classList.toggle('hidden', !show);
+  // En vertical el juego se frena (nadie te pega mientras girás el celu)
+  game.portraitBlock = show;
+  if (show) input?.reset();
 }
 
 function updateCamera(dt, snap = false) {
@@ -166,7 +171,7 @@ function showScreen(id) {
   queueMicrotask(updateRotateHint);
 }
 
-function updateHud() {
+function updateHud(dt = 0) {
   const h = game.hero;
   const shown = Math.min(5, h.hpMax);
   const full = Math.min(shown, Math.ceil(h.hp * shown / h.hpMax));
@@ -174,7 +179,16 @@ function updateHud() {
   $('#hud-score').textContent = game.score.total.toLocaleString('es-AR');
   const m = game.score.multiplier;
   $('#hud-mult').textContent = m > 1 ? '×' + m.toFixed(1) : '';
-  $('#act-power').classList.toggle('cooling', h.powerCd > 0);
+  const pw = Math.min(1, h.power), ready = pw >= 1;
+  $('#hud-power-fill').style.width = (pw * 100).toFixed(1) + '%';
+  $('#hud-power').classList.toggle('ready', ready);
+  $('#hud-power-text').textContent = ready ? (TOUCH ? '⚡ ¡LISTO!' : '⚡ ¡LISTO! (L)') : 'PODER';
+  const atk = $('#act-attack');
+  atk.style.setProperty('--pw', pw.toFixed(3));
+  atk.style.setProperty('--hold', Math.min(1, h.holdT / POWER.hold).toFixed(3));
+  atk.classList.toggle('ready', ready);
+  atk.classList.toggle('charging', ready && h.holdT > 0.08);
+  coach.update(dt);
 }
 
 function clearRun() {
@@ -220,7 +234,7 @@ function startRun(heroId, withIntro = false) {
   $('#hud').classList.remove('hidden');
   $('#hud-name').textContent = HERO_CFG[heroId].name;
   $('#hud-portrait').style.backgroundImage = `url(${assets.url(HERO_CFG[heroId].poses.idle.tex)})`;
-  if (matchMedia('(pointer: coarse)').matches) $('#touch').classList.remove('hidden');
+  if (TOUCH) $('#touch').classList.remove('hidden');
   updateCamera(0, true);
   resize();
   clearBanners();
@@ -229,6 +243,7 @@ function startRun(heroId, withIntro = false) {
   audio.music(heroId);
   if (withIntro) { game.state = 'intro'; game.story.startIntro(); }
   else game.state = 'playing';
+  coach.reset();
   updateRotateHint();
 }
 
@@ -246,7 +261,8 @@ function openGate(i) {
   g.open = true;
   g.t = 0;
   fx.shake(0.35);
-  game.banner('¡ZONA DESPEJADA!', 'Seguí hacia la derecha →');
+  // Menos carteles: un aviso chico arriba del héroe en vez de un cartel
+  if (game.hero) fx.popup(game.hero.actor.position.clone().setY(3.3), '¡DESPEJADO! SEGUÍ →', '#7ee0c3', { size: 24, life: 1.4, rise: 0.4 });
   game.ctx.audio?.sfx('crate');
   game.ctx.audio?.sfx('clear');
 }
@@ -273,6 +289,7 @@ function updateZones() {
   for (const w of WAVES) {
     if (w.level !== game.level) continue;
     const st = game.waves[w.id];
+    if (st === 'idle' && x > w.trigger && game.cameos.busy) { game.cameos.hurry(); break; }
     if (st === 'idle' && x > w.trigger) {
       game.waves[w.id] = 'active';
       game.enemies.spawnWave(w.id);
@@ -367,6 +384,7 @@ game.setStage = (id) => {
   clearRun();
   // Saltar a una etapa (solo pruebas): Pinky no se cruza salvo que la prueba lo pida
   game.cameos.pinky.shown = { 1: true, 2: true };
+  coach?.hide();
   game.props.reset();
   const p = game.hero.actor.position;
   game.state = 'playing';
@@ -426,7 +444,9 @@ let last = 0;
 function frame(now) {
   const dt = Math.min(0.05, last ? (now - last) / 1000 : 0) * game.timeScale;
   last = now;
-  if (game.state === 'playing') {
+  if (game.portraitBlock && (game.state === 'playing' || game.state === 'intro')) {
+    // en pausa hasta que gires el celu
+  } else if (game.state === 'playing') {
     const t0 = performance.now();
     if (input.consume('pause')) pause();
     else if (!fx.frozen(dt)) {
@@ -445,7 +465,7 @@ function frame(now) {
       game.combo.update(dt);
       game.stats.maxMult = Math.max(game.stats.maxMult, game.score.multiplier);
     }
-    updateHud();
+    updateHud(dt);
     if (dt > 0) game.perf.record(dt * 1000, performance.now() - t0);
   } else if (game.state === 'intro') {
     game.time = 0;
@@ -484,7 +504,7 @@ async function boot() {
   assets = await loadAssets('assets/manifest.json', (f) => { $('#load-fill').style.width = Math.round(f * 100) + '%'; });
   registerSkins(assets);
   world = buildStreet(scene, assets);
-  input = createInput({ canvas, joystick: $('#joystick'), knob: $('#knob'), buttons: document.querySelectorAll('.act') });
+  input = createInput({ canvas, joystick: $('#joystick'), knob: $('#knob'), zone: $('#stick-zone'), buttons: document.querySelectorAll('.act') });
   fx = createFx(scene, camera, $('#labels'), $('#flash'));
   audio = createAudio(assets);
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
@@ -500,13 +520,15 @@ async function boot() {
   game.traps = createTraps(ctx);
   game.butter = createButter(ctx);
   game.cameos = createCameos(ctx);
+  coach = createCoach({ game, el: $('#coach'), touch: TOUCH });
+  game.coach = coach;
   game.psycho = createPsycho(ctx);
   game.powers = createPowers(ctx);
   game.props = createProps(ctx);
   game.pickups = game.props.pickups;
   game.crates = game.props.crates;
   game.story = createStory(ctx);
-  canvas.addEventListener('pointerdown', () => { if (game.state === 'intro') endIntro(); });
+  for (const el of [canvas, $('#stick-zone')]) el.addEventListener('pointerdown', () => { if (game.state === 'intro' && !game.portraitBlock) endIntro(); });
   addEventListener('keydown', () => { if (game.state === 'intro') endIntro(); });
   game.heroScreen = () => { const v = game.hero.actor.position.clone(); v.y += 1; v.project(camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 }; };
   game.quickStart = (heroId) => startRun(heroId);

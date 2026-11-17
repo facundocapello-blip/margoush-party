@@ -29,8 +29,8 @@ export function createInput(dom) {
   dom.canvas.addEventListener('mouseup', (e) => { release(e.button === 2 ? 'dodge' : 'attack'); });
   dom.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  // Joystick
-  const joy = dom.joystick, knob = dom.knob;
+  // Joystick flotante: aparece donde apoyás el pulgar en la mitad izquierda (no hay que apuntarle a un círculo)
+  const joy = dom.joystick, knob = dom.knob, zone = dom.zone;
   const moveStick = (cx, cy) => {
     const r = joy.getBoundingClientRect();
     const rad = r.width * 0.38;
@@ -43,18 +43,31 @@ export function createInput(dom) {
     stick.z = Math.abs(ny) < dead ? 0 : ny;
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
   };
+  const homeStick = () => { joy.style.left = joy.style.top = joy.style.bottom = ''; joy.classList.remove('floating'); };
   const endStick = (e) => {
     if (e.pointerId !== stick.id) return;
     stick.id = null; stick.x = 0; stick.z = 0;
     knob.style.transform = 'translate(0px, 0px)';
+    homeStick();
   };
-  joy.addEventListener('pointerdown', (e) => {
+  const grab = (e, el, center) => {
     if (stick.id !== null) return;
     stick.id = e.pointerId;
-    try { joy.setPointerCapture(e.pointerId); } catch (_) {}
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    if (center) {
+      // el joystick se muda adonde tocaste (sin salirse de la pantalla)
+      const size = joy.offsetWidth || 118;
+      const x = Math.max(4, Math.min(innerWidth / 2 - size, e.clientX - size / 2));
+      const y = Math.max(70, Math.min(innerHeight - size - 4, e.clientY - size / 2));
+      joy.style.left = x + 'px'; joy.style.top = y + 'px'; joy.style.bottom = 'auto';
+      joy.classList.add('floating');
+    }
     moveStick(e.clientX, e.clientY);
     e.preventDefault();
-  });
+  };
+  joy.addEventListener('pointerdown', (e) => grab(e, joy, false));
+  zone?.addEventListener('pointerdown', (e) => grab(e, zone, true));
+  zone?.addEventListener('lostpointercapture', endStick);
   addEventListener('pointermove', (e) => { if (e.pointerId === stick.id) moveStick(e.clientX, e.clientY); }, true);
   addEventListener('pointerup', endStick, true);
   addEventListener('pointercancel', endStick, true);
@@ -98,6 +111,7 @@ export function createInput(dom) {
       queued.clear();
       stick.id = null; stick.x = 0; stick.z = 0;
       knob.style.transform = 'translate(0px, 0px)';
+      homeStick();
       for (const b of dom.buttons) b.classList.remove('pressed');
       for (const o of allOwners) o.clear();
     },

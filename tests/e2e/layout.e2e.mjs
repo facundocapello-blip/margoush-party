@@ -32,7 +32,7 @@ try {
   await page.waitForTimeout(200);
   const score = await rect('#hud-score'), banner = await rect('#banner');
   check(!overlap(score, banner), 'el mensaje de Facu no tapa el puntaje');
-  for (const c of ['#joystick', '#act-attack', '#act-jump', '#act-dodge', '#act-power']) check(!overlap(banner, await rect(c)), `el mensaje no tapa ${c}`);
+  for (const c of ['#joystick', '#act-attack', '#act-jump', '#act-dodge']) check(!overlap(banner, await rect(c)), `el mensaje no tapa ${c}`);
   const car = await G(() => { const g = window.__game; const v = g.facu.car.position.clone(); v.y += 1.2; v.project(g.ctx.camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight }; });
   check(!(car.x > banner.left && car.x < banner.right && car.y > banner.top && car.y < banner.bottom), 'el mensaje no tapa el auto de Facu');
 
@@ -41,7 +41,7 @@ try {
   await page.waitForTimeout(400);
   const bar = await rect('#boss-bar');
   check(bar && bar.top > 390 / 2, `la barra de BIG CHAKY va abajo (top ${bar && Math.round(bar.top)})`);
-  for (const c of ['#joystick', '#act-attack', '#act-jump', '#act-dodge', '#act-power']) check(!overlap(bar, await rect(c)), `la barra no tapa ${c}`);
+  for (const c of ['#joystick', '#act-attack', '#act-jump', '#act-dodge']) check(!overlap(bar, await rect(c)), `la barra no tapa ${c}`);
   await shot(page, 'layout-boss');
   check(errors.length === 0, 'sin errores de consola ' + JSON.stringify(errors));
 } finally {

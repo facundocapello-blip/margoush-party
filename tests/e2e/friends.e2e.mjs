@@ -64,21 +64,6 @@ try {
   check(s.hp === 5, `patinar no saca vida (hp ${s.hp})`);
   check(s.x1 - s.x0 >= 1.5, `patina ${(s.x1 - s.x0).toFixed(2)} m aunque se camine al revés`);
 
-  // ---------- El patinazo frena antes del bache ----------
-  const b = await G(() => { const t = window.__game.traps.list.find(t => t.kind === 'bache'); return { x: t.x, w: t.w, z: (t.z0 + t.z1) / 2 }; });
-  const edge = b.x - b.w / 2;
-  await quiet(edge - 2.9, b.z);
-  await track();
-  await puddle(edge - 1.7, b.z);
-  await page.keyboard.down('ArrowRight');
-  await until(() => window.__game.hero.slideT > 0);
-  await page.keyboard.up('ArrowRight');
-  await slideDone();
-  await page.waitForTimeout(300);
-  const hb = await hero();
-  check(hb.hp === 5, `patinar hacia el bache no cuesta vida (hp ${hb.hp})`);
-  check(hb.x < edge, `el patinazo frena antes del borde del bache (x=${hb.x.toFixed(2)}, borde ${edge.toFixed(2)})`);
-
   // ---------- El patinazo frena antes del piquete cerrado ----------
   const gx = await G(() => window.__game.world.gates.find(g => g.kind === 'piquete').x);
   await G(() => {

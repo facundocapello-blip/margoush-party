@@ -38,6 +38,8 @@ export function createCameos(ctx) {
     fx.popup(pinky.actor.position.clone().setY(PINKY.heightM + 0.7), text, color, { size: 22, life: 1.3, rise: 0.3 });
   }
 
+  function goal() { p.phase = 'party'; p.t = 0; say(PINKY_LINES.goal, '#ffd34d'); ctx.audio?.sfx('goal'); }
+
   function remove() {
     pinky.actor?.dispose();
     pinky.actor = null;
@@ -63,11 +65,11 @@ export function createCameos(ctx) {
       moving = Math.abs(dx) > 0.05;
       if (Math.abs(dx) < 0.3 || p.t > 6) { p.phase = 'wait'; p.t = 0; }
     } else if (p.phase === 'wait') {
-      if (p.t >= PINKY.wait) { p.phase = 'party'; p.t = 0; say(PINKY_LINES.goal, '#ffd34d'); ctx.audio?.sfx('goal'); }
+      if (p.t >= PINKY.wait) goal();
     } else if (p.phase === 'party') {
       a.lift = Math.abs(Math.sin(p.t * 9)) * 0.45;
       a.setPose(Math.floor(p.t * 6) % 2 ? 'strike' : 'idle');
-      if (p.t >= PINKY.party) { p.phase = 'leave'; p.t = 0; a.lift = 0; a.setFacing(-1); say(PINKY_LINES.bye); }
+      if (p.t >= (p.short ? 0.6 : PINKY.party)) { p.phase = 'leave'; p.t = 0; a.lift = 0; a.setFacing(-1); say(PINKY_LINES.bye); }
     } else if (p.phase === 'leave') {
       a.position.x -= PINKY.leave * dt;
       moving = true;
@@ -85,6 +87,14 @@ export function createCameos(ctx) {
     pinky,
     update,
     get phase() { return p?.phase || null; },
+    // Mientras Pinky actúa no entra la oleada siguiente (que el chiste no se pise con la pelea)
+    get busy() { return !!p && p.phase !== 'leave'; },
+    // Llegaste a la oleada siguiente: Pinky escucha el gol ya y se va enseguida (la oleada espera menos de un segundo)
+    hurry() {
+      if (!p || p.phase === 'leave') return;
+      p.short = true;
+      if (p.phase !== 'party') goal();
+    },
     clear() { remove(); calm = 0; pinky.shown = { 1: false, 2: false }; },
     // Al cambiar de nivel: corta una aparición a medias (no se repite en el nivel que terminó)
     onLevelStart() { remove(); calm = 0; },

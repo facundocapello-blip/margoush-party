@@ -86,6 +86,9 @@ try {
   await page.click('#btn-rank-back');
   await G(() => window.__game.quickStart('marine'));
   await G(() => window.__game.finish(false));
+  check(await G(() => document.querySelector('#btn-save').disabled), 'con 0 puntos no se ofrece guardar');
+  await G(() => window.__game.quickStart('marine'));
+  await G(() => { window.__game.score.addKill('minion'); window.__game.finish(false); });
   await page.fill('#nick', 'Faca');
   await page.click('#btn-save');
   await page.waitForSelector('#save-status:has-text("Sin conexión")', { timeout: 9000 });

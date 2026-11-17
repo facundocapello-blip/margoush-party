@@ -54,25 +54,8 @@ try {
     check(h.hp === 5, 'la baldosa no saca vida');
   }
 
-  // ---------- Bache ----------
-  if (!ONLY || ONLY === 'bache') {
-    const b = await G(() => { const t = window.__game.traps.list.find(t => t.kind === 'bache'); return { x: t.x, w: t.w, z: (t.z0 + t.z1) / 2 }; });
-    await ba(b.x - b.w / 2 - 0.8, b.z);
-    await hold('ArrowRight', 450);
-    await page.waitForTimeout(300);
-    const h1 = await H();
-    check(h1.hp === 4, `caer en el bache saca un corazón (hp ${h1.hp})`);
-    check(h1.x < b.x - b.w / 2, `después de caer vuelve al borde (x=${h1.x.toFixed(2)})`);
-    await page.waitForTimeout(400);
-    check((await H()).x < b.x - b.w / 2 + 0.01 || true, 'no queda trabado adentro');
-    await hold('ArrowRight', 300);
-    // Saltarlo no duele
-    await ba(b.x - b.w / 2 - 0.5, b.z);
-    await G(() => { const h = window.__game.hero; h.vy = 8.5; h.lift = 0.001; });
-    await hold('ArrowRight', 650);
-    const h2 = await H();
-    check(h2.hp === 5 && h2.x > b.x + b.w / 2, `saltando se pasa el bache (x=${h2.x.toFixed(2)}, hp ${h2.hp})`);
-  }
+  // ---------- Sin baches ----------
+  check(await G(() => !window.__game.traps.list.some(t => t.kind === 'bache')), 'no quedan baches en la calle');
 
   // ---------- Piquete ----------
   if (!ONLY || ONLY === 'piquete') {
@@ -85,7 +68,10 @@ try {
     await G(() => { const g = window.__game; g.hero.actor.position.x = 115; g.enemies.list.forEach(e => { e.hp = 0; }); g.hero.inv = 0; });
     await until(() => window.__game.world.gates.find(g => g.kind === 'piquete').open);
     await page.waitForTimeout(400);
-    await hold('ArrowRight', 900);
+    // camina hasta pasar el corte (en Chrome sin GPU los cuadros van lentos: se espera la posición, no un tiempo fijo)
+    await page.keyboard.down('ArrowRight');
+    await until((gx) => window.__game.hero.actor.position.x > gx + 1, gx, 6000).catch(() => {});
+    await page.keyboard.up('ArrowRight');
     const h2 = await H();
     check(h2.x > gx + 1 && h2.hp === 4, `vencida la banda del bombo, el corte se levanta (x=${h2.x.toFixed(2)}, hp ${h2.hp})`);
   }
