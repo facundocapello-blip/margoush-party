@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#1a1433">
+  <title>MARGOUSH 3D · El rescate de Margot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@700;900&display=swap">
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <div id="hud" class="hidden">
+      <div class="hud-left">
+        <div id="hud-portrait"></div>
+        <div>
+          <div id="hud-name">DOUGE</div>
+          <div id="hud-hearts"></div>
+          <div id="hud-power" aria-label="Poder"><div id="hud-power-fill"></div><span id="hud-power-text">PODER</span></div>
+        </div>
+      </div>
+      <div class="hud-center">
+        <div id="hud-score">0</div>
+        <div id="hud-mult"></div>
+      </div>
+      <div class="hud-right">
+        <button id="btn-mute" class="icon-btn" aria-label="Silenciar">♪</button>
+        <button id="btn-pause" class="icon-btn" aria-label="Pausa">Ⅱ</button>
+      </div>
+    </div>
+    <div id="boss-bar" class="hidden"><span>BIG CHAKY</span><div class="track"><div id="boss-fill"></div></div></div>
+    <div id="banner" class="hidden"></div>
+    <div id="level-card" class="hidden"><small id="level-done"></small><b id="level-name"></b><span id="level-pts"></span><em id="level-next"></em></div>
+    <div id="combo" class="hidden"><b id="combo-num">0</b><small>GOLPES</small></div>
+    <div id="labels"></div>
+    <div id="flash"></div>
+
+    <div id="touch" class="hidden">
+      <div id="stick-zone" aria-hidden="true"></div>
+      <div id="joystick"><div id="knob"></div></div>
+      <div id="actions">
+        <button class="act" id="act-attack" data-action="attack" aria-label="Golpe (mantené para el poder)"><span class="ico">👊</span><i class="ring"></i></button>
+        <button class="act" id="act-jump" data-action="jump" aria-label="Salto"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l7 8h-4.5v8h-5v-8H5z"/></svg><small>SALTO</small></button>
+        <button class="act" id="act-dodge" data-action="dodge" aria-label="Esquivar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h11a3 3 0 1 0-3-3" /><path d="M3 12h16a3 3 0 1 1-3 3" /><path d="M3 16h7" /></svg><small>ESQUIVE</small></button>
+      </div>
+    </div>
+
+
+    <!-- Pantallas -->
+    <section id="screen-loading" class="screen">
+      <h1 class="logo">MARGOUSH</h1>
+      <div class="bar"><div id="load-fill"></div></div>
+    </section>
+
+    <section id="screen-menu" class="screen hidden">
+      <div class="cover-bg" aria-hidden="true"></div>
+      <div class="beam beam-l" aria-hidden="true"></div>
+      <div class="beam beam-r" aria-hidden="true"></div>
+      <div class="cover-title">
+        <h1 class="logo">MARGOUSH</h1>
+      </div>
+      <button id="press-start" class="press">TOCÁ PARA EMPEZAR</button>
+      <div class="menu-col" id="menu-buttons">
+        <button id="btn-play" class="big-btn">¡JUGAR!</button>
+        <button id="btn-ranking" class="ghost-btn">🏆 Ranking</button>
+      </div>
+    </section>
+
+    <section id="screen-select" class="screen hidden">
+      <h2>Elegí tu héroe</h2>
+      <div class="cards">
+        <button class="card" id="pick-douge" data-hero="douge"><img src="assets/douge_idle.webp" alt="Douge"><span>DOUGE</span><small>Pega fuerte</small><em>⚡ Verdades a los gritos: los vuela a todos</em></button>
+        <button class="card" id="pick-marine" data-hero="marine"><img src="assets/marine_idle.webp" alt="Marine"><span>MARINE</span><small>Más rápida</small><em>⚡ Flambé: los quema y te cura 🥐</em></button>
+      </div>
+    </section>
+
+    <section id="screen-pause" class="screen hidden">
+      <h2>Pausa</h2>
+      <button id="btn-resume" class="big-btn">SEGUIR</button>
+      <button id="btn-restart" class="ghost-btn">Reiniciar</button>
+      <button id="btn-home" class="ghost-btn">Menú</button>
+    </section>
+
+    <section id="screen-result" class="screen hidden"></section>
+    <section id="screen-ranking" class="screen hidden"></section>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
