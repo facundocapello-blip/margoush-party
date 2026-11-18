@@ -98,10 +98,17 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     const trunkM = keep(new T.MeshLambertMaterial({ color: L('#6b4a33') })), leafM = keep(new T.MeshLambertMaterial({ color: L('#4f8f3a'), flatShading: true }));
     const leafM2 = keep(new T.MeshLambertMaterial({ color: L('#78b04f'), flatShading: true })), poleM = keep(new T.MeshLambertMaterial({ color: L('#262b33') }));
     const bulbM = keep(new T.MeshBasicMaterial({ color: L('#ffd98a') }));
+    // Árbol pintado del kit (el mismo de Buenos Aires), si está
+    const treeArt = assets.has('prop_arbol');
+    const treeMeta = treeArt ? assets.meta('prop_arbol') : null;
+    const treeGeo = treeArt ? keep(new T.PlaneGeometry(5 * treeMeta.w / treeMeta.h, 5).translate(0, 2.5, 0)) : null;
+    const treeMat = treeArt ? keep(new T.MeshBasicMaterial({ map: assets.texture('prop_arbol'), alphaTest: 0.3, transparent: true, side: T.DoubleSide })) : null;
     const deco = [];
     for (const sd of [-1, 1]) for (let i = 0; i < 16; i++) {
       const g = new T.Group();
-      if (i % 2 === 0) {
+      if (i % 2 === 0 && treeArt) {
+        const m = new T.Mesh(treeGeo, treeMat); m.scale.x = i % 4 ? -1 : 1; g.add(m);
+      } else if (i % 2 === 0) {
         const tr = new T.Mesh(trunkG, trunkM); tr.position.y = 1.3;
         const l1 = new T.Mesh(leafG, leafM); l1.position.y = 3.1;
         const l2 = new T.Mesh(leafG, leafM2); l2.scale.setScalar(0.75); l2.position.set(0.5, 3.8, 0.2);

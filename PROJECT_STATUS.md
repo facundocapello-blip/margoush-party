@@ -162,3 +162,8 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - Cambio de nivel sin corte: se levanta la barrera «FRONTERA ✈», el héroe cruza caminando bajo «Bienvenue en France» y pasa una franja azul-blanco-rojo.
 - Piquete y portones de Francia («GRÈVE !») con el arte pintado de la valla; mesitas de Le Concept pintadas.
 - Pruebas: `npm test` 31 ok; toda la carpeta e2e en verde (Chrome sin pantalla). Falta iPhone real.
+
+## Actualización 2026-11-18 (noche) · Kit de objetos pintados
+- 6 objetos generados en Flow (proyecto «nov 18 - 14:19», Nano Banana, con la mesa de café como referencia de estilo) y recortados con `tools/cut_white.py`: `prop_arbol`, `prop_contenedor`, `prop_cajones`, `prop_maceta`, `prop_fuente`, `prop_galpon`.
+- Reemplazan a los árboles, contenedores y macetas hechos con figuras, a los cajones del portón de Buenos Aires («CERRADO»), a la puerta del galpón («PRIVADO») y a la fuente; los árboles de la persecución también son los pintados.
+- Presupuesto de imágenes subido a 7 MB. Pruebas: `npm test` 31 ok; e2e en verde (Chrome sin pantalla).

@@ -21,7 +21,9 @@ try {
         if (inL1 && c === 0x74b9e8) out.celeste++;
         if (c === 0xd23a3a) { if (inL1) out.tricolor1++; if (inL2) out.tricolor2++; }
       }
-      if (o.geometry.type === 'CylinderGeometry' && o.material.color && o.material.color.getHex() === 0xb4643c) { if (inL1) out.pots1++; if (inL2) out.pots2++; }
+      // maceta: la pintada del kit (prop_maceta) o la de figuras simples
+      const pot = (o.geometry.type === 'CylinderGeometry' && o.material.color && o.material.color.getHex() === 0xb4643c) || o.material?.map?.image?.src?.includes('prop_maceta');
+      if (pot) { if (inL1) out.pots1++; if (inL2) out.pots2++; }
       if (o.geometry.type === 'ConeGeometry' && o.material.color && o.material.color.getHex() === 0xf1e9dc) out.obelisco++;
     });
     return out;
