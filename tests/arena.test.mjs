@@ -105,6 +105,8 @@ test('four returns switch to phase 2 with rage', () => {
   assert.equal(l.state.hp, 15);
   assert.equal(ofType(evs, 'rage').length, 1);
   assert.ok(evs.some(e => e.type === 'line' && e.text === '¡Ahora sí me enojé!'));
+  assert.ok(evs.some(e => e.type === 'line' && e.text === '¡Tomá, barrilito!'));
+  assert.ok(evs.some(e => e.type === 'line' && e.text === '¡Me devolviste el barril, atrevido!'));
 });
 
 test('the hand warns, lands, stays stuck and takes extra damage', () => {
@@ -161,6 +163,7 @@ test('power clears every shot and hurts him', () => {
   assert.equal(hit.length, 1);
   assert.equal(hit[0].dmg, 4);
   assert.equal(hit[0].by, 'power');
+  assert.ok(p.some(e => e.type === 'line' && e.text === '¡Eso no vale!'));
   assert.equal(l.state.hp, 26);
 });
 
@@ -190,9 +193,10 @@ test('ko wins over a last hit in the same frame', () => {
   // tiros rápidos y héroe al fondo: un barril llega mientras la mano está trabada
   const l = createArenaLogic({ rand: () => 0 }), hero = { x: 0, z: ARENA.zFar, y: 0, dodging: false, inv: 99 };
   l._setHp(1.5);
-  // espera la mano trabada y un barril a un cuadro de tocar al héroe
-  const close = () => l.state.shots.find(s => s.kind === 'barrel' && !s.returning &&
-    Math.hypot(hero.x - s.x, hero.z - s.z) < ARENA.hitR + 0.15);
+  // espera la mano trabada y un barril que SÍ quedaría dentro de hitR tras un paso más (hoy está afuera)
+  const step = ARENA.phase1.barrelSpeed * FPS;
+  const close = () => l.state.shots.find(s => s.kind === 'barrel' && !s.returning && s.z < hero.z &&
+    hero.z - s.z >= ARENA.hitR && hero.z - (s.z + step) < ARENA.hitR);
   for (let i = 0; i < 120 * 60; i++) {
     const b = l.state.shots.find(s => s.kind === 'barrel' && !s.returning && s.z < hero.z);
     if (b) hero.x = b.x;
@@ -200,11 +204,38 @@ test('ko wins over a last hit in the same frame', () => {
     l.update(FPS, hero);
   }
   assert.equal(l.state.hand.state, 'stuck');
-  assert.ok(close(), 'barrel about to touch');
+  assert.ok(close(), 'precondition: the barrel touches the hero on the next step');
   const hand = l.state.hand;
   hero.inv = 0;
   const punch = l.punch({ x: hand.x, z: hand.z, reach: 1.9, dmg: 1 });
   assert.equal(ofType(punch, 'ko').length, 1);
   const next = l.update(FPS, hero);
   assert.equal(next.filter(e => e.type === 'hurt').length, 0);
+});
+
+test('a ko in a frame drops the hurt events of that same frame', () => {
+  const l = mk(), hero = { x: 0, z: -3, y: 0, dodging: false, inv: 0 };
+  l._setHp(3.75);
+  // un barril común que toca al héroe y, DESPUÉS en el arreglo, un devuelto que llega al jefe y lo noquea
+  l.state.shots.push({ id: 900, kind: 'barrel', gold: false, x: 0, z: -3, y: 0, returning: false });
+  l.state.shots.push({ id: 901, kind: 'barrel', gold: true, x: 0, z: ARENA.bossZ + 0.01, y: 0, returning: true });
+  const evs = l.update(FPS, hero);
+  assert.equal(ofType(evs, 'ko').length, 1);
+  assert.equal(ofType(evs, 'hurt').length, 0);
+});
+
+test('the stuck hand cannot be mashed: hits are locked out for 0.2 s', () => {
+  const l = mk(), hero = safeHero();
+  l._setHp(15);
+  runUntil(l, hero, () => l.state.hand.state === 'stuck');
+  const hand = l.state.hand, evs = [];
+  let hits = 0;
+  while (l.state.phase === 2 && (l.state.hand.state === 'stuck' || hits === 0)) {
+    const p = l.punch({ x: hand.x, z: hand.z, reach: 1.9, dmg: 1 });
+    hits += ofType(p, 'handHit').length;
+    evs.push(...p, ...l.update(FPS, hero));
+  }
+  assert.ok(hits >= 2, `hits ${hits}`);
+  assert.ok(hits <= Math.ceil(ARENA.phase2.stuck / 0.2), `hits ${hits}`);
+  assert.ok(15 - l.state.hp <= Math.ceil(ARENA.phase2.stuck / 0.2) * 1.5);
 });

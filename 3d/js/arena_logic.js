@@ -3,6 +3,9 @@
 // barriles (ruedan hacia el héroe) y cajones (caen donde estaba el héroe). Los barriles dorados se
 // devuelven de un golpe y son lo único que lo lastima en la fase 1. Con la mitad de vida se enoja:
 // fase 2, con el manotazo (la mano cae donde estabas, se traba y ahí sí se le pega).
+// Eventos: throw, hurt, dodge, returned, bossHit, handHit, slam, rage, ko, line.
+// PUNTAJE: solo cuentan `handHit` (+50) y `returned` (+300); `bossHit` es únicamente para la barra de vida
+// y el feedback de daño (también sale al pegarle a la mano, no hay que puntuarlo de nuevo).
 // Coordenadas: x a lo ancho (±xMax), z hacia el fondo negativo.
 
 export const ARENA = {
@@ -24,13 +27,15 @@ const HAND_DOWN = 0.15;    // la mano cae
 const HAND_UP = 0.4;       // la mano se levanta
 const CRATE_H = 8;         // altura desde la que cae el cajón
 const BARREL_Y = 1.1;      // el héroe en el aire (y >= esto) pasa por encima del barril
+const HAND_LOCK = 0.2;     // s mínimos entre golpes a la mano trabada
 const REMOVE_Z = 4;        // el barril que pasó de largo se descarta
 
 const LINES = {
-  first: '¡Tomá, flaco!',
-  returned: '¡Ay! ¡Me pegó mi propio barril!',
+  first: '¡Tomá, barrilito!',
+  returned: '¡Me devolviste el barril, atrevido!',
   rage: '¡Ahora sí me enojé!',
-  stuck: '¡Uy! ¡Se me trabó la mano!'
+  stuck: '¡Soltá, soltá!',
+  power: '¡Eso no vale!'
 };
 
 export function createArenaLogic({ rand = Math.random } = {}) {
@@ -44,6 +49,7 @@ export function createArenaLogic({ rand = Math.random } = {}) {
   let throws = 0, barrels = 0; // contadores de la fase actual
   let sinceSlam = 0;           // tiros desde el último manotazo
   let firstLine = false;
+  let handLock = 0;            // s hasta poder volver a pegarle a la mano
   let poseName = null, poseT = 0; // pose forzada (hurt / rage) y cuánto dura
   const crateT = new Map();    // id del cajón → segundos que lleva cayendo
 
@@ -167,10 +173,13 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     t += dt;
     state.bossX = Math.sin(t * 0.6) * A.bossSway;
     if (poseT > 0) poseT -= dt;
+    if (handLock > 0) handLock -= dt;
     timer -= dt;
     if (timer <= 0) { release(hero, evs); timer = interval(); }
     moveShots(dt, hero, evs);
     if (state.phase !== 'ko') moveHand(dt, hero, evs);
+    // si lo noquearon en este cuadro, ningún golpe al héroe del mismo cuadro vale
+    if (state.phase === 'ko') return evs.filter(e => e.type !== 'hurt');
     // pose
     if (state.phase === 'ko') state.pose = 'ko';
     else if (poseT > 0) state.pose = poseName;
@@ -195,8 +204,10 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     }
     // la mano trabada se castiga
     const h = state.hand;
-    if (h.state === 'stuck' && Math.hypot(area.x - h.x, area.z - h.z) < area.reach) {
+    if (h.state === 'stuck' && handLock <= 0 && Math.hypot(area.x - h.x, area.z - h.z) < area.reach) {
       const dmg = A.handDmg * area.dmg;
+      handLock = HAND_LOCK;
+      // handHit es lo que puntúa (+50); el bossHit de abajo es solo para la barra de vida / feedback
       evs.push({ type: 'handHit', dmg });
       damage(dmg, 'hand', evs);
     }
@@ -209,6 +220,7 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     state.shots = [];
     crateT.clear();
     damage(A.powerDmg, 'power', evs);
+    if (state.phase !== 'ko') evs.push({ type: 'line', text: LINES.power });
     return evs;
   }
 
