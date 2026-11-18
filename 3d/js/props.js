@@ -87,7 +87,6 @@ export function createProps(ctx) {
       }
       if (n && world.secret.sealed && crates.list.every(c => c.broken)) {
         world.secret.sealed = false;
-        game.banner('PASAJE DEL CORTADO', '¡Se abrió el pasaje! Entrá a ver qué hay.');
       }
       return n;
     },
@@ -103,18 +102,12 @@ export function createProps(ctx) {
           if (b.kind === 'poison') {
             game.psycho.start();
             fx.popup(b.sprite.position.clone().setY(2), '¡UFF! 🌀', '#c084fc', { size: 26, life: 1.1 });
-            game.banner('🍄 ¡HONGO RARO!', 'Se te va la cabeza un ratito… pero no pasa nada.', 3);
             ctx.audio?.sfx('secret');
           } else {
             h.hp = Math.min(h.hpMax, h.hp + 1);
             game.score.addPickup('bottle');
             fx.popup(b.sprite.position.clone().setY(2), '+50 ❤️', '#ff9fb0', { size: 22 });
             ctx.audio?.sfx('pickup');
-            // Chiste: Marine no dice «merci beaucoup», dice «¡Messi Goku!»
-            if (game.heroId === 'marine') {
-              fx.popup(b.sprite.position.clone().setY(2.8), '¡MESSI GOKU! ⚽🐉', '#ffd166', { size: 24, life: 1.2 });
-              ctx.audio?.messiGoku();
-            }
           }
         }
       }

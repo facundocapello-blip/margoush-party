@@ -141,6 +141,12 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     const CEPI_DRIVE = C.userData.key;
     const mark = mk(new T.RingGeometry(0.55, 0.78, 28), new T.MeshBasicMaterial({ color: L('#ff4d5e'), transparent: true, opacity: 0.85, depthWrite: false }));
     mark.rotation.x = -Math.PI / 2; mark.visible = false; mark.renderOrder = 2;
+    // Polvo que levantan las ruedas traseras del BYD (va de atrás: las ruedas no se ven girar, el polvo vende la velocidad)
+    const dustTex = canvasTex(64, 64, (g) => { const r = g.createRadialGradient(32, 32, 2, 32, 32, 30); r.addColorStop(0, 'rgba(236,222,214,.85)'); r.addColorStop(1, 'rgba(236,222,214,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); }, 1, 1);
+    const dustMat = keep(new T.SpriteMaterial({ map: dustTex, transparent: true, depthWrite: false }));
+    const dust = [];
+    for (let i = 0; i < 28; i++) { const sp = new T.Sprite(dustMat.clone()); keep(sp.material); sp.visible = false; scene.add(sp); dust.push({ sp, t: 9, life: 0.6, v: new T.Vector3() }); }
+    let dustAt = 0, dustI = 0;
     const ball = mk(new T.SphereGeometry(0.2, 14, 10), new T.MeshLambertMaterial({ color: L('#e6f04a'), emissive: L('#6a6a00') })); ball.visible = false;
     const track = buildTrack();
     const obs = track.obstacles.map(o => ({ ...o, ...OBST[o.kind], m: sprite(OBST[o.kind].tex, OBST[o.kind].h, OBST[o.kind].slip ? 0.6 : 0.9), dead: false, vy: 0, y: 0, spin: 0 }));
@@ -168,7 +174,6 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       setTex(C, pose === 'drive' ? CEPI_DRIVE : pose === 'windup' ? 'chase_cepi_windup' : pose === 'throw' ? 'chase_cepi_throw' : 'chase_cepi_dead');
     };
     game.state = 'chase';
-    banner('¡SE ESCAPA CEPI!', 'Se lleva la llave en su BYD. Doblá con el joystick, SALTO para saltar, 👊 rompe cosas.', 3.6);
 
     function hurt(txt) {
       if (inv > 0 || dashT > 0 || powT > 0) return;
@@ -263,7 +268,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         const want = stunT > 0 ? 6 : 8 + Math.sin(t * 0.7) * 1.8;
         gap += (want - gap) * dt * 0.8;
         cx += (Math.sin(t * 0.55) * 2.3 - cx) * dt * 1.2;
-        if (!shot && stunT <= 0 && windT <= 0) { throwT -= dt; if (throwT <= 0) { windT = CHASE.windup; hintE.classList.remove('hidden'); cepiTo('windup'); } }
+        if (!shot && stunT <= 0 && windT <= 0) { throwT -= dt; if (throwT <= 0) { windT = CHASE.windup; cepiTo('windup'); } } // sin cartel: se ve a Cepi asomarse y la marca roja en el piso
         if (windT > 0) {
           windT -= dt;
           if (windT <= 0) {
@@ -335,6 +340,25 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       const meta = assets.meta(C.userData.key), w0 = C.userData.h * meta.w / meta.h;
       C.scale.set(w0 * (1 - 0.22 * Math.sin(Math.PI * k)), C.userData.h * (1 + 0.06 * Math.sin(Math.PI * k)), 1);
       C.rotation.z = parked ? 0 : carTilt;
+      // polvo de las ruedas (más con más velocidad; nada estacionado)
+      dustAt -= dt;
+      if (!parked && dt > 0 && dustAt <= 0) {
+        dustAt = 0.06;
+        const wHalf = C.userData.h * assets.meta(C.userData.key).w / assets.meta(C.userData.key).h * 0.36;
+        for (const sd of [-1, 1]) {
+          const d = dust[dustI++ % dust.length];
+          d.t = 0; d.life = 0.5 + Math.random() * 0.25; d.sp.visible = true;
+          d.sp.position.set(cx + sd * wHalf + (Math.random() - 0.5) * 0.3, 0.25, carZ + 0.5);
+          d.v.set(sd * (0.6 + Math.random() * 0.8), 0.6 + Math.random() * 0.6, v * 0.35 + 2);
+        }
+      }
+      for (const d of dust) {
+        if (!d.sp.visible) continue;
+        d.t += dt; const k = d.t / d.life;
+        if (k >= 1) { d.sp.visible = false; continue; }
+        d.sp.position.addScaledVector(d.v, dt);
+        const sc = 0.5 + k * 1.4; d.sp.scale.set(sc, sc, 1); d.sp.material.opacity = 0.55 * (1 - k);
+      }
       for (const o of obs) if (o.m.visible) { place(o.m, o.x, o.y, -o.s); if (o.dead && o.m.userData.sh) o.m.userData.sh.visible = false; }
       for (const p of picks) if (!p.got) { place(p.m, p.x, p.y + Math.sin(t * 4 + p.s) * 0.15, -p.s); p.m.rotation.y = Math.sin(t * 3 + p.s) * 0.6; }
       for (let i = pops.length - 1; i >= 0; i--) {

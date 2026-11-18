@@ -209,7 +209,6 @@ export function createBoss(ctx, x) {
     b.phase = 2;
     fx.flash('#ff4d5e', 0.35);
     fx.shake(0.5);
-    game.banner('👑 BIG CHAKY — ¡FURIOSO!', 'Pisotea más seguido: saltá la onda y pegale cuando queda expuesto.');
     ctx.audio?.sfx('roar');
   }
 

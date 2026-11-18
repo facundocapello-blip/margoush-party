@@ -136,7 +136,7 @@ try {
     await until((id) => window.__game.waves[id] === 'active', id, 3000);
     const r = await G(() => ({ kinds: window.__game.enemies.list.map(e => e.kind), banners: window.__banners.slice() }));
     check(r.kinds.includes('lale'), `en ${id} aparece Lale (${r.kinds.join(', ')})`);
-    check(r.banners.some(t => t.includes('LALE')), `en ${id} sale el cartel de LALE «MANTECOSO»`);
+    check(!r.banners.some(t => t.includes('LALE')), `en ${id} Lale entra sin cartel de presentación (se entiende jugando)`);
   }
 
   check(errors.length === 0, 'sin errores en consola: ' + errors.join(' | '));

@@ -171,3 +171,10 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 ## Actualización 2026-11-18 (noche, 2) · Asfalto porteño
 - Piso de Buenos Aires pintado por código a 64 px/m: manchas de tono, huellas lustradas de ruedas, parches de bacheo con borde irregular, fisuras, tapa de cloaca, cordón cuneta con rejilla y línea central gastada. Sendas peatonales en x=74 (parada) y x=124 (antes de Le Concept).
 - Pruebas: `npm test` 31 ok; e2e level1_look, perf, mobile, traps, level, gates y layout en verde.
+
+## Actualización 2026-11-18 (noche, 3) · BYD de atrás, sin cartelitos, boina
+- BYD de Cepi regenerado en Flow visto exactamente de atrás (manejando / preparando el saque / tirando), recortado del verde con el mismo marco para que no salte; sin pelota dibujada (`tools/erase_ball.py`). Polvo de las ruedas traseras.
+- Sin carteles de instrucciones: títulos de tanda, «¡DESPEJADO! SEGUÍ →», «FRANCIA →», «PASO CERRADO», presentaciones de malos (queda la de Cepi mini-jefe), consejos del jefe, instrucciones de la persecución y «¡Cepi prepara el saque!». Quedan los chistes y la historia.
+- «¡Messi Goku!» de Marine solo al elegirla (se sacó de la cerveza).
+- Mini Facu en Francia: boina dibujada (antes era un cilindro que se veía como un cuadradito gris).
+- Pruebas: `npm test` 31 ok; toda la carpeta e2e en verde (Chrome sin pantalla).

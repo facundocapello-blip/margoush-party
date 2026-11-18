@@ -23,7 +23,7 @@ try {
   }
   await page.keyboard.up('ArrowRight');
   const x1 = await G(() => window.__game.hero.actor.position.x);
-  check((await page.textContent('#banner')).includes('PASO CERRADO'), 'al chocar el portón avisa que hay que despejar la zona');
+  check(!(await page.textContent('#banner')).includes('PASO CERRADO'), 'al chocar el portón no sale cartel (el portón ya se ve cerrado)');
   check(x1 < GX, `esquivando sin parar no se atraviesa el portón cerrado (x=${x1.toFixed(2)})`);
 
 

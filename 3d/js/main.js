@@ -256,7 +256,6 @@ function endIntro() {
   game.state = 'playing';
   audio.music(game.heroId);
   input.reset();
-  game.banner('¡SALVÁ A MARGOT!', 'Seguí la calle hasta el galpón de BIG CHAKY →');
 }
 
 // ---------- zonas ----------
@@ -266,8 +265,7 @@ function openGate(i) {
   g.open = true;
   g.t = 0;
   fx.shake(0.35);
-  // Menos carteles: un aviso chico arriba del héroe en vez de un cartel
-  if (game.hero) fx.popup(game.hero.actor.position.clone().setY(3.3), '¡DESPEJADO! SEGUÍ →', '#7ee0c3', { size: 24, life: 1.4, rise: 0.4 });
+  // Sin carteles de instrucciones: el portón que se derrumba ya dice que se puede seguir
   game.ctx.audio?.sfx('crate');
   game.ctx.audio?.sfx('clear');
 }
@@ -278,15 +276,7 @@ function updateZones() {
   for (const g of world.gates) {
     if (!g.open && hp.x > g.x) {
       hp.x = g.x - 1;
-      game.banner('🚧 PASO CERRADO', 'Primero despejá la zona: la banda de BIG CHAKY te espera.');
       break;
-    }
-  }
-  // Al llegar a un portón cerrado, explica que no se salta: hay que despejar la zona
-  for (const g of world.gates) {
-    if (!g.open && Math.abs(hp.x - g.x) < 1.2 && game.time - (game.gateHintAt ?? -99) > 6) {
-      game.gateHintAt = game.time;
-      game.banner('🚧 PASO CERRADO', 'Primero despejá la zona: la banda de BIG CHAKY te espera.');
     }
   }
   const x = hp.x;
@@ -302,8 +292,8 @@ function updateZones() {
       }
       game.waves[w.id] = 'active';
       game.enemies.spawnWave(w.id);
+      // Sin cartel de título por tanda; Facu sigue tirando sus comentarios
       if (w.facu) game.facu.say(w.facu, 3.4);
-      else game.banner(w.title, w.text);
       break;
     }
     if (st === 'active' && game.enemies.alive() === 0) {
@@ -312,18 +302,12 @@ function updateZones() {
       if (w.endsLevel) {
         // El nivel termina al llegar al final de la calle, no apenas cae el último malo
         game.levelExit = true;
-        game.banner('¡LE CONCEPT ES NUESTRO!', 'Seguí hasta el final de la calle para pasar a Francia →', 3.2);
       }
     }
   }
   if (game.levelExit && game.level < LEVELS.length) {
     const end = LEVELS[game.level - 1].maxX - 2.5;
     if (x >= end) { game.levelExit = false; startTransition(); return; }
-    // Flecha que te marca el camino, cada tanto
-    if (game.time - (game.exitHintAt ?? -99) > 2.2) {
-      game.exitHintAt = game.time;
-      fx.popup(new THREE.Vector3(Math.min(end, x + 4), 2.6, hp.z), 'FRANCIA →', '#7ee0c3', { size: 26, life: 1.6, rise: 0.2 });
-    }
   }
   const last = WAVES[WAVES.length - 1];
   if (!game.boss && game.level === 2 && game.waves[last.id] === 'cleared' && x > world.galponX + 6) spawnBoss();
@@ -396,14 +380,12 @@ function endTransition() {
   $('#level-card').classList.remove('travel');
   game.state = 'playing';
   input.reset();
-  game.banner('NIVEL 2: FRANCIA', 'Bienvenue en France · seguí hasta el galpón de BIG CHAKY →');
 }
 game.startTransition = startTransition;
 
 function spawnBoss() {
   game.boss = createBoss(game.ctx, world.bounds.maxX - 14);
   game.banner('👑 BIG CHAKY', '«¡De acá no pasa nadie! ¡La nena se queda conmigo!»');
-  game.banner('CÓMO GANARLE', 'Casi no siente los golpes: pegale cuando brilla (después de embestir o pisotear).', 3.6);
   game.ctx.audio?.music('boss');
   game.ctx.audio?.sfx('roar');
 }
