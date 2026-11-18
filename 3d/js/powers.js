@@ -1,7 +1,8 @@
 import { itemMat } from './items.js';
 // Poderes (se lanzan con la barra llena, manteniendo apretado el golpe). No hay que apuntar: actúan alrededor del héroe.
 //  Douge  «¡VERDADES A LOS GRITOS!»: trompazo al piso, onda en círculo que voltea a todos y les grita verdades.
-//  Marine «¡FLAMBÉ!»: giro con la sartén en llamas que quema y aturde; queda fuego en el piso y sale un croissant que cura 1 corazón.
+//  Marine «¡HIEDRA!»: brotan enredaderas que atrapan y aturden; quedan hojas que pinchan en el piso y sale una flor que cura 1 corazón.
+//  (Internamente sigue llamándose «flambe»: las reglas de juego no cambiaron, solo el dibujo.)
 export const POWERS = {
   wave: { radius: 4.4, depth: 2.6, dmg: 2, knock: 10, strength: 1.6, grow: 0.35 },
   flambe: { radius: 3.4, depth: 2.2, dmg: 1, stun: 1.6, heal: 1 },
@@ -25,7 +26,7 @@ export function createPowers(ctx) {
   const waves = [], spins = [], fires = [], treats = [];
   const made = { wave: 0, flambe: 0 };
   const mat = (emoji) => new THREE.SpriteMaterial({ map: emojiTex(emoji), transparent: true, depthWrite: false });
-  const panMat = itemMat(ctx.assets, 'sarten', '🍳'), flameMat = mat('🔥'), croissantMat = itemMat(ctx.assets, 'medialuna', '🥐');
+  const panMat = itemMat(ctx.assets, 'hiedra', '🌿'), flameMat = mat('🍃'), croissantMat = itemMat(ctx.assets, 'flor', '🌺');
   const ringGeo = new THREE.RingGeometry(0.82, 1, 48);
   const fireDisc = new THREE.CircleGeometry(1, 32);
 
@@ -140,7 +141,7 @@ export function createPowers(ctx) {
           c.healed = true;
           const before = c.hero.hp;
           c.hero.hp = Math.min(c.hero.hpMax, c.hero.hp + POWERS.flambe.heal);
-          fx.popup(hp.clone().setY(3), c.hero.hp > before ? '🥐 +1 ❤️' : '🥐 ¡ÑAM!', '#ffb3d9', { size: 24, life: 1 });
+          fx.popup(hp.clone().setY(3), c.hero.hp > before ? '🌺 +1 ❤️' : '🌺 ¡QUÉ LINDA!', '#ffb3d9', { size: 24, life: 1 });
           ctx.audio?.sfx('pickup');
           drop(treats, i);
         }

@@ -22,6 +22,8 @@ export function createScore() {
     addPickup(kind) { total += PICKUP[kind]; },
     // Boletas y otras multas: restan, pero el total nunca baja de cero
     addPenalty(n) { total = Math.max(0, total - n); },
+    // Bonus sueltos (persecución de Cepi: coleccionables, cosas rotas, esquives): se multiplican por el combo
+    addBonus(n) { total += Math.round(n * multiplier()); },
     addHit() { hits++; },
     takeDamage() { hits = 0; },
     // Los bonus de vida y tiempo solo cuentan si se rescató a Margot

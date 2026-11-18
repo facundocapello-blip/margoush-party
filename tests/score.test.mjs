@@ -112,3 +112,11 @@ test('ranks are calibrated for two levels', () => {
   // Perder en el Nivel 1 es C
   assert.equal(flawless({ upToLevel: 1, won: false }).rank, 'C');
 });
+
+test('chase bonuses use the combo multiplier', () => {
+  const s = createScore();
+  s.addBonus(50);
+  for (let i = 0; i < 10; i++) s.addHit();
+  s.addBonus(50);
+  assert.equal(s.total, 50 + 100);
+});

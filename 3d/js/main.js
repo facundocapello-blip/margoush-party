@@ -14,6 +14,7 @@ import { createPowers } from './powers.js';
 import { createFacu } from './facu.js';
 import { createCameos } from './cameos.js';
 import { createBoss } from './boss.js';
+import { createChase } from './chase.js';
 import { createStory } from './story.js';
 import { createAudio } from './audio.js';
 import { createUi } from './ui.js';
@@ -193,6 +194,8 @@ function updateHud(dt = 0) {
 
 function clearRun() {
   game.levelExit = false;
+  game.chase?.dispose();
+  game.chaseDone = false;
   game.enemies?.resetIntros?.();
   game.enemies?.clear();
   game.butter?.clear();
@@ -292,6 +295,11 @@ function updateZones() {
     const st = game.waves[w.id];
     if (st === 'idle' && x > w.trigger && game.cameos.busy) { game.cameos.hurry(); break; }
     if (st === 'idle' && x > w.trigger) {
+      // Le boulevard: antes de la pelea, Cepi se escapa en su BYD y se lo persigue hacia el fondo
+      if (w.chase && !game.chaseDone) {
+        if (game.enemies.alive() === 0) { game.chaseDone = true; game.chase.start(); }
+        break;
+      }
       game.waves[w.id] = 'active';
       game.enemies.spawnWave(w.id);
       if (w.facu) game.facu.say(w.facu, 3.4);
@@ -436,7 +444,8 @@ game.finish = finish;
 
 // ---------- pausa ----------
 function pause() {
-  if (game.state !== 'playing') return;
+  if (game.state !== 'playing' && game.state !== 'chase') return;
+  game.pausedFrom = game.state;
   game.state = 'paused';
   input.reset();
   audio.pauseMusic();
@@ -446,7 +455,7 @@ function resume() {
   if (game.state !== 'paused') return;
   input.reset();
   showScreen(null);
-  game.state = 'playing';
+  game.state = game.pausedFrom === 'chase' && game.chase.active ? 'chase' : 'playing';
   audio.resumeMusic();
   last = 0;
 }
@@ -458,6 +467,13 @@ function frame(now) {
   const realDt = Math.min(0.1, last ? (now - last) / 1000 : 0);
   const dt = Math.min(0.05, realDt) * game.timeScale;
   last = now;
+  // Persecución de Cepi: tiene su propia escena (sigue dibujándose en pausa)
+  if (game.chase.active && game.state !== 'chase' && game.state !== 'paused') game.chase.dispose();
+  if (game.chase.active) {
+    if (game.state === 'chase') game.chase.update(dt);
+    if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
+    if (game.chase.active) { game.chase.render(); requestAnimationFrame(frame); return; }
+  }
   if (game.state === 'playing') {
     const t0 = performance.now();
     if (input.consume('pause')) pause();
@@ -538,6 +554,22 @@ async function boot() {
   game.pickups = game.props.pickups;
   game.crates = game.props.crates;
   game.story = createStory(ctx);
+  game.chase = createChase({
+    game, input, audio, assets, renderer, banner: game.banner, updateHud, pause, POWER,
+    // Lo alcanzaste: el BYD quedó sin batería y Cepi se baja con la paleta (oleada «boulevard»)
+    onCaught() {
+      game.state = 'playing';
+      game.hero.actor.position.set(212.5, 0, 0);
+      game.hero.actor.setFacing(1);
+      Object.assign(game.hero, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.2 });
+      game.waves.boulevard = 'active';
+      game.enemies.spawnWave('boulevard');
+      updateCamera(0, true);
+      last = 0;
+      game.banner('¡SE QUEDÓ SIN BATERÍA!', '«¡Es eléctrico, papá!» Cepi se baja con la paleta: sacale la llave.', 3.4);
+    },
+    onDown() { game.state = 'playing'; finish(false); }
+  });
   for (const el of [canvas, $('#stick-zone')]) el.addEventListener('pointerdown', () => { if (game.state === 'intro') endIntro(); });
   addEventListener('keydown', () => { if (game.state === 'intro') endIntro(); });
   game.heroScreen = () => { const v = game.hero.actor.position.clone(); v.y += 1; v.project(camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 }; };

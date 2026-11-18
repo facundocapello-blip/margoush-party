@@ -293,7 +293,7 @@ export function createHero(id, ctx) {
   }
 
   // Douge: «¡VERDADES A LOS GRITOS!» — onda en círculo que voltea a todos alrededor.
-  // Marine: «¡FLAMBÉ!» — giro con la sartén en llamas que quema y aturde, y un croissant que cura 1 corazón.
+  // Marine «Hiedra»: «¡HIEDRA!» — brotan enredaderas que atrapan, aturden y pinchan, y una flor que cura 1 corazón.
   function usePower() {
     h.power = 0; h.holdT = 0; h.powerT = 0.6;
     const p = actor.position;
@@ -306,7 +306,7 @@ export function createHero(id, ctx) {
       ctx.audio?.sfx('diushbag'); // el grito tipo «¡Hadouken!» acompaña la onda
     } else {
       game.powers.flambe(p.x, p.z, h);
-      fx.popup(p.clone().setY(4.4), '¡FLAMBÉ! OH LÀ LÀ !', '#ff9fd0', { size: 24, life: 1.1 });
+      fx.popup(p.clone().setY(4.4), '¡HIEDRA! OH LÀ LÀ !', '#7ee0c3', { size: 24, life: 1.1 });
       fx.shake(0.35); fx.hitstop(0.1);
       ctx.audio?.say('Oh là là !', 'fr-FR', { female: true });
     }

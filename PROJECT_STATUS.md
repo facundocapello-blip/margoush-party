@@ -145,3 +145,14 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - `diushbag` corto (~0.5 s) y explosivo: saturación, golpe grave, "BAG" acentuado y whoosh de bola de fuego. Suena también con el poder de Douge.
 - Al elegir a Marine (y al agarrar su botella): voz femenina francesa (`pickFemaleFrench`, Amélie en iPhone) dice "Messi Gokou !" (juego con "merci beaucoup").
 - Depende de las voces instaladas en el teléfono.
+
+## 2026-11-18 · MARGOUSH 3D: persecución de Cepi hacia el fondo (rama `feat-3d`)
+- Pedido de Facu: un tramo que se juegue hacia el fondo, estilo Crash Bandicoot Warped (el del tigre). Reemplaza el prototipo de Astra 6.2 (iframe 2D), que no tenía el estilo del juego.
+- Nuevo `3d/js/chase.js`: al llegar a la oleada `boulevard` (x≈212) Cepi escapa en su BYD con la llave; el héroe lo persigue ~45 s en su vehículo (Douge: Hongo móvil; Marine: Maceta móvil con hiedra). Corre solo; joystick dobla, SALTO salta, 👊 rompe mesas y espanta palomas, ESQUIVE da invulnerabilidad corta (esquive justo +100), mantener 👊/L con la barra llena = poder (Douge «¡VERDADES A LOS GRITOS!», Marine «¡HIEDRA!»). Obstáculos: mesa de café, palomas, trottinette, barricada de la grève (no se rompe), charco de manteca. Coleccionables: hongos / hojitas (+50, cargan poder). Medidor «BYD de Cepi» con % de batería.
+- Final: el BYD se queda sin batería en un cargador → vuelve al beat 'em up con la pelea contra Cepi (`cepiJefe`) y sigue la campaña. Sin corazones en la persecución → derrota normal.
+- Usa el mismo renderer, HUD, carteles, controles táctiles y sonidos. Pausa/seguir funcionan dentro de la persecución.
+- Marine pasa a ser «Hiedra»: su poder del juego principal se llama «¡HIEDRA!» (hojas 🍃 en vez de fuego, flor 🌺 que cura). Mismas reglas.
+- Imágenes nuevas (`3d/assets/chase_*.webp`, generadas en Google Flow y recortadas). Presupuesto de assets subido de 6 a 6,6 MB.
+- Pruebas: `npm test` (31 ok, incluye pista con carril libre y bonus) y `node tests/e2e/chase.e2e.mjs` (Douge y Marine de punta a punta, pausa, salto, doblar, poder, derrota; sin errores). Chrome sin pantalla con GPU por software: no equivale a Safari en iPhone real.
+- Pendiente: probar en iPhone real y ajustar dificultad (cada pelotazo o choque saca 1 corazón).
+- Vista previa pública actualizada con la persecución (18/11): https://claude.ai/artifact/VxSUGZoXMyrtY1vT1vSWbz (versión 1795028718-e287). GitHub Pages sin cambios (`main` intacto).
