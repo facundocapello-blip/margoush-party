@@ -455,6 +455,14 @@
   "cols": 1,
   "rows": 1
  },
+ "chase_cepi_drive": {
+  "file": "chase_cepi_drive.webp",
+  "w": 381,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
  "chase_douge_drive": {
   "file": "chase_douge_drive.webp",
   "w": 295,

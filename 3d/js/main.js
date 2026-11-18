@@ -20,7 +20,7 @@ import { createAudio } from './audio.js';
 import { createUi } from './ui.js';
 import { createRanking } from './ranking.js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
-import { LEVELS, WAVES, SECRET_X, GALPON_X } from './level.js';
+import { LEVELS, WAVES, SECRET_X, GALPON_X, BORDER_X } from './level.js';
 
 const freshWaves = () => Object.fromEntries(WAVES.map(w => [w.id, 'idle']));
 
@@ -330,20 +330,52 @@ function updateZones() {
 }
 
 // ---------- cambio de nivel ----------
-const TRANSITION_S = 3.2;
+// Sin cortes: se levanta la barrera de la frontera, el héroe cruza caminando bajo el arco
+// «Bienvenue en France» (pasa una franja azul-blanco-rojo) y el Nivel 2 arranca donde llegó.
+const TRANSITION_MAX_S = 6;
+const TRANSITION_WAIT_S = 0.45; // lo que tarda la barrera en subir antes de que arranque a caminar
 function startTransition() {
   game.state = 'transition';
   game.transT = 0;
+  game.transCrossed = false;
   input.reset();
   clearBanners();
   game.combo.reset();
+  world.border?.raise();
+  game.hero.actor.setFacing(1);
+  Object.assign(game.hero, { state: 'free', lift: 0, vy: 0, knock: 0, knockZ: 0 });
   const done = LEVELS[game.level - 1], next = LEVELS[game.level];
   $('#level-done').textContent = `NIVEL ${done.id} COMPLETO`;
   $('#level-name').textContent = done.name;
   $('#level-pts').textContent = game.score.total.toLocaleString('es-AR') + ' puntos';
   $('#level-next').textContent = `→ NIVEL ${next.id}: ${next.name}`;
   $('#level-card').classList.remove('hidden');
+  $('#level-card').classList.add('travel');
   audio.sfx('clear');
+  audio.sfx('bell');
+}
+
+// Cada cuadro de la transición: el héroe camina solo hasta el arranque del Nivel 2
+function updateTransition(dt) {
+  game.transT += dt;
+  const h = game.hero, a = h.actor, p = a.position, next = LEVELS[game.level];
+  const walking = game.transT > TRANSITION_WAIT_S && p.x < next.start;
+  const speed = walking ? Math.max(h.speed, 7.2) : 0;
+  if (walking) {
+    p.x = Math.min(next.start, p.x + speed * dt);
+    p.z += (0 - p.z) * Math.min(1, dt * 2.5);
+  }
+  a.setPose(walking ? 'run' : 'idle');
+  a.update(dt, speed);
+  if (!game.transCrossed && p.x >= BORDER_X + 0.5) {
+    game.transCrossed = true;
+    const w = $('#border-wipe');
+    w.classList.remove('go'); void w.offsetWidth; w.classList.add('go');
+    audio.sfx('secret');
+    $('#level-card').classList.add('hidden');
+  }
+  game.facu.celebrate(dt);
+  if (p.x >= next.start || game.transT > TRANSITION_MAX_S) endTransition();
 }
 
 function endTransition() {
@@ -353,17 +385,18 @@ function endTransition() {
   game.enemies.clear(); game.butter.clear(); game.psycho.stop(); game.powers.clear();
   game.cameos.onLevelStart();
   game.traps.reset(); // nada de Buenos Aires (un colectivo en camino) pasa a Francia
-  h.actor.position.set(L.start, 0, 0);
+  h.actor.position.set(Math.max(L.start, Math.min(h.actor.position.x, L.start + 1)), 0, h.actor.position.z);
   h.actor.setFacing(1);
+  h.actor.setPose('idle');
   h.hp = Math.min(h.hpMax, h.hp + 2);
   h.inv = 0;
   game.facu.reset();
   game.facu.france(L.start + 4); // Facu con boina y baguette: «¡Allez, allez!»
   $('#level-card').classList.add('hidden');
+  $('#level-card').classList.remove('travel');
   game.state = 'playing';
   input.reset();
-  updateCamera(0, true);
-  game.banner('NIVEL 2: FRANCIA', 'Seguí hasta el galpón de BIG CHAKY →');
+  game.banner('NIVEL 2: FRANCIA', 'Bienvenue en France · seguí hasta el galpón de BIG CHAKY →');
 }
 game.startTransition = startTransition;
 
@@ -500,10 +533,7 @@ function frame(now) {
     if (game.story.updateIntro(dt)) endIntro();
     game.hero.actor.update(dt, 0);
   } else if (game.state === 'transition') {
-    game.transT += dt;
-    game.hero.actor.update(dt, 0);
-    game.facu.celebrate(dt);
-    if (game.transT > TRANSITION_S) endTransition();
+    updateTransition(dt);
   } else if (game.state === 'rescue') {
     game.rescueT += dt;
     const step = game.story.updateRescue(dt, game.rescueT);

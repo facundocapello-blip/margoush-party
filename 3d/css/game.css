@@ -187,6 +187,20 @@ body.has-screen #labels, body.has-screen #combo, body.has-screen #hud, body.has-
 #level-card em { font-style: normal; font-size: 16px; font-weight: 800; color: #ffffff; opacity: 0.9; }
 @keyframes level-in { from { transform: translate(-50%, -50%) scale(0.6); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 body.has-screen #level-card { display: none; }
+/* Cruce de la frontera: el cartel queda arriba (no tapa al héroe) y pasa una franja azul-blanco-rojo */
+#level-card.travel { top: 24%; }
+#border-wipe { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; display: flex; opacity: 0; }
+#border-wipe i { flex: 1; transform: skewX(-14deg) scaleX(1.25); }
+#border-wipe i:nth-child(1) { background: #2b4fa8; }
+#border-wipe i:nth-child(2) { background: #f4f1ea; }
+#border-wipe i:nth-child(3) { background: #d23a3a; }
+#border-wipe.go { animation: border-wipe 0.75s cubic-bezier(.5, 0, .3, 1) both; }
+@keyframes border-wipe {
+  0% { opacity: 0.8; transform: translateX(-115%); }
+  45% { opacity: 0.8; transform: translateX(-8%); }
+  100% { opacity: 0; transform: translateX(115%); }
+}
+@media (prefers-reduced-motion: reduce) { #border-wipe.go { animation: none; } }
 
 /* ---------- Portada (estilo póster de película) ---------- */
 #screen-menu { display: block; padding: 0; overflow: hidden; background: #120a22; }

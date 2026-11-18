@@ -130,7 +130,10 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       m.rotation.y = Math.atan2(cam.position.x - x, cam.position.z - z) * 0.6;
       const s = m.userData.sh; if (s) { s.position.set(x, 0.14, z); s.visible = m.visible; }
     }
-    const P = sprite(pre + '_drive', 2.6), C = sprite('chase_cepi_windup', 4.1, 1.1);
+    const P = sprite(pre + '_drive', 2.6), C = sprite(assets.has('chase_cepi_drive') ? 'chase_cepi_drive' : 'chase_cepi_windup', 4.1, 1.1);
+    const CEPI_DRIVE = C.userData.key;
+    const mark = mk(new T.RingGeometry(0.55, 0.78, 28), new T.MeshBasicMaterial({ color: L('#ff4d5e'), transparent: true, opacity: 0.85, depthWrite: false }));
+    mark.rotation.x = -Math.PI / 2; mark.visible = false; mark.renderOrder = 2;
     const ball = mk(new T.SphereGeometry(0.2, 14, 10), new T.MeshLambertMaterial({ color: L('#e6f04a'), emissive: L('#6a6a00') })); ball.visible = false;
     const track = buildTrack();
     const obs = track.obstacles.map(o => ({ ...o, ...OBST[o.kind], m: sprite(OBST[o.kind].tex, OBST[o.kind].h, OBST[o.kind].slip ? 0.6 : 0.9), dead: false, vy: 0, y: 0, spin: 0 }));
@@ -150,6 +153,13 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     let dist = 0, x = 0, y = 0, vy = 0, v = 0, t = 0, phase = 'intro', phaseT = 0, gap = 13, cx = 0;
     let dashT = 0, dashCd = 0, dashDir = 1, slipT = 0, slipDir = 1, hurtT = 0, inv = 0, holdT = 0, powT = 0, stunT = 0;
     let throwT = 3.2, windT = 0, shot = null, lastPick = 0, chain = 0;
+    // Cepi maneja mirando adelante; se da vuelta para sacar y vuelve al volante (turnT = «giro» del cambio de pose)
+    let cepiPose = 'drive', poseT = 0, turnT = 0, cxPrev = 0, carTilt = 0;
+    const cepiTo = (pose) => {
+      if (cepiPose === pose) return;
+      cepiPose = pose; poseT = 0; turnT = 0.2;
+      setTex(C, pose === 'drive' ? CEPI_DRIVE : pose === 'windup' ? 'chase_cepi_windup' : pose === 'throw' ? 'chase_cepi_throw' : 'chase_cepi_dead');
+    };
     game.state = 'chase';
     banner('¡SE ESCAPA CEPI!', 'Se lleva la llave en su BYD. Doblá con el joystick, SALTO para saltar, 👊 rompe cosas.', 3.6);
 
@@ -172,7 +182,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         o.dead = true; o.vy = isM ? 3 : 9; o.spin = isM ? 0 : 6; game.score.addBonus(80);
         pop(o.x, 2, -o.s, isM ? '🌿' : '¡VERDAD!', '#7ee0c3', 20);
       }
-      if (shot) { shot = null; ball.visible = false; stunT = 1.6; gap = Math.max(6, gap - 4); game.score.addBonus(200); pop(cx, 3.4, -(dist + gap), '¡TOMÁ!', '#ffd36e', 26); }
+      if (shot) { shot = null; ball.visible = false; mark.visible = false; stunT = 1.6; gap = Math.max(6, gap - 4); game.score.addBonus(200); pop(cx, 3.4, -(dist + gap), '¡TOMÁ!', '#ffd36e', 26); }
     }
     function smashAhead() {
       for (const o of obs) {
@@ -243,19 +253,19 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       }
       // Cepi en su BYD: se mantiene adelante, zigzaguea y tira pelotazos a donde estabas
       if (phase === 'run') {
-        const want = stunT > 0 ? 6 : 9 + Math.sin(t * 0.7) * 2.4;
+        const want = stunT > 0 ? 6 : 8 + Math.sin(t * 0.7) * 1.8;
         gap += (want - gap) * dt * 0.8;
         cx += (Math.sin(t * 0.55) * 2.3 - cx) * dt * 1.2;
-        if (!shot && stunT <= 0 && windT <= 0) { throwT -= dt; if (throwT <= 0) { windT = CHASE.windup; hintE.classList.remove('hidden'); } }
+        if (!shot && stunT <= 0 && windT <= 0) { throwT -= dt; if (throwT <= 0) { windT = CHASE.windup; hintE.classList.remove('hidden'); cepiTo('windup'); } }
         if (windT > 0) {
           windT -= dt;
           if (windT <= 0) {
-            shot = { r: gap, x0: cx, x1: x, t: 0 }; ball.visible = true; setTex(C, 'chase_cepi_throw'); hintE.classList.add('hidden');
+            shot = { r: gap, x0: cx, x1: x, t: 0 }; ball.visible = true; cepiTo('throw'); hintE.classList.add('hidden');
             const [a, b] = CHASE.throwEvery; throwT = a + Math.random() * (b - a) - prog * 0.8; sfx('crate');
           }
         }
         if (dist >= LEN - 40) {
-          phase = 'battery'; phaseT = 0; shot = null; ball.visible = false; windT = 0; hintE.classList.add('hidden');
+          phase = 'battery'; phaseT = 0; shot = null; ball.visible = false; mark.visible = false; windT = 0; hintE.classList.add('hidden');
           banner('¡SIN BATERÍA!', 'El BYD de Cepi se apaga en el cargador…', 2.6);
         }
       }
@@ -264,18 +274,22 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         const k = Math.min(1, shot.t / CHASE.ballTime), bx = shot.x0 + (shot.x1 - shot.x0) * k;
         ball.position.set(bx, 2.2 - 1.1 * k + Math.sin(Math.PI * k) * 1.4, -(dist + shot.r * (1 - k)));
         ball.rotation.x += dt * 12;
+        mark.visible = true; mark.position.set(shot.x1, 0.16, -dist - 1.3); mark.scale.setScalar(1.5 - 0.6 * k); mark.material.opacity = 0.35 + 0.55 * k;
         if (k >= 1) {
           if (Math.abs(bx - x) < 1.05 && y < 1.1) {
             if (dashT > 0) { game.score.addBonus(100); charge(0.15); pop(x, 2.8, -dist, '¡ESQUIVE JUSTO!', '#7ee0c3', 24); }
             else hurt('¡PELOTAZO!');
           }
-          shot = null; ball.visible = false; setTex(C, 'chase_cepi_windup');
+          shot = null; ball.visible = false; mark.visible = false;
         }
       }
+      poseT += dt;
+      if (cepiPose === 'throw' && poseT > 0.55) cepiTo('drive');
+      if (cepiPose === 'windup' && windT <= 0 && !shot) cepiTo('drive');
       let carZ = -(dist + gap);
       if (phase === 'battery' || phase === 'end') {
         carZ = -LEN; cx += (0 - cx) * dt * 2;
-        if (C.userData.key !== 'chase_cepi_dead') setTex(C, 'chase_cepi_dead');
+        cepiTo('dead');
         const stopAt = LEN - 6;
         if (phase === 'battery' && dist >= stopAt - 0.5) {
           phase = 'end'; phaseT = 0; v = 0; game.score.addBonus(CHASE.catchBonus);
@@ -304,7 +318,16 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       for (const f of facs) if (f.position.z > pz + 10) f.position.z -= 14 * facW;
       for (const g of deco) if (g.position.z > pz + 10) g.position.z -= 16 * 9;
       place(P, x, y, pz); P.userData.sh.scale.set(2 * (1 - Math.min(0.5, y * 0.15)), 1, 1.1);
-      place(C, cx, 0, carZ);
+      // El BYD: rebota con el empedrado, se inclina al doblar y «gira» (se aplasta un toque) cuando Cepi cambia de pose
+      turnT = Math.max(0, turnT - dt);
+      const lat = dt > 0 ? (cx - cxPrev) / dt : 0; cxPrev = cx;
+      carTilt += (Math.max(-0.12, Math.min(0.12, -lat * 0.05)) - carTilt) * Math.min(1, dt * 6);
+      const parked = cepiPose === 'dead', k = turnT / 0.2;
+      const bob = parked ? 0 : Math.abs(Math.sin(t * 9)) * 0.07 + Math.sin(t * 23) * 0.015;
+      place(C, cx, bob + Math.sin(Math.PI * k) * 0.25, carZ);
+      const meta = assets.meta(C.userData.key), w0 = C.userData.h * meta.w / meta.h;
+      C.scale.set(w0 * (1 - 0.22 * Math.sin(Math.PI * k)), C.userData.h * (1 + 0.06 * Math.sin(Math.PI * k)), 1);
+      C.rotation.z = parked ? 0 : carTilt;
       for (const o of obs) if (o.m.visible) { place(o.m, o.x, o.y, -o.s); if (o.dead && o.m.userData.sh) o.m.userData.sh.visible = false; }
       for (const p of picks) if (!p.got) { place(p.m, p.x, p.y + Math.sin(t * 4 + p.s) * 0.15, -p.s); p.m.rotation.y = Math.sin(t * 3 + p.s) * 0.6; }
       for (let i = pops.length - 1; i >= 0; i--) {
@@ -327,7 +350,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       render() { renderer.render(scene, cam); },
       redraw() { draw(0, phase === 'battery' || phase === 'end' ? -LEN : -(dist + gap)); },
       dispose,
-      get state() { return { phase, dist, x, y, gap, hp: hero.hp, power: hero.power, obstacles: obs.length, pickups: picks.length, length: LEN }; }
+      get state() { return { phase, dist, x, y, gap, cepi: cepiPose, hp: hero.hp, power: hero.power, obstacles: obs.length, pickups: picks.length, length: LEN }; }
     };
     draw(0);
   }

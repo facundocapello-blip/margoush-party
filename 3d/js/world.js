@@ -483,6 +483,46 @@ export function buildStreet(scene, assets) {
   }), side: THREE.DoubleSide }));
   welcome.position.set(BORDER_X + 0.5, 4.7, 0);
   scene.add(welcome);
+  // Barrera de la frontera: corta la calle al final de Buenos Aires y se levanta al pasar de nivel
+  const borderBar = (() => {
+    const x = BORDER_X - 2.2, z0 = 3.95, len = 7.9;
+    const stripes = canvasTex(512, 32, (c, w, h) => {
+      for (let i = 0; i < 16; i++) { c.fillStyle = i % 2 ? '#f4f1ea' : '#d8343f'; c.fillRect(i * w / 16, 0, w / 16, h); }
+      c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(0, h - 6, w, 6);
+    });
+    const postMat = new THREE.MeshLambertMaterial({ map: canvasTex(32, 128, (c, w, h) => {
+      for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#1e1b22' : '#f2b705'; c.fillRect(0, i * h / 8, w, h / 8); }
+    }) });
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.5, 0.42), postMat); post.position.set(x, 0.75, z0 + 0.15);
+    const rest = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.95, 0.22), postMat); rest.position.set(x, 0.47, z0 - len + 0.1);
+    const pivot = new THREE.Group(); pivot.position.set(x, 1.32, z0);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, len).translate(0, 0, -len / 2), new THREE.MeshLambertMaterial({ map: stripes }));
+    const weight = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.6), new THREE.MeshLambertMaterial({ color: 0x2a2630 })); weight.position.set(0, 0, 0.45);
+    const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.62), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map: canvasTex(512, 138, (c, w, h) => {
+      c.fillStyle = '#f2b705'; c.fillRect(0, 0, w, h); c.fillStyle = '#1e1b22'; c.fillRect(8, 8, w - 16, h - 16);
+      c.font = '900 64px Fredoka, "Arial Rounded MT Bold", Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = '#f2b705'; c.fillText('FRONTERA ✈', w / 2, h / 2 + 4);
+    }) }));
+    plate.position.set(0, -0.48, -len * 0.42);
+    // luz que titila arriba del poste: roja mientras está cerrada, verde al abrirse
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff3b3b })); lamp.position.set(x, 1.68, z0 + 0.15);
+    pivot.add(arm, weight, plate);
+    scene.add(post, rest, pivot, lamp);
+    let k = 0, target = 0, clock = 0;
+    return {
+      x,
+      get open() { return target > 0; },
+      get lift() { return k; },
+      raise() { target = 1; lamp.material.color.set(0x5ee08a); },
+      reset() { target = 0; k = 0; pivot.rotation.x = 0; lamp.material.color.set(0xff3b3b); },
+      update(dt) {
+        clock += dt;
+        k += (target - k) * Math.min(1, dt * 6);
+        pivot.rotation.x = k * Math.PI * 0.46 + (target && k > 0.97 ? Math.sin(clock * 18) * 0.01 : 0);
+        lamp.visible = target > 0 || Math.sin(clock * 6) > -0.3;
+      }
+    };
+  })();
   sign('GALPÓN DEL FONDO', GALPON_X + 18, 7.6, '#ff7a6b', 9);
 
   // Faroles con halo
@@ -569,7 +609,16 @@ export function buildStreet(scene, assets) {
   // Mesitas de Le Concept en la vereda y guirnalda de lucecitas
   const tableMat = new THREE.MeshLambertMaterial({ color: 0x2d2a2a });
   const clothMat = new THREE.MeshLambertMaterial({ color: 0xf4efe4 });
-  for (const x of [LE_CONCEPT_X - 7.5, LE_CONCEPT_X - 5.5, LE_CONCEPT_X + 5.5, LE_CONCEPT_X + 7.5]) {
+  // Con arte pintado: la mesita de mantel a cuadros con sillas de mimbre (la misma de la persecución)
+  const cafeArt = assets.has?.('chase_ob_table');
+  if (cafeArt) {
+    const m = assets.meta('chase_ob_table'), h = 1.55, geo = new THREE.PlaneGeometry(h * m.w / m.h, h).translate(0, h / 2, 0);
+    const mat = new THREE.MeshBasicMaterial({ map: assets.texture('chase_ob_table'), alphaTest: 0.45, side: THREE.DoubleSide });
+    for (const x of [LE_CONCEPT_X - 6.5, LE_CONCEPT_X + 6.5]) {
+      const t = new THREE.Mesh(geo, mat); t.position.set(x, 0, -4.4); scene.add(t);
+    }
+  }
+  for (const x of cafeArt ? [] : [LE_CONCEPT_X - 7.5, LE_CONCEPT_X - 5.5, LE_CONCEPT_X + 5.5, LE_CONCEPT_X + 7.5]) {
     const top = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 14), clothMat);
     top.position.set(x, 0.95, -4.45);
     const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.95, 6), tableMat);
@@ -648,9 +697,32 @@ export function buildStreet(scene, assets) {
     c.font = '900 56px "Comic Sans MS", Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#222';
     c.fillText('CORTE', w / 2, h / 2 + 4);
   });
+  // Vallas pintadas (mismo arte que la persecución de Cepi): el piquete y la grève se ven al nivel de los personajes
+  const barricadeArt = assets.has?.('chase_ob_barricade');
+  const barMat = barricadeArt ? new THREE.MeshBasicMaterial({ map: assets.texture('chase_ob_barricade'), alphaTest: 0.45, side: THREE.DoubleSide }) : null;
+  const barGeo = barricadeArt ? new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0) : null;
+  const barAspect = barricadeArt ? assets.meta('chase_ob_barricade').w / assets.meta('chase_ob_barricade').h : 1;
+  function paintedRow(g, pieces, h, step) {
+    let i = 0;
+    for (let z = -3.3; z <= 3.5; z += step, i++) {
+      const m = new THREE.Mesh(barGeo, barMat);
+      m.scale.set(h * barAspect * (i % 2 ? -1 : 1), h * (0.92 + (i % 3) * 0.05), 1);
+      m.position.set((i % 2 ? 0.12 : -0.12), 0, z);
+      m.rotation.set(0, (i % 2 ? 0.12 : -0.1), 0);
+      g.add(m);
+      pieces.push({ mesh: m, base: m.position.clone(), baseRot: m.rotation.clone(), v: new THREE.Vector3(), spin: new THREE.Vector3() });
+    }
+  }
+  const greveMat = new THREE.MeshBasicMaterial({ map: canvasTex(256, 112, (c, w, h) => {
+    c.fillStyle = '#f4efe4'; c.fillRect(0, 0, w, h);
+    c.strokeStyle = '#d23a3a'; c.lineWidth = 10; c.strokeRect(5, 5, w - 10, h - 10);
+    c.font = '900 58px "Comic Sans MS", Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#2b4fa8';
+    c.fillText('GRÈVE !', w / 2, h / 2 + 4);
+  }), side: THREE.DoubleSide });
   function buildPiquete(g, pieces, fires) {
-    for (let z = -3.4; z <= 3.5; z += 0.95) {
-      for (let row = 0; row < 3; row++) {
+    if (barricadeArt) paintedRow(g, pieces, 2.1, 1.25);
+    for (let z = -3.4; z <= 3.5; z += barricadeArt ? 1.9 : 0.95) {
+      if (!barricadeArt) for (let row = 0; row < 3; row++) {
         const m = new THREE.Mesh(tireGeo, tireMat);
         m.rotation.x = Math.PI / 2;
         m.position.set((Math.random() - 0.5) * 0.15, 0.2 + row * 0.4, z);
@@ -658,7 +730,7 @@ export function buildStreet(scene, assets) {
         pieces.push({ mesh: m, base: m.position.clone(), baseRot: m.rotation.clone(), v: new THREE.Vector3(), spin: new THREE.Vector3() });
       }
       const f = new THREE.Sprite(fireMat);
-      f.position.set(0, 1.75, z); f.scale.set(1.1, 1.9, 1);
+      f.position.set(barricadeArt ? 0.5 : 0, barricadeArt ? 1.2 : 1.75, z - (barricadeArt ? 0.3 : 0)); f.scale.set(1.1, 1.9, 1);
       const sm = new THREE.Sprite(smokeMat.clone());
       sm.position.set(0, 3.2, z); sm.scale.set(2.2, 2.2, 1);
       g.add(f, sm);
@@ -678,6 +750,14 @@ export function buildStreet(scene, assets) {
     g.position.x = x;
     scene.add(g);
     if (kind === 'piquete') { buildPiquete(g, pieces, fires); return { x, kind, open: false, mesh: g, pieces, fires, t: 0 }; }
+    if (kind === 'crates' && x > BORDER_X && barricadeArt) {
+      paintedRow(g, pieces, 2.4, 1.15);
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.8), greveMat);
+      sign.position.set(0.3, 2.55, 2.4); sign.rotation.set(-0.2, 0, -0.06);
+      g.add(sign);
+      pieces.push({ mesh: sign, base: sign.position.clone(), baseRot: sign.rotation.clone(), v: new THREE.Vector3(), spin: new THREE.Vector3() });
+      return { x, kind, open: false, mesh: g, pieces, fires, t: 0 };
+    }
     let i = 0;
     for (let z = -3.4; z <= 3.5; z += 1.15) {
       for (let row = 0; row < 2; row++) {
@@ -701,6 +781,7 @@ export function buildStreet(scene, assets) {
   let fireClock = 0;
   function updateGates(dt) {
     fireClock += dt;
+    borderBar.update(dt);
     for (const g of gates) {
       // El fuego del piquete titila mientras el corte sigue; al levantarse se apaga
       for (const f of g.fires) {
@@ -732,6 +813,7 @@ export function buildStreet(scene, assets) {
   }
 
   function resetGates() {
+    borderBar.reset();
     for (const g of gates) {
       g.open = false; g.t = 0; g.mesh.visible = true;
       for (const p of g.pieces) { p.mesh.position.copy(p.base); p.mesh.rotation.copy(p.baseRot); }
@@ -759,5 +841,5 @@ export function buildStreet(scene, assets) {
     return pos;
   }
 
-  return { bounds: STREET, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
+  return { bounds: STREET, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, border: borderBar, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
 }
