@@ -231,11 +231,11 @@ test('the stuck hand cannot be mashed: hits are locked out for 0.2 s', () => {
   const hand = l.state.hand, evs = [];
   let hits = 0;
   while (l.state.phase === 2 && (l.state.hand.state === 'stuck' || hits === 0)) {
-    const p = l.punch({ x: hand.x, z: hand.z, reach: 1.9, dmg: 1 });
+    const p = l.punch({ x: hand.x, z: hand.z, reach: 1.9, dmg: 0.1 }); // golpe flojo: sin tope no llega al ko
     hits += ofType(p, 'handHit').length;
     evs.push(...p, ...l.update(FPS, hero));
   }
   assert.ok(hits >= 2, `hits ${hits}`);
   assert.ok(hits <= Math.ceil(ARENA.phase2.stuck / 0.2), `hits ${hits}`);
-  assert.ok(15 - l.state.hp <= Math.ceil(ARENA.phase2.stuck / 0.2) * 1.5);
+  assert.ok(15 - l.state.hp <= Math.ceil(ARENA.phase2.stuck / 0.2) * 1.5 * 0.1 + 1e-9);
 });
