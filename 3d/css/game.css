@@ -262,3 +262,12 @@ body.has-screen #level-card { display: none; }
 .photo-row { display: flex; align-items: center; gap: 12px; justify-content: center; }
 .photo-row img { width: 112px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 10px; border: 3px solid #fff; box-shadow: 0 6px 14px #0008; transform: rotate(-3deg); }
 @media (max-height: 460px) { .photo-row img { width: 84px; } }
+
+/* Menús desplazables; la superficie de juego conserva sus gestos exclusivos. */
+html, body { touch-action: auto; }
+#game, #touch, #stick-zone, #joystick, .act { touch-action: none; }
+.screen, .table-wrap { touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.screen { justify-content: safe center; }
+.screen > * { flex-shrink: 0; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--mint); outline-offset: 3px; }
+.has-screen #touch { visibility: hidden; }

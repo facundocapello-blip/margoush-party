@@ -145,3 +145,13 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - `diushbag` corto (~0.5 s) y explosivo: saturación, golpe grave, "BAG" acentuado y whoosh de bola de fuego. Suena también con el poder de Douge.
 - Al elegir a Marine (y al agarrar su botella): voz femenina francesa (`pickFemaleFrench`, Amélie en iPhone) dice "Messi Gokou !" (juego con "merci beaucoup").
 - Depende de las voces instaladas en el teléfono.
+
+## 2026-11-18 · Revisión incremental de estabilidad
+- Base comprobada: `feat-3d` c54c714 (posterior al resumen 0280885). Se conservan juego vertical, tutorial retirado, amigos, kit visual, voces, jefe expuesto y foto familiar.
+- Pausa de introducción, transición y rescate con regreso al estado exacto. Avisos, FX y render se congelan en pausa/menú; ocultar página pausa escenas.
+- Menú limpia oleadas, poderes, efectos, carteles y controles. Reinicio limpia foto pendiente y tiempos de pistas.
+- Constructor WebGL protegido por recuperación de carga y botón Reintentar; manejo de pérdida de contexto. Liberación de geometría propia de cada actor.
+- Pantallas y ranking permiten scroll táctil; controles mantienen bloqueo de gestos.
+- Pruebas ejecutadas: `npm test` 36/36 (28 existentes + 8 de ciclo de pausa), `node --check 3d/js/main.js`, `git diff --check`.
+- Límite: e2e de Claude no ejecutados en este entorno; dependen de rutas locales de Playwright/Three. No certifica Safari físico ni partida completa.
+- Pendientes: estilo/rango S con métricas actuales, ES/FR, validación visual y Safari físico. No se reintroduce el tutorial retirado. `main` intacta.

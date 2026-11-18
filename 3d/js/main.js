@@ -26,8 +26,7 @@ const freshWaves = () => Object.fromEntries(WAVES.map(w => [w.id, 'idle']));
 const $ = (s) => document.querySelector(s);
 const canvas = $('#game');
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.outputEncoding = THREE.sRGBEncoding;
+let renderer;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
 const PITCH = THREE.MathUtils.degToRad(30);
@@ -193,6 +192,8 @@ function updateHud(dt = 0) {
 
 function clearRun() {
   game.levelExit = false;
+  game.gateHintAt = -99;
+  game.exitHintAt = -99;
   game.enemies?.resetIntros?.();
   game.enemies?.clear();
   game.butter?.clear();
@@ -231,6 +232,10 @@ function startRun(heroId, withIntro = false) {
   game.stats = { maxMult: 1 };
   game.props.reset();
   game.time = 0;
+  game.wantPhoto = false;
+  game.photo = null;
+  game.resumeState = null;
+  last = 0;
   input.reset();
   showScreen(null);
   $('#hud').classList.remove('hidden');
@@ -436,17 +441,18 @@ game.finish = finish;
 
 // ---------- pausa ----------
 function pause() {
-  if (game.state !== 'playing') return;
+  if (!['playing', 'intro', 'transition', 'rescue'].includes(game.state)) return;
+  game.resumeState = game.state;
   game.state = 'paused';
   input.reset();
   audio.pauseMusic();
   showScreen('screen-pause');
 }
 function resume() {
-  if (game.state !== 'paused') return;
+  if (game.state !== 'paused' || document.hidden) return;
   input.reset();
   showScreen(null);
-  game.state = 'playing';
+  game.state = game.resumeState || 'playing';
   audio.resumeMusic();
   last = 0;
 }
@@ -458,6 +464,8 @@ function frame(now) {
   const realDt = Math.min(0.1, last ? (now - last) / 1000 : 0);
   const dt = Math.min(0.05, realDt) * game.timeScale;
   last = now;
+  if (document.hidden) { pause(); requestAnimationFrame(frame); return; }
+  if (!['playing', 'intro', 'transition', 'rescue'].includes(game.state)) { requestAnimationFrame(frame); return; }
   if (game.state === 'playing') {
     const t0 = performance.now();
     if (input.consume('pause')) pause();
@@ -496,6 +504,7 @@ function frame(now) {
     if (step === 'photo') game.wantPhoto = true;
     if (step === 'done') finish(true);
   }
+  if (game.state === 'paused') { requestAnimationFrame(frame); return; }
   // el cartel corre con el reloj real (no se frena con los golpes ni con la cámara lenta)
   if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
   world.updateGates(dt);
@@ -508,6 +517,12 @@ function frame(now) {
 }
 
 async function boot() {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  canvas.addEventListener('webglcontextlost', event => {
+    event.preventDefault(); pause();
+    showLoadError('Se interrumpieron los gráficos 3D. Recargá para volver a jugar.');
+  });
   resize();
   addEventListener('resize', resize);
   addEventListener('orientationchange', () => setTimeout(resize, 200));
@@ -522,7 +537,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.cameos?.onLevelStart(); game.state = 'menu'; audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => { input.reset(); clearRun(); clearBanners(); game.wantPhoto = false; game.resumeState = null; game.state = 'menu'; audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -582,5 +597,18 @@ async function boot() {
 
 boot().catch((e) => {
   console.error(e);
-  $('#screen-loading').innerHTML = '<h2>No se pudo cargar el juego</h2><p>Revisá la conexión y recargá la página.</p>';
+  showLoadError(renderer ? 'No se pudieron cargar los recursos. Recargá para reintentar.' : 'El navegador no pudo activar WebGL. Cerrá otras pestañas y reintentá, o abrí el juego en Safari.');
 });
+
+function showLoadError(message) {
+  game.state = 'error';
+  input?.reset(); audio?.pauseMusic();
+  for (const id of ['#hud', '#touch', '#boss-bar', '#level-card']) $(id)?.classList.add('hidden');
+  showScreen('screen-loading');
+  const panel = $('#screen-loading');
+  const title = document.createElement('h2'); title.textContent = 'No pudimos iniciar el juego';
+  const detail = document.createElement('p'); detail.textContent = message;
+  const retry = document.createElement('button'); retry.className = 'big-btn'; retry.textContent = 'Reintentar';
+  retry.addEventListener('click', () => location.reload());
+  panel.replaceChildren(title, detail, retry);
+}
