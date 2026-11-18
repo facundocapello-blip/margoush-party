@@ -262,3 +262,19 @@ body.has-screen #level-card { display: none; }
 .photo-row { display: flex; align-items: center; gap: 12px; justify-content: center; }
 .photo-row img { width: 112px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 10px; border: 3px solid #fff; box-shadow: 0 6px 14px #0008; transform: rotate(-3deg); }
 @media (max-height: 460px) { .photo-row img { width: 84px; } }
+
+/* ---------- Persecución de Cepi (chase.js) ---------- */
+body.chasing #labels, body.chasing #combo, body.chasing #boss-bar { visibility: hidden; }
+#chase-ui { position: fixed; inset: 0; z-index: 7; pointer-events: none; }
+#chase-ui .chase-flash { position: absolute; inset: 0; background: #ff4d5e; opacity: 0; transition: opacity 0.25s; }
+#chase-bat { position: absolute; left: 50%; bottom: calc(16px + var(--safe-b)); transform: translateX(-50%); display: flex; align-items: center; gap: 8px;
+  background: rgba(16, 10, 30, 0.72); border: 2px solid rgba(255, 211, 110, 0.5); border-radius: 14px; padding: 5px 12px; font-weight: 900; font-size: 12px; letter-spacing: 1px; color: #fff; white-space: nowrap; }
+#chase-bat span { font-family: Fredoka, sans-serif; color: var(--gold); }
+#chase-bat b { position: relative; width: min(150px, 22vw); height: 12px; border-radius: 4px; border: 2px solid #fff; background: #0008; }
+#chase-bat b::after { content: ""; position: absolute; right: -6px; top: 2px; width: 3px; height: 4px; background: #fff; border-radius: 1px; }
+#chase-bat i { position: absolute; left: 1px; top: 1px; bottom: 1px; border-radius: 2px; transition: width 0.2s; }
+#chase-bat em { font-style: normal; min-width: 36px; font-variant-numeric: tabular-nums; }
+#chase-hint { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); background: #a1263e; color: #fff; border: 2px solid var(--gold); border-radius: 20px; padding: 6px 16px;
+  font-family: Fredoka, sans-serif; font-weight: 700; font-size: 16px; animation: banner-in 0.18s ease-out; }
+body.portrait #chase-bat { bottom: auto; top: calc(110px + var(--safe-t)); }
+@media (max-width: 740px) { #chase-bat span { display: none; } #chase-bat b { width: min(110px, 18vw); } }

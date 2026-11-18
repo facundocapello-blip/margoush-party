@@ -41,7 +41,8 @@ export const WAVES = [
   { id: 'francia-2', level: 2, trigger: 186, gate: 2, title: 'PELOTAZOS', text: 'Cepi y Lale tiran desde lejos: acercate rápido.',
     spawns: [{ dx: 10, dz: 1.5, kind: 'cepi' }, { dx: 9, dz: -2, kind: 'lale' }] },
   // Mini-jefe a mitad del nivel 2: Cepi «el Niño», el hermano de Facu, viene re caliente
-  { id: 'boulevard', level: 2, trigger: 212, gate: null, title: 'LE BOULEVARD', text: '¡Ojo! Viene el hermano de Facu…',
+  // chase: antes de la pelea, Cepi escapa en su BYD y hay que perseguirlo hacia el fondo (chase.js)
+  { id: 'boulevard', level: 2, trigger: 212, gate: null, chase: true, title: 'LE BOULEVARD', text: '¡Ojo! Viene el hermano de Facu…',
     spawns: [{ dx: 10, dz: 0, kind: 'cepiJefe' }] },
   { id: 'boulevard-2', level: 2, trigger: 238, gate: 3, title: 'ÚLTIMO TRAMO', text: 'Atrás de esta barrera está el galpón.',
     spawns: [{ dx: 8, dz: -1.5, kind: 'pinky' }, { dx: 10, dz: 1.8, kind: 'lale' }, { dx: 11, dz: 0, kind: 'cepi' }] }

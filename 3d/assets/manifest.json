@@ -430,5 +430,157 @@
   "rows": 1,
   "skull": 152.0,
   "foot": 0.988
+ },
+ "chase_cepi_dead": {
+  "file": "chase_cepi_dead.webp",
+  "w": 384,
+  "h": 340,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_cepi_throw": {
+  "file": "chase_cepi_throw.webp",
+  "w": 384,
+  "h": 347,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_cepi_windup": {
+  "file": "chase_cepi_windup.webp",
+  "w": 381,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_douge_drive": {
+  "file": "chase_douge_drive.webp",
+  "w": 295,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_douge_hit": {
+  "file": "chase_douge_hit.webp",
+  "w": 367,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_douge_jump": {
+  "file": "chase_douge_jump.webp",
+  "w": 233,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_douge_power": {
+  "file": "chase_douge_power.webp",
+  "w": 384,
+  "h": 362,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_marine_drive": {
+  "file": "chase_marine_drive.webp",
+  "w": 361,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_marine_hit": {
+  "file": "chase_marine_hit.webp",
+  "w": 381,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_marine_jump": {
+  "file": "chase_marine_jump.webp",
+  "w": 341,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_marine_power": {
+  "file": "chase_marine_power.webp",
+  "w": 384,
+  "h": 329,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_ob_barricade": {
+  "file": "chase_ob_barricade.webp",
+  "w": 384,
+  "h": 321,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_ob_butter": {
+  "file": "chase_ob_butter.webp",
+  "w": 384,
+  "h": 205,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_ob_pigeons": {
+  "file": "chase_ob_pigeons.webp",
+  "w": 384,
+  "h": 242,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_ob_scooter": {
+  "file": "chase_ob_scooter.webp",
+  "w": 384,
+  "h": 200,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_ob_table": {
+  "file": "chase_ob_table.webp",
+  "w": 384,
+  "h": 224,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_pk_hoja": {
+  "file": "chase_pk_hoja.webp",
+  "w": 156,
+  "h": 160,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_pk_hongo": {
+  "file": "chase_pk_hongo.webp",
+  "w": 160,
+  "h": 143,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "chase_paris_fondo": {
+  "file": "chase_paris_fondo.webp",
+  "w": 1200,
+  "h": 289,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
  }
 }

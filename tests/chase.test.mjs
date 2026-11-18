@@ -1,0 +1,21 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { buildTrack, CHASE } from '../3d/js/chase.js';
+import { WAVES } from '../3d/js/level.js';
+
+test('the chase track always leaves a free lane and fits before the charger', () => {
+  const { obstacles, pickups } = buildTrack();
+  assert.ok(obstacles.length >= 18, `obstacles ${obstacles.length}`);
+  assert.ok(pickups.length >= 40, `pickups ${pickups.length}`);
+  for (const o of obstacles) {
+    assert.ok(o.s > 40 && o.s < CHASE.length - 40, `obstacle at ${o.s}`);
+    // ninguno ocupa los tres carriles: la barricada tapa dos, el resto uno
+    assert.ok(Math.abs(o.x) <= CHASE.lane, `obstacle x ${o.x}`);
+  }
+  const gaps = obstacles.slice(1).map((o, i) => o.s - obstacles[i].s);
+  assert.ok(Math.min(...gaps) >= 20, 'there is room to react between obstacles');
+});
+
+test('the boulevard wave starts with the chase', () => {
+  assert.equal(WAVES.find(w => w.id === 'boulevard').chase, true);
+});

@@ -19,6 +19,7 @@ try {
   await G(() => {
     const g = window.__game; g.setStage('boulevard'); g.enemies.clear(); g.traps.disable();
     g.waves.boulevard = 'idle'; g.hero.hp = g.hero.hpMax = 99; g.hero.actor.position.set(214, 0, 0); g.facu.jokeCd = 99;
+    g.chaseDone = true; // sin la persecución (se prueba en chase.e2e.mjs)
     window.__banners.length = 0;
   });
   await until(() => window.__game.waves.boulevard === 'active', null, 3000);
