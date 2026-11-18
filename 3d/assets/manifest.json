@@ -441,15 +441,15 @@
  },
  "chase_cepi_throw": {
   "file": "chase_cepi_throw.webp",
-  "w": 384,
-  "h": 347,
+  "w": 396,
+  "h": 384,
   "frames": 1,
   "cols": 1,
   "rows": 1
  },
  "chase_cepi_windup": {
   "file": "chase_cepi_windup.webp",
-  "w": 381,
+  "w": 396,
   "h": 384,
   "frames": 1,
   "cols": 1,
@@ -457,7 +457,7 @@
  },
  "chase_cepi_drive": {
   "file": "chase_cepi_drive.webp",
-  "w": 381,
+  "w": 396,
   "h": 384,
   "frames": 1,
   "cols": 1,

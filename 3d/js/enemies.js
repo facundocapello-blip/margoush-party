@@ -572,9 +572,9 @@ export function createEnemies(ctx) {
       for (const d of wave ? wave.spawns : []) {
         const x = Math.min(lb.maxX - 1, Math.max(lb.minX + 1, hx + d.dx));
         spawn(x, d.dz, d.kind);
-        // Cada amigo se presenta con su cartel la primera vez que aparece en la partida
+        // Sin carteles de presentación (se entiende jugando); solo el mini-jefe (Cepi «el Niño») tiene su entrada
         const intro = INTROS[d.kind];
-        if (intro && (!introduced.has(d.kind) || KINDS[d.kind].miniBoss)) { introduced.add(d.kind); game.banner(intro[0], intro[1], 3.2); }
+        if (intro && KINDS[d.kind]?.miniBoss) { introduced.add(d.kind); game.banner(intro[0], intro[1], 3.2); }
         if (KINDS[d.kind]?.miniBoss) { miniBossBar(list[list.length - 1]); ctx.audio?.sfx('boo'); }
       }
     },

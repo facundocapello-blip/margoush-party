@@ -96,8 +96,21 @@ export function createFacu(ctx) {
   hole.add(rim, pit); hole.visible = false; scene.add(hole);
   const baguette = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('🥖'), transparent: true, depthWrite: false }));
   baguette.scale.set(0.9, 0.9, 1); baguette.visible = false; scene.add(baguette);
-  const beret = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.12, 18), new THREE.MeshLambertMaterial({ color: 0x1b1b24 }));
-  beret.visible = false; scene.add(beret);
+  // Boina francesa dibujada (antes era un cilindro que con la luz se veía como un cuadradito gris)
+  const beretTex = (() => {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+    const g = c.getContext('2d');
+    g.translate(128, 74); g.rotate(-0.12);
+    const body = g.createRadialGradient(-28, -22, 6, 0, 0, 110);
+    body.addColorStop(0, '#4a4658'); body.addColorStop(0.45, '#22202c'); body.addColorStop(1, '#0d0c12');
+    g.fillStyle = body; g.beginPath(); g.ellipse(6, 4, 108, 58, 0, Math.PI * 1.02, Math.PI * 2.02); g.quadraticCurveTo(70, 26, 0, 24); g.quadraticCurveTo(-80, 24, -102, 2); g.fill();
+    g.fillStyle = '#121018'; g.beginPath(); g.ellipse(0, 20, 86, 10, 0, 0, Math.PI * 2); g.fill();     // borde que calza en la cabeza
+    g.fillStyle = 'rgba(255,255,255,0.14)'; g.beginPath(); g.ellipse(-30, -20, 40, 9, -0.2, 0, Math.PI * 2); g.fill(); // brillo de la lana
+    g.strokeStyle = '#0d0c12'; g.lineWidth = 7; g.lineCap = 'round'; g.beginPath(); g.moveTo(10, -38); g.quadraticCurveTo(16, -52, 26, -54); g.stroke(); // piquito
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+  })();
+  const beret = new THREE.Sprite(new THREE.SpriteMaterial({ map: beretTex, transparent: true, depthWrite: false }));
+  beret.scale.set(0.92, 0.5, 1); beret.renderOrder = 3; beret.visible = false; scene.add(beret);
 
   let act = null;          // aparición en curso: { kind, t, ... }
   let jokeIdx = 0, idleT = 0, talkT = 0;
@@ -197,7 +210,7 @@ export function createFacu(ctx) {
         actor.lift = t < 0.35 ? Math.sin(t / 0.35 * Math.PI) * 0.7 : Math.abs(Math.sin(idleT * 5)) * 0.08;
         actor.lean = Math.sin(idleT * 4) * 0.08;
         const p = actor.position;
-        beret.position.set(p.x + 0.02, actor.lift + 1.93, p.z + 0.05);
+        beret.position.set(p.x + 0.03, actor.lift + 1.915, p.z + 0.12);
         baguette.position.set(p.x - 0.55, actor.lift + 1.05, p.z + 0.1);
         baguette.material.rotation = Math.sin(idleT * 6) * 0.5;
         if (t > 2.6) { fx.dust(p); end(); return; }
