@@ -590,5 +590,53 @@
   "frames": 1,
   "cols": 1,
   "rows": 1
+ },
+ "prop_arbol": {
+  "file": "prop_arbol.webp",
+  "w": 278,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "prop_contenedor": {
+  "file": "prop_contenedor.webp",
+  "w": 443,
+  "h": 358,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "prop_cajones": {
+  "file": "prop_cajones.webp",
+  "w": 448,
+  "h": 333,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "prop_maceta": {
+  "file": "prop_maceta.webp",
+  "w": 316,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "prop_fuente": {
+  "file": "prop_fuente.webp",
+  "w": 364,
+  "h": 369,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "prop_galpon": {
+  "file": "prop_galpon.webp",
+  "w": 434,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
  }
 }

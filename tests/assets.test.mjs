@@ -18,10 +18,10 @@ test('manifest lists every asset and each file exists', () => {
   }
 });
 
-test('assets weigh less than 6.6 MB in total', () => {
-  // 6,6 MB desde la persecución de Cepi (sprites de vehículos, obstáculos y el fondo de París)
+test('assets weigh less than 7 MB in total', () => {
+  // 6,6 MB desde la persecución de Cepi; 7 MB desde el kit de objetos pintados (árbol, contenedor, cajones, maceta, fuente, galpón)
   const total = fs.readdirSync(dir).reduce((s, f) => s + fs.statSync(path.join(dir, f)).size, 0);
-  assert.ok(total < 6_600_000, `total ${total}`);
+  assert.ok(total < 7_000_000, `total ${total}`);
 });
 
 test('sheet metadata', () => {

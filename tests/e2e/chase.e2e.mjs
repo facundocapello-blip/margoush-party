@@ -48,7 +48,10 @@ for (const hero of ['douge', 'marine']) {
     await page.keyboard.press('Space');
     await page.waitForTimeout(150);
     check((await G(page, () => window.__game.chase.state.y)) > 0.3, `${hero}: SALTO salta`);
-    await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(300); await page.keyboard.up('ArrowLeft');
+    // GPU por software: se espera por posición, no por tiempo
+    await page.keyboard.down('ArrowLeft');
+    await page.waitForFunction(() => window.__game.chase.state.x < -1, null, { timeout: 5000 }).catch(() => {});
+    await page.keyboard.up('ArrowLeft');
     check((await G(page, () => window.__game.chase.state.x)) < -1, `${hero}: el joystick dobla`);
 
     // Poder con la barra llena

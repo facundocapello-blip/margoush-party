@@ -547,11 +547,26 @@ export function buildStreet(scene, assets) {
     scene.add(pool);
   }
 
+  // Objetos pintados (kit hecho en Flow): planos parados con el dibujo; si falta la imagen queda la versión por código
+  const artMats = {};
+  const artGeo = new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0);
+  function art(key, h, x, z, { flip = false, y = 0, parent = scene } = {}) {
+    if (!assets.has?.(key)) return null;
+    const meta = assets.meta(key);
+    artMats[key] ||= new THREE.MeshBasicMaterial({ map: assets.texture(key), alphaTest: 0.3, transparent: true, side: THREE.DoubleSide });
+    const m = new THREE.Mesh(artGeo, artMats[key]);
+    m.scale.set(h * meta.w / meta.h * (flip ? -1 : 1), h, 1);
+    m.position.set(x, y, z);
+    parent.add(m);
+    return m;
+  }
+
   // Buenos Aires: plátanos, contenedores verdes y una parada de colectivo
   const barkMat = new THREE.MeshLambertMaterial({ color: 0x8a7a63 });
   const crownMat = new THREE.MeshLambertMaterial({ color: 0x3f6b34 });
   for (let x = 10; x < BORDER_X - 4; x += 17) {
     if (Math.abs(x - LE_CONCEPT_X) < 9) continue;
+    if (art('prop_arbol', 4.8, x, -4.85, { flip: (x / 17 | 0) % 2 === 1 })) continue;
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 3.4, 8), barkMat);
     trunk.position.set(x, 1.7, -4.75);
     scene.add(trunk);
@@ -563,6 +578,7 @@ export function buildStreet(scene, assets) {
   }
   const binMat = new THREE.MeshLambertMaterial({ color: 0x2f7d4a });
   for (const x of [20, 53, 87, 110]) {
+    if (art('prop_contenedor', 1.55, x, -4.7, { flip: x === 87 })) continue;
     const bin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.25, 0.9), binMat);
     bin.position.set(x, 0.79, -4.75);
     const lid = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 1.0), new THREE.MeshLambertMaterial({ color: 0x23603a }));
@@ -599,6 +615,7 @@ export function buildStreet(scene, assets) {
   const potMat = new THREE.MeshLambertMaterial({ color: 0xb4643c });
   const leafMat = new THREE.MeshLambertMaterial({ color: 0x4f7a3c });
   for (let x = BORDER_X + 4; x < GALPON_X; x += 15) {
+    if (art('prop_maceta', 1.45, x, -5.0)) continue;
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), potMat);
     pot.position.set(x, 0.41, -5.0);
     const bush = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 8), leafMat);
@@ -640,6 +657,8 @@ export function buildStreet(scene, assets) {
   }
 
   // Fuente de la plaza
+  // la pintada va sobre la vereda (la vieja quedaba detrás de las fachadas)
+  const paintedFountain = art('prop_fuente', 2.7, 220, -4.85);
   const stone = new THREE.MeshLambertMaterial({ color: 0xd8c3a5 });
   const basin = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 0.6, 24), stone);
   basin.position.set(220, 0.3, -6.6);
@@ -647,7 +666,7 @@ export function buildStreet(scene, assets) {
   water.rotation.x = -Math.PI / 2; water.position.set(220, 0.62, -6.6);
   const column = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 2.2, 10), stone);
   column.position.set(220, 1.4, -6.6);
-  scene.add(basin, water, column);
+  if (!paintedFountain) scene.add(basin, water, column);
 
   // Entrada del pasaje secreto (sellada por cajones en Task 5)
   const door = new THREE.Group();
@@ -702,11 +721,15 @@ export function buildStreet(scene, assets) {
   const barMat = barricadeArt ? new THREE.MeshBasicMaterial({ map: assets.texture('chase_ob_barricade'), alphaTest: 0.45, side: THREE.DoubleSide }) : null;
   const barGeo = barricadeArt ? new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0) : null;
   const barAspect = barricadeArt ? assets.meta('chase_ob_barricade').w / assets.meta('chase_ob_barricade').h : 1;
-  function paintedRow(g, pieces, h, step) {
+  function paintedRow(g, pieces, h, step, key = 'chase_ob_barricade') {
     let i = 0;
+    const mat = key === 'chase_ob_barricade' ? barMat : (artMats[key] ||= new THREE.MeshBasicMaterial({ map: assets.texture(key), alphaTest: 0.3, transparent: true, side: THREE.DoubleSide }));
+    const aspect = assets.meta(key).w / assets.meta(key).h;
     for (let z = -3.3; z <= 3.5; z += step, i++) {
-      const m = new THREE.Mesh(barGeo, barMat);
-      m.scale.set(h * barAspect * (i % 2 ? -1 : 1), h * (0.92 + (i % 3) * 0.05), 1);
+      const m = new THREE.Mesh(barGeo, mat);
+      // los que tienen cartel («CERRADO», «PRIVADO») no se espejan: las letras quedarían al revés
+      const flip = key === 'chase_ob_barricade' && i % 2;
+      m.scale.set(h * aspect * (flip ? -1 : 1), h * (0.92 + (i % 3) * 0.05), 1);
       m.position.set((i % 2 ? 0.12 : -0.12), 0, z);
       m.rotation.set(0, (i % 2 ? 0.12 : -0.1), 0);
       g.add(m);
@@ -750,6 +773,12 @@ export function buildStreet(scene, assets) {
     g.position.x = x;
     scene.add(g);
     if (kind === 'piquete') { buildPiquete(g, pieces, fires); return { x, kind, open: false, mesh: g, pieces, fires, t: 0 }; }
+    // Buenos Aires: cajones de obra con cinta y «CERRADO»; la puerta del galpón: barricada con cadenas y «PRIVADO»
+    const special = kind === 'crates' && x < BORDER_X ? 'prop_cajones' : kind === 'crates' && x > GALPON_X - 10 ? 'prop_galpon' : null;
+    if (special && barricadeArt && assets.has?.(special)) {
+      paintedRow(g, pieces, special === 'prop_galpon' ? 2.7 : 2.3, special === 'prop_galpon' ? 1.6 : 1.3, special);
+      return { x, kind, open: false, mesh: g, pieces, fires, t: 0 };
+    }
     if (kind === 'crates' && x > BORDER_X && barricadeArt) {
       paintedRow(g, pieces, 2.4, 1.15);
       const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.8), greveMat);
