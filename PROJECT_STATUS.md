@@ -156,3 +156,9 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - Pruebas: `npm test` (31 ok, incluye pista con carril libre y bonus) y `node tests/e2e/chase.e2e.mjs` (Douge y Marine de punta a punta, pausa, salto, doblar, poder, derrota; sin errores). Chrome sin pantalla con GPU por software: no equivale a Safari en iPhone real.
 - Pendiente: probar en iPhone real y ajustar dificultad (cada pelotazo o choque saca 1 corazón).
 - Vista previa pública actualizada con la persecución (18/11): https://claude.ai/artifact/VxSUGZoXMyrtY1vT1vSWbz (versión 1795028718-e287). GitHub Pages sin cambios (`main` intacto).
+
+## Actualización 2026-11-18 · MARGOUSH 3D: Cepi maneja, frontera y vallas pintadas
+- Persecución: Cepi maneja mirando adelante (`chase_cepi_drive.webp`, armado con `tools/cepi_drive.py`) y se da vuelta solo para sacar; giro con aplaste, rebote y balanceo del BYD. Marca roja en el piso donde pica el pelotazo. Cepi va un poco más cerca.
+- Cambio de nivel sin corte: se levanta la barrera «FRONTERA ✈», el héroe cruza caminando bajo «Bienvenue en France» y pasa una franja azul-blanco-rojo.
+- Piquete y portones de Francia («GRÈVE !») con el arte pintado de la valla; mesitas de Le Concept pintadas.
+- Pruebas: `npm test` 31 ok; toda la carpeta e2e en verde (Chrome sin pantalla). Falta iPhone real.

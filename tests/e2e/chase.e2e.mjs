@@ -28,6 +28,12 @@ for (const hero of ['douge', 'marine']) {
     await page.waitForFunction(() => window.__game.chase.state?.dist > 15, null, { timeout: 30000 });
     const s1 = await G(page, () => window.__game.chase.state);
     check(s1.phase === 'run' && s1.dist > 15, `${hero}: corre solo hacia el fondo (${s1.dist.toFixed(0)} m)`);
+    // Cepi maneja mirando adelante y se da vuelta solo para sacar
+    const poses = new Set([s1.cepi]);
+    for (let i = 0; i < 300 && !(poses.has('windup') && poses.has('throw') && poses.size >= 3); i++) {
+      poses.add(await G(page, () => window.__game.chase.state.cepi)); await page.waitForTimeout(40);
+    }
+    check(poses.has('drive') && poses.has('windup') && poses.has('throw'), `${hero}: Cepi alterna manejar / darse vuelta / sacar (${[...poses].join(', ')})`);
 
     // Pausa y vuelta a la persecución
     await G(page, () => window.__game.pause());
