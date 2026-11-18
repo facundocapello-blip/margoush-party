@@ -134,19 +134,97 @@ function landmarkPainter(id) {
   };
 }
 
-// Asfalto de la avenida, con línea central discontinua
+// Asfalto porteño pintado por código (64 px por metro; el piso arranca 5,4 m detrás de z = 0).
+// Capas: base con manchas grandes, huellas lustradas de las ruedas, parches de bacheo, fisuras,
+// granito, tapa de cloaca, cordón cuneta con rejilla y la línea central gastada.
+const PPM = 64;
 function asphalt(ctx, w, h) {
-  ctx.fillStyle = '#3a3640'; ctx.fillRect(0, 0, w, h);
-  for (let n = 0; n < 2600; n++) {
-    const l = 50 + Math.random() * 40;
-    ctx.fillStyle = `rgba(${l},${l - 4},${l + 6},0.5)`;
-    ctx.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const zy = (z) => (5.4 + z) * PPM; // z del mundo → fila de la textura
+  ctx.fillStyle = '#3b3443'; ctx.fillRect(0, 0, w, h);
+  // manchas grandes de tono (el asfalto nunca es parejo)
+  for (let n = 0; n < 26; n++) {
+    const x = rnd() * w, y = zy(-3.8) + rnd() * (zy(4.2) - zy(-3.8)), r = 60 + rnd() * 170;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const warm = rnd() < 0.5;
+    g.addColorStop(0, warm ? 'rgba(92,72,84,0.35)' : 'rgba(28,24,40,0.35)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    for (const dx of [-w, 0, w]) { ctx.fillStyle = g; ctx.save(); ctx.translate(dx, 0); ctx.fillRect(x - r, y - r, r * 2, r * 2); ctx.restore(); }
   }
-  // z = 0 está a 5,4 m del borde de atrás del piso (32 px por metro)
-  ctx.fillStyle = 'rgba(255,240,200,0.75)';
-  ctx.fillRect(20, 5.4 * 32 - 3, w * 0.55, 6);
-  ctx.fillStyle = 'rgba(255,214,90,0.55)';
-  ctx.fillRect(0, (5.4 - 3.75) * 32, w, 4);
+  // huellas de las ruedas: dos franjas por carril, más lisas y claras
+  for (const z of [-2.55, -1.15, 1.15, 2.55]) {
+    const y = zy(z), g = ctx.createLinearGradient(0, y - 26, 0, y + 26);
+    g.addColorStop(0, 'rgba(120,108,128,0)'); g.addColorStop(0.5, 'rgba(120,108,128,0.16)'); g.addColorStop(1, 'rgba(120,108,128,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, y - 26, w, 52);
+  }
+  // parches de bacheo: rectángulos más oscuros con la junta clara
+  for (const [x0, z0, pw, ph] of [[90, -2.9, 210, 1.4], [640, 1.4, 260, 1.7], [880, -1.1, 120, 0.9]]) {
+    // borde irregular (cortado a mano) y apenas más oscuro que el resto
+    const y0 = zy(z0), hh = ph * PPM, pts = [];
+    for (let k = 0; k <= 8; k++) pts.push([x0 + pw * k / 8, y0 + (rnd() - 0.5) * 5]);
+    for (let k = 1; k <= 4; k++) pts.push([x0 + pw + (rnd() - 0.5) * 5, y0 + hh * k / 4]);
+    for (let k = 7; k >= 0; k--) pts.push([x0 + pw * k / 8, y0 + hh + (rnd() - 0.5) * 5]);
+    for (let k = 3; k >= 1; k--) pts.push([x0 + (rnd() - 0.5) * 5, y0 + hh * k / 4]);
+    ctx.beginPath(); pts.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); ctx.closePath();
+    ctx.fillStyle = 'rgba(30,25,38,0.55)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(140,128,142,0.18)'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  // granito: dos tamaños, tintes fríos y cálidos
+  for (let n = 0; n < 14000; n++) {
+    const l = 46 + rnd() * 70, s = rnd() < 0.85 ? 2 : 3, warm = rnd() < 0.4;
+    ctx.fillStyle = `rgba(${l + (warm ? 14 : 0)},${l - 4},${l + (warm ? 0 : 14)},${0.25 + rnd() * 0.35})`;
+    ctx.fillRect(rnd() * w, rnd() * h, s, s);
+  }
+  // fisuras: líneas quebradas oscuras con un borde claro
+  const crack = (x, y, len, dir) => {
+    const pts = [[x, y]];
+    for (let i = 0; i < len; i++) { x += Math.cos(dir) * (8 + rnd() * 10); y += Math.sin(dir) * (8 + rnd() * 10); dir += (rnd() - 0.5) * 0.9; pts.push([x, y]); }
+    for (const [col, lw, oy] of [['rgba(170,156,170,0.25)', 3, 1.5], ['rgba(14,10,20,0.8)', 2, 0]]) {
+      ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath();
+      pts.forEach(([px, py], i) => (i ? ctx.lineTo(px, py + oy) : ctx.moveTo(px, py + oy))); ctx.stroke();
+    }
+    if (rnd() < 0.7) { const [bx, by] = pts[(pts.length / 2) | 0]; crack(bx, by, (len / 2) | 0, dir + (rnd() < 0.5 ? 1 : -1)); }
+  };
+  for (const [x, z, len, dir] of [[300, -2.2, 14, 0.3], [520, 2.0, 18, -0.2], [760, -0.6, 10, 2.6], [40, 2.9, 12, 0.1], [960, -3.0, 9, 1.2]]) crack(x, zy(z), len, dir);
+  // tapa de cloaca
+  const mx = 430, my = zy(2.15), mr = 0.42 * PPM;
+  ctx.fillStyle = '#25202b'; ctx.beginPath(); ctx.arc(mx, my, mr + 6, 0, Math.PI * 2); ctx.fill();
+  const mg = ctx.createRadialGradient(mx - 8, my - 10, 4, mx, my, mr);
+  mg.addColorStop(0, '#6a6070'); mg.addColorStop(1, '#3d3542'); ctx.fillStyle = mg;
+  ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.arc(mx, my, mr - 4, 0, Math.PI * 2); ctx.clip();
+  ctx.strokeStyle = 'rgba(30,24,34,0.7)'; ctx.lineWidth = 3;
+  for (let k = -mr; k <= mr; k += 9) { ctx.beginPath(); ctx.moveTo(mx + k, my - mr); ctx.lineTo(mx + k + 6, my + mr); ctx.stroke(); }
+  ctx.restore();
+  // cordón cuneta de hormigón contra la vereda, con su rejilla
+  const gy0 = zy(-3.85), gy1 = zy(-3.3);
+  const cg = ctx.createLinearGradient(0, gy0, 0, gy1);
+  cg.addColorStop(0, '#8d8590'); cg.addColorStop(0.8, '#6f6874'); cg.addColorStop(1, '#4a4350');
+  ctx.fillStyle = cg; ctx.fillRect(0, gy0, w, gy1 - gy0);
+  ctx.fillStyle = 'rgba(30,24,36,0.5)'; for (let x = 0; x < w; x += 2 * PPM) ctx.fillRect(x, gy0, 3, gy1 - gy0);
+  ctx.fillStyle = '#1c1722'; ctx.fillRect(700, gy0 + 4, 1.1 * PPM, gy1 - gy0 - 8);
+  ctx.fillStyle = '#5e5664'; for (let x = 706; x < 700 + 1.1 * PPM; x += 9) ctx.fillRect(x, gy0 + 6, 4, gy1 - gy0 - 12);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(0, gy1, w, 5);
+  // línea central discontinua, gastada (le faltan pedazos de pintura)
+  const ly = zy(0), dash = 3.2 * PPM, period = w / 3;
+  for (let x = 30; x < w; x += period) {
+    ctx.fillStyle = 'rgba(244,234,214,0.8)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, ly - 5, dash, 10, 3) : ctx.rect(x, ly - 5, dash, 10); ctx.fill();
+    ctx.fillStyle = 'rgba(59,52,67,0.85)';
+    for (let n = 0; n < 12; n++) { ctx.beginPath(); ctx.ellipse(x + rnd() * dash, ly - 4 + rnd() * 8, 2 + rnd() * 6, 1.5 + rnd() * 2.5, rnd() * 3, 0, Math.PI * 2); ctx.fill(); }
+  }
+}
+
+// Senda peatonal: barras blancas gastadas cruzando toda la calle (se pega encima del asfalto)
+function zebra(ctx, w, h) {
+  let seed = 5;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const bar = h / 15;
+  for (let i = 0; i < 15; i += 2) {
+    ctx.fillStyle = 'rgba(240,232,218,0.9)'; ctx.fillRect(0, i * bar + 2, w, bar - 4);
+    ctx.globalCompositeOperation = 'destination-out';
+    for (let n = 0; n < 22; n++) { ctx.beginPath(); ctx.ellipse(rnd() * w, i * bar + rnd() * bar, 3 + rnd() * 9, 2 + rnd() * 4, rnd() * 3, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalCompositeOperation = 'source-over';
+  }
 }
 
 function canvasTex(w, h, draw, repeatX = 1, repeatY = 1) {
@@ -254,10 +332,18 @@ export function buildStreet(scene, assets) {
 
   // Piso: asfalto porteño hasta la frontera, adoquines franceses hasta el galpón
   const baLen = BORDER_X + 20;
-  const asphaltFloor = new THREE.Mesh(new THREE.PlaneGeometry(baLen, 22), new THREE.MeshLambertMaterial({ color: 0xbdb6c4, map: canvasTex(512, 704, asphalt, baLen / 16, 1) }));
+  // 22 m de fondo × 64 px/m = 1408 px; cada copia cubre 16 m de calle (1024 px)
+  const asphaltFloor = new THREE.Mesh(new THREE.PlaneGeometry(baLen, 22), new THREE.MeshLambertMaterial({ color: 0xc9c2cf, map: canvasTex(1024, 1408, asphalt, baLen / 16, 1) }));
   asphaltFloor.rotation.x = -Math.PI / 2;
   asphaltFloor.position.set(BORDER_X - baLen / 2, 0, 5.6);
   scene.add(asphaltFloor);
+  // Sendas peatonales: en la parada del colectivo y antes de Le Concept
+  const zebraMat = new THREE.MeshLambertMaterial({ color: 0xc9c2cf, map: canvasTex(256, 512, zebra), transparent: true, depthWrite: false });
+  for (const x of [74, 124]) {
+    const zb = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 7.2), zebraMat);
+    zb.rotation.x = -Math.PI / 2; zb.position.set(x, 0.012, 0.25);
+    scene.add(zb);
+  }
   const frLen = GALPON_X - BORDER_X;
   const floorMat = new THREE.MeshLambertMaterial({ color: 0x9c8a94, map: canvasTex(512, 512, cobble, frLen / 7, 6) });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(frLen, 22), floorMat);

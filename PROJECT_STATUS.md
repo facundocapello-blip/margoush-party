@@ -167,3 +167,7 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - 6 objetos generados en Flow (proyecto «nov 18 - 14:19», Nano Banana, con la mesa de café como referencia de estilo) y recortados con `tools/cut_white.py`: `prop_arbol`, `prop_contenedor`, `prop_cajones`, `prop_maceta`, `prop_fuente`, `prop_galpon`.
 - Reemplazan a los árboles, contenedores y macetas hechos con figuras, a los cajones del portón de Buenos Aires («CERRADO»), a la puerta del galpón («PRIVADO») y a la fuente; los árboles de la persecución también son los pintados.
 - Presupuesto de imágenes subido a 7 MB. Pruebas: `npm test` 31 ok; e2e en verde (Chrome sin pantalla).
+
+## Actualización 2026-11-18 (noche, 2) · Asfalto porteño
+- Piso de Buenos Aires pintado por código a 64 px/m: manchas de tono, huellas lustradas de ruedas, parches de bacheo con borde irregular, fisuras, tapa de cloaca, cordón cuneta con rejilla y línea central gastada. Sendas peatonales en x=74 (parada) y x=124 (antes de Le Concept).
+- Pruebas: `npm test` 31 ok; e2e level1_look, perf, mobile, traps, level, gates y layout en verde.
