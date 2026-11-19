@@ -221,6 +221,9 @@ export const DICHOS = {
   '¡Ahora sí me enojé!': 'Là, je suis vraiment fâché !',
   '¡Soltá, soltá!': 'Lâche, lâche !',
   '¡Eso no vale!': 'Ça compte pas !',
+  // Margot y BIG CHAKY cuando cruzan al fondo
+  '¡Papááá!': 'Papaaa !',
+  '¡Jua, jua, jua!': 'Mouahaha !',
   // Douge: verdades a los gritos
   '¡ESTÁS PELADO!': "T'ES CHAUVE !",
   '¡ESO NO ES UN ASADO!': "ÇA, C'EST PAS UN ASADO !",

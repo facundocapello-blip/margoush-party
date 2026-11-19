@@ -351,3 +351,10 @@ body.bonus-on:not(.portrait) #boss-bar { top: calc(92px + var(--safe-t)); bottom
 .pop small.sub { display: block; font-size: 0.62em; font-weight: 500; font-style: italic; opacity: 0.92; margin-top: 2px; }
 #banner small.sub, .host-bubble small.sub { display: block; font-size: 0.82em; font-style: italic; opacity: 0.85; margin-top: 2px; }
 html[lang=fr] #act-attack.ready::after { content: 'MAINTIENS'; }
+
+/* ---------- Margot en el HUD (margot.js): tranquila, contenta o llorando ---------- */
+#hud-margot { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #ffb3d9; background: url(../assets/margot_faces.webp) no-repeat 0% 50% / 300% 100%; box-shadow: 0 0 10px #ffb3d955; flex: 0 0 auto; margin-left: 4px; }
+#hud-margot[data-mood="happy"] { background-position: 50% 50%; }
+#hud-margot[data-mood="cry"] { background-position: 100% 50%; border-color: #9ad7ff; box-shadow: 0 0 12px #9ad7ff88; }
+#hud-margot.bump { animation: margot-bump 0.35s ease-out; }
+@keyframes margot-bump { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }

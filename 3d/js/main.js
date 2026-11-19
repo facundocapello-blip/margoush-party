@@ -22,6 +22,8 @@ import { createRanking } from './ranking.js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { LEVELS, WAVES, SECRET_X, GALPON_X, BORDER_X } from './level.js';
 import { tr, fillText, translateDom, setLang, getLang, onLangChange } from './i18n.js';
+import { createMargot } from './margot.js';
+import { SpriteActor } from './sprites.js';
 
 const freshWaves = () => Object.fromEntries(WAVES.map(w => [w.id, 'idle']));
 
@@ -186,6 +188,9 @@ function updateHud(dt = 0) {
   const pw = Math.min(1, h.power), ready = pw >= 1;
   $('#hud-power-fill').style.width = (pw * 100).toFixed(1) + '%';
   $('#hud-power').classList.toggle('ready', ready);
+  const mood = game.margot?.mood(h) || 'calm';
+  const face = $('#hud-margot');
+  if (face.dataset.mood !== mood) { face.dataset.mood = mood; face.classList.remove('bump'); void face.offsetWidth; face.classList.add('bump'); }
   $('#hud-power-text').textContent = ready ? tr(TOUCH ? '⚡ ¡LISTO!' : '⚡ ¡LISTO! (L)') : tr('PODER');
   const atk = $('#act-attack');
   atk.style.setProperty('--pw', pw.toFixed(3));
@@ -203,6 +208,7 @@ function clearRun() {
   game.enemies?.clear();
   game.butter?.clear();
   game.cameos?.clear();
+  game.margot?.clear();
   game.psycho?.stop();
   game.powers?.clear();
   game.traps?.reset();
@@ -397,6 +403,9 @@ function updateZones() {
     if (st === 'active' && game.enemies.alive() === 0) {
       game.waves[w.id] = 'cleared';
       if (w.gate != null) openGate(w.gate);
+      // Margot: se pone contenta y enseguida BIG CHAKY cruza al fondo con ella (que no te olvides a quién rescatás)
+      game.margot.cheer();
+      game.margot.cross();
       if (w.endsLevel) {
         // El nivel termina al llegar al final de la calle, no apenas cae el último malo
         game.levelExit = true;
@@ -480,6 +489,7 @@ function endTransition() {
   const h = game.hero;
   game.enemies.clear(); game.butter.clear(); game.psycho.stop(); game.powers.clear();
   game.cameos.onLevelStart();
+  game.margot.clear();
   game.traps.reset(); // nada de Buenos Aires (un colectivo en camino) pasa a Francia
   h.actor.position.set(Math.max(L.start, Math.min(h.actor.position.x, L.start + 1)), 0, h.actor.position.z);
   h.actor.setFacing(1);
@@ -560,6 +570,7 @@ function finish(won) {
   game.state = 'result';
   input.reset();
   game.cameos.onLevelStart();
+  game.margot.clear();
   game.psycho.stop();
   game.lastResult = { won, ...game.score.finalize({ hpLeft: game.hero.hp, hpMax: game.hero.hpMax, seconds: game.time, won }), photo: won ? game.photo : null };
   $('#touch').classList.add('hidden');
@@ -642,6 +653,7 @@ function frame(now) {
       game.psycho.update(dt);
       game.powers.update(dt);
       game.cameos.update(dt);
+      game.margot.update(dt);
       game.props.update(dt, game.time);
       updateZones();
       game.combo.update(dt);
@@ -687,7 +699,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.state = 'menu'; paintContinue(); audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -697,6 +709,7 @@ async function boot() {
   game.traps = createTraps(ctx);
   game.butter = createButter(ctx);
   game.cameos = createCameos(ctx);
+  game.margot = createMargot(ctx, SpriteActor);
   game.psycho = createPsycho(ctx);
   game.powers = createPowers(ctx);
   game.props = createProps(ctx);
