@@ -1,0 +1,42 @@
+# Cada vez que se sube algo a feat-3d, lo pasa a main (que es lo que publica GitHub Pages).
+# Para volver atrás: git revert -m 1 <merge> en main.
+name: Publicar feat-3d en main
+
+on:
+  push:
+    branches: [feat-3d]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: publicar-main
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Merge de feat-3d en main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin feat-3d
+          if git merge-base --is-ancestor origin/feat-3d HEAD; then
+            echo "main ya tiene todo lo de feat-3d"; exit 0
+          fi
+          git merge --no-ff origin/feat-3d -m "Merge feat-3d (automático): $(git log -1 --format=%s origin/feat-3d)"
+          git push origin main
+
+      - name: Pedir que GitHub Pages vuelva a publicar
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds"
