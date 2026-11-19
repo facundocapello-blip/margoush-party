@@ -202,6 +202,28 @@ body.has-screen #level-card { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { #border-wipe.go { animation: none; } }
 
+/* Cortina entre tramos (calle ↔ persecución ↔ arena, nivel 1 → 2): tres franjas en diagonal que tapan, cambia la escena y destapan */
+#curtain { position: fixed; inset: 0; pointer-events: none; z-index: 40; overflow: hidden; visibility: hidden; }
+#curtain i { position: absolute; top: -20%; bottom: -20%; left: -60%; width: 220%; transform: translateX(-110%) skewX(-16deg); }
+#curtain i:nth-child(1) { background: #ffd36e; }
+#curtain i:nth-child(2) { background: #ff7c8f; }
+#curtain i:nth-child(3) { background: #1c1536; }
+#curtain b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.8); font-family: Fredoka, sans-serif; color: #ffd36e; font-size: clamp(26px, min(7vw, 9vh), 54px); font-weight: 900; letter-spacing: 0.06em; white-space: nowrap; text-shadow: 0 4px 0 #0008; opacity: 0; }
+#curtain.close, #curtain.open { visibility: visible; }
+#curtain.close i { animation: curtain-in 0.34s cubic-bezier(.6, 0, .4, 1) both; }
+#curtain.close i:nth-child(2) { animation-delay: 0.04s; }
+#curtain.close i:nth-child(3) { animation-delay: 0.08s; }
+#curtain.close b { animation: curtain-label 0.3s 0.3s cubic-bezier(.2, 1.4, .4, 1) both; }
+#curtain.open i { animation: curtain-out 0.42s cubic-bezier(.6, 0, .4, 1) both; transform: translateX(0) skewX(-16deg); }
+#curtain.open i:nth-child(2) { animation-delay: 0.04s; }
+#curtain.open i:nth-child(1) { animation-delay: 0.08s; }
+#curtain.open b { opacity: 1; transform: translate(-50%, -50%) scale(1); animation: curtain-label-out 0.2s both; }
+@keyframes curtain-in { from { transform: translateX(-110%) skewX(-16deg); } to { transform: translateX(0) skewX(-16deg); } }
+@keyframes curtain-out { from { transform: translateX(0) skewX(-16deg); } to { transform: translateX(110%) skewX(-16deg); } }
+@keyframes curtain-label { from { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes curtain-label-out { to { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } }
+@media (prefers-reduced-motion: reduce) { #curtain.close i, #curtain.open i { animation-duration: 0.01s; } }
+
 /* ---------- Portada (estilo póster de película) ---------- */
 #screen-menu { display: block; padding: 0; overflow: hidden; background: #120a22; }
 .cover-bg { position: absolute; inset: 0; background: url(../assets/street_bg.webp) center 70% / cover no-repeat; filter: brightness(0.42) saturate(1.15); }

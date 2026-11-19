@@ -6,7 +6,7 @@ const until = (fn, arg, ms = 6000) => page.waitForFunction(fn, arg, { timeout: m
 // Calle francesa despejada, héroe inmortal en x=170, y un malo del tipo pedido
 const solo = (kind, dx = 3, dz = 0) => G(([kind, dx, dz]) => {
   const g = window.__game; g.setStage('francia-quiet'); g.traps?.disable?.(); g.enemies.clear();
-  g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 0; g.hero.actor.position.set(170, 0, 0); g.facu.jokeCd = 99;
+  g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 0; g.hero.actor.position.set(170, 0, 0);
   const e = g.enemies.spawn(170 + dx, dz, kind); e.cd = 0; return e.hp;
 }, [kind, dx, dz]);
 const E = () => G(() => { const e = window.__game.enemies.list[0]; return e && { state: e.state, t: e.t, hp: e.hp, x: e.pos.x }; });
@@ -76,7 +76,7 @@ try {
 
   // ---------- Personalidad de cada malo ----------
   // Oleada grande: como mucho 2 de cerca y 1 de lejos atacando a la vez
-  await G(() => { const g = window.__game; g.setStage('piquete'); g.traps.disable(); g.hero.hp = g.hero.hpMax = 99; g.facu.jokeCd = 99; });
+  await G(() => { const g = window.__game; g.setStage('piquete'); g.traps.disable(); g.hero.hp = g.hero.hpMax = 99; });
   const peak = await G(() => new Promise((res) => {
     const g = window.__game; let m = 0, r = 0; if (typeof g.enemies.attacking !== 'function') return res({ m: -1, r: -1 });
     const id = setInterval(() => { const a = g.enemies.attacking(); m = Math.max(m, a.melee); r = Math.max(r, a.ranged); }, 50);
@@ -85,7 +85,7 @@ try {
   check(peak.m >= 1 && peak.m <= 2 && peak.r <= 1, `oleada grande respeta turnos (cerca ${peak.m}, lejos ${peak.r})`);
 
   // Los que esperan miran al héroe y no tiemblan
-  await G(() => { const g = window.__game; g.setStage('francia-quiet'); g.traps.disable(); g.enemies.clear(); g.facu.jokeCd = 99;
+  await G(() => { const g = window.__game; g.setStage('francia-quiet'); g.traps.disable(); g.enemies.clear();
     g.hero.hp = 99; g.hero.inv = 999; g.hero.actor.position.set(170, 0, 0);
     for (const [x, z, k] of [[174, -1, 'secuaz'], [175, 1, 'secuaz'], [166, 0.5, 'secuaz'], [176, 0, 'patovica'], [165, -1.5, 'patovica']]) g.enemies.spawn(x, z, k); });
   await page.waitForTimeout(2000);
@@ -130,7 +130,7 @@ try {
   check(behind >= 1, 'el secuaz rodea para pegar por la espalda');
 
   // Dos secuaces encarando a la vez no se traban buscando la misma espalda: los dos llegan a pegar
-  await G(() => { const g = window.__game; g.setStage('francia-quiet'); g.traps.disable(); g.enemies.clear(); g.facu.jokeCd = 99;
+  await G(() => { const g = window.__game; g.setStage('francia-quiet'); g.traps.disable(); g.enemies.clear();
     g.hero.hp = 99; g.hero.inv = 999; g.hero.actor.position.set(170, 0, 0); g.hero.actor.setFacing(1);
     for (const x of [173, 173.6]) { const e = g.enemies.spawn(x, 0, 'secuaz'); e.cd = 0; }
     window.__rnd = Math.random; Math.random = () => 0.1; }); // los dos amagan: el caso que se trababa
@@ -140,7 +140,7 @@ try {
   check(pair === 2, `dos secuaces juntos llegan a pegar los dos (${pair})`);
 
   // Nadie anuncia un golpe desde donde no llega a pegar
-  await G(() => { const g = window.__game; g.setStage('vereda'); g.traps.disable(); g.facu.jokeCd = 99; g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 999; });
+  await G(() => { const g = window.__game; g.setStage('vereda'); g.traps.disable(); g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 999; });
   const far = await G(() => new Promise((res) => { const g = window.__game, h = g.hero.actor.position, bad = [], prev = new Map();
     const id = setInterval(() => g.enemies.list.forEach((e) => { if (e.state === 'windup' && prev.get(e) !== 'windup') { const reach = e.kind === 'patovica' ? 2.1 : 1.7; const ex = Math.abs(h.x - e.pos.x); if (ex > reach - 0.1) bad.push(+ex.toFixed(2)); } prev.set(e, e.state); }), 16);
     setTimeout(() => { clearInterval(id); res(bad); }, 8000); }));

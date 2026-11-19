@@ -41,7 +41,7 @@ try {
   const until = (fn, arg, ms = 6000) => page.waitForFunction(fn, arg, { timeout: ms, polling: 16 });
   const H = () => G(() => { const h = window.__game.hero; return { x: h.actor.position.x, z: h.actor.position.z, hp: h.hp, slowT: h.slowT }; });
   // Nivel 1 sin malos: las oleadas se marcan como despejadas
-  const ba = (x, z) => G(([x, z]) => { const g = window.__game; g.setStage('vereda'); g.enemies.clear(); for (const k in g.waves) g.waves[k] = 'cleared'; g.hero.hp = 5; g.hero.hpMax = 5; g.hero.inv = 0; g.hero.actor.position.set(x, 0, z); g.facu.jokeCd = 99; }, [x, z]);
+  const ba = (x, z) => G(([x, z]) => { const g = window.__game; g.setStage('vereda'); g.enemies.clear(); for (const k in g.waves) g.waves[k] = 'cleared'; g.hero.hp = 5; g.hero.hpMax = 5; g.hero.inv = 0; g.hero.actor.position.set(x, 0, z); }, [x, z]);
   const trap = (kind) => G((k) => window.__game.traps.list.find(t => t.kind === k), kind);
 
   // ---------- Baldosa floja ----------

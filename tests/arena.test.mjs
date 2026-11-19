@@ -61,7 +61,7 @@ test('every third barrel is gold and crates never are', () => {
   const barrels = shots.filter(s => s.kind === 'barrel'), crates = shots.filter(s => s.kind === 'crate');
   assert.ok(barrels.length >= 6 && crates.length >= 2, `barrels ${barrels.length} crates ${crates.length}`);
   assert.equal(throws.length, shots.length);
-  barrels.forEach((b, i) => assert.equal(!!b.gold, (i + 1) % 3 === 0, `barrel ${i}`));
+  barrels.forEach((b, i) => assert.equal(!!b.gold, (i + 1) % ARENA.phase1.goldEvery === 0, `barrel ${i}`));
   assert.ok(crates.every(c => !c.gold));
 });
 
@@ -69,9 +69,9 @@ test('punching a gold barrel in the window sends it back and hurts the boss', ()
   const l = mk(), hero = safeHero();
   const evs = giveReturn(l, hero);
   const hit = ofType(evs, 'bossHit')[0];
-  assert.equal(hit.dmg, 3.75);
+  assert.equal(hit.dmg, ARENA.returnDmg);
   assert.equal(hit.by, 'barrel');
-  assert.equal(l.state.hp, 26.25);
+  assert.equal(l.state.hp, 30 - ARENA.returnDmg);
 });
 
 test('punching a plain barrel does nothing and it still hurts', () => {
@@ -97,9 +97,9 @@ test('mashing punch through phase 1 never lowers his life', () => {
   assert.equal(l.state.phase, 1);
 });
 
-test('four returns switch to phase 2 with rage', () => {
+test('three returns switch to phase 2 with rage', () => {
   const l = mk(), hero = safeHero(), evs = [];
-  for (let i = 0; i < 4; i++) evs.push(...giveReturn(l, hero));
+  for (let i = 0; i < 3; i++) evs.push(...giveReturn(l, hero));
   evs.push(...run(l, 0.1, hero));
   assert.equal(l.state.phase, 2);
   assert.equal(l.state.hp, 15);

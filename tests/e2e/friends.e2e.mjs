@@ -9,7 +9,7 @@ const until = (fn, arg, ms = 8000) => page.waitForFunction(fn, arg, { timeout: m
 const quiet = (x, z = 0) => G(([x, z]) => {
   const g = window.__game; g.setStage('vereda'); g.enemies.clear(); for (const k in g.waves) g.waves[k] = 'cleared';
   g.traps.disable(); g.butter?.clear(); g.hero.hp = g.hero.hpMax = 5; g.hero.inv = 0; g.hero.slideT = 0;
-  g.hero.actor.position.set(x, 0, z); g.hero.actor.setFacing(1); g.facu.jokeCd = 99;
+  g.hero.actor.position.set(x, 0, z); g.hero.actor.setFacing(1);
 }, [x, z]);
 // Anota dónde empezó y dónde terminó el patinazo (cuadro a cuadro)
 const track = () => G(() => {
@@ -69,7 +69,7 @@ try {
   await G(() => {
     const g = window.__game; g.setStage('piquete'); g.traps.disable(); g.butter?.clear();
     g.enemies.list.forEach(e => { e.stun = 99; e.pos.z = 3.4; e.pos.x -= 6; });
-    g.hero.hp = g.hero.hpMax = 5; g.hero.inv = 0; g.hero.slideT = 0; g.facu.jokeCd = 99;
+    g.hero.hp = g.hero.hpMax = 5; g.hero.inv = 0; g.hero.slideT = 0;
   });
   await G((gx) => window.__game.hero.actor.position.set(gx - 4, 0, -1), gx);
   await track();
@@ -87,7 +87,7 @@ try {
   // ---------- Lale tira manteca y a veces se resbala ----------
   const lale = (dx = 8) => G((dx) => {
     const g = window.__game; g.setStage('francia-quiet'); g.traps.disable(); g.enemies.clear(); g.butter?.clear();
-    g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 0; g.hero.actor.position.set(170, 0, 0); g.facu.jokeCd = 99;
+    g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 0; g.hero.actor.position.set(170, 0, 0);
     return g.enemies.spawn(170 + dx, 0, 'lale').hp;
   }, dx);
   const hit = (dmg = 1) => G((dmg) => {
@@ -130,7 +130,7 @@ try {
     await G(([id, stage, at]) => {
       const g = window.__game; g.setStage(stage); g.enemies.clear(); g.traps.disable();
       for (const k in g.waves) if (g.waves[k] === 'active') g.waves[k] = 'cleared';
-      g.waves[id] = 'idle'; g.hero.hp = g.hero.hpMax = 99; g.hero.actor.position.set(at, 0, 0); g.facu.jokeCd = 99;
+      g.waves[id] = 'idle'; g.hero.hp = g.hero.hpMax = 99; g.hero.actor.position.set(at, 0, 0);
       window.__banners.length = 0;
     }, [id, stage, at]);
     await until((id) => window.__game.waves[id] === 'active', id, 3000);

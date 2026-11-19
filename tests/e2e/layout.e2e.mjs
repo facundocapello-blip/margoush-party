@@ -28,10 +28,10 @@ try {
 
   // Jugando: nada tapa el puntaje
   await page.waitForFunction(() => window.__game.state === 'playing', null, { timeout: 8000 });
-  await G(() => window.__game.facu.say('¡Prueba de globo de Facu!', 3));
+  await G(() => window.__game.banner('PRUEBA', '¡Prueba de globo!', 3));
   await page.waitForTimeout(200);
   const score = await rect('#hud-score'), banner = await rect('#banner');
-  check(!overlap(score, banner), 'el mensaje de Facu no tapa el puntaje');
+  check(!overlap(score, banner), 'el mensaje no tapa el puntaje');
   for (const c of ['#joystick', '#act-attack', '#act-jump', '#act-dodge']) check(!overlap(banner, await rect(c)), `el mensaje no tapa ${c}`);
 
   // Barra del jefe en la arena: arriba (abajo taparía los pies del héroe), sin chocar con los controles

@@ -18,7 +18,7 @@ try {
   // ---------- Cepi mini-jefe a mitad del nivel 2 ----------
   await G(() => {
     const g = window.__game; g.setStage('boulevard'); g.enemies.clear(); g.traps.disable();
-    g.waves.boulevard = 'idle'; g.hero.hp = g.hero.hpMax = 99; g.hero.actor.position.set(214, 0, 0); g.facu.jokeCd = 99;
+    g.waves.boulevard = 'idle'; g.hero.hp = g.hero.hpMax = 99; g.hero.actor.position.set(214, 0, 0);
     g.chaseDone = true; // sin la persecución (se prueba en chase.e2e.mjs)
     window.__banners.length = 0;
   });
@@ -76,7 +76,7 @@ try {
   await startRun(page, 'douge');
   await G(() => window.__game.finish(true));
   await page.waitForTimeout(500);
-  check(await G(() => !document.querySelector('#cepi') && !!document.querySelector('#screen-result .host img[alt="Facu"]')), 'al ganar no aparece Cepi: presenta Facu');
+  check(await G(() => !document.querySelector('#cepi') && !document.querySelector('#screen-result .host')), 'al ganar no aparece Cepi ni Facu');
 
   check(errors.length === 0, 'sin errores en consola: ' + errors.join(' | '));
 } finally { await browser.close(); }
