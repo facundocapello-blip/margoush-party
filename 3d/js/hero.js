@@ -10,8 +10,7 @@ export const HERO_CFG = {
 
 // Caminata: hasta `max` m/s (joystick a medias, o cuando camina solo) se usa la caminata en vez de correr.
 // stride: metros por cuadro (10 cuadros = dos pasos de ~1,5 m)
-export const WALK = { max: 3.9, stride: 0.3, auto: 3.4 };
-const RUN_STRIDE = 0.27; // m por cuadro de la carrera de 12 cuadros (dos zancadas ≈ 3,2 m)
+export const WALK = { max: 3.9, stride: 0.3, auto: 3.4, h: 1.03 };
 
 // Combo de 3: el tercero es el remate (la arena de BIG CHAKY usa los mismos tiempos)
 export const SWINGS = [
@@ -35,9 +34,8 @@ export function createHero(id, ctx) {
   if (A.has?.('rescate_sheet')) poses.carry = { tex: 'rescate_sheet', cell: id === 'douge' ? 0 : 1 };
   if (A.has?.(id + '_actions_sheet')) ['jump', 'dodge', 'hurt', 'power'].forEach((n, i) => { poses[n] = { tex: id + '_actions_sheet', cell: i }; });
   // Caminata de 10 cuadros (sacada de un video hecho con IA): se usa yendo despacio; rápido sigue la de correr
-  if (A.has?.(id + '_walk_sheet')) poses.walk = { tex: id + '_walk_sheet', stride: WALK.stride };
-  // Carrera de 12 cuadros (también de video): reemplaza la de 6 si está
-  if (A.has?.(id + '_run_sheet')) poses.run = { tex: id + '_run_sheet', stride: RUN_STRIDE };
+  // h: mismo alto de cuerpo que parado (no se escala por la cabeza: en el video el cuerpo es más largo y crecía)
+  if (A.has?.(id + '_walk_sheet')) poses.walk = { tex: id + '_walk_sheet', stride: WALK.stride, h: WALK.h };
   const actor = new SpriteActor(ctx.scene, ctx.assets, { poses, heightM: cfg.heightM, scaleRef: cfg.scaleRef });
   const has = (n) => !!actor.poses[n];
 
