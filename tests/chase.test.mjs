@@ -16,6 +16,6 @@ test('the chase track always leaves a free lane and fits before the charger', ()
   assert.ok(Math.min(...gaps) >= 20, 'there is room to react between obstacles');
 });
 
-test('the boulevard wave starts with the chase', () => {
-  assert.equal(WAVES.find(w => w.id === 'boulevard').chase, true);
+test('the chase is no longer in the boulevard: it opens level 1 (no wave triggers it)', () => {
+  assert.equal(WAVES.some(w => w.chase), false);
 });

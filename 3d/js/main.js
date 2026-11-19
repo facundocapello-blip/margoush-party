@@ -232,11 +232,11 @@ function setLevel(n) {
 
 // ---------- checkpoints ----------
 // Al morir no se vuelve a Buenos Aires: se reintenta desde el último tramo al que se llegó
-// (Nivel 2, la persecución o BIG CHAKY). Queda guardado en el celu para «CONTINUAR» desde el menú.
+// (el BYD de Cepi, Nivel 2 o BIG CHAKY). Queda guardado en el celu para «CONTINUAR» desde el menú.
 const CP_KEY = 'margoush3d_checkpoint';
 const CHECKPOINTS = {
   francia: { label: 'NIVEL 2 · FRANCIA', short: 'Francia' },
-  chase: { label: 'LA FUGA DE CEPI', short: 'la fuga de Cepi' },
+  byd: { label: '¡ROMPÉ EL BYD!', short: 'el BYD de Cepi' },
   boss: { label: 'BIG CHAKY', short: 'BIG CHAKY' }
 };
 function saveCheckpoint(id) {
@@ -269,7 +269,14 @@ function resumeAt(cp) {
   game.checkpoint = cp;
   game.score.restore(cp.score);
   game.time = cp.time || 0;
-  const first = { francia: WAVES.findIndex(w => w.level === 2), chase: WAVES.findIndex(w => w.chase), boss: WAVES.length }[cp.id];
+  // El mini nivel del BYD es al principio del Nivel 1 (después de la persecución)
+  if (cp.id === 'byd') {
+    game.state = 'curtain';
+    audio.music('chase', { fade: 0 });
+    curtain(() => startBydLevel(), { label: CHECKPOINTS.byd.label });
+    return;
+  }
+  const first = { francia: WAVES.findIndex(w => w.level === 2), boss: WAVES.length }[cp.id];
   WAVES.forEach((w, i) => {
     if (i >= first) return;
     game.waves[w.id] = 'cleared';
@@ -282,25 +289,18 @@ function resumeAt(cp) {
   game.cameos.onLevelStart();
   const p = game.hero.actor.position;
   if (cp.id === 'francia') p.set(LEVELS[1].start, 0, 0);
-  else if (cp.id === 'chase') p.set(WAVES[first].trigger - 0.5, 0, 0);
   else p.set(GALPON_X + 8, 0, 0);
   updateCamera(0, true);
-  if (cp.id === 'chase') {
-    game.chaseDone = true;
-    game.state = 'curtain';
-    audio.music('chase', { fade: 0 });
-    curtain(() => game.chase.start(), { label: CHECKPOINTS.chase.label });
-  } else if (cp.id === 'boss') {
-    game.chaseDone = true;
+  if (cp.id === 'boss') {
     spawnBoss();
   } else {
     game.state = 'curtain';
-    curtain(() => { game.state = 'playing'; input.reset(); }, { label: CHECKPOINTS.francia.label });
+    curtain(() => { game.state = 'playing'; input.reset(); audio.music('street', { fade: 0 }); }, { label: CHECKPOINTS.francia.label });
   }
 }
 game.resumeAt = resumeAt;
 
-function startRun(heroId, withIntro = false, { keepCheckpoint = false } = {}) {
+function startRun(heroId, withIntro = false, { keepCheckpoint = false, street = false } = {}) {
   if (!keepCheckpoint) clearCheckpoint();
   game.heroId = heroId;
   if (game.hero) game.hero.actor.dispose();
@@ -323,17 +323,53 @@ function startRun(heroId, withIntro = false, { keepCheckpoint = false } = {}) {
   clearBanners();
   $('#boss-bar').classList.add('hidden');
   // En la intro no suena el tema del héroe (solo los efectos del secuestro); arranca al empezar a jugar
-  audio.music(withIntro ? null : 'street', { fade: 0 });
-  if (withIntro) { game.state = 'intro'; game.story.startIntro(); }
+  audio.music(withIntro || !(keepCheckpoint || street) ? null : 'street', { fade: 0 });
+  // El Nivel 1 arranca con Cepi llevándose a Margot y la persecución (sin intro, directo a la persecución)
+  if (withIntro) { game.state = 'intro'; game.story.startIntro(game.hero); }
+  else if (!keepCheckpoint && !street) startChaseRun();
   else game.state = 'playing';
   updateRotateHint();
 }
 
 function endIntro() {
   game.story.endIntro();
-  game.state = 'playing';
-  audio.music('street');
   input.reset();
+  startChaseRun();
+}
+// La persecución de Cepi (se llevó a Margot en su BYD): primer tramo del Nivel 1
+function startChaseRun() {
+  game.chaseDone = true;
+  game.state = 'curtain';
+  audio.music('chase', { fade: 0.3 });
+  curtain(() => game.chase.start(), { label: 'LA FUGA DE CEPI' });
+}
+// Mini nivel: romper el BYD antes de que Cepi lo cargue (bonus.js)
+function startBydLevel() {
+  if (game.checkpoint?.id !== 'byd') saveCheckpoint('byd');
+  input.reset();
+  audio.music('chase', { fade: 0.3 });
+  game.bonus.start();
+}
+game.startBydLevel = startBydLevel;
+// Lo rompiste: Cepi se lleva a Margot corriendo al galpón de BIG CHAKY y arranca la calle de Buenos Aires
+function bydDone() {
+  game.state = 'playing';
+  const h = game.hero;
+  h.actor.position.set(LEVELS[0].start, 0, 0.5);
+  h.actor.setFacing(1); h.actor.setPose('idle');
+  Object.assign(h, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.2 });
+  updateCamera(0, true);
+  input.reset();
+  audio.music('street', { fade: 0.4 });
+  game.banner('¡CEPI SE LLEVA A MARGOT!', 'Corre al galpón de BIG CHAKY. ¡Seguilo por Buenos Aires!', 3.2);
+}
+// Se cargó: Cepi se escapa, perdés un corazón y se vuelve a intentar (sin corazones, se terminó)
+function bydFailed() {
+  const h = game.hero;
+  h.hp = Math.max(0, h.hp - 1);
+  game.score.takeDamage();
+  if (h.hp <= 0) { game.state = 'playing'; finish(false); return; }
+  game.bonus.start();
 }
 
 // ---------- cortina entre tramos ----------
@@ -385,17 +421,6 @@ function updateZones() {
     const st = game.waves[w.id];
     if (st === 'idle' && x > w.trigger && game.cameos.busy) { game.cameos.hurry(); break; }
     if (st === 'idle' && x > w.trigger) {
-      // Le boulevard: antes de la pelea, Cepi se escapa en su BYD y se lo persigue hacia el fondo
-      if (w.chase && !game.chaseDone) {
-        if (game.enemies.alive() === 0) {
-          game.chaseDone = true;
-          saveCheckpoint('chase');
-          game.state = 'curtain';
-          audio.music('chase', { fade: 0.4 });
-          curtain(() => game.chase.start(), { label: 'LA FUGA DE CEPI' });
-        }
-        break;
-      }
       game.waves[w.id] = 'active';
       game.enemies.spawnWave(w.id);
       break;
@@ -403,9 +428,8 @@ function updateZones() {
     if (st === 'active' && game.enemies.alive() === 0) {
       game.waves[w.id] = 'cleared';
       if (w.gate != null) openGate(w.gate);
-      // Margot: se pone contenta y enseguida BIG CHAKY cruza al fondo con ella (que no te olvides a quién rescatás)
+      // Margot (carita del HUD) se pone contenta
       game.margot.cheer();
-      game.margot.cross();
       if (w.endsLevel) {
         // El nivel termina al llegar al final de la calle, no apenas cae el último malo
         game.levelExit = true;
@@ -464,23 +488,8 @@ function updateTransition(dt) {
   if (!game.transCrossed && (p.x >= BORDER_X + 0.5 || game.transT > TRANSITION_MAX_S)) {
     game.transCrossed = true;
     audio.sfx('secret');
-    // Entre Buenos Aires y Francia: el BONUS «¡ROMPÉ EL BYD!» (bonus.js) y después Francia
-    curtain(() => { if (game.state === 'transition') startBonus(); }, { label: 'BONUS · ¡ROMPÉ EL BYD!' });
+    curtain(() => { if (game.state === 'transition') { endTransition(); audio.music('street', { fade: 0.4 }); } }, { label: 'NIVEL 2 · FRANCIA' });
   }
-}
-
-function startBonus() {
-  $('#level-card').classList.add('hidden');
-  $('#level-card').classList.remove('travel');
-  input.reset();
-  audio.music('chase', { fade: 0.3 });
-  game.bonus.start();
-}
-game.startBonus = startBonus;
-// El bonus termina con la cortina ya cerrada (la abre bonus.js con el cartel de Francia)
-function bonusDone() {
-  endTransition();
-  audio.music('street', { fade: 0.4 });
 }
 
 function endTransition() {
@@ -721,27 +730,21 @@ async function boot() {
     onWin() { game.state = 'playing'; last = 0; game.onBossDown(); },
     onDown() { game.state = 'playing'; finish(false); }
   });
-  game.bonus = createBonus({ game, input, audio, assets, renderer, updateHud, pause, POWER, SWINGS, onEnd() { last = 0; bonusDone(); } });
+  game.bonus = createBonus({ game, input, audio, assets, renderer, updateHud, pause, POWER, SWINGS,
+    onEnd() { last = 0; bydDone(); }, onFail() { last = 0; bydFailed(); } });
   game.chase = createChase({
     game, input, audio, assets, renderer, banner: game.banner, updateHud, pause, POWER,
-    // Lo alcanzaste: el BYD quedó sin batería y Cepi se baja con la paleta (oleada «boulevard»)
-    onCaught() {
-      game.state = 'playing';
-      game.hero.actor.position.set(212.5, 0, 0);
-      game.hero.actor.setFacing(1);
-      Object.assign(game.hero, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.2 });
-      game.waves.boulevard = 'active';
-      game.enemies.spawnWave('boulevard');
-      updateCamera(0, true);
-      last = 0;
-      game.banner('¡SE QUEDÓ SIN BATERÍA!', '«¡Es eléctrico, papá!» Cepi se baja con la paleta: sacale la llave.', 3.4);
-    },
+    // Lo alcanzaste: el BYD quedó sin batería y Cepi corre a enchufarlo → mini nivel «¡ROMPÉ EL BYD!»
+    wonLabel: '¡ROMPÉ EL BYD!',
+    onCaught() { last = 0; startBydLevel(); },
     onDown() { game.state = 'playing'; finish(false); }
   });
   for (const el of [canvas, $('#stick-zone')]) el.addEventListener('pointerdown', () => { if (game.state === 'intro') endIntro(); });
   addEventListener('keydown', () => { if (game.state === 'intro') endIntro(); });
   game.heroScreen = () => { const v = game.hero.actor.position.clone(); v.y += 1; v.project(camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 }; };
-  game.quickStart = (heroId) => startRun(heroId);
+  // Atajos de pruebas: directo a la calle de Buenos Aires, o desde la persecución
+  game.quickStart = (heroId) => startRun(heroId, false, { street: true });
+  game.quickChase = (heroId) => startRun(heroId, false);
 
   // Portada: el primer toque habilita el sonido (Safari) y arranca la música
   const startCover = () => {

@@ -1,17 +1,11 @@
-// Persecución de Cepi en el boulevard: se juega hacia el fondo y termina en la pelea con Cepi.
+// Persecución de Cepi al principio del Nivel 1 (se llevó a Margot): se juega hacia el fondo y termina
+// en el mini nivel «¡ROMPÉ EL BYD!».
 import { launch, open, startRun, check, shot } from './harness.mjs';
 
 const G = (page, fn, arg) => page.evaluate(fn, arg);
 
 async function toBoulevard(page, hero) {
-  await startRun(page, hero);
-  await G(page, () => {
-    const g = window.__game;
-    g.setStage('francia-quiet');
-    g.waves['francia-2'] = 'cleared';
-    for (const gate of g.world.gates) gate.open = true;
-    g.hero.actor.position.set(213.5, 0, 0);
-  });
+  await G(page, (h) => window.__game.quickChase(h), hero);
   await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 8000 });
 }
 
@@ -20,7 +14,7 @@ for (const hero of ['douge', 'marine']) {
   try {
     await open(page);
     await toBoulevard(page, hero);
-    check(true, `${hero}: al llegar al boulevard arranca la persecución`);
+    check(await G(page, () => window.__game.level) === 1, `${hero}: al empezar la partida arranca la persecución (Nivel 1)`);
     check(await G(page, () => !!document.querySelector('#chase-bat') && !document.querySelector('#hud').classList.contains('hidden')),
       `${hero}: se ve la batería del BYD y el HUD de siempre`);
     await G(page, () => { window.__game.hero.hp = window.__game.hero.hpMax = 99; });
@@ -61,19 +55,17 @@ for (const hero of ['douge', 'marine']) {
     check((await G(page, () => window.__game.hero.power)) < 1, `${hero}: con la barra llena sale el poder`);
     await shot(page, `chase_${hero}`);
 
-    // Hasta el final (rápido): el BYD se queda sin batería y empieza la pelea con Cepi
+    // Hasta el final (rápido): el BYD se queda sin batería y sigue el mini nivel de romperlo
     await G(page, () => { window.__game.timeScale = 3; });
-    await page.waitForFunction(() => window.__game.state === 'playing', null, { timeout: 60000 });
+    await page.waitForFunction(() => window.__game.state === 'bonus', null, { timeout: 60000 });
     await G(page, () => { window.__game.timeScale = 1; });
     const after = await G(page, () => {
       const g = window.__game;
-      return { wave: g.waves.boulevard, alive: g.enemies.alive(), x: g.hero.actor.position.x, chase: g.chase.active, ui: !!document.querySelector('#chase-ui'), score: g.score.total };
+      return { chase: g.chase.active, ui: !!document.querySelector('#chase-ui'), score: g.score.total, cp: g.checkpoint?.id, level: g.level };
     });
     check(!after.chase && !after.ui, `${hero}: al terminar se limpia la persecución`);
-    check(after.wave === 'active' && after.alive === 1, `${hero}: después aparece Cepi para pelear`);
+    check(after.cp === 'byd' && after.level === 1, `${hero}: después viene «¡ROMPÉ EL BYD!» (con checkpoint)`);
     check(after.score >= 500, `${hero}: suma puntos (${after.score})`);
-    await page.waitForTimeout(400);
-    await shot(page, `chase_${hero}_pelea`);
     check(errors.length === 0, `${hero}: sin errores (${errors.join(' | ')})`);
   } finally { await browser.close(); }
 }

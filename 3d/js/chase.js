@@ -1,10 +1,11 @@
-// «La fuga de Cepi»: tramo del boulevard que se juega hacia el fondo (estilo Crash Bandicoot Warped).
-// Cepi se escapa con la llave en su BYD tirando pelotazos; el héroe lo persigue en su vehículo
+// «La fuga de Cepi»: arranque del Nivel 1 en Buenos Aires, se juega hacia el fondo (estilo Crash Bandicoot Warped).
+// Cepi se lleva a Margot en su BYD (se la ve llorando en la luneta) tirando pelotazos; el héroe lo persigue en su vehículo
 // (Douge en el Hongo móvil, Marine en la Maceta móvil). Corre solo: el joystick dobla, SALTO salta,
 // 👊 rompe cosas, ESQUIVE da invulnerabilidad corta y manteniendo 👊 con la barra llena sale el poder.
-// Al final el BYD se queda sin batería en un cargador y arranca la pelea con Cepi (oleada «boulevard»).
+// Al final el BYD se queda sin batería en un cargador y sigue el mini nivel «¡ROMPÉ EL BYD!» (bonus.js).
 // Usa el mismo renderer, HUD, carteles, controles y sonidos que el resto del juego.
 import { fillText, translateDom } from './i18n.js';
+import { bydTextureWithMargot } from './byd_margot.js';
 
 export const CHASE = {
   length: 760,        // metros hasta el cargador
@@ -47,7 +48,7 @@ export function buildTrack(seed = 7) {
   return { obstacles, pickups };
 }
 
-export function createChase({ game, input, audio, assets, renderer, banner, updateHud, pause, POWER, onCaught, onDown }) {
+export function createChase({ game, input, audio, assets, renderer, banner, updateHud, pause, POWER, onCaught, onDown, wonLabel = '' }) {
   let cur = null;
 
   function start() {
@@ -83,14 +84,25 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     const road = mk(new T.PlaneGeometry(ROAD * 2, 260), new T.MeshLambertMaterial({ map: cobble })); road.rotation.x = -Math.PI / 2;
     const walks = [-1, 1].map(sd => { const m = mk(new T.PlaneGeometry(WALK, 260), new T.MeshLambertMaterial({ map: walkTex })); m.rotation.x = -Math.PI / 2; m.position.set(sd * (ROAD + WALK / 2), 0.12, 0); return m; });
     const curbs = [-1, 1].map(sd => { const m = mk(new T.BoxGeometry(0.35, 0.24, 260), new T.MeshLambertMaterial({ color: L('#e6d6c6') })); m.position.set(sd * ROAD, 0.1, 0); return m; });
-    // Fondo con la Torre Eiffel: sigue a la cámara, así nunca se llega
-    const fondo = assets.meta('chase_paris_fondo'), BW = 260, BH = BW * fondo.h / fondo.w;
-    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture('chase_paris_fondo'), fog: false }));
-    // Fachadas de los locales de Francia, recicladas a los costados
-    const FAC = ['le_ble', 'henris', 'punto_de_oro', 'street_bg'].filter(k => assets.has(k));
+    // Fondo de Buenos Aires (avenida que se pierde con el Obelisco): sigue a la cámara, así nunca se llega.
+    // Si todavía no está el dibujo, se pinta uno por código (cielo de atardecer, edificios y el Obelisco).
+    const fondoKey = assets.has('chase_ba_fondo') ? 'chase_ba_fondo' : null;
+    const fondoTex = fondoKey ? assets.texture(fondoKey) : (() => {
+      const c = document.createElement('canvas'); c.width = 1200; c.height = 300; const g = c.getContext('2d');
+      const gr = g.createLinearGradient(0, 0, 0, 300); gr.addColorStop(0, '#5a6fd0'); gr.addColorStop(0.55, '#e48aa0'); gr.addColorStop(1, '#ffc27a');
+      g.fillStyle = gr; g.fillRect(0, 0, 1200, 300);
+      let r = 3; const rnd = () => ((r = (r * 16807) % 2147483647) / 2147483647);
+      for (let x = 0; x < 1200; x += 26 + rnd() * 30) { const h = 40 + rnd() * 110 * (Math.abs(x - 600) / 600 + 0.3); g.fillStyle = `hsl(${250 + rnd() * 30},28%,${42 + rnd() * 12}%)`; g.fillRect(x, 300 - h, 30 + rnd() * 30, h); }
+      g.fillStyle = '#f3ece4'; g.beginPath(); g.moveTo(588, 300); g.lineTo(594, 92); g.lineTo(600, 78); g.lineTo(606, 92); g.lineTo(612, 300); g.fill(); // el Obelisco
+      const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; return keep(t);
+    })();
+    const fondo = fondoKey ? assets.meta(fondoKey) : { w: 1200, h: 300 }, BW = 260, BH = BW * fondo.h / fondo.w;
+    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: fondoTex, fog: false }));
+    // Fachadas porteñas a los costados (kiosco, parrilla, pizzería…)
+    const FAC = ['calle_buenos_aires'].filter(k => assets.has(k));
     const facW = 13.2, facH = 8.8, facs = [];
     for (const sd of [-1, 1]) for (let i = 0; i < 14; i++) {
-      const m = mk(new T.PlaneGeometry(facW, facH), new T.MeshLambertMaterial({ map: assets.texture(FAC[(i + (sd > 0 ? 2 : 0)) % FAC.length]) }));
+      const m = mk(new T.PlaneGeometry(facW, facH), new T.MeshLambertMaterial({ map: assets.texture(FAC[i % FAC.length]) }));
       m.rotation.y = -sd * Math.PI / 2; m.position.set(sd * FX, facH / 2 - 0.05, -i * facW); facs.push(m);
     }
     // Árboles y faroles
@@ -126,7 +138,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     const shG = keep(new T.PlaneGeometry(1, 1)); shG.rotateX(-Math.PI / 2);
     const shM = keep(new T.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
     const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
-    const setTex = (m, key) => { const meta = assets.meta(key); m.material.map = assets.texture(key); m.userData.key = key; m.scale.set(m.userData.h * meta.w / meta.h, m.userData.h, 1); };
+    const setTex = (m, key) => { const meta = assets.meta(key); m.material.map = (m.userData.margot && key !== 'chase_cepi_dead' && bydTextureWithMargot(assets, key)) || assets.texture(key); m.userData.key = key; m.scale.set(m.userData.h * meta.w / meta.h, m.userData.h, 1); };
     function sprite(key, h, shadow = 1) {
       const m = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ alphaTest: 0.45, side: T.DoubleSide })));
       m.userData.h = h; setTex(m, key); scene.add(m);
@@ -140,6 +152,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     }
     const P = sprite(pre + '_drive', 2.6), C = sprite(assets.has('chase_cepi_drive') ? 'chase_cepi_drive' : 'chase_cepi_windup', 4.1, 1.1);
     const CEPI_DRIVE = C.userData.key;
+    C.userData.margot = true; setTex(C, CEPI_DRIVE); // Margot llorando en la luneta
     const mark = mk(new T.RingGeometry(0.55, 0.78, 28), new T.MeshBasicMaterial({ color: L('#ff4d5e'), transparent: true, opacity: 0.85, depthWrite: false }));
     mark.rotation.x = -Math.PI / 2; mark.visible = false; mark.renderOrder = 2;
     // Polvo que levantan las ruedas traseras del BYD (va de atrás: las ruedas no se ven girar, el polvo vende la velocidad)
@@ -215,8 +228,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     function close(won) {
       if (closing) return;
       closing = true;
-      if (won) audio?.music?.('street', { fade: 0.4 });
-      if (game.curtain) game.curtain(() => end(won)); else end(won);
+      if (game.curtain) game.curtain(() => end(won), { label: won ? wonLabel : '' }); else end(won);
     }
     function end(won) {
       if (!cur) return;
@@ -263,7 +275,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         if (o.slip) { if (slipT <= 0) { slipT = 1; slipDir = Math.random() < 0.5 ? -1 : 1; pop(x, 2.6, -dist, '¡RESBALÓN!', '#ffd23a', 24); sfx('fall'); } continue; }
         if (o.birds) { o.dead = true; o.vy = 7; v *= 0.7; pop(x, 2.6, -dist, '¡PALOMAS!', '#cfd8ff', 22); continue; }
         if (dashT > 0 || powT > 0 || inv > 0) continue;
-        o.dead = true; o.vy = 5; o.spin = 5; hurt(o.kind === 'barricade' ? '¡LA GRÈVE!' : '¡PAF!');
+        o.dead = true; o.vy = 5; o.spin = 5; hurt(o.kind === 'barricade' ? '¡PIQUETE!' : '¡PAF!');
       }
       // Coleccionables: hongos (Douge) u hojitas (Marine)
       for (const p of picks) {

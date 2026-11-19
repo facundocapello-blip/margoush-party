@@ -8,12 +8,17 @@ try {
   await page.click('#btn-play');
   await page.click('#pick-marine');
   await page.waitForTimeout(1200);
-  check(await G(() => window.__game.state) === 'intro', 'arranca con la intro de BIG CHAKY');
+  check(await G(() => window.__game.state) === 'intro', 'arranca con la intro: Cepi se lleva a Margot');
+  await page.waitForTimeout(1300);
   await shot(page, 'intro');
   const t0 = Date.now();
   await page.mouse.click(480, 300);
-  await page.waitForFunction(() => window.__game.state === 'playing', null, { timeout: 2000 });
-  check(Date.now() - t0 < 1000, `un toque saltea la intro (${Date.now() - t0} ms)`);
+  await page.waitForFunction(() => window.__game.state === 'curtain' || window.__game.state === 'chase', null, { timeout: 2000 });
+  check(Date.now() - t0 < 1000, `un toque saltea la intro y va a la persecución (${Date.now() - t0} ms)`);
+  await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 5000 });
+  await G(() => window.__game.chase.dispose());
+  await G(() => window.__game.quickStart('marine'));
+  await page.waitForFunction(() => window.__game.state === 'playing', null, { timeout: 5000 });
 
   // Jefe: la pelea es en la arena (escena propia)
   await G(() => window.__game.setStage('galpon'));

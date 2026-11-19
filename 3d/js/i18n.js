@@ -179,7 +179,18 @@ export const TEXTOS = {
   'Puntaje': 'Score',
   'Fecha': 'Date',
   'Todavía no hay puntajes. ¡Sé el primero!': 'Pas encore de scores. Sois le premier !',
-  'Ranking en línea': 'Classement en ligne'
+  'Ranking en línea': 'Classement en ligne',
+  // ---------- Nivel 1: Cepi se lleva a Margot, persecución y mini nivel del BYD ----------
+  '¡CEPI SE LLEVÓ A MARGOT!': 'CEPI A ENLEVÉ MARGOT !',
+  '¡Se escapa en su BYD! ¡Perseguilo!': "Il s'enfuit dans sa BYD ! Poursuis-le !",
+  '¡ROMPÉ EL BYD!': 'CASSE LA BYD !',
+  'el BYD de Cepi': 'la BYD de Cepi',
+  'NIVEL 1 · BUENOS AIRES': 'NIVEAU 1 · BUENOS AIRES',
+  '¡OTRA VEZ!': 'ENCORE UNE FOIS !',
+  'CARGA DEL BYD': 'CHARGE DE LA BYD',
+  '¡CEPI SE LLEVA A MARGOT!': 'CEPI EMMÈNE MARGOT !',
+  'Corre al galpón de BIG CHAKY. ¡Seguilo por Buenos Aires!': "Il court à l'entrepôt de BIG CHAKY. Suis-le dans Buenos Aires !",
+  '¡PIQUETE!': 'BARRAGE !',
 };
 
 export const DICHOS = {
@@ -231,7 +242,17 @@ export const DICHOS = {
   '¡TENÉS OLOR A PATA!': 'TU PUES DES PIEDS !',
   '¡NO SABÉS PEGAR!': 'TU SAIS PAS FRAPPER !',
   '¡TU VIEJA TE VISTE!': "C'EST TA MÈRE QUI T'HABILLE !",
-  '¡CORRÉS COMO PATO!': 'TU COURS COMME UN CANARD !'
+  '¡CORRÉS COMO PATO!': 'TU COURS COMME UN CANARD !',
+  '¡Jua! ¡Me la llevo!': 'Ha ! Je l’emmène !',
+  '¡MI BYD! ¡Me llevo a Margot igual!': 'MA BYD ! J’emmène Margot quand même !',
+  '¡Cargado! ¡Casi, casi!': 'Chargée ! Presque, presque !',
+  '¡Jaja! ¡100 %, me voy!': 'Haha ! 100 %, je file !',
+  '¡AY! ¡Me desenchufaste!': 'AÏE ! Tu m’as débranché !',
+  '¡El cable no!': 'Pas le câble !',
+  '¡Mamááá!': 'Mamaaan !',
+  '¡Enchufado de nuevo!': 'Rebranché !',
+  '¡Ya casi carga!': 'Elle est presque chargée !',
+  '¡Cargá, cargá, cargá!': 'Charge, charge, charge !',
 };
 
 // Plantillas ({x}, {n}) armadas una sola vez

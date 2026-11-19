@@ -31,6 +31,8 @@ try {
   await page.click('#pick-douge');
   await page.waitForTimeout(500);
   await page.mouse.click(480, 300);
+  await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 15000 });
+  await page.evaluate(() => { const g = window.__game; g.chase.dispose(); g.quickStart(g.heroId); }); // la persecución se prueba en chase.e2e
   await page.waitForFunction(() => window.__game.state === 'playing');
   await G(() => { const g = window.__game; g.hero.hp = g.hero.hpMax = 99; });
 

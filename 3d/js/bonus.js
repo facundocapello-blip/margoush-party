@@ -1,29 +1,35 @@
-// BONUS «¡ROMPÉ EL BYD!»: minijuego entre Buenos Aires y Francia, a lo Street Fighter II.
-// El BYD de Cepi está estacionado en la frontera (en doble fila, claro): 20 s para hacerlo bolsa a trompadas.
+// MINI NIVEL «¡ROMPÉ EL BYD!»: después de la persecución (nivel 1). El BYD de Cepi se quedó sin batería
+// y Cepi corre a enchufarlo al cargador: hay que hacerlo bolsa a trompadas ANTES de que se cargue.
 // Escena propia (como la arena): héroe de espaldas, el auto de atrás, cámara detrás. Un punto brilla en el
 // auto (farol izquierdo, rayo del medio o farol derecho): pegarle parado frente a ese punto vale triple.
-// El auto se va rompiendo a la vista (rajaduras, faroles apagados, abolladuras) y al final Cepi se baja
-// agarrándose la cabeza. Sin carteles de instrucciones: el reloj, la barra del auto y las frases de Cepi.
+// A la derecha está el cargador con Cepi: si le pegás a Cepi, lo desenchufás un rato (la carga se frena).
+// Si la batería llega a 100 %, Cepi se escapa: perdés un corazón y se vuelve a intentar.
+// Sin carteles de instrucciones: la batería, la barra del auto y las frases de Cepi.
 // (los golpes SWINGS llegan de hero.js por parámetro: así la lógica se prueba en node sin Three.js)
 import { fillText, tr } from './i18n.js';
+import { bydCanvasWithMargot } from './byd_margot.js';
 
 export const BONUS = {
-  time: 20,
-  hp: 60,
+  charge: 16,          // s que tarda en cargarse del todo si nadie lo molesta
+  hp: 54,
   spotMult: 3,         // golpe frente al punto que brilla
   spotR: 0.75,         // m de tolerancia para estar «frente al punto»
+  cepiR: 0.9,          // m de tolerancia para pegarle a Cepi en el cargador
+  stun: 2.4,           // s que Cepi queda desenchufado después de un golpe
+  unplug: 6,           // % de carga que se pierde con cada golpe a Cepi
   powerDmg: 14,
-  points: { hit: 20, spot: 60, wreck: 1500, perSecond: 60 },
+  points: { hit: 20, spot: 60, cepi: 80, wreck: 1500, perPercent: 15 },
   move: 6
 };
 // Puntos del dibujo (px de chase_cepi_drive, 396×384): farol izquierdo, rayo, farol derecho
 const SPOTS = [{ u: 100, v: 182 }, { u: 222, v: 210 }, { u: 334, v: 182 }];
-const CAR_H = 3.6, HERO_H = 2.0, CAR_Z = -1.6, HERO_Z = 1.5;
-const LINES = ['¡Mi BYD no!', '¡Lo tengo en cuotas!', '¡Es eléctrico, papá!', '¡Le bajás la batería!', '¡Te voy a acusar con mamá!', '¡Ni lo terminé de pagar!'];
+const CAR_H = 3.6, HERO_H = 2.0, CAR_Z = -1.6, HERO_Z = 1.5, CEPI_H = 2.3;
+const LINES = ['¡Mi BYD no!', '¡Lo tengo en cuotas!', '¡Es eléctrico, papá!', '¡Ya casi carga!', '¡Te voy a acusar con mamá!', '¡Ni lo terminé de pagar!', '¡Cargá, cargá, cargá!'];
 
 // Lógica pura (sin Three.js ni DOM): se prueba con node --test
+// bat: % de carga del BYD (0 → 100). cepiStun: s que le quedan a Cepi desenchufado.
 export function createBonusLogic({ rand = Math.random } = {}) {
-  const st = { hp: BONUS.hp, t: BONUS.time, spot: 1, over: false, wrecked: false, stage: 0, hits: 0 };
+  const st = { hp: BONUS.hp, bat: 0, t: 0, spot: 1, over: false, wrecked: false, charged: false, stage: 0, hits: 0, cepiStun: 0, cepiHits: 0 };
   const stageOf = () => (st.hp <= 0 ? 4 : st.hp <= BONUS.hp * 0.25 ? 3 : st.hp <= BONUS.hp * 0.5 ? 2 : st.hp <= BONUS.hp * 0.75 ? 1 : 0);
   function nextSpot() { let n = st.spot; while (n === st.spot) n = Math.floor(rand() * SPOTS.length); st.spot = n; }
   function damage(dmg, evs) {
@@ -31,14 +37,23 @@ export function createBonusLogic({ rand = Math.random } = {}) {
     st.hp = Math.max(0, st.hp - dmg);
     const s = stageOf();
     if (s > st.stage) { st.stage = s; evs.push({ type: 'stage', stage: s }); }
-    if (st.hp <= 0) { st.over = true; st.wrecked = true; evs.push({ type: 'wreck', timeLeft: st.t }); }
+    if (st.hp <= 0) { st.over = true; st.wrecked = true; evs.push({ type: 'wreck', batLeft: 100 - st.bat }); }
   }
   return {
     get state() { return st; },
-    // x: distancia lateral del héroe al centro del auto; spotX(i): x del punto i
-    punch({ x, dmg, spotX }) {
+    get plugged() { return !st.over && st.cepiStun <= 0; },
+    // x: distancia lateral del héroe al centro del auto; spotX(i): x del punto i; cepiX: x de Cepi (opcional)
+    punch({ x, dmg, spotX, cepiX = null }) {
       const evs = [];
       if (st.over) return evs;
+      if (cepiX != null && Math.abs(x - cepiX) < BONUS.cepiR) {
+        st.hits++; st.cepiHits++;
+        const was = st.cepiStun > 0;
+        st.cepiStun = BONUS.stun;
+        st.bat = Math.max(0, st.bat - BONUS.unplug);
+        evs.push({ type: 'cepi', unplugged: !was });
+        return evs;
+      }
       const onSpot = Math.abs(x - spotX(st.spot)) < BONUS.spotR;
       const d = dmg * (onSpot ? BONUS.spotMult : 1);
       st.hits++;
@@ -47,18 +62,22 @@ export function createBonusLogic({ rand = Math.random } = {}) {
       damage(d, evs);
       return evs;
     },
-    power() { const evs = []; if (!st.over) { evs.push({ type: 'hit', dmg: BONUS.powerDmg, spot: -1, power: true }); damage(BONUS.powerDmg, evs); } return evs; },
+    power() { const evs = []; if (!st.over) { evs.push({ type: 'hit', dmg: BONUS.powerDmg, spot: -1, power: true }); st.cepiStun = Math.max(st.cepiStun, 1.2); damage(BONUS.powerDmg, evs); } return evs; },
     update(dt) {
       const evs = [];
       if (st.over) return evs;
-      st.t = Math.max(0, st.t - dt);
-      if (st.t <= 0) { st.over = true; evs.push({ type: 'timeup' }); }
+      st.t += dt;
+      if (st.cepiStun > 0) {
+        st.cepiStun = Math.max(0, st.cepiStun - dt);
+        if (st.cepiStun <= 0) evs.push({ type: 'replug' });
+      } else st.bat = Math.min(100, st.bat + dt * 100 / BONUS.charge);
+      if (st.bat >= 100) { st.over = true; st.charged = true; evs.push({ type: 'charged' }); }
       return evs;
     }
   };
 }
 
-export function createBonus({ game, input, audio, assets, renderer, updateHud, pause, POWER, SWINGS, onEnd }) {
+export function createBonus({ game, input, audio, assets, renderer, updateHud, pause, POWER, SWINGS, onEnd, onFail }) {
   let cur = null;
 
   function start() {
@@ -102,7 +121,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     // El auto: textura propia sobre la que se dibujan los daños
     const img = assets.texture('chase_cepi_drive').image, meta = assets.meta('chase_cepi_drive');
     const carCanvas = document.createElement('canvas'); carCanvas.width = meta.w; carCanvas.height = meta.h;
-    const cg = carCanvas.getContext('2d'); cg.drawImage(img, 0, 0, meta.w, meta.h);
+    const cg = carCanvas.getContext('2d'); cg.drawImage(bydCanvasWithMargot(assets, 'chase_cepi_drive') || img, 0, 0, meta.w, meta.h);
     const carTex = keep(new T.CanvasTexture(carCanvas)); carTex.encoding = T.sRGBEncoding;
     const carW = CAR_H * meta.w / meta.h;
     const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
@@ -112,6 +131,31 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     const deadMeta = deadTex ? assets.meta('chase_cepi_dead') : null;
     const spotX = (i) => (SPOTS[i].u / meta.w - 0.5) * carW;
     const spotY = (i) => (1 - SPOTS[i].v / meta.h) * CAR_H;
+    // El cargador (a la derecha del auto) con Cepi enchufándolo: se le puede pegar para desenchufarlo
+    const chargerX = carW / 2 + 2.2, cepiX = carW / 2 + 1.25;
+    const post = mk(new T.BoxGeometry(0.55, 1.9, 0.45), new T.MeshLambertMaterial({ color: L('#e9edf2') }));
+    post.position.set(chargerX, 0.95, CAR_Z + 0.2);
+    const screen = mk(new T.PlaneGeometry(0.36, 0.42), new T.MeshBasicMaterial({ color: L('#2fd36b') }));
+    screen.position.set(chargerX, 1.45, CAR_Z + 0.43);
+    const cable = mk(new T.CylinderGeometry(0.045, 0.045, 1, 6), new T.MeshLambertMaterial({ color: L('#1d1d22') }));
+    const cableFrom = new T.Vector3(chargerX - 0.2, 1.1, CAR_Z + 0.25), cableTo = new T.Vector3(carW / 2 - 0.15, 1.35, CAR_Z + 0.2);
+    function cableAt(to) {
+      const d = new T.Vector3().subVectors(to, cableFrom);
+      cable.scale.set(1, d.length(), 1);
+      cable.position.copy(cableFrom).addScaledVector(d, 0.5);
+      cable.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize());
+    }
+    cableAt(cableTo);
+    const cepiHas = assets.has('cepi_actions_sheet');
+    const cepiTex = cepiHas ? keep(assets.texture('cepi_actions_sheet').clone()) : null;
+    if (cepiTex) { cepiTex.needsUpdate = true; cepiTex.repeat.set(1 / 4, 1); }
+    const cepiMat = keep(new T.MeshBasicMaterial({ map: cepiTex, alphaTest: 0.45, transparent: true, side: T.DoubleSide, visible: cepiHas }));
+    const cepiM = new T.Mesh(unit, cepiMat); scene.add(cepiM);
+    const cm = cepiHas ? assets.meta('cepi_actions_sheet') : { w: 4, h: 1 };
+    const cepiAsp = (cm.w / 4) / cm.h;
+    let cepiCell = -1;
+    const setCepi = (cell) => { if (cell === cepiCell || !cepiTex) return; cepiCell = cell; cepiTex.offset.set(cell / 4, 0); };
+    setCepi(0);
     // Sombra del auto y del héroe
     const shTex = canvasTex(64, 64, (g) => { const r = g.createRadialGradient(32, 32, 1, 32, 32, 32); r.addColorStop(0, 'rgba(10,6,20,.6)'); r.addColorStop(1, 'rgba(10,6,20,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); });
     const shGeo = keep(new T.PlaneGeometry(1, 1)); shGeo.rotateX(-Math.PI / 2);
@@ -138,7 +182,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
 
     // Carteles propios: reloj, fogonazo y textos que flotan
     const ui = document.createElement('div'); ui.id = 'bonus-ui';
-    ui.innerHTML = '<div class="bonus-flash"></div><div class="bonus-clock"><small>BONUS</small><b>20</b></div>';
+    ui.innerHTML = '<div class="bonus-flash"></div><div class="bonus-clock"><small>' + tr('CARGA DEL BYD') + '</small><b>⚡0%</b></div>';
     document.body.append(ui); document.body.classList.add('arena-on', 'bonus-on');
     const flashE = ui.querySelector('.bonus-flash'), clockE = ui.querySelector('.bonus-clock b');
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
@@ -192,7 +236,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
 
     let x = 0, t = 0, phase = 'intro', phaseT = 0, ended = false, closing = false;
     let swing = null, swingT = 0, swingHit = false, combo = 0, comboWindow = 0, buffer = 0, holdT = 0;
-    let shakeT = 0, carKick = 0, carTilt = 0, lineCd = 1.5, moving = false, wreckT = 0;
+    let shakeT = 0, carKick = 0, carTilt = 0, lineCd = 1.5, moving = false, wreckT = 0, cepiHurtT = 0, cepiTalk = 2.5;
     const result = { points: 0, wrecked: false };
     game.state = 'bonus';
 
@@ -217,21 +261,30 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
           if (onSpot) { flash('#fff2c4', 0.3); sfx('hitHeavy'); } else sfx('hit');
           setBar();
           lineCd -= 1;
-          if (lineCd <= 0) { lineCd = 4 + Math.random() * 3; pop(0, CAR_H * 0.92, CAR_Z, LINES[Math.random() * LINES.length | 0], '#ff9b8a', 20, 1.5); }
+          if (lineCd <= 0) { lineCd = 6 + Math.random() * 3; pop(cepiX, CEPI_H + 0.6, CAR_Z, LINES[Math.random() * 3 | 0], '#ff9b8a', 20, 1.5); }
         } else if (e.type === 'stage') onStage(e.stage);
         else if (e.type === 'wreck') {
           result.wrecked = true;
-          const bonus = BONUS.points.wreck + Math.round(e.timeLeft) * BONUS.points.perSecond;
+          const bonus = BONUS.points.wreck + Math.round(e.batLeft) * BONUS.points.perPercent;
           addPts(bonus, 0, CAR_H * 0.55, CAR_Z + 0.5, true);
           flash('#ffffff', 0.6); sfx('ko'); sfx('crowd'); shakeT = 0.5;
           if (deadTex) { carMat.map = deadTex; carMat.needsUpdate = true; car.scale.set(CAR_H * 1.05 * deadMeta.w / deadMeta.h, CAR_H * 1.05, 1); }
-          pop(0, CAR_H * 0.85, CAR_Z, '¡MI BYD! ¡Lo llevo al taller en Francia!', '#ffffff', 20, 2.2);
+          pop(cepiX, CEPI_H + 0.5, CAR_Z, '¡MI BYD! ¡Me llevo a Margot igual!', '#ffffff', 20, 2.4);
+          setCepi(2);
           phase = 'end'; phaseT = 0; glow.visible = false; clockE.parentElement.style.opacity = '0';
           pops.forEach(q => { if (/^[+]/.test(q.e.textContent) && q.t > 0) q.life = q.t; }); // se van los +20 que quedaban
-        } else if (e.type === 'timeup') {
-          sfx('bell');
-          pop(0, CAR_H * 0.85, CAR_Z, logic.state.hp < BONUS.hp * 0.5 ? '¡Jaja! ¡Casi, casi!' : '¡Jaja! ¡Ni un rayón le hiciste!', '#ff9b8a', 22, 2);
+        } else if (e.type === 'charged') {
+          sfx('bell'); flash('#7ee0c3', 0.4);
+          pop(cepiX, CEPI_H + 0.5, CAR_Z, logic.state.hp < BONUS.hp * 0.5 ? '¡Cargado! ¡Casi, casi!' : '¡Jaja! ¡100 %, me voy!', '#ff9b8a', 22, 2);
           phase = 'end'; phaseT = 0; glow.visible = false;
+        } else if (e.type === 'cepi') {
+          setCepi(2); cepiHurtT = 0.5;
+          shakeT = 0.12; sfx('hitHeavy'); flash('#ffffff', 0.25);
+          addPts(BONUS.points.cepi, cepiX, CEPI_H, CAR_Z + 0.4, true);
+          if (e.unplugged) pop(cepiX, CEPI_H + 0.6, CAR_Z, ['¡AY! ¡Me desenchufaste!', '¡El cable no!', '¡Mamááá!'][Math.random() * 3 | 0], '#ff9b8a', 20, 1.4);
+          setBar();
+        } else if (e.type === 'replug') {
+          pop(cepiX, CEPI_H + 0.6, CAR_Z, '¡Enchufado de nuevo!', '#ff9b8a', 18, 1.2);
         }
       }
     }
@@ -244,7 +297,8 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     function close() {
       if (closing) return;
       closing = true;
-      if (game.curtain) game.curtain(() => end(), { label: 'NIVEL 2 · FRANCIA' }); else end();
+      const label = result.wrecked ? 'NIVEL 1 · BUENOS AIRES' : '¡OTRA VEZ!';
+      if (game.curtain) game.curtain(() => end(), { label }); else end();
     }
     function end() {
       if (ended) return;
@@ -252,7 +306,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       game.time += t;
       dispose();
       input.reset();
-      onEnd(result);
+      if (result.wrecked || !onFail) onEnd(result); else onFail(result);
     }
 
     function update(dt) {
@@ -265,7 +319,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       if (phase === 'intro' && phaseT > 0.9) { phase = 'play'; phaseT = 0; sfx('bell'); }
       if (phase === 'play') {
         const mx = input.moveX;
-        x = Math.max(-carW / 2 + 0.2, Math.min(carW / 2 - 0.2, x + mx * BONUS.move * (swing ? 0.4 : 1) * dt));
+        x = Math.max(-carW / 2 + 0.2, Math.min(cepiX + 0.2, x + mx * BONUS.move * (swing ? 0.4 : 1) * dt));
         moving = Math.abs(mx) > 0.15;
         if (input.pressed('attack')) { holdT += dt; if (hero.power >= 1 && holdT >= POWER.hold) usePower(); } else holdT = 0;
         if (input.consume('attack')) { if (!swing) startSwing(); else buffer = 0.2; }
@@ -274,7 +328,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
           swingT += dt;
           if (!swingHit && swingT >= swing.hitAt) {
             swingHit = true;
-            const evs = logic.punch({ x, dmg: swing.dmg, spotX });
+            const evs = logic.punch({ x, dmg: swing.dmg, spotX, cepiX });
             if (evs.length) hero.power = Math.min(1, hero.power + 0.03);
             handle(evs);
           }
@@ -297,16 +351,29 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
 
     function draw(dt) {
       const S = logic.state;
-      clockE.textContent = String(Math.ceil(S.t));
-      clockE.parentElement.classList.toggle('hurry', S.t <= 5 && !S.over);
+      clockE.textContent = '⚡' + Math.floor(S.bat) + '%';
+      clockE.parentElement.classList.toggle('hurry', S.bat >= 70 && !S.over);
+      screen.material.color.setHex(S.cepiStun > 0 ? 0xff4d5e : (Math.sin(t * 8) > 0 ? 0x2fd36b : 0x9cffc0));
+      // Cepi: enchufando (parado), golpeado o tirado; el cable cae al piso mientras está desenchufado
+      cepiHurtT = Math.max(0, cepiHurtT - dt);
+      if (S.wrecked) setCepi(2);
+      else if (S.cepiStun > 0) setCepi(cepiHurtT > 0 ? 2 : 3);
+      else setCepi(phase === 'play' && Math.sin(t * 5) > 0.6 ? 1 : 0);
+      const lying = cepiCell === 3;
+      cepiM.scale.set(-CEPI_H * cepiAsp * (lying ? 1.05 : 1), CEPI_H * (lying ? 1.05 : 1), 1); // mira hacia el auto
+      cepiM.position.set(cepiX + (cepiHurtT > 0 ? Math.sin(t * 50) * 0.05 : 0), 0, CAR_Z + 0.55);
+      cableAt(S.cepiStun > 0 || S.wrecked ? new T.Vector3(cepiX - 0.3, 0.06, CAR_Z + 0.9) : cableTo);
+      if (phase === 'play' && S.cepiStun <= 0) { cepiTalk -= dt; if (cepiTalk <= 0) { cepiTalk = 3.5 + Math.random() * 2; pop(cepiX, CEPI_H + 0.6, CAR_Z, LINES[Math.random() * LINES.length | 0], '#ff9b8a', 18, 1.4); } }
       shakeT = Math.max(0, shakeT - dt);
       const sh = shakeT > 0 ? 0.12 : 0;
       cam.aspect = innerWidth / innerHeight;
       cam.fov = cam.aspect < 0.9 ? 64 : 46;
       cam.updateProjectionMatrix();
       const intro = phase === 'intro' ? Math.max(0, 1 - phaseT / 0.9) : 0;
-      cam.position.set(x * 0.25 + (Math.random() - 0.5) * sh, 4.8 + intro * 3, HERO_Z + 6.4 + intro * 5 + (Math.random() - 0.5) * sh);
-      cam.lookAt(0, 1.7, CAR_Z);
+      // El cuadro abarca el auto y el cargador con Cepi; con el celu parado sigue más al héroe
+      const mid = cepiX * 0.3, follow = cam.aspect < 0.9 ? 0.6 : 0.25, cxm = mid + (x - mid) * follow;
+      cam.position.set(cxm + (Math.random() - 0.5) * sh, 4.8 + intro * 3, HERO_Z + 6.4 + (cam.aspect < 0.9 ? 1.2 : 0) + intro * 5 + (Math.random() - 0.5) * sh);
+      cam.lookAt(cxm, 1.7, CAR_Z);
       // Auto: rebota hacia atrás con cada golpe y vuelve
       carKick = Math.max(0, carKick - dt * 1.8);
       carTilt *= Math.max(0, 1 - dt * 6);
@@ -355,7 +422,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       update,
       render() { renderer.render(scene, cam); },
       dispose,
-      get state() { return { ...logic.state, x, phase, result: { ...result }, spotX: SPOTS.map((_, i) => spotX(i)) }; }
+      get state() { return { ...logic.state, x, phase, cepiX, result: { ...result }, spotX: SPOTS.map((_, i) => spotX(i)) }; }
     };
     draw(0);
   }
