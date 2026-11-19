@@ -292,3 +292,11 @@ body.chasing #labels, body.chasing #combo, body.chasing #boss-bar { visibility: 
   font-family: Fredoka, sans-serif; font-weight: 700; font-size: 16px; animation: banner-in 0.18s ease-out; }
 body.portrait #chase-bat { bottom: auto; top: calc(110px + var(--safe-t)); }
 @media (max-width: 740px) { #chase-bat span { display: none; } #chase-bat b { width: min(110px, 18vw); } }
+
+/* ---------- Arena de BIG CHAKY (arena.js): solo fogonazo y textos que flotan (.pop) ---------- */
+body.arena-on #labels, body.arena-on #combo { visibility: hidden; }
+#arena-ui { position: fixed; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
+#arena-ui .arena-flash { position: absolute; inset: 0; background: #ff4d5e; opacity: 0; transition: opacity 0.25s; }
+#arena-ui .pop { z-index: 1; }
+/* En la arena la barra va arriba también en horizontal: abajo tapaba los pies del héroe y los avisos del piso */
+body.arena-on:not(.portrait) #boss-bar { top: calc(70px + var(--safe-t)); bottom: auto; }

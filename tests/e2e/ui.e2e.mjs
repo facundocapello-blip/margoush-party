@@ -41,15 +41,16 @@ try {
     const s = await G(() => {
       const g = window.__game;
       if (g.state === 'result') return { done: true };
+      // La arena de BIG CHAKY tiene su propia prueba (arena.e2e): acá el bot la termina con el gancho de pruebas
+      if (g.state === 'arena') { g.hero.hp = g.hero.hpMax = 99; g.arena.logic?._setHp(0); return { wait: true }; }
       if (g.state !== 'playing') return { wait: true };
       const h = g.hero.actor.position;
       const foes = g.enemies.list.filter(e => e.hp > 0).map(e => e.pos);
-      if (g.boss && !g.boss.dead) foes.push(g.boss.pos);
       const e = foes.sort((a, b) => Math.abs(a.x - h.x) - Math.abs(b.x - h.x))[0];
       if (!e || Math.abs(e.x - h.x) > 12) return { key: 'ArrowRight' };
       const dx = e.x - h.x, dz = e.z - h.z;
       if (Math.abs(dz) > 0.4) return { key: dz > 0 ? 'ArrowDown' : 'ArrowUp' };
-      if (Math.abs(dx) > (g.boss && e === g.boss.pos ? 2.2 : 1.5)) return { key: dx > 0 ? 'ArrowRight' : 'ArrowLeft' };
+      if (Math.abs(dx) > 1.5) return { key: dx > 0 ? 'ArrowRight' : 'ArrowLeft' };
       return { attack: true, face: dx > 0 ? 1 : -1, facing: g.hero.actor.facing };
     });
     if (s.done) break;

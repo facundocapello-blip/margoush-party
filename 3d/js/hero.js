@@ -8,8 +8,8 @@ export const HERO_CFG = {
     idle: { tex: 'marine_idle' }, run: { tex: 'marine_run' }, attack: { tex: 'marine_attack' } } }
 };
 
-// Combo de 3: el tercero es el remate
-const SWINGS = [
+// Combo de 3: el tercero es el remate (la arena de BIG CHAKY usa los mismos tiempos)
+export const SWINGS = [
   { dur: 0.26, hitAt: 0.09, reach: 1.9, dmg: 1, knock: 2.5, strength: 1 },
   { dur: 0.26, hitAt: 0.09, reach: 1.9, dmg: 1, knock: 2.5, strength: 1 },
   { dur: 0.4, hitAt: 0.14, reach: 2.3, dmg: 2, knock: 8, strength: 1.6 }
@@ -263,7 +263,6 @@ export function createHero(id, ctx) {
     const p = actor.position;
     let best = null, bd = Infinity;
     const cands = game.enemies.list.filter(e => e.hp > 0 && e.state !== 'dead').map(e => e.pos);
-    if (game.boss && !game.boss.dead) cands.push(game.boss.pos);
     for (const q of cands) {
       const dx = Math.abs(q.x - p.x), dz = Math.abs(q.z - p.z);
       if (dx > AIM.reach || dz > AIM.depth) continue;
@@ -281,7 +280,7 @@ export function createHero(id, ctx) {
     const area = { x: actor.position.x, z: actor.position.z, facing: actor.facing, reach: s.reach, depth: 0.75, dmg: s.dmg, knock: s.knock, strength: s.strength, airborne: h.lift > 0.5 };
     fx.slash(new THREE.Vector3(actor.position.x, 1.25, actor.position.z), actor.facing, ['short', 'long', 'finisher'][h.combo]);
     const alive0 = game.enemies.alive();
-    const foes = game.enemies.hitArea(area) + (game.boss ? game.boss.hitArea(area) : 0);
+    const foes = game.enemies.hitArea(area);
     const hits = foes + game.props.hitArea(area);
     if (foes > 0) {
       h.charge(s.strength > 1.2 ? POWER.finisher : POWER.hit);

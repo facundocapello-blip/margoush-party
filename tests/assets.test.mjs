@@ -8,7 +8,11 @@ const NAMES = ['douge_idle','douge_run','douge_attack','marine_idle','marine_run
   'boss_idle','boss_run','boss_attack','boss_hurt','margot_sheet','kidnap_sheet','courier','street_bg','facu',
   'music_douge','music_marine',
   'face_secuaz_sheet','face_patovica_sheet','face_bombo_sheet','face_mozo_sheet','face_delivery_sheet',
-  'pinky_sheet','cepi_sheet','lale_sheet'];
+  'pinky_sheet','cepi_sheet','lale_sheet',
+  'arena_chaky_idle','arena_chaky_throw','arena_chaky_slam','arena_chaky_hurt','arena_chaky_rage','arena_chaky_ko',
+  'arena_douge_back_idle','arena_douge_back_run','arena_douge_back_punch','arena_douge_back_hurt',
+  'arena_marine_back_idle','arena_marine_back_run','arena_marine_back_punch','arena_marine_back_hurt',
+  'arena_barril','arena_cajon','arena_fondo'];
 
 test('manifest lists every asset and each file exists', () => {
   const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
@@ -18,10 +22,10 @@ test('manifest lists every asset and each file exists', () => {
   }
 });
 
-test('assets weigh less than 7 MB in total', () => {
-  // 6,6 MB desde la persecución de Cepi; 7 MB desde el kit de objetos pintados (árbol, contenedor, cajones, maceta, fuente, galpón)
+test('assets weigh less than 8.5 MB in total', () => {
+  // 8,5 MB desde la arena de BIG CHAKY; 6,6 MB desde la persecución de Cepi; 7 MB desde el kit de objetos pintados (árbol, contenedor, cajones, maceta, fuente, galpón)
   const total = fs.readdirSync(dir).reduce((s, f) => s + fs.statSync(path.join(dir, f)).size, 0);
-  assert.ok(total < 7_000_000, `total ${total}`);
+  assert.ok(total < 8_500_000, `total ${total}`);
 });
 
 test('sheet metadata', () => {

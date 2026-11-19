@@ -17,7 +17,7 @@ export function createCameos(ctx) {
   function ready() {
     if (!PINKY.enabled) return false;
     const lvl = game.level;
-    if (pinky.shown[lvl] || game.boss || game.story?.inIntro) return false;
+    if (pinky.shown[lvl] || game.bossStarted || game.story?.inIntro) return false;
     if (game.enemies.alive() > 0) return false;
     const mine = WAVES.filter(w => w.level === lvl);
     if (mine.some(w => game.waves[w.id] === 'active')) return false;

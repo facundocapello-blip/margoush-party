@@ -34,11 +34,11 @@ try {
   check(!overlap(score, banner), 'el mensaje de Facu no tapa el puntaje');
   for (const c of ['#joystick', '#act-attack', '#act-jump', '#act-dodge']) check(!overlap(banner, await rect(c)), `el mensaje no tapa ${c}`);
 
-  // Barra del jefe abajo al centro, sin chocar con los controles
+  // Barra del jefe en la arena: arriba (abajo taparía los pies del héroe), sin chocar con los controles
   await G(() => window.__game.setStage('galpon'));
   await page.waitForTimeout(400);
   const bar = await rect('#boss-bar');
-  check(bar && bar.top > 390 / 2, `la barra de BIG CHAKY va abajo (top ${bar && Math.round(bar.top)})`);
+  check(bar && bar.top < 390 / 2, `la barra de BIG CHAKY va arriba (top ${bar && Math.round(bar.top)})`);
   for (const c of ['#joystick', '#act-attack', '#act-jump', '#act-dodge']) check(!overlap(bar, await rect(c)), `la barra no tapa ${c}`);
   await shot(page, 'layout-boss');
   check(errors.length === 0, 'sin errores de consola ' + JSON.stringify(errors));

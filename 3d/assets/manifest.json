@@ -638,5 +638,141 @@
   "frames": 1,
   "cols": 1,
   "rows": 1
+ },
+ "arena_barril": {
+  "file": "arena_barril.webp",
+  "w": 439,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_cajon": {
+  "file": "arena_cajon.webp",
+  "w": 435,
+  "h": 384,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_chaky_hurt": {
+  "file": "arena_chaky_hurt.webp",
+  "w": 620,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_chaky_idle": {
+  "file": "arena_chaky_idle.webp",
+  "w": 342,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_chaky_ko": {
+  "file": "arena_chaky_ko.webp",
+  "w": 685,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_chaky_rage": {
+  "file": "arena_chaky_rage.webp",
+  "w": 421,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_chaky_slam": {
+  "file": "arena_chaky_slam.webp",
+  "w": 526,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_chaky_throw": {
+  "file": "arena_chaky_throw.webp",
+  "w": 422,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_douge_back_hurt": {
+  "file": "arena_douge_back_hurt.webp",
+  "w": 588,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_douge_back_idle": {
+  "file": "arena_douge_back_idle.webp",
+  "w": 380,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_douge_back_punch": {
+  "file": "arena_douge_back_punch.webp",
+  "w": 403,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_douge_back_run": {
+  "file": "arena_douge_back_run.webp",
+  "w": 316,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_fondo": {
+  "file": "arena_fondo.webp",
+  "w": 1280,
+  "h": 714,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_marine_back_hurt": {
+  "file": "arena_marine_back_hurt.webp",
+  "w": 544,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_marine_back_idle": {
+  "file": "arena_marine_back_idle.webp",
+  "w": 317,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_marine_back_punch": {
+  "file": "arena_marine_back_punch.webp",
+  "w": 371,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
+ },
+ "arena_marine_back_run": {
+  "file": "arena_marine_back_run.webp",
+  "w": 320,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
  }
 }
