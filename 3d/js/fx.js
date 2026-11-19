@@ -1,4 +1,5 @@
 // Efectos de golpe: chispas, anillos, sacudón, congelado y textos flotantes.
+import { fillText } from './i18n.js';
 export function createFx(scene, camera, labelsEl, flashEl) {
   const sparkTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -29,7 +30,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
   function popup(pos, text, color = '#fff', { size = 20, life = 0.8, rise = 1.4 } = {}) {
     const el = document.createElement('div');
     el.className = 'pop';
-    el.textContent = text;
+    fillText(el, text);
     el.style.color = color;
     el.style.fontSize = size + 'px';
     labelsEl.appendChild(el);

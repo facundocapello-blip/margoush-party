@@ -4,6 +4,7 @@
 // 👊 rompe cosas, ESQUIVE da invulnerabilidad corta y manteniendo 👊 con la barra llena sale el poder.
 // Al final el BYD se queda sin batería en un cargador y arranca la pelea con Cepi (oleada «boulevard»).
 // Usa el mismo renderer, HUD, carteles, controles y sonidos que el resto del juego.
+import { fillText, translateDom } from './i18n.js';
 
 export const CHASE = {
   length: 760,        // metros hasta el cargador
@@ -156,10 +157,11 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     // Carteles propios: batería del BYD, aviso de saque, destello rojo y textos que flotan
     const ui = document.createElement('div'); ui.id = 'chase-ui';
     ui.innerHTML = '<div class="chase-flash"></div><div id="chase-bat"><span>BYD de Cepi</span><b><i></i></b><em>100%</em></div><div id="chase-hint" class="hidden">¡Cepi prepara el saque!</div>';
+    translateDom(ui);
     document.body.append(ui); document.body.classList.add('chasing');
     const batI = ui.querySelector('#chase-bat i'), batE = ui.querySelector('#chase-bat em'), hintE = ui.querySelector('#chase-hint'), flash = ui.querySelector('.chase-flash');
     const pops = [];
-    const pop = (x, y, z, txt, col = '#ffd36e', size = 22) => { const e = document.createElement('div'); e.className = 'pop'; e.textContent = txt; e.style.color = col; e.style.fontSize = size + 'px'; ui.append(e); pops.push({ e, v: new T.Vector3(x, y, z), t: 0 }); };
+    const pop = (x, y, z, txt, col = '#ffd36e', size = 22) => { const e = document.createElement('div'); e.className = 'pop'; fillText(e, txt); e.style.color = col; e.style.fontSize = size + 'px'; ui.append(e); pops.push({ e, v: new T.Vector3(x, y, z), t: 0 }); };
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
 
     // Estado

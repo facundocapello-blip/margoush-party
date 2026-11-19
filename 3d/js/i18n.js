@@ -1,0 +1,307 @@
+// Idioma del juego: español (el original) o francés (para Marine).
+// Los textos se escriben en castellano en el código; este diccionario dice cómo van en francés.
+// - TEXTOS: se reemplazan enteros.
+// - DICHOS: lo que dicen los personajes. En francés el porteño sigue hablando en porteño
+//   y abajo aparece el subtítulo en francés (el chiste está en cómo lo dicen).
+// - {x} en una clave es una parte que cambia (un nombre, un número): se traduce aparte.
+// Si un texto no está acá, sale tal cual (no se rompe nada).
+
+const KEY = 'margoush3d_lang';
+let lang = 'es';
+try { lang = localStorage.getItem(KEY) === 'fr' ? 'fr' : 'es'; } catch (_) {}
+const listeners = new Set();
+
+export const TEXTOS = {
+  // ---------- Menús ----------
+  'TOCÁ PARA EMPEZAR': 'TOUCHE POUR COMMENCER',
+  '▶ CONTINUAR': '▶ CONTINUER',
+  '¡JUGAR!': 'JOUER !',
+  '🏆 Ranking': '🏆 Classement',
+  'Elegí tu héroe': 'Choisis ton héros',
+  'Pega fuerte': 'Frappe fort',
+  '⚡ Verdades a los gritos: los vuela a todos': '⚡ Vérités en pleine face : il les fait tous voler',
+  'Más rápida': 'Plus rapide',
+  '⚡ ¡Hiedra!: los atrapa y te cura 🌸': '⚡ Lierre ! : il les attrape et te soigne 🌸',
+  '← Volver': '← Retour',
+  'Volver': 'Retour',
+  'Pausa': 'Pause',
+  'SEGUIR': 'CONTINUER',
+  'Reintentar este tramo': 'Réessayer cette étape',
+  'Salir al menú': 'Revenir au menu',
+  'Sí': 'Oui',
+  'No, seguir jugando': 'Non, je continue',
+  'Silenciar': 'Couper le son',
+  'Poder': 'Pouvoir',
+  'PODER': 'POUVOIR',
+  'SALTO': 'SAUT',
+  'Salto': 'Saut',
+  'ESQUIVE': 'ESQUIVE',
+  'Esquivar': 'Esquiver',
+  'GOLPES': 'COUPS',
+  'Golpe (mantené para el poder)': 'Coup (maintiens pour le pouvoir)',
+  '¿Volver a arrancar desde {x}?': 'Recommencer depuis {x} ?',
+  '¿Empezar todo de nuevo? Perdés lo que llevás.': 'Tout recommencer ? Tu perds ta progression.',
+  '¿Salir al menú? Después podés CONTINUAR desde {x}.': 'Revenir au menu ? Tu pourras CONTINUER depuis {x}.',
+  '¿Salir al menú? Perdés lo que llevás de esta partida.': 'Revenir au menu ? Tu perds cette partie.',
+  '🔁 Reintentar desde {x}': '🔁 Réessayer depuis {x}',
+  '🔁 Reintentar: {x}': '🔁 Réessayer : {x}',
+  '🔁 Empezar de nuevo': '🔁 Recommencer',
+
+  // ---------- Tramos y niveles ----------
+  'BUENOS AIRES': 'BUENOS AIRES',
+  'FRANCIA': 'FRANCE',
+  'Francia': 'la France',
+  'NIVEL 2 · FRANCIA': 'NIVEAU 2 · FRANCE',
+  'NIVEL {n} COMPLETO': 'NIVEAU {n} TERMINÉ',
+  '→ NIVEL {n}: {x}': '→ NIVEAU {n} : {x}',
+  '{n} puntos': '{n} points',
+  'LA FUGA DE CEPI': 'LA FUITE DE CEPI',
+  'la fuga de Cepi': 'la fuite de Cepi',
+  'BONUS · ¡ROMPÉ EL BYD!': 'BONUS · CASSE LA BYD !',
+  'LA VEREDA': 'LE TROTTOIR',
+  '¡Llegó la banda de BIG CHAKY!': 'La bande de BIG CHAKY est là !',
+  'MANTECA EN LA VEREDA': 'DU BEURRE SUR LE TROTTOIR',
+  'Lale y Pinky te cortan el paso.': 'Lale et Pinky te barrent la route.',
+  'LA AVENIDA': "L'AVENUE",
+  'Cuidado con el colectivo: no frena.': 'Attention au bus : il ne freine pas.',
+  '¡PIQUETE!': 'BARRAGE !',
+  'Sacá a la banda para que levanten el corte.': 'Chasse la bande pour lever le barrage.',
+  '¡LLEGAMOS A LE CONCEPT!': 'ON ARRIVE AU CONCEPT !',
+  'La banda copó la puerta del restaurante.': "La bande bloque l'entrée du restaurant.",
+  'LA RUE': 'LA RUE',
+  '¡La banda te siguió hasta Francia!': "La bande t'a suivi jusqu'en France !",
+  'PELOTAZOS': 'BALLES DE PADEL',
+  'Cepi y Lale tiran desde lejos: acercate rápido.': 'Cepi et Lale tirent de loin : approche-toi vite.',
+  'LE BOULEVARD': 'LE BOULEVARD',
+  '¡Ojo! Viene el hermano de Facu…': 'Attention ! Voilà le frère de Facu…',
+  'ÚLTIMO TRAMO': 'DERNIÈRE ÉTAPE',
+  'Atrás de esta barrera está el galpón.': "L'entrepôt est derrière cette barrière.",
+
+  // ---------- Malos (presentación) ----------
+  'LALE «MANTECOSO»': 'LALE « LE BEURRÉ »',
+  'CEPI «EL NIÑO»': 'CEPI « LE GAMIN »',
+  '😡 CEPI «EL NIÑO» (JEFE)': '😡 CEPI « LE GAMIN » (BOSS)',
+  'PINKY «EL TRAPITO»': 'PINKY « EL TRAPITO »',
+  'Tira barras de manteca: ¡no las pises!': 'Il lance du beurre : ne marche pas dessus !',
+  'Te tira pelotazos de pádel: movete de la sombra.': "Il t'envoie des balles de padel : sors de l'ombre au sol.",
+  'El hermano de Facu vino re caliente: ¡aguantalo!': 'Le frère de Facu est furax : tiens bon !',
+  'Te quiere cobrar el estacionamiento: si te pega, te saca plata.': "Il veut te faire payer le parking : s'il te touche, il te prend des sous.",
+  'BIG CHAKY': 'BIG CHAKY',
+  '🔵🟡 PINKY': '🔵🟡 PINKY',
+
+  // ---------- Historia ----------
+  '¡BIG CHAKY SE LLEVÓ A MARGOT!': 'BIG CHAKY A ENLEVÉ MARGOT !',
+  '¡Rescatala antes de que llegue al galpón!': "Sauve-la avant qu'il arrive à l'entrepôt !",
+  '🎉 ¡MARGOT ESTÁ A SALVO!': '🎉 MARGOT EST SAUVÉE !',
+  '¡Un aplauso para {x}!': 'Bravo, {x} !',
+  '📸 ¡FOTO FAMILIAR!': '📸 PHOTO DE FAMILLE !',
+
+  // ---------- Poderes y golpes ----------
+  '¡VERDADES A LOS GRITOS!': 'VÉRITÉS EN PLEINE FACE !',
+  'La verdad duele: todo vuela por el aire.': 'La vérité fait mal : tout s’envole.',
+  '¡HIEDRA!': 'LIERRE !',
+  '¡HIEDRA! OH LÀ LÀ !': 'LIERRE ! OH LÀ LÀ !',
+  'La hiedra atrapa todo lo que viene.': 'Le lierre attrape tout ce qui arrive.',
+  '⚡ ¡PODER LISTO!': '⚡ POUVOIR PRÊT !',
+  '⚡ ¡LISTO!': '⚡ PRÊT !',
+  '⚡ ¡LISTO! (L)': '⚡ PRÊT ! (L)',
+  'Cargá el poder pegando 👊': 'Frappe pour charger le pouvoir 👊',
+  '🌺 ¡QUÉ LINDA!': '🌺 QU’ELLE EST JOLIE !',
+  '¡VERDAD!': 'VÉRITÉ !',
+  '¡JUSTO!': 'PILE !',
+  '¡RESBALÓN!': 'ÇA GLISSE !',
+  '¡TOMÁ!': 'TIENS !',
+  '¡PLAF!': 'PLAF !',
+  '¡BOM!': 'BOUM !',
+  '¡PAF!': 'PAF !',
+  '¡PUM! +{n}': 'BOUM ! +{n}',
+  '¡AHÍ VOY!': "J'ARRIVE !",
+  '-${n} ¡ESTACIONAMIENTO!': '-${n} PARKING !',
+  '¡UFF! 🌀': 'OUF ! 🌀',
+  '¡SECRETO! +500': 'SECRET ! +500',
+  '🌟 SECRETO': '🌟 SECRET',
+  'Encontraste el Pasaje del Cortado: +500 puntos.': 'Tu as trouvé le Passage du Cortado : +500 points.',
+  '🚌 ¡BOCINAZO!': '🚌 COUP DE KLAXON !',
+  '🐦 ¡PALOMAS!': '🐦 PIGEONS !',
+  '¡SPLASH!': 'SPLASH !',
+  '¡BACHE!': 'NID-DE-POULE !',
+  '¡QUEMA!': 'ÇA BRÛLE !',
+
+  // ---------- Persecución y bonus ----------
+  'BYD de Cepi': 'BYD de Cepi',
+  'EL BYD DE CEPI': 'LA BYD DE CEPI',
+  '¡CURRUCUCÚ!': 'ROUCOULE !',
+  '¡PALOMAS!': 'PIGEONS !',
+  '¡LA GRÈVE!': 'LA GRÈVE !',
+  '¡PELOTAZO!': 'BALLE DE PADEL !',
+  '¡SIN BATERÍA!': 'PLUS DE BATTERIE !',
+  '¡SE QUEDÓ SIN BATERÍA!': 'PLUS DE BATTERIE !',
+  'El BYD de Cepi se apaga en el cargador…': 'La BYD de Cepi s’éteint sur la borne…',
+  '«¡Es eléctrico, papá!» Cepi se baja con la paleta: sacale la llave.': '« ¡Es eléctrico, papá! » Cepi descend avec sa raquette : prends-lui la clé.',
+  '¡ESQUIVE JUSTO!': 'ESQUIVE PARFAITE !',
+  '¡ALCANZASTE A CEPI! +{n}': 'TU AS RATTRAPÉ CEPI ! +{n}',
+
+  // ---------- Fin de partida y ranking ----------
+  '¡MARGOT ESTÁ A SALVO!': 'MARGOT EST SAUVÉE !',
+  '¡Margot te sigue esperando!': "Margot t'attend toujours !",
+  'Pelea y objetos': 'Combat et objets',
+  'Bonus por vida': 'Bonus de vie',
+  'Bonus por tiempo': 'Bonus de temps',
+  'PUNTAJE': 'SCORE',
+  'Tu apodo': 'Ton pseudo',
+  'Guardar puntaje': 'Enregistrer le score',
+  'Guardando…': 'Enregistrement…',
+  '¡Guardado!': 'Enregistré !',
+  'Guardado en el celular': 'Gardé sur le téléphone',
+  'No se pudo guardar.': "Impossible d'enregistrer.",
+  'Sin puntos todavía': 'Pas encore de points',
+  'Poné un apodo para entrar al ranking.': 'Mets un pseudo pour entrer dans le classement.',
+  'Poné un apodo.': 'Mets un pseudo.',
+  'Héroe inválido.': 'Héros invalide.',
+  'Puntaje inválido.': 'Score invalide.',
+  '¡Listo! Ya estás en el ranking de la familia.': "C'est fait ! Tu es dans le classement de la famille.",
+  'Sin conexión: tu puntaje quedó guardado en este celular': 'Hors ligne : ton score est gardé sur ce téléphone',
+  'Sin conexión: mostrando los puntajes de este celular': 'Hors ligne : scores de ce téléphone',
+  'Empezar de cero': 'Recommencer à zéro',
+  'Jugar de nuevo': 'Rejouer',
+  '🏆 Ver ranking': '🏆 Voir le classement',
+  'Menú': 'Menu',
+  '📸 Guardar la foto': '📸 Garder la photo',
+  'MARGOUSH: ¡Margot está a salvo!': 'MARGOUSH : Margot est sauvée !',
+  'Foto familiar del rescate': 'Photo de famille du sauvetage',
+  'Cepi, enojado': 'Cepi, fâché',
+  '🏆 Ranking de la familia': '🏆 Classement de la famille',
+  'Esta semana': 'Cette semaine',
+  'Histórico': 'Depuis toujours',
+  'Cargando…': 'Chargement…',
+  'Apodo': 'Pseudo',
+  'Héroe': 'Héros',
+  'Puntaje': 'Score',
+  'Fecha': 'Date',
+  'Todavía no hay puntajes. ¡Sé el primero!': 'Pas encore de scores. Sois le premier !',
+  'Ranking en línea': 'Classement en ligne'
+};
+
+export const DICHOS = {
+  // Cepi
+  '¡Me tenés podrido!': 'Tu me saoules !',
+  '¡Tomá, pelotazo!': 'Tiens, prends ça !',
+  '¡Dale que es fácil, che!': "Allez, c'est facile !",
+  '¡Dale, que es fácil, che!': "Allez, c'est facile !",
+  '¡Andá a jugar a la bolita!': 'Va jouer aux billes !',
+  '¡Te voy a acusar con mamá!': 'Je vais le dire à maman !',
+  '¡¿Perdiste?! ¡No te lo puedo creer!': "T'as perdu ?! J'y crois pas !",
+  '¡Hasta Margot lo hacía mejor!': 'Même Margot ferait mieux !',
+  '¡Mi BYD no!': 'Pas ma BYD !',
+  '¡Lo tengo en cuotas!': 'Je la paie encore à crédit !',
+  '¡Es eléctrico, papá!': 'Elle est électrique, mec !',
+  '¡Le bajás la batería!': 'Tu vides la batterie !',
+  '¡Ni lo terminé de pagar!': "Je l'ai même pas finie de payer !",
+  '¡MI BYD! ¡Lo llevo al taller en Francia!': "MA BYD ! Je l'emmène au garage en France !",
+  '¡Jaja! ¡Ni un rayón le hiciste!': 'Haha ! Pas une égratignure !',
+  '¡Jaja! ¡Casi, casi!': 'Haha ! Presque, presque !',
+  '¡Bueno, ganaste… esta vez!': "Bon, t'as gagné… pour cette fois !",
+  '¡Uf, uf…!': 'Pff, pff… !',
+  '¡Cepi prepara el saque!': 'Cepi prépare son service !',
+  // Pinky
+  '¿Te lo cuido, jefe?': 'Je vous la surveille, chef ?',
+  '¡Son 2 lucas, maestro!': "C'est 2 000 pesos, mon pote !",
+  '¡Dale que te lo lavo!': 'Allez, je vous la lave !',
+  '¡Acá se paga por adelantado!': "Ici, on paie d'avance !",
+  '¡Aguante Boca!': 'Allez Boca !',
+  '¡Aguantá que te ayudo!': "Tiens bon, je t'aide !",
+  '📻 ¡GOOOL DE BOCA!': '📻 BUUUT DE BOCA !',
+  '¡Me voy a la cancha!': 'Je file au stade !',
+  '¡Aguante Margot! (el estacionamiento va de onda)': "Allez Margot ! (le parking, c'est cadeau)",
+  // Lale
+  '¡Bravo! ¡Tomen manteca de regalo!': 'Bravo ! Du beurre en cadeau !',
+  // BIG CHAKY
+  '¡Tomá, barrilito!': 'Tiens, un petit tonneau !',
+  '¡Me devolviste el barril, atrevido!': "Tu m'as renvoyé le tonneau, insolent !",
+  '¡Ahora sí me enojé!': 'Là, je suis vraiment fâché !',
+  '¡Soltá, soltá!': 'Lâche, lâche !',
+  '¡Eso no vale!': 'Ça compte pas !',
+  // Douge: verdades a los gritos
+  '¡ESTÁS PELADO!': "T'ES CHAUVE !",
+  '¡ESO NO ES UN ASADO!': "ÇA, C'EST PAS UN ASADO !",
+  '¡TU EQUIPO SE VA A LA B!': 'TON ÉQUIPE VA DESCENDRE !',
+  '¡TENÉS OLOR A PATA!': 'TU PUES DES PIEDS !',
+  '¡NO SABÉS PEGAR!': 'TU SAIS PAS FRAPPER !',
+  '¡TU VIEJA TE VISTE!': "C'EST TA MÈRE QUI T'HABILLE !",
+  '¡CORRÉS COMO PATO!': 'TU COURS COMME UN CANARD !'
+};
+
+// Plantillas ({x}, {n}) armadas una sola vez
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const PLANTILLAS = Object.keys(TEXTOS).filter(k => /\{[a-z]\}/.test(k)).map(k => {
+  const names = [...k.matchAll(/\{([a-z])\}/g)].map(m => m[1]);
+  const re = new RegExp('^' + k.split(/\{[a-z]\}/).map(esc).join('(.+?)') + '$');
+  return { re, names, fr: TEXTOS[k] };
+});
+
+export function getLang() { return lang; }
+export function setLang(l) {
+  const next = l === 'fr' ? 'fr' : 'es';
+  if (next === lang) return;
+  lang = next;
+  try { localStorage.setItem(KEY, lang); } catch (_) {}
+  document.documentElement.lang = lang;
+  listeners.forEach(fn => { try { fn(lang); } catch (_) {} });
+}
+export function onLangChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
+
+// Traduce un texto escrito en castellano (si estamos en francés)
+export function tr(s) {
+  if (lang === 'es' || typeof s !== 'string' || !s) return s;
+  if (Object.prototype.hasOwnProperty.call(TEXTOS, s)) return TEXTOS[s];
+  if (Object.prototype.hasOwnProperty.call(DICHOS, s)) return DICHOS[s];
+  for (const p of PLANTILLAS) {
+    const m = s.match(p.re);
+    if (m) {
+      let out = p.fr;
+      p.names.forEach((n, i) => { out = out.replace('{' + n + '}', tr(m[i + 1])); });
+      return out;
+    }
+  }
+  return s;
+}
+
+// Pone un texto en un elemento. Si es algo que dice un personaje y estamos en francés,
+// queda en castellano y abajo va el subtítulo en francés.
+export function fillText(el, s) {
+  if (lang === 'fr' && typeof s === 'string' && Object.prototype.hasOwnProperty.call(DICHOS, s)) {
+    el.textContent = s;
+    const sub = document.createElement('small');
+    sub.className = 'sub';
+    sub.textContent = DICHOS[s];
+    el.append(sub);
+    return;
+  }
+  el.textContent = tr(s);
+}
+
+// Textos fijos del HTML (menús, botones): guarda el original y lo traduce cada vez que cambia el idioma
+const ORIG = new WeakMap();
+const ATTRS = ['aria-label', 'alt', 'placeholder'];
+export function translateDom(root = document.body) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const n of nodes) {
+    if (n.parentElement?.closest('script,style,#labels,#banner,#hud-score,#hud-mult,#hud-hearts,#combo-num,#continue-where,#pause-confirm-text,#level-card,#curtain')) continue;
+    const raw = n.nodeValue;
+    if (!raw.trim()) continue;
+    if (!ORIG.has(n)) ORIG.set(n, raw);
+    const o = ORIG.get(n);
+    const lead = o.match(/^\s*/)[0], trail = o.match(/\s*$/)[0];
+    n.nodeValue = lead + tr(o.trim()) + trail;
+  }
+  root.querySelectorAll('[aria-label],[alt],[placeholder]').forEach(el => {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const key = 'data-i18n-' + a;
+      if (!el.hasAttribute(key)) el.setAttribute(key, el.getAttribute(a));
+      el.setAttribute(a, tr(el.getAttribute(key)));
+    }
+  });
+}
