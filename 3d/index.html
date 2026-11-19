@@ -66,6 +66,7 @@
       </div>
       <button id="press-start" class="press">TOCÁ PARA EMPEZAR</button>
       <div class="menu-col" id="menu-buttons">
+        <button id="btn-continue" class="big-btn alt hidden">▶ CONTINUAR<small id="continue-where"></small></button>
         <button id="btn-play" class="big-btn">¡JUGAR!</button>
         <button id="btn-ranking" class="ghost-btn">🏆 Ranking</button>
       </div>
@@ -75,15 +76,23 @@
       <h2>Elegí tu héroe</h2>
       <div class="cards">
         <button class="card" id="pick-douge" data-hero="douge"><img src="assets/douge_idle.webp" alt="Douge"><span>DOUGE</span><small>Pega fuerte</small><em>⚡ Verdades a los gritos: los vuela a todos</em></button>
-        <button class="card" id="pick-marine" data-hero="marine"><img src="assets/marine_idle.webp" alt="Marine"><span>MARINE</span><small>Más rápida</small><em>⚡ Flambé: los quema y te cura 🥐</em></button>
+        <button class="card" id="pick-marine" data-hero="marine"><img src="assets/marine_idle.webp" alt="Marine"><span>MARINE</span><small>Más rápida</small><em>⚡ ¡Hiedra!: los atrapa y te cura 🌸</em></button>
       </div>
+      <button id="btn-select-back" class="ghost-btn">← Volver</button>
     </section>
 
     <section id="screen-pause" class="screen hidden">
       <h2>Pausa</h2>
-      <button id="btn-resume" class="big-btn">SEGUIR</button>
-      <button id="btn-restart" class="ghost-btn">Reiniciar</button>
-      <button id="btn-home" class="ghost-btn">Menú</button>
+      <div id="pause-main" class="menu-col">
+        <button id="btn-resume" class="big-btn">SEGUIR</button>
+        <button id="btn-restart" class="ghost-btn">Reintentar este tramo</button>
+        <button id="btn-home" class="ghost-btn">Salir al menú</button>
+      </div>
+      <div id="pause-confirm" class="menu-col hidden">
+        <p id="pause-confirm-text" class="confirm-text"></p>
+        <button id="btn-confirm-yes" class="big-btn alt">Sí</button>
+        <button id="btn-confirm-no" class="ghost-btn">No, seguir jugando</button>
+      </div>
     </section>
 
     <section id="screen-result" class="screen hidden"></section>

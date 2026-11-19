@@ -22,6 +22,7 @@ function runUntil(logic, hero, cond, max = 60, evs = []) {
   return evs;
 }
 const ofType = (evs, type) => evs.filter(e => e.type === type);
+const H = ARENA.hp, HALF = ARENA.hp / 2;
 const goldFree = (logic) => logic.state.shots.find(s => s.kind === 'barrel' && s.gold && !s.returning);
 
 // Espera un dorado, se para en su línea y lo devuelve de un golpe; corre hasta que le pega al jefe
@@ -47,8 +48,8 @@ function giveReturn(logic, hero) {
 test('starts in phase 1 with full life', () => {
   const l = mk();
   assert.equal(l.state.phase, 1);
-  assert.equal(l.state.hp, 30);
-  assert.equal(l.state.hpMax, 30);
+  assert.equal(l.state.hp, H);
+  assert.equal(l.state.hpMax, H);
 });
 
 test('every third barrel is gold and crates never are', () => {
@@ -71,38 +72,51 @@ test('punching a gold barrel in the window sends it back and hurts the boss', ()
   const hit = ofType(evs, 'bossHit')[0];
   assert.equal(hit.dmg, ARENA.returnDmg);
   assert.equal(hit.by, 'barrel');
-  assert.equal(l.state.hp, 30 - ARENA.returnDmg);
+  assert.equal(l.state.hp, H - ARENA.returnDmg);
 });
 
-test('punching a plain barrel does nothing and it still hurts', () => {
-  const l = mk(), hero = { x: 0, z: -3, y: 0, dodging: false, inv: 0 };
-  // el primer barril sale común: el héroe se para en su línea sin invulnerabilidad
-  const evs = runUntil(l, hero, () => l.state.shots.length > 0);
+test('a plain barrel punched in the window goes back for less damage', () => {
+  const l = mk(), hero = { x: 0, z: -3, y: 0, dodging: false, inv: 99 };
+  runUntil(l, hero, () => l.state.shots.length > 0);
   const b = l.state.shots[0];
   assert.equal(b.kind, 'barrel');
   assert.ok(!b.gold);
   hero.x = b.x;
-  while (hero.z - b.z > 1.5) evs.push(...l.update(FPS, hero));
+  while (hero.z - b.z > 1.5) l.update(FPS, hero);
+  const p = l.punch({ x: hero.x, z: hero.z, reach: 1.9, dmg: 1 });
+  assert.equal(ofType(p, 'returned').length, 1);
+  assert.equal(ofType(p, 'returned')[0].gold, false);
+  const evs = runUntil(l, hero, () => l.state.hp < H, 5);
+  assert.equal(ofType(evs, 'bossHit')[0].dmg, ARENA.returnDmgWhite);
+});
+
+test('punching a barrel too early does nothing and it still hurts', () => {
+  const l = mk(), hero = { x: 0, z: -3, y: 0, dodging: false, inv: 0 };
+  const evs = runUntil(l, hero, () => l.state.shots.length > 0);
+  const b = l.state.shots[0];
+  hero.x = b.x;
+  const maxD = ARENA.returnWindow * ARENA.phase1.barrelSpeed;
+  while (hero.z - b.z > maxD + 1) evs.push(...l.update(FPS, hero));
   const p = l.punch({ x: hero.x, z: hero.z, reach: 1.9, dmg: 1 });
   assert.equal(ofType(p, 'returned').length, 0);
   assert.equal(b.returning, false);
-  evs.push(...run(l, 1, hero));
+  evs.push(...run(l, 1.5, hero));
   assert.ok(evs.some(e => e.type === 'hurt' && e.by === 'barrel'));
 });
 
-test('mashing punch through phase 1 never lowers his life', () => {
+test('mashing punch from a corner (off the barrels\' line) never lowers his life', () => {
   const l = mk(), hero = { x: -4.2, z: -3, y: 0, dodging: false, inv: 99 };
   run(l, 60, hero, () => l.punch({ x: hero.x, z: hero.z, reach: 1.9, dmg: 1 }));
-  assert.equal(l.state.hp, 30);
+  assert.equal(l.state.hp, H);
   assert.equal(l.state.phase, 1);
 });
 
-test('three returns switch to phase 2 with rage', () => {
+test('gold returns switch to phase 2 with rage', () => {
   const l = mk(), hero = safeHero(), evs = [];
   for (let i = 0; i < 3; i++) evs.push(...giveReturn(l, hero));
   evs.push(...run(l, 0.1, hero));
   assert.equal(l.state.phase, 2);
-  assert.equal(l.state.hp, 15);
+  assert.equal(l.state.hp, H - 3 * ARENA.returnDmg);
   assert.equal(ofType(evs, 'rage').length, 1);
   assert.ok(evs.some(e => e.type === 'line' && e.text === '¡Ahora sí me enojé!'));
   assert.ok(evs.some(e => e.type === 'line' && e.text === '¡Tomá, barrilito!'));
@@ -111,7 +125,7 @@ test('three returns switch to phase 2 with rage', () => {
 
 test('the hand warns, lands, stays stuck and takes extra damage', () => {
   const l = mk(), hero = { x: -2, z: -4, y: 0, dodging: false, inv: 99 };
-  l._setHp(15);
+  l._setHp(HALF);
   assert.equal(l.state.phase, 2);
   const evs = runUntil(l, hero, () => l.state.hand.state === 'warn');
   assert.equal(l.state.hand.x, -2);
@@ -125,8 +139,8 @@ test('the hand warns, lands, stays stuck and takes extra damage', () => {
   const p = l.punch({ x: -2, z: -4, reach: 1.9, dmg: 1 });
   const hh = ofType(p, 'handHit');
   assert.equal(hh.length, 1);
-  assert.equal(hh[0].dmg, 1.5);
-  assert.equal(l.state.hp, 13.5);
+  assert.equal(hh[0].dmg, ARENA.handDmg);
+  assert.equal(l.state.hp, HALF - ARENA.handDmg);
   // lejos de la mano no pega
   assert.equal(ofType(l.punch({ x: 4, z: -1, reach: 1.9, dmg: 1 }), 'handHit').length, 0);
   // con la mano ya levantada, golpear no baja la vida
@@ -140,7 +154,7 @@ test('the hand warns, lands, stays stuck and takes extra damage', () => {
 test('the hand hurts if you stay under it, dodging is rewarded', () => {
   const frameOfSlam = (hero) => {
     const l = mk();
-    l._setHp(15);
+    l._setHp(HALF);
     for (let i = 0; i < 30 * 60; i++) {
       const evs = l.update(FPS, hero);
       if (ofType(evs, 'slam').length) return evs;
@@ -161,10 +175,10 @@ test('power clears every shot and hurts him', () => {
   assert.equal(l.state.shots.length, 0);
   const hit = ofType(p, 'bossHit');
   assert.equal(hit.length, 1);
-  assert.equal(hit[0].dmg, 4);
+  assert.equal(hit[0].dmg, ARENA.powerDmg);
   assert.equal(hit[0].by, 'power');
   assert.ok(p.some(e => e.type === 'line' && e.text === '¡Eso no vale!'));
-  assert.equal(l.state.hp, 26);
+  assert.equal(l.state.hp, H - ARENA.powerDmg);
 });
 
 function toStuckHand(l, hero) {
@@ -226,7 +240,7 @@ test('a ko in a frame drops the hurt events of that same frame', () => {
 
 test('the stuck hand cannot be mashed: hits are locked out for 0.2 s', () => {
   const l = mk(), hero = safeHero();
-  l._setHp(15);
+  l._setHp(HALF);
   runUntil(l, hero, () => l.state.hand.state === 'stuck');
   const hand = l.state.hand, evs = [];
   let hits = 0;
@@ -237,5 +251,5 @@ test('the stuck hand cannot be mashed: hits are locked out for 0.2 s', () => {
   }
   assert.ok(hits >= 2, `hits ${hits}`);
   assert.ok(hits <= Math.ceil(ARENA.phase2.stuck / 0.2), `hits ${hits}`);
-  assert.ok(15 - l.state.hp <= Math.ceil(ARENA.phase2.stuck / 0.2) * 1.5 * 0.1 + 1e-9);
+  assert.ok(HALF - l.state.hp <= Math.ceil(ARENA.phase2.stuck / 0.2) * ARENA.handDmg * 0.1 + 1e-9);
 });

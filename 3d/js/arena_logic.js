@@ -1,7 +1,7 @@
 // «La arena de BIG CHAKY»: lógica pura de la pelea final (sin Three.js ni DOM, se prueba con node --test).
 // El héroe vive entre zNear y zFar; BIG CHAKY está al fondo (bossZ) y se pasea de lado a lado tirando
-// barriles (ruedan hacia el héroe) y cajones (caen donde estaba el héroe). Los barriles dorados se
-// devuelven de un golpe y son lo único que lo lastima en la fase 1. Con la mitad de vida se enoja:
+// barriles (ruedan hacia el héroe) y cajones (caen donde estaba el héroe). Cualquier barril se devuelve
+// de un golpe (el dorado pega más) y es lo único que lo lastima en la fase 1. Con la mitad de vida se enoja:
 // fase 2, con el manotazo (la mano cae donde estabas, se traba y ahí sí se le pega).
 // Eventos: throw, hurt, dodge, returned, bossHit, handHit, slam, rage, ko, line.
 // PUNTAJE: solo cuentan `handHit` (+50) y `returned` (+300); `bossHit` es únicamente para la barra de vida
@@ -9,17 +9,20 @@
 // Coordenadas: x a lo ancho (±xMax), z hacia el fondo negativo.
 
 export const ARENA = {
-  hp: 30,
+  hp: 24,
   xMax: 4.2, zNear: 0, zFar: -7, bossZ: -16, bossSway: 3,
-  returnWindow: 0.45,  // s antes de que el barril llegue al héroe en los que el golpe lo devuelve (holgado en el celular)
-  returnDmg: 5,        // 3 devoluciones = la mitad de la vida
-  handDmg: 1.5,        // multiplica el daño del golpe
+  // Ritmo de «siempre hay algo para pegar»: TODOS los barriles se devuelven (los dorados pegan más)
+  returnWindow: 0.6,   // s antes de que el barril llegue al héroe en los que el golpe lo devuelve (holgado en el celular)
+  returnR: 1.2,        // tolerancia de costado para devolver: hay que ponerse en la línea del barril (como un arquero)
+  returnDmg: 5,        // barril dorado devuelto
+  returnDmgWhite: 2,   // barril común devuelto
+  handDmg: 2,          // multiplica el daño del golpe
   powerDmg: 4,
   hitR: 1.05,
   // Ritmo: tira seguido y a veces en ráfaga (un segundo barril enseguida), así siempre hay algo para esquivar o devolver
-  phase1: { throwEvery: [1.2, 1.8], goldEvery: 2, barrelSpeed: 7, crateTime: 1.1, salvo: 0.35, salvoGap: 0.5 },
-  phase2: { throwEvery: [1.0, 1.6], goldEvery: 3, slamEvery: 2, slamWarn: 0.9, stuck: 2.0, salvo: 0.45, salvoGap: 0.45 },
-  points: { returned: 300, hand: 50, dodge: 100 }
+  phase1: { throwEvery: [1.0, 1.5], goldEvery: 2, barrelSpeed: 7, crateTime: 1.1, salvo: 0.35, salvoGap: 0.5 },
+  phase2: { throwEvery: [0.9, 1.4], goldEvery: 3, slamEvery: 1, slamWarn: 0.8, stuck: 1.8, salvo: 0.4, salvoGap: 0.45 },
+  points: { returned: 300, returnedWhite: 120, hand: 50, dodge: 100 }
 };
 
 // Tiempos internos (s)
@@ -139,7 +142,7 @@ export function createArenaLogic({ rand = Math.random } = {}) {
         s.z -= c.barrelSpeed * 2 * dt;
         if (s.z > A.bossZ) { keep.push(s); continue; }
         evs.push({ type: 'line', text: LINES.returned });
-        damage(A.returnDmg, 'barrel', evs);
+        damage(s.gold ? A.returnDmg : A.returnDmgWhite, 'barrel', evs);
       } else {
         s.z += c.barrelSpeed * dt;
         if (Math.hypot(hero.x - s.x, hero.z - s.z) < A.hitR && hero.y < BARREL_Y) {
@@ -201,14 +204,14 @@ export function createArenaLogic({ rand = Math.random } = {}) {
   function punch(area) {
     const evs = [];
     if (state.phase === 'ko') return evs;
-    // un dorado que viene hacia el héroe, dentro de la ventana, vuelve
+    // un barril que viene hacia el héroe, dentro de la ventana, vuelve (el dorado pega más)
     const maxD = A.returnWindow * A.phase1.barrelSpeed;
     for (const s of state.shots) {
-      if (s.kind !== 'barrel' || !s.gold || s.returning) continue;
+      if (s.kind !== 'barrel' || s.returning) continue;
       const d = area.z - s.z;
-      if (Math.abs(s.x - area.x) < A.hitR && d > 0 && d <= maxD) {
+      if (Math.abs(s.x - area.x) < A.returnR && d > -0.3 && d <= maxD) {
         s.returning = true;
-        evs.push({ type: 'returned' });
+        evs.push({ type: 'returned', gold: s.gold });
       }
     }
     // la mano trabada se castiga

@@ -29,7 +29,8 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
   function readNick() { try { return localStorage.getItem(NICK_KEY) || ''; } catch (_) { return ''; } }
   function writeNick(v) { try { localStorage.setItem(NICK_KEY, v); } catch (_) {} }
 
-  function showResult(result, heroId) {
+  // retry: { label, onRetry } si hay un checkpoint para volver a intentar ese tramo
+  function showResult(result, heroId, retry = null) {
     resultEl.replaceChildren();
     const cepiSheet = assets.has?.('cepi_sheet');
     const host = result.won
@@ -54,7 +55,9 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
     nick.value = readNick();
     const save = el('button', { id: 'btn-save', class: 'big-btn', text: 'Guardar puntaje' });
     const status = el('p', { id: 'save-status', class: 'status', role: 'status' });
-    const again = el('button', { id: 'btn-again', class: 'big-btn alt', text: 'Jugar de nuevo' });
+    const again = el('button', { id: 'btn-again', class: retry ? 'ghost-btn' : 'big-btn alt', text: retry ? 'Empezar de cero' : 'Jugar de nuevo' });
+    const retryBtn = retry ? el('button', { id: 'btn-retry', class: 'big-btn alt retry', text: '🔁 Reintentar: ' + retry.label }) : null;
+    retryBtn?.addEventListener('click', retry.onRetry);
     const toRank = el('button', { id: 'btn-show-ranking', class: 'ghost-btn', text: '🏆 Ver ranking' });
     const menu = el('button', { id: 'btn-result-menu', class: 'ghost-btn', text: 'Menú' });
 
@@ -107,6 +110,7 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
       rows,
       el('div', { class: 'save-row' }, [nick, save]),
       status,
+      retryBtn,
       el('div', { class: 'btn-row' }, [again, toRank, menu])
     ]);
     resultEl.append(el('div', { class: 'result-wrap' }, host ? [host, card] : [card]));
