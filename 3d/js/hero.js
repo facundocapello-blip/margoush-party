@@ -8,6 +8,10 @@ export const HERO_CFG = {
     idle: { tex: 'marine_idle' }, run: { tex: 'marine_run' }, attack: { tex: 'marine_attack' } } }
 };
 
+// Caminata: hasta `max` m/s (joystick a medias, o cuando camina solo) se usa la caminata en vez de correr.
+// stride: metros por cuadro (10 cuadros = dos pasos de ~1,5 m)
+export const WALK = { max: 3.9, stride: 0.3, auto: 3.4 };
+
 // Combo de 3: el tercero es el remate (la arena de BIG CHAKY usa los mismos tiempos)
 export const SWINGS = [
   { dur: 0.26, hitAt: 0.09, reach: 1.9, dmg: 1, knock: 2.5, strength: 1 },
@@ -29,6 +33,8 @@ export function createHero(id, ctx) {
   if (A.has?.(id + '_combo_sheet')) for (let i = 0; i < 3; i++) poses['attack' + (i + 1)] = { tex: id + '_combo_sheet', cell: i };
   if (A.has?.('rescate_sheet')) poses.carry = { tex: 'rescate_sheet', cell: id === 'douge' ? 0 : 1 };
   if (A.has?.(id + '_actions_sheet')) ['jump', 'dodge', 'hurt', 'power'].forEach((n, i) => { poses[n] = { tex: id + '_actions_sheet', cell: i }; });
+  // Caminata de 10 cuadros (sacada de un video hecho con IA): se usa yendo despacio; rápido sigue la de correr
+  if (A.has?.(id + '_walk_sheet')) poses.walk = { tex: id + '_walk_sheet', stride: WALK.stride };
   const actor = new SpriteActor(ctx.scene, ctx.assets, { poses, heightM: cfg.heightM, scaleRef: cfg.scaleRef });
   const has = (n) => !!actor.poses[n];
 
@@ -227,6 +233,12 @@ export function createHero(id, ctx) {
     } else if (h.lift > 0) {
       actor.setPose(has('jump') ? 'jump' : 'run');
       actor.lean = h.vy > 0 ? 0.05 : -0.08; actor.offsetX = 0; actor.stretch = h.vy > 0 ? 0.05 : -0.02;
+    } else if (speed > 0.3 && speed < WALK.max && has('walk')) {
+      actor.setPose('walk');
+      // un rebotecito por paso (cinco cuadros por paso)
+      const phase = (actor.dist / WALK.stride) / 5 * Math.PI;
+      actor.lift = Math.abs(Math.sin(phase)) * 0.03;
+      actor.lean = 0; actor.offsetX = 0; actor.stretch = 0;
     } else if (speed > 0.3) {
       actor.setPose('run');
       // rebote: dos pasos por ciclo de 6 cuadros

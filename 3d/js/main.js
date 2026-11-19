@@ -3,7 +3,7 @@ import { buildStreet } from './world.js';
 import { createInput } from './input.js';
 import { createScore } from './score.js';
 import { createFx } from './fx.js';
-import { createHero, HERO_CFG, POWER, SWINGS } from './hero.js';
+import { createHero, HERO_CFG, POWER, SWINGS, WALK } from './hero.js';
 import { createEnemies } from './enemies.js';
 import { registerSkins } from './skins.js';
 import { createTraps } from './traps.js';
@@ -439,12 +439,14 @@ function updateTransition(dt) {
   game.transT += dt;
   const h = game.hero, a = h.actor, p = a.position, next = LEVELS[game.level];
   const walking = game.transT > TRANSITION_WAIT_S && p.x < next.start;
-  const speed = walking ? Math.max(h.speed, 7.2) : 0;
+  // Si el héroe tiene caminata, cruza la frontera caminando tranquilo; si no, corriendo como antes
+  const strolls = !!a.poses.walk;
+  const speed = walking ? (strolls ? WALK.auto : Math.max(h.speed, 7.2)) : 0;
   if (walking) {
     p.x = Math.min(next.start, p.x + speed * dt);
     p.z += (0 - p.z) * Math.min(1, dt * 2.5);
   }
-  a.setPose(walking ? 'run' : 'idle');
+  a.setPose(walking ? (strolls ? 'walk' : 'run') : 'idle');
   a.update(dt, speed);
   // Al cruzar la frontera (o si tarda demasiado) la cortina tapa y Francia arranca ya lista, sin esperas
   if (!game.transCrossed && (p.x >= BORDER_X + 0.5 || game.transT > TRANSITION_MAX_S)) {
