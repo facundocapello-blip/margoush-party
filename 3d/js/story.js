@@ -182,10 +182,10 @@ export function createStory(ctx) {
           c.position.x += 10 * dt;
           st.position.x = c.position.x + 1.1;
           st.lift = Math.abs(Math.sin(i.t * 14)) * 0.08;
-          if (c.position.x > i.hero.actor.position.x + 16) { this.endIntro(); return true; }
+          if (c.position.x > (i.hero?.actor.position.x ?? 4) + 16) { this.endIntro(); return true; }
         }
         // el héroe se da cuenta y sale corriendo atrás
-        if (i.hero && i.t2 > 0.9) { i.hero.actor.setPose(i.hero.actor.poses.run ? 'run' : 'idle'); i.hero.actor.position.x += 4 * dt; }
+        if (i.hero?.actor && i.t2 > 0.9) { i.hero.actor.setPose(i.hero.actor.poses.run ? 'run' : 'idle'); i.hero.actor.position.x += 4 * dt; }
       }
       c.update(dt, i.phase === 2 ? 10 : 7);
       st.update(dt, 0);

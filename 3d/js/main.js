@@ -625,7 +625,20 @@ game.pause = pause;
 game.resume = resume;
 
 let last = 0;
+// Red de seguridad: si un cuadro tira un error, el juego NO se congela (se anota y sigue);
+// si pasa en la intro, se la saltea y arranca la persecución.
+let frameErrors = 0;
 function frame(now) {
+  try { frameStep(now); } catch (e) {
+    frameErrors++;
+    console.error('[MARGOUSH] error en el cuadro', e);
+    game.lastError = String(e && e.stack || e);
+    if (game.state === 'intro') { try { endIntro(); } catch (_) {} }
+    requestAnimationFrame(frame);
+  }
+}
+game.frameErrors = () => frameErrors;
+function frameStep(now) {
   const realDt = Math.min(0.1, last ? (now - last) / 1000 : 0);
   const dt = Math.min(0.05, realDt) * game.timeScale;
   last = now;

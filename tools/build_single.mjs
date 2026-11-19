@@ -22,9 +22,10 @@ const js = (await esbuild.build({ entryPoints: [path.join(G3, 'js', 'main.js')],
 let css = fs.readFileSync(path.join(G3, 'css', 'game.css'), 'utf8').replace(/url\(\.\.\/assets\/([\w.-]+)\)/g, (_, f) => `url(${files[f] || dataUrl(f)})`);
 let html = fs.readFileSync(path.join(G3, 'index.html'), 'utf8');
 html = html.replace(/src="assets\/([\w.-]+)"/g, (_, f) => `src="${files[f] || dataUrl(f)}"`);
-html = html.replace('<link rel="stylesheet" href="css/game.css">', () => `<style>${css}</style>`);
+html = html.replace(/<link rel="stylesheet" href="css\/game\.css[^"]*">/, () => `<style>${css}</style>`);
+html = html.replace(/\s*<script type="importmap">[\s\S]*?<\/script>/, ''); // todo va en un solo bundle
 html = html.replace(/<script src="https:\/\/cdnjs[^"]+three\.min\.js"><\/script>/, () => `<script>${fs.readFileSync(THREE, 'utf8')}</script>`);
-html = html.replace('<script type="module" src="js/main.js"></script>', () =>
+html = html.replace(/<script type="module" src="js\/main\.js[^"]*"><\/script>/, () =>
   `<script>window.__EMBED=${JSON.stringify({ manifest, files })};</script>\n<script type="module">${js.replace(/<\/script/g, '<\\/script')}</script>`);
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, html);
