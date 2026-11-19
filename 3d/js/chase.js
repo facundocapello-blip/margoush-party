@@ -57,9 +57,10 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 400);
-    scene.background = L('#a6b2e5');
-    scene.fog = new T.Fog(L('#d9a7b4'), 50, 172);
-    scene.add(new T.HemisphereLight(0xfff0dc, 0x5c4a7a, 1.05));
+    // Atardecer porteño: cielo celeste que baja a naranja (Francia era lila y rosa)
+    scene.background = new T.Color('#5f9fe0'); // sin L(): sale igual que el borde de arriba del fondo (sin corte en el cielo)
+    scene.fog = new T.Fog(L('#c9d8ea'), 55, 172);
+    scene.add(new T.HemisphereLight(0xf4f6ff, 0x4a4f5c, 1.05));
     const sun = new T.DirectionalLight(0xffd2a0, 0.9); sun.position.set(-4, 10, -6); scene.add(sun);
     const ROAD = 5.2, WALK = 4.4, FX = ROAD + WALK + 0.3, LEN = CHASE.length;
     const mk = (geo, mat) => { const m = new T.Mesh(keep(geo), keep(mat)); scene.add(m); return m; };
@@ -67,33 +68,50 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
       const t = keep(new T.CanvasTexture(c)); t.encoding = T.sRGBEncoding; t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = 8; return t;
     };
-    // Adoquines y veredas (texturas hechas por código, se deslizan con el avance)
-    const cobble = canvasTex(256, 256, (g, w, h) => {
-      g.fillStyle = '#5d5878'; g.fillRect(0, 0, w, h);
-      for (let r = 0; r < 8; r++) for (let c = 0; c < 5; c++) {
-        const x = c * 52 + (r % 2 ? 26 : 0), y = r * 32;
-        g.fillStyle = `hsl(${235 + Math.random() * 25},${12 + Math.random() * 10}%,${48 + Math.random() * 26}%)`;
-        g.beginPath(); g.roundRect ? g.roundRect(x - 24, y + 3, 48, 27, 7) : g.rect(x - 24, y + 3, 48, 27); g.fill();
-        g.fillStyle = 'rgba(255,220,190,.10)'; g.fillRect(x - 20, y + 5, 40, 5);
-      }
-    }, 3, 46);
+    // Avenida 9 de Julio: asfalto con carriles marcados y el carril amarillo del Metrobus a los lados,
+    // veredas de baldosas grises porteñas (texturas por código, se deslizan con el avance)
+    const cobble = canvasTex(512, 256, (g, w, h) => {
+      g.fillStyle = '#34363d'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 2600; i++) { const v = Math.random(); g.fillStyle = v < 0.5 ? `rgba(255,255,255,${0.03 + Math.random() * 0.05})` : `rgba(0,0,0,${0.08 + Math.random() * 0.1})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+      // carril del Metrobus: franja rojiza del carril exclusivo y línea amarilla continua
+      g.fillStyle = 'rgba(176,58,46,.5)'; g.fillRect(0, 0, w * 0.07, h); g.fillRect(w * 0.93, 0, w * 0.07, h);
+      g.fillStyle = '#f2c230'; g.fillRect(w * 0.07 - 6, 0, 12, h); g.fillRect(w * 0.93 - 6, 0, 12, h);
+      // separación de carriles: líneas blancas cortadas
+      g.fillStyle = '#eceae2';
+      for (const u of [0.375, 0.625]) { g.fillRect(u * w - 4, h * 0.08, 8, h * 0.42); g.fillRect(u * w - 4, h * 0.58, 8, h * 0.42); }
+    }, 1, 46);
     const walkTex = canvasTex(128, 128, (g, w, h) => {
-      g.fillStyle = '#cdb7a4'; g.fillRect(0, 0, w, h); g.strokeStyle = '#a8917f'; g.lineWidth = 3;
-      for (let i = 0; i <= 2; i++) { g.beginPath(); g.moveTo(0, i * 64); g.lineTo(w, i * 64); g.stroke(); g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, h); g.stroke(); }
-    }, 2, 40);
+      g.fillStyle = '#a7a8ab'; g.fillRect(0, 0, w, h);
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+        const x = c * 32, y = r * 32;
+        g.fillStyle = `hsl(220,4%,${60 + Math.random() * 10}%)`; g.fillRect(x + 1, y + 1, 30, 30);
+        g.fillStyle = 'rgba(70,72,80,.45)'; for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) { g.beginPath(); g.arc(x + 8 + a * 8, y + 8 + b * 8, 1.6, 0, Math.PI * 2); g.fill(); } // vainillas
+      }
+      g.strokeStyle = '#7d7f85'; g.lineWidth = 2; for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(0, i * 32); g.lineTo(w, i * 32); g.stroke(); g.beginPath(); g.moveTo(i * 32, 0); g.lineTo(i * 32, h); g.stroke(); }
+    }, 3, 60);
     const road = mk(new T.PlaneGeometry(ROAD * 2, 260), new T.MeshLambertMaterial({ map: cobble })); road.rotation.x = -Math.PI / 2;
     const walks = [-1, 1].map(sd => { const m = mk(new T.PlaneGeometry(WALK, 260), new T.MeshLambertMaterial({ map: walkTex })); m.rotation.x = -Math.PI / 2; m.position.set(sd * (ROAD + WALK / 2), 0.12, 0); return m; });
-    const curbs = [-1, 1].map(sd => { const m = mk(new T.BoxGeometry(0.35, 0.24, 260), new T.MeshLambertMaterial({ color: L('#e6d6c6') })); m.position.set(sd * ROAD, 0.1, 0); return m; });
+    const curbs = [-1, 1].map(sd => { const m = mk(new T.BoxGeometry(0.35, 0.24, 260), new T.MeshLambertMaterial({ color: L('#c8c6c0') })); m.position.set(sd * ROAD, 0.1, 0); return m; });
     // Fondo de Buenos Aires (avenida que se pierde con el Obelisco): sigue a la cámara, así nunca se llega.
     // Si todavía no está el dibujo, se pinta uno por código (cielo de atardecer, edificios y el Obelisco).
     const fondoKey = assets.has('chase_ba_fondo') ? 'chase_ba_fondo' : null;
     const fondoTex = fondoKey ? assets.texture(fondoKey) : (() => {
       const c = document.createElement('canvas'); c.width = 1200; c.height = 300; const g = c.getContext('2d');
-      const gr = g.createLinearGradient(0, 0, 0, 300); gr.addColorStop(0, '#5a6fd0'); gr.addColorStop(0.55, '#e48aa0'); gr.addColorStop(1, '#ffc27a');
+      const gr = g.createLinearGradient(0, 0, 0, 300); gr.addColorStop(0, '#5f9fe0'); gr.addColorStop(0.55, '#a9cdee'); gr.addColorStop(0.85, '#f6c48a'); gr.addColorStop(1, '#f39a5e');
       g.fillStyle = gr; g.fillRect(0, 0, 1200, 300);
       let r = 3; const rnd = () => ((r = (r * 16807) % 2147483647) / 2147483647);
-      for (let x = 0; x < 1200; x += 26 + rnd() * 30) { const h = 40 + rnd() * 110 * (Math.abs(x - 600) / 600 + 0.3); g.fillStyle = `hsl(${250 + rnd() * 30},28%,${42 + rnd() * 12}%)`; g.fillRect(x, 300 - h, 30 + rnd() * 30, h); }
-      g.fillStyle = '#f3ece4'; g.beginPath(); g.moveTo(588, 300); g.lineTo(594, 92); g.lineTo(600, 78); g.lineTo(606, 92); g.lineTo(612, 300); g.fill(); // el Obelisco
+      // torres de la 9 de Julio: más altas hacia los costados, con ventanas prendidas
+      for (let x = 0; x < 1200; x += 24 + rnd() * 26) {
+        const far = Math.abs(x - 600) / 600, h = 30 + rnd() * 70 + far * 120, bw = 26 + rnd() * 34;
+        if (Math.abs(x + bw / 2 - 600) < 70) continue; // la avenida abre el centro
+        g.fillStyle = `hsl(${215 + rnd() * 15},${14 + rnd() * 10}%,${30 + rnd() * 14}%)`; g.fillRect(x, 300 - h, bw, h);
+        g.fillStyle = 'rgba(255,214,140,.55)';
+        for (let wy = 300 - h + 6; wy < 292; wy += 9) for (let wx = x + 4; wx < x + bw - 4; wx += 7) if (rnd() < 0.35) g.fillRect(wx, wy, 3, 4);
+      }
+      // el Obelisco: blanco, con una cara iluminada por el atardecer y la ventanita de arriba
+      g.fillStyle = '#d9d3cc'; g.beginPath(); g.moveTo(582, 300); g.lineTo(591, 70); g.lineTo(600, 52); g.lineTo(609, 70); g.lineTo(618, 300); g.fill();
+      g.fillStyle = '#fbf3e6'; g.beginPath(); g.moveTo(600, 300); g.lineTo(600, 52); g.lineTo(609, 70); g.lineTo(618, 300); g.fill();
+      g.fillStyle = '#5a5a66'; g.fillRect(597, 76, 6, 5);
       const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; return keep(t);
     })();
     const fondo = fondoKey ? assets.meta(fondoKey) : { w: 1200, h: 300 }, BW = 260, BH = BW * fondo.h / fondo.w;
@@ -107,10 +125,10 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     }
     // Árboles y faroles
     const trunkG = keep(new T.CylinderGeometry(0.16, 0.24, 2.6, 7)), leafG = keep(new T.IcosahedronGeometry(1.25, 1));
-    const poleG = keep(new T.CylinderGeometry(0.07, 0.1, 3.6, 6)), bulbG = keep(new T.SphereGeometry(0.26, 10, 8));
+    const poleG = keep(new T.CylinderGeometry(0.09, 0.14, 6.4, 6)), bulbG = keep(new T.BoxGeometry(0.9, 0.14, 0.38)), armG = keep(new T.BoxGeometry(1.6, 0.09, 0.09));
     const trunkM = keep(new T.MeshLambertMaterial({ color: L('#6b4a33') })), leafM = keep(new T.MeshLambertMaterial({ color: L('#4f8f3a'), flatShading: true }));
-    const leafM2 = keep(new T.MeshLambertMaterial({ color: L('#78b04f'), flatShading: true })), poleM = keep(new T.MeshLambertMaterial({ color: L('#262b33') }));
-    const bulbM = keep(new T.MeshBasicMaterial({ color: L('#ffd98a') }));
+    const leafM2 = keep(new T.MeshLambertMaterial({ color: L('#78b04f'), flatShading: true })), poleM = keep(new T.MeshLambertMaterial({ color: L('#4a5551') }));
+    const bulbM = keep(new T.MeshBasicMaterial({ color: L('#fff4d6') }));
     // Árbol pintado del kit (el mismo de Buenos Aires), si está
     const treeArt = assets.has('prop_arbol');
     const treeMeta = treeArt ? assets.meta('prop_arbol') : null;
@@ -127,9 +145,11 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         const l2 = new T.Mesh(leafG, leafM2); l2.scale.setScalar(0.75); l2.position.set(0.5, 3.8, 0.2);
         g.add(tr, l1, l2);
       } else {
-        const p = new T.Mesh(poleG, poleM); p.position.y = 1.8;
-        const b = new T.Mesh(bulbG, bulbM); b.position.y = 3.7;
-        g.add(p, b);
+        // columna de alumbrado de avenida: alta, con brazo hacia la calle
+        const p = new T.Mesh(poleG, poleM); p.position.y = 3.2;
+        const arm = new T.Mesh(armG, poleM); arm.position.set(-sd * 0.75, 6.3, 0);
+        const b = new T.Mesh(bulbG, bulbM); b.position.set(-sd * 1.45, 6.2, 0);
+        g.add(p, arm, b);
       }
       g.position.set(sd * (ROAD + 0.9), 0, -i * 9); scene.add(g); deco.push(g);
     }
@@ -349,7 +369,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       cam.position.set(x * 0.55, 4.1 + y * 0.25 + ie * 5, pz + 7.8 + ie * 7); cam.lookAt(x * 0.3, 1.3 - ie * 0.8, pz - 12);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? 74 : 58; cam.updateProjectionMatrix();
       road.position.set(0, 0, pz - 100); cobble.offset.y = dist / (260 / 46);
-      for (const w of walks) w.position.z = pz - 100; walkTex.offset.y = dist / (260 / 40);
+      for (const w of walks) w.position.z = pz - 100; walkTex.offset.y = dist / (260 / 60);
       for (const c of curbs) c.position.z = pz - 100;
       back.position.set(0, BH / 2 - 3, pz - 176);
       for (const f of facs) if (f.position.z > pz + 10) f.position.z -= 14 * facW;
