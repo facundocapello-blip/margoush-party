@@ -767,5 +767,15 @@
   "rows": 1,
   "skull": 141.0,
   "foot": 0.996
+ },
+ "marine_walk_sheet": {
+  "file": "marine_walk_sheet.webp",
+  "w": 1744,
+  "h": 400,
+  "frames": 8,
+  "cols": 8,
+  "rows": 1,
+  "skull": 137.0,
+  "foot": 0.985
  }
 }
