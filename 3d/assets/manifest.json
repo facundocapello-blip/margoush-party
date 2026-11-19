@@ -757,5 +757,15 @@
   "frames": 1,
   "cols": 1,
   "rows": 1
+ },
+ "douge_walk_sheet": {
+  "file": "douge_walk_sheet.webp",
+  "w": 3000,
+  "h": 512,
+  "frames": 10,
+  "cols": 10,
+  "rows": 1,
+  "skull": 141.0,
+  "foot": 0.996
  }
 }
