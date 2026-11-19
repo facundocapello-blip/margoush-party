@@ -322,6 +322,28 @@ const glowTex = () => canvasTex(128, 128, (ctx) => {
   ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
 });
 
+// Lugares de la vereda porteña donde no se tapa ningún local: las columnas entre casitas de la pintura
+// `calle_buenos_aires` (tres casitas por imagen; bordes en u = 0, 0,328 y 0,676), fuera de los locales famosos,
+// de Le Concept y de la frontera. Sin la pintura, cada 17 m como antes.
+export const BA_SEAMS_U = [0, 0.328, 0.676];
+export function streetSpotsBA(assets, { lcLeft, lcRight }) {
+  const blocked = [[lcLeft - 2.5, lcRight + 2.5], [BORDER_X - 5, Infinity],
+    ...LANDMARKS.map(L => [L.x - L.w / 2 - 1.9, L.x + L.w / 2 + 1.9])];
+  const free = (x) => !blocked.some(([a, b]) => x > a && x < b);
+  const out = [];
+  if (assets.has?.('calle_buenos_aires')) {
+    const m = assets.meta('calle_buenos_aires'), PW = 9.3 * m.w / m.h;
+    for (const [from, to] of [[-7, lcLeft], [lcRight, BORDER_X]]) {
+      for (let x0 = from; x0 < to - 0.01; x0 += PW) {
+        for (const u of BA_SEAMS_U) { const x = x0 + u * PW; if (x > from + 0.5 && x < to - 0.5 && free(x)) out.push(x); }
+      }
+    }
+  } else {
+    for (let x = 10; x < BORDER_X - 4; x += 17) if (free(x)) out.push(x);
+  }
+  return out.sort((a, b) => a - b);
+}
+
 export function buildStreet(scene, assets) {
   scene.background = new THREE.Color(0x2c2350);
   scene.fog = new THREE.Fog(0x2c2350, 30, 75);
@@ -647,12 +669,20 @@ export function buildStreet(scene, assets) {
     return m;
   }
 
-  // Buenos Aires: plátanos, contenedores verdes y una parada de colectivo
+  // Buenos Aires: plátanos, contenedores verdes y una parada de colectivo.
+  // Van en las columnas que separan una casita de la otra en la pintura (nunca delante de una vidriera,
+  // una puerta o un cartel) y lejos de los locales famosos y de Le Concept.
+  const baSpots = streetSpotsBA(assets, { lcLeft, lcRight });
+  const treeXs = [], binXs = [];
+  for (const x of baSpots) if (x >= 8 && (!treeXs.length || x - treeXs[treeXs.length - 1] >= 16)) treeXs.push(x);
+  for (const x of baSpots) {
+    if (binXs.length >= 4 || treeXs.some(t => Math.abs(t - x) < 3) || binXs.some(b => Math.abs(b - x) < 20) || x < 14) continue;
+    binXs.push(x);
+  }
   const barkMat = new THREE.MeshLambertMaterial({ color: 0x8a7a63 });
   const crownMat = new THREE.MeshLambertMaterial({ color: 0x3f6b34 });
-  for (let x = 10; x < BORDER_X - 4; x += 17) {
-    if (Math.abs(x - LE_CONCEPT_X) < 9) continue;
-    if (art('prop_arbol', 4.8, x, -4.85, { flip: (x / 17 | 0) % 2 === 1 })) continue;
+  for (const x of treeXs) {
+    if (art('prop_arbol', 4.3, x, -4.85, { flip: treeXs.indexOf(x) % 2 === 1 })) continue;
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 3.4, 8), barkMat);
     trunk.position.set(x, 1.7, -4.75);
     scene.add(trunk);
@@ -663,14 +693,14 @@ export function buildStreet(scene, assets) {
     }
   }
   const binMat = new THREE.MeshLambertMaterial({ color: 0x2f7d4a });
-  for (const x of [20, 53, 87, 110]) {
-    if (art('prop_contenedor', 1.55, x, -4.7, { flip: x === 87 })) continue;
+  binXs.forEach((x, i) => {
+    if (art('prop_contenedor', 1.55, x, -4.7, { flip: i % 2 === 1 })) return;
     const bin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.25, 0.9), binMat);
     bin.position.set(x, 0.79, -4.75);
     const lid = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 1.0), new THREE.MeshLambertMaterial({ color: 0x23603a }));
     lid.position.set(x, 1.47, -4.75);
     scene.add(bin, lid);
-  }
+  });
   const stopPole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3, 6), postMat);
   stopPole.position.set(70, 1.5, -4.4);
   const stopSign = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: canvasTex(128, 128, (c, w, h) => {
@@ -956,5 +986,5 @@ export function buildStreet(scene, assets) {
     return pos;
   }
 
-  return { bounds: STREET, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, border: borderBar, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
+  return { treeXs, binXs, bounds: STREET, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, border: borderBar, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
 }

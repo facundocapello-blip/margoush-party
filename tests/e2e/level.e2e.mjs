@@ -37,7 +37,11 @@ try {
   const hurt = await G(() => { const g = window.__game; return g.hero.hurt(1, 0); });
   check(!hurt && await G(() => window.__game.hero.hp) === 2, 'durante la transición no se recibe daño');
 
-  await waitFor(() => window.__game.state === 'playing' && window.__game.level === 2, 9000);
+  // En el medio está el BONUS «¡ROMPÉ EL BYD!» (su propia prueba: bonus.e2e): acá se rompe el auto de una
+  await waitFor(() => window.__game.state === 'bonus', 9000);
+  check(true, 'entre los dos niveles aparece el BONUS');
+  await G(() => { const B = window.__game.bonus.logic; for (let i = 0; i < 80 && !B.state.over; i++) B.punch({ x: 99, dmg: 2, spotX: () => 0 }); });
+  await waitFor(() => window.__game.state === 'playing' && window.__game.level === 2, 12000);
   const s2 = await G(() => ({ x: window.__game.hero.actor.position.x, hp: window.__game.hero.hp }));
   check(s2.x >= 152, `el Nivel 2 arranca en Francia (x=${s2.x.toFixed(1)})`);
   check(await G(() => window.__game.transCrossed), 'cruza caminando bajo el arco y entra con la cortina');
@@ -54,6 +58,8 @@ try {
   await G(() => { const g = window.__game; g.setStage('le-concept'); g.hero.hp = 5; g.enemies.list.forEach(e => { e.hp = 0; }); });
   await waitFor(() => window.__game.levelExit === true, 6000);
   await G(() => window.__game.hero.actor.position.set(144, 0, 0));
+  await waitFor(() => window.__game.state === 'bonus', 9000);
+  await G(() => { const B = window.__game.bonus.logic; for (let i = 0; i < 80 && !B.state.over; i++) B.punch({ x: 99, dmg: 2, spotX: () => 0 }); });
   await waitFor(() => window.__game.state === 'playing' && window.__game.level === 2, 12000);
   check(await G(() => window.__game.hero.hp) === 5, 'la cura no pasa del máximo');
 
