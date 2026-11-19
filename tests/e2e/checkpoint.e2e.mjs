@@ -21,6 +21,8 @@ try {
   // Llegar al nivel 2 por la frontera guarda el checkpoint
   await startRun(page, 'marine');
   await g(() => { const G = window.__game; G.setStage('le-concept'); G.enemies.clear(); G.waves['le-concept'] = 'cleared'; G.levelExit = true; G.hero.actor.position.x = 144; G.score.addFlat(1234); });
+  await page.waitForFunction(() => window.__game.state === 'bonus', null, { timeout: 20000 });
+  await g(() => { const B = window.__game.bonus.logic; for (let i = 0; i < 80 && !B.state.over; i++) B.punch({ x: 99, dmg: 2, spotX: () => 0 }); });
   await page.waitForFunction(() => window.__game.checkpoint?.id === 'francia', null, { timeout: 20000 });
   check((await g(() => window.__game.storedCheckpoint()))?.id === 'francia', 'el checkpoint de Francia queda guardado en el celu');
 

@@ -3,7 +3,7 @@ import { buildStreet } from './world.js';
 import { createInput } from './input.js';
 import { createScore } from './score.js';
 import { createFx } from './fx.js';
-import { createHero, HERO_CFG, POWER } from './hero.js';
+import { createHero, HERO_CFG, POWER, SWINGS } from './hero.js';
 import { createEnemies } from './enemies.js';
 import { registerSkins } from './skins.js';
 import { createTraps } from './traps.js';
@@ -14,6 +14,7 @@ import { createPowers } from './powers.js';
 import { createCameos } from './cameos.js';
 import { createArena } from './arena.js';
 import { createChase } from './chase.js';
+import { createBonus } from './bonus.js';
 import { createStory } from './story.js';
 import { createAudio } from './audio.js';
 import { createUi } from './ui.js';
@@ -203,6 +204,7 @@ function clearRun() {
   game.powers?.clear();
   game.traps?.reset();
   game.arena?.dispose();
+  game.bonus?.dispose();
   game.story?.endIntro();
   game.story?.resetCage();
   fx.clear();
@@ -448,8 +450,23 @@ function updateTransition(dt) {
   if (!game.transCrossed && (p.x >= BORDER_X + 0.5 || game.transT > TRANSITION_MAX_S)) {
     game.transCrossed = true;
     audio.sfx('secret');
-    curtain(() => { if (game.state === 'transition') endTransition(); }, { label: `NIVEL ${next.id} · ${next.name}` });
+    // Entre Buenos Aires y Francia: el BONUS «¡ROMPÉ EL BYD!» (bonus.js) y después Francia
+    curtain(() => { if (game.state === 'transition') startBonus(); }, { label: 'BONUS · ¡ROMPÉ EL BYD!' });
   }
+}
+
+function startBonus() {
+  $('#level-card').classList.add('hidden');
+  $('#level-card').classList.remove('travel');
+  input.reset();
+  audio.music('chase', { fade: 0.3 });
+  game.bonus.start();
+}
+game.startBonus = startBonus;
+// El bonus termina con la cortina ya cerrada (la abre bonus.js con el cartel de Francia)
+function bonusDone() {
+  endTransition();
+  audio.music('street', { fade: 0.4 });
 }
 
 function endTransition() {
@@ -552,7 +569,7 @@ game.finish = finish;
 // ---------- pausa ----------
 function pause() {
   if (game.state === 'intro') endIntro(); // en la intro, la pausa también la saltea
-  if (game.state !== 'playing' && game.state !== 'chase' && game.state !== 'arena') return;
+  if (game.state !== 'playing' && game.state !== 'chase' && game.state !== 'arena' && game.state !== 'bonus') return;
   game.pausedFrom = game.state;
   game.state = 'paused';
   input.reset();
@@ -574,7 +591,8 @@ function resume() {
   if (game.state !== 'paused') return;
   input.reset();
   showScreen(null);
-  game.state = game.pausedFrom === 'chase' && game.chase.active ? 'chase' : game.pausedFrom === 'arena' && game.arena.active ? 'arena' : 'playing';
+  const back = { chase: game.chase.active, arena: game.arena.active, bonus: game.bonus.active };
+  game.state = back[game.pausedFrom] ? game.pausedFrom : 'playing';
   audio.resumeMusic();
   last = 0;
 }
@@ -592,6 +610,13 @@ function frame(now) {
     if (game.state === 'chase') game.chase.update(dt);
     if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
     if (game.chase.active) { game.chase.render(); requestAnimationFrame(frame); return; }
+  }
+  // BONUS «¡ROMPÉ EL BYD!»: escena propia (sigue dibujándose en pausa)
+  if (game.bonus.active && game.state !== 'bonus' && game.state !== 'paused') game.bonus.dispose();
+  if (game.bonus.active) {
+    if (game.state === 'bonus') game.bonus.update(dt);
+    if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
+    if (game.bonus.active) { game.bonus.render(); requestAnimationFrame(frame); return; }
   }
   // Arena de BIG CHAKY: también tiene su propia escena (sigue dibujándose en pausa)
   if (game.arena.active && game.state !== 'arena' && game.state !== 'paused') game.arena.dispose();
@@ -657,7 +682,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.cameos?.onLevelStart(); game.state = 'menu'; paintContinue(); audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.state = 'menu'; paintContinue(); audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -678,6 +703,7 @@ async function boot() {
     onWin() { game.state = 'playing'; last = 0; game.onBossDown(); },
     onDown() { game.state = 'playing'; finish(false); }
   });
+  game.bonus = createBonus({ game, input, audio, assets, renderer, updateHud, pause, POWER, SWINGS, onEnd() { last = 0; bonusDone(); } });
   game.chase = createChase({
     game, input, audio, assets, renderer, banner: game.banner, updateHud, pause, POWER,
     // Lo alcanzaste: el BYD quedó sin batería y Cepi se baja con la paleta (oleada «boulevard»)
