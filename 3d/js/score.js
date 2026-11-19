@@ -24,6 +24,8 @@ export function createScore() {
     addPenalty(n) { total = Math.max(0, total - n); },
     // Bonus sueltos (persecución de Cepi: coleccionables, cosas rotas, esquives): se multiplican por el combo
     addBonus(n) { total += Math.round(n * multiplier()); },
+    // Puntos fijos (arena de BIG CHAKY: devolución, mano, esquive): sin multiplicador
+    addFlat(n) { total += n; },
     addHit() { hits++; },
     takeDamage() { hits = 0; },
     // Los bonus de vida y tiempo solo cuentan si se rescató a Margot

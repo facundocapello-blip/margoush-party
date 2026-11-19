@@ -14,7 +14,12 @@ const COMBO_WINDOW = 0.45; // s para encadenar el siguiente golpe
 const HURT_POSE = 0.5;     // s con la pose de golpeado
 const INV = 1.3;           // s invulnerable después de un golpe
 const END_DELAY = 1.6;     // s entre el ko (o caer) y salir de la arena
-const HERO_H = 2.4, BOSS_H = 8, BARREL_H = 1.15, CRATE_H = 1.3;
+const HERO_H = 2.4, BOSS_H = 14, BARREL_H = 1.15, CRATE_H = 1.3;
+// BIG CHAKY parado sobre la tarima, enorme: la cámara va lejos y alta para que mida ≥ 2,5 veces al héroe en pantalla
+const TARIMA_H = 0.6, TARIMA_FRONT = ARENA.bossZ + 2.4, TARIMA_BACK = ARENA.bossZ - 5;
+const CAM = { y: 6, back: 11, lookY: 6, fov: 66, fovPortrait: 70 };
+// Manotazo: la pose `slam` recortada por arriba de la mano (filas 0..545 de 768) y la mano sola (recorte 20,505 430×263)
+const SLAM_CUT = 545 / 768, HAND_CROP = { x: 20, y: 505, w: 430, h: 263 }, HAND_W = 2.8, HAND_FALL = 7;
 
 export function createArena({ game, input, audio, assets, renderer, banner, updateHud, pause, POWER, onWin, onDown }) {
   let cur = null;
@@ -69,10 +74,12 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     const edgeG = keep(new T.BoxGeometry(0.18, 0.06, 26));
     for (const sd of [-1, 1]) { const e = new T.Mesh(edgeG, edgeM); e.position.set(sd * 4.5, 0.03, -8); scene.add(e); }
     // Tarima al fondo, detrás de BIG CHAKY
-    const tarima = mk(new T.BoxGeometry(12, 0.45, 4), new T.MeshLambertMaterial({ map: canvasTex(256, 64, planks(false), 3, 1) }));
-    tarima.position.set(0, 0.22, ARENA.bossZ - 3.2);
-    const tarimaFront = mk(new T.PlaneGeometry(12, 0.45), new T.MeshLambertMaterial({ color: L('#2a1810') }));
-    tarimaFront.position.set(0, 0.22, ARENA.bossZ - 1.19);
+    // Tarima al fondo: BIG CHAKY está parado arriba (los barriles bajan por el frente)
+    const TD = TARIMA_FRONT - TARIMA_BACK;
+    const tarima = mk(new T.BoxGeometry(12, TARIMA_H, TD), new T.MeshLambertMaterial({ map: canvasTex(256, 64, planks(false), 3, TD / 4) }));
+    tarima.position.set(0, TARIMA_H / 2, (TARIMA_FRONT + TARIMA_BACK) / 2);
+    const tarimaFront = mk(new T.PlaneGeometry(12, TARIMA_H), new T.MeshLambertMaterial({ color: L('#2a1810') }));
+    tarimaFront.position.set(0, TARIMA_H / 2, TARIMA_FRONT + 0.01);
     // Fondo pintado del galpón detrás de todo (sin niebla: es una pintura)
     const fondo = assets.meta('arena_fondo'), BW = 84, BH = BW * fondo.h / fondo.w, BZ = ARENA.bossZ - 6;
     const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture('arena_fondo'), fog: false }));
@@ -83,10 +90,25 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     const shM = keep(new T.MeshBasicMaterial({ map: radial([[0, 'rgba(20,10,40,.6)'], [1, 'rgba(20,10,40,0)']]), transparent: true, depthWrite: false }));
     const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0); // apoyado en el piso
     const unitC = keep(new T.PlaneGeometry(1, 1));                          // centrado (para girar)
+    // Texturas recortadas del manotazo: el cuerpo sin la mano y la mano sola
+    const slamMeta = assets.meta('arena_chaky_slam');
+    const slamTop = keep(assets.texture('arena_chaky_slam').clone());
+    slamTop.needsUpdate = true; slamTop.offset.set(0, 1 - SLAM_CUT); slamTop.repeat.set(1, SLAM_CUT);
+    const handTex = canvasTex(HAND_CROP.w, HAND_CROP.h, (g) => {
+      g.drawImage(assets.texture('arena_chaky_slam').image, HAND_CROP.x, HAND_CROP.y, HAND_CROP.w, HAND_CROP.h, 0, 0, HAND_CROP.w, HAND_CROP.h);
+      g.clearRect(0, 0, 102, 115); g.clearRect(348, 0, 82, 113); // las botas que quedan al costado de la mano
+    });
+    handTex.wrapS = handTex.wrapT = T.ClampToEdgeWrapping; handTex.repeat.set(1, 1);
+    const CUSTOM = {
+      arena_chaky_slamtop: { map: slamTop, w: slamMeta.w, h: slamMeta.h * SLAM_CUT, hk: SLAM_CUT },
+      arena_chaky_hand: { map: handTex, w: HAND_CROP.w, h: HAND_CROP.h, hk: 1 }
+    };
     const setTex = (m, key) => {
       if (m.userData.key === key) return;
-      const meta = assets.meta(key); m.material.map = assets.texture(key); m.material.needsUpdate = true; m.userData.key = key;
-      m.userData.w = m.userData.h * meta.w / meta.h; m.scale.set(m.userData.w, m.userData.h, 1);
+      const c = CUSTOM[key], meta = c || assets.meta(key);
+      m.material.map = c ? c.map : assets.texture(key); m.material.needsUpdate = true; m.userData.key = key;
+      const h = m.userData.h * (c ? c.hk : 1);
+      m.userData.w = h * meta.w / meta.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
     };
     function sprite(key, h, shadow = 1, centered = false) {
       const m = new T.Mesh(centered ? unitC : unit, keep(new T.MeshBasicMaterial({ alphaTest: 0.45, side: T.DoubleSide })));
@@ -100,6 +122,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       const s = m.userData.sh; if (s) { s.position.set(x, 0.03, z); s.visible = m.visible; }
     }
     const B = sprite('arena_chaky_idle', BOSS_H, 0.9);
+    const hand = sprite('arena_chaky_hand', HAND_W * HAND_CROP.h / HAND_CROP.w, 0); hand.visible = false;
     const P = sprite(heroPre + 'idle', HERO_H);
     // Mano del manotazo: sombra que crece en el piso donde va a caer
     const handM = keep(new T.MeshBasicMaterial({ map: radial([[0, 'rgba(8,2,16,.92)'], [0.6, 'rgba(8,2,16,.6)'], [1, 'rgba(8,2,16,0)']]), transparent: true, depthWrite: false }));
@@ -140,10 +163,10 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     if (bar) { const sp = bar.querySelector('span'); if (sp) sp.textContent = 'BIG CHAKY'; bar.classList.remove('hidden'); }
     const setBar = () => { if (fill) fill.style.width = (100 * logic.state.hp / logic.state.hpMax).toFixed(1) + '%'; };
     setBar();
-    const pops = [];
+    const pops = [], seen = new Set(), scratch = new T.Vector3();
     const pop = (x, y, z, txt, col = '#ffd36e', size = 22, life = 1.1) => {
       const e = document.createElement('div'); e.className = 'pop'; e.textContent = txt; e.style.color = col; e.style.fontSize = size + 'px';
-      ui.append(e); pops.push({ e, v: new T.Vector3(x, y, z), t: 0, life });
+      ui.append(e); pops.push({ e, v: new T.Vector3(x, y, z), t: 0, life, w: e.offsetWidth }); // ancho medido una vez
     };
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
     let flashTimer = 0;
@@ -162,9 +185,10 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     game.state = 'arena';
 
     const shake = (a, s = 0.3) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, s); };
-    const bossTop = () => new T.Vector3(logic.state.bossX, BOSS_H + 0.6, ARENA.bossZ);
+    // Frases y puntos de BIG CHAKY a la altura del pecho: no le tapan la cara
+    const bossChest = () => new T.Vector3(logic.state.bossX, TARIMA_H + B.userData.hh * 0.38, ARENA.bossZ); // según la pose que se ve
     function addPts(n, px, py, pz) {
-      const before = game.score.total; game.score.addBonus(n);
+      const before = game.score.total; game.score.addFlat(n); // valores fijos del spec, sin multiplicador
       pop(px, py, pz, '+' + (game.score.total - before), '#ffd36e', 24);
     }
     function charge(a) { hero.power = Math.min(1, hero.power + a); }
@@ -196,14 +220,14 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
           case 'ko': {
             setBar(); flash('#ffffff', 0.6); shake(0.6, 0.9); sfx('ko');
             const before = game.score.total; game.score.addKill('boss');
-            pop(logic.state.bossX, BOSS_H * 0.6, ARENA.bossZ, '+' + (game.score.total - before), '#ffd36e', 34, 1.6);
+            pop(logic.state.bossX, TARIMA_H + B.userData.hh * 0.38, ARENA.bossZ, '+' + (game.score.total - before), '#ffd36e', 34, 1.6);
             bar?.classList.add('hidden');
             phase = 'ko'; phaseT = 0;
             break;
           }
           case 'throw': sfx('whoosh'); break;
           case 'slam': shake(0.5, 0.4); sfx('slam'); break;
-          case 'line': { const p = bossTop(); pop(p.x, p.y, p.z, e.text, '#ffffff', 30, 1.8); break; }
+          case 'line': { const p = bossChest(); pop(p.x, p.y, p.z, e.text, '#ffffff', 30, 1.8); break; }
         }
       }
     }
@@ -291,27 +315,33 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       // Cámara detrás y arriba del héroe, mirando a BIG CHAKY
       shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
-      cam.position.set(x * 0.4 + (Math.random() - 0.5) * sh, 4.2 + (Math.random() - 0.5) * sh, z + 7);
-      cam.lookAt(0, 2.5, ARENA.bossZ);
-      cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? 74 : 58; cam.updateProjectionMatrix();
+      cam.position.set(x * 0.4 + (Math.random() - 0.5) * sh, CAM.y + (Math.random() - 0.5) * sh, z + CAM.back);
+      cam.lookAt(0, CAM.lookY, ARENA.bossZ);
+      cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
-      // BIG CHAKY: la pose de la lógica; con la mano abajo o trabada se ve el manotazo
-      const handDown = S.hand.state === 'down' || S.hand.state === 'stuck';
+      // BIG CHAKY: la pose de la lógica, salvo en el manotazo (una sola mano a la vista):
+      // - aviso (y preparación): pose `rage`, la mano todavía arriba; solo la sombra en el piso anuncia dónde cae
+      // - mano abajo / trabada / subiendo: el `slam` recortado sin la mano (el corte queda bajo la tarima) y la mano
+      //   suelta dibujada donde está de verdad, en (hand.x, hand.z); ahí también tapa el `hurt` de la lógica
+      const H = S.hand, handOut = H.state === 'down' || H.state === 'stuck' || H.state === 'up';
       let pose = S.pose;
-      if (handDown && pose !== 'ko') pose = 'slam';
+      if (pose !== 'ko') {
+        if (handOut) pose = 'slamtop';
+        else if (pose === 'slam') pose = 'rage';
+      }
       if (pose !== prevPose) { prevPose = pose; poseT = 0; }
       poseT += dt;
       bossKey = 'arena_chaky_' + pose; setTex(B, bossKey);
       let bx = S.bossX, by = 0, rz = 0, sx = 1, sy = 1;
       if (pose === 'throw') { const k = Math.min(1, poseT / 0.6); by = Math.abs(Math.sin(k * Math.PI * 2)) * 0.35; rz = Math.sin(poseT * 9) * 0.06; }
-      else if (pose === 'slam' && S.hand.state === 'stuck') { bx += (Math.random() - 0.5) * 0.18; by = Math.random() * 0.05; } // forcejea con la mano trabada
+      else if (pose === 'slamtop') { by = -0.25; if (H.state === 'stuck') { bx += (Math.random() - 0.5) * 0.18; by += Math.random() * 0.05; } } // forcejea con la mano trabada
       else if (pose === 'rage') { bx += Math.sin(t * 40) * 0.12; sy = 1 + Math.sin(t * 12) * 0.03; }
       else if (pose === 'idle') { sy = 1 + Math.sin(t * 2.2) * 0.015; by = Math.abs(Math.sin(t * 1.2)) * 0.05; }
-      place(B, bx, by, ARENA.bossZ);
-      B.scale.set(B.userData.w * sx, B.userData.h * sy, 1); B.rotation.z = rz;
+      place(B, bx, TARIMA_H + by, ARENA.bossZ);
+      B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);
       B.material.color.setRGB(1, bossFlash > 0 ? 0.55 : 1, bossFlash > 0 ? 0.55 : 1);
-      B.userData.sh.scale.set(5.5, 1, 2.2);
+      B.userData.sh.position.y = TARIMA_H + 0.02; B.userData.sh.scale.set(8, 1, 3);
 
       // Héroe de espaldas
       heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : moving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
@@ -321,37 +351,47 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       P.rotation.z = dashT > 0 ? -dashX * 0.25 : 0;
       P.userData.sh.visible = true; P.userData.sh.scale.set(1.6 * (1 - Math.min(0.5, y * 0.2)), 1, 0.8);
 
-      // Mano: sombra que crece durante el aviso y queda marcada mientras está abajo
-      const H = S.hand;
+      // Mano: sombra que crece durante el aviso; la mano cae desde arriba, tiembla trabada y se levanta
+      if (handOut) {
+        hand.visible = true;
+        let hy = 0, hx = H.x;
+        if (H.state === 'down') hy = HAND_FALL * Math.max(0, 1 - H.t / 0.15);
+        else if (H.state === 'up') hy = HAND_FALL * Math.min(1, H.t / 0.4);
+        else { hx += (Math.random() - 0.5) * 0.12; hy = Math.random() * 0.04; }
+        place(hand, hx, hy, H.z - 0.35); // un poco detrás del punto: el héroe parado ahí queda adelante
+        hand.rotation.z = H.state === 'stuck' ? Math.sin(t * 30) * 0.03 : 0;
+      } else hand.visible = false;
       if (H.state === 'none') handSh.visible = false;
       else {
         handSh.visible = true; handSh.position.set(H.x, 0.04, H.z);
-        let s = 2.2, op = 1;
-        if (H.state === 'warn') { const k = Math.min(1, H.t / ARENA.phase2.slamWarn); s = 0.4 + 1.8 * k; op = 0.35 + 0.6 * k; }
+        let s = 2.8, op = 1;
+        if (H.state === 'warn') { const k = Math.min(1, H.t / ARENA.phase2.slamWarn); s = 0.6 + 2.2 * k; op = 0.45 + 0.55 * k; }
         else if (H.state === 'up') { const k = Math.min(1, H.t / 0.4); op = 1 - k; }
-        else s = 2.2 + Math.sin(t * 18) * 0.06;
+        else s = 2.8 + Math.sin(t * 18) * 0.06;
         handSh.scale.set(s, 1, s); handM.opacity = op;
       }
 
       // Barriles y cajones
-      const seen = new Set();
+      seen.clear();
       for (const s of S.shots) {
         seen.add(s.id);
         let e = live.get(s.id);
         if (!e) {
           e = take(s.kind); live.set(s.id, e);
-          if (s.kind === 'crate') e.from = { x: S.bossX, z: ARENA.bossZ + 0.5 };
+          if (s.kind === 'crate') e.from = { x: S.bossX, y: TARIMA_H + BOSS_H * 0.85, z: ARENA.bossZ + 0.5 };
         }
         if (s.kind === 'barrel') {
           e.m.material.color.copy(s.gold ? GOLD : WHITE);
-          place(e.m, s.x, BARREL_H / 2, s.z);
+          const by0 = s.z < TARIMA_FRONT ? TARIMA_H : 0; // ruedan por la tarima y bajan
+          place(e.m, s.x, BARREL_H / 2 + by0, s.z);
+          if (e.m.userData.sh) e.m.userData.sh.position.y = by0 + 0.03;
           e.m.rotation.z -= dt * (s.returning ? -14 : 9);
           e.halo.visible = s.gold;
-          if (s.gold) { const p = 1.9 + Math.sin(t * 10) * 0.35; e.halo.position.set(s.x, BARREL_H / 2, s.z + 0.05); e.halo.scale.set(p, p, 1); e.halo.material.opacity = 0.65 + Math.sin(t * 10) * 0.25; }
+          if (s.gold) { const p = 1.9 + Math.sin(t * 10) * 0.35; e.halo.position.set(s.x, BARREL_H / 2 + by0, s.z + 0.05); e.halo.scale.set(p, p, 1); e.halo.material.opacity = 0.65 + Math.sin(t * 10) * 0.25; }
         } else {
           const k = Math.max(0, Math.min(1, 1 - s.y / 8));
           const cx = e.from.x + (s.x - e.from.x) * k, cz = e.from.z + (s.z - e.from.z) * k;
-          const cy = s.y * 0.75 + Math.sin(Math.PI * k) * 3 + CRATE_H / 2;
+          const cy = e.from.y * (1 - k) + Math.sin(Math.PI * k) * 2.5 + CRATE_H / 2; // sale de sus manos en arco
           place(e.m, cx, cy, cz);
           e.m.rotation.z += dt * 5;
           if (e.m.userData.sh) { e.m.userData.sh.position.set(s.x, 0.03, s.z); e.m.userData.sh.scale.set(0.6 + k, 1, 0.4 + 0.6 * k); }
@@ -363,12 +403,18 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       // Textos que flotan
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt; q.v.y += dt * 0.8;
-        const sp = q.v.clone().project(cam);
-        const half = Math.min(innerWidth / 2, (q.e.offsetWidth || 0) / 2 + 8); // las frases largas no se cortan en el borde
+        const sp = scratch.copy(q.v).project(cam);
+        const half = Math.min(innerWidth / 2, q.w / 2 + 8); // las frases largas no se cortan en el borde
         q.e.style.left = Math.max(half, Math.min(innerWidth - half, (sp.x + 1) / 2 * innerWidth)) + 'px'; q.e.style.top = (1 - sp.y) / 2 * innerHeight + 'px';
         q.e.style.opacity = String(Math.max(0, Math.min(1, (q.life - q.t) / 0.35)));
         if (q.t > q.life) { q.e.remove(); pops.splice(i, 1); }
       }
+    }
+
+    // Alto en pantalla (px, de arriba hacia abajo) de BIG CHAKY y del héroe: para las pruebas de tamaño
+    function screenBoxes() {
+      const py = (m, k) => (1 - scratch.set(m.position.x, m.position.y + m.userData.hh * k, m.position.z).project(cam).y) / 2 * innerHeight;
+      return { boss: { top: py(B, 1), face: py(B, 0.85), feet: py(B, 0) }, hero: { top: py(P, 1), feet: py(P, 0) } };
     }
 
     let disposed = false;
@@ -400,7 +446,8 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
         return {
           ...S, shots: S.shots.map(s => ({ ...s })), hand: { ...S.hand },
           hero: { x, z, y, pose: heroPose, tex: P.userData.key }, bossTex: bossKey,
-          hp: hero.hp, power: hero.power, scene: phase
+          hp: hero.hp, power: hero.power, scene: phase,
+          screen: screenBoxes()
         };
       }
     };
