@@ -158,7 +158,8 @@ export function createEnemies(ctx) {
     let pose = 'idle';
     if (st === 'dead' && a.poses.ko && e.dead < 0.45) pose = 'ko';
     else if (st === 'dead' || st === 'hitstun' || st === 'slipped') pose = 'hurt';
-    else if (STRIKE_STATES.includes(st) || a.offsetX > 0.05) pose = 'strike';
+    // Cepi en la preparación muestra la paleta atrás (cuadro «parado»); el golpe recién al soltar la pelota
+    else if ((STRIKE_STATES.includes(st) && !(e.k.ai === 'cepi' && st === 'throw')) || a.offsetX > 0.05) pose = 'strike';
     else if (st === 'windup' || st === 'ring' || e.stun > 0) pose = 'idle';
     else if (e.k.ai === 'bombo' && a.lift > 0.02) pose = Math.floor(e.beat * 2) % 2 ? 'step' : 'idle';
     else if (e.moving && a.poses.walk) pose = 'walk';
@@ -407,7 +408,7 @@ export function createEnemies(ctx) {
       const mark = new THREE.Mesh(new THREE.CircleGeometry(MOZO.hitRadius, 24), markMat);
       mark.rotation.x = -Math.PI / 2; mark.position.set(target.x, 0.05, target.z);
       const s = new THREE.Sprite(croissantMat); s.scale.set(0.8, 0.8, 1);
-      const from = e.pos.clone().setY(1.7);
+      const from = origin || e.pos.clone().setY(1.7);
       s.position.copy(from);
       scene.add(mark, s);
       shots.push({ from, target, t: 0, sprite: s, mark, owner: e });
@@ -449,13 +450,15 @@ export function createEnemies(ctx) {
     taunt(e, dt, CEPI_TAUNTS, '#ff9b8a');
     if (e.state === 'throw') {
       e.t -= dt;
-      a.offsetX = 0.2;
+      a.offsetX = 0;
       if (e.t <= 0) {
         e.state = 'walk'; e.cd = CEPI.every * (e.k.miniBoss ? 0.8 : 1);
+        a.offsetX = 0.35; // pose de golpe justo cuando sale la pelota (la pelota sale de la paleta)
         const n = e.k.burst || 1;
         for (let i = 0; i < n; i++) {
           const off = n > 1 ? (i - (n - 1) / 2) * CEPI.spread : 0;
-          throwShot(e, new THREE.Vector3(e.throwX + (n > 1 ? off * 0.5 : 0), 0, Math.max(-3.2, Math.min(3.2, e.throwZ + off))), ballMat, 0.55);
+          throwShot(e, new THREE.Vector3(e.throwX + (n > 1 ? off * 0.5 : 0), 0, Math.max(-3.2, Math.min(3.2, e.throwZ + off))), ballMat, 0.55,
+            e.pos.clone().add(new THREE.Vector3(a.facing * 0.85 * e.k.scale, 2.0 * e.k.scale, 0.05)));
         }
         ctx.audio?.sfx('swing');
         if (e.k.miniBoss) {
@@ -487,11 +490,11 @@ export function createEnemies(ctx) {
     }
   }
 
-  function throwShot(e, target, mat, size) {
+  function throwShot(e, target, mat, size, origin = null) {
     const mark = new THREE.Mesh(new THREE.CircleGeometry(MOZO.hitRadius, 24), markMat);
     mark.rotation.x = -Math.PI / 2; mark.position.set(target.x, 0.05, target.z);
     const sp = new THREE.Sprite(mat); sp.scale.set(size, size, 1);
-    const from = e.pos.clone().setY(1.7);
+    const from = origin || e.pos.clone().setY(1.7);
     sp.position.copy(from);
     scene.add(mark, sp);
     shots.push({ from, target, t: 0, sprite: sp, mark, owner: e });
