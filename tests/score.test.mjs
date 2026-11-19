@@ -91,7 +91,7 @@ test('losing earns no hp or time bonus', () => {
 
 // Recorrido de los dos niveles sin recibir daño: todos los malos, mamaderas, secreto y jefe
 function flawless({ seconds = 300, hpLeft = 5, upToLevel = 2, won = true } = {}) {
-  const HP = { secuaz: 3, patovica: 7, bombo: 4, mozo: 3, lale: 4, delivery: 3, cepi: 4, cepiJefe: 14, pinky: 4 };
+  const HP = { secuaz: 3, patovica: 7, bombo: 4, mozo: 3, lale: 4, delivery: 3, cepi: 4, cepiJefe: 11, pinky: 4 };
   const PTS = { secuaz: 'minion', patovica: 'patovica', bombo: 'bombo', mozo: 'mozo', lale: 'lale', delivery: 'delivery', cepi: 'cepi', cepiJefe: 'cepiJefe', pinky: 'pinky' };
   const s = createScore();
   let swing = 0;

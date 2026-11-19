@@ -207,7 +207,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             addPts(ARENA.points.dodge, x, 2.8, z); charge(POWER.dodge); sfx('pickup');
             break;
           case 'returned':
-            addPts(ARENA.points.returned, x, 3, z - 1); charge(POWER.finisher); sfx('hitHeavy'); shake(0.2, 0.2);
+            addPts(e.gold ? ARENA.points.returned : ARENA.points.returnedWhite, x, 3, z - 1); charge(e.gold ? POWER.finisher : POWER.hit * 2); sfx('hitHeavy'); shake(e.gold ? 0.25 : 0.12, 0.2);
             break;
           case 'handHit':
             addPts(ARENA.points.hand, x, 2.6, z - 0.8); charge(POWER.hit); sfx('hit'); freezeT = 0.07; shake(0.25, 0.2);

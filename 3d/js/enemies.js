@@ -19,7 +19,7 @@ export const KINDS = {
   lale: { tex: 'courier_lale', hp: 4, scale: 1, speed: 3.0, ai: 'lale', ranged: true, points: 'lale', name: 'LALE «MANTECOSO»', gait: { cadence: 1.5, bob: 0.1, sway: 0.05 } },
   // Los malos de la banda son amigos de Facu: Lale (manteca), Cepi (pelotazos de pádel) y Pinky (trapito)
   cepi: { tex: 'courier_cepi', hp: 4, scale: 1.05, speed: 3.0, ai: 'cepi', ranged: true, points: 'cepi', name: 'CEPI «EL NIÑO»', gait: { cadence: 1.5, bob: 0.1, sway: 0.06 } },
-  cepiJefe: { tex: 'courier_cepi', sheet: 'cepi', hp: 14, scale: 1.25, speed: 3.2, ai: 'cepi', ranged: true, burst: 3, points: 'cepiJefe', name: 'CEPI «EL NIÑO»', miniBoss: true, gait: { cadence: 1.4, bob: 0.1, sway: 0.06 } },
+  cepiJefe: { tex: 'courier_cepi', sheet: 'cepi', hp: 11, scale: 1.25, speed: 3.2, ai: 'cepi', ranged: true, burst: 3, points: 'cepiJefe', name: 'CEPI «EL NIÑO»', miniBoss: true, gait: { cadence: 1.4, bob: 0.1, sway: 0.06 } },
   pinky: { tex: 'courier_pinky', hp: 4, scale: 1.05, speed: 3.4, windup: 0.5, ai: 'melee', fee: 100, points: 'pinky', name: 'PINKY «EL TRAPITO»', gait: { cadence: 1.6, bob: 0.12, sway: 0.07 } },
   delivery: { tex: 'face_delivery_sheet', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', ranged: true, points: 'delivery', gait: { cadence: 0, bob: 0 } }
 };
@@ -31,7 +31,8 @@ const WAIT = { min: 2.8, spread: 1.6, settle: 0.6, gap: 0.4 }; // anillo de espe
 const TAUNTS = ['¡Vení!', '¡Dale!', '¡Jaja!'];
 export const CEPI_TAUNTS = ['¡Me tenés podrido!', '¡Tomá, pelotazo!', '¡Dale que es fácil, che!', '¡Andá a jugar a la bolita!', '¡Te voy a acusar con mamá!'];
 export const PINKY_TAUNTS = ['¿Te lo cuido, jefe?', '¡Son 2 lucas, maestro!', '¡Dale que te lo lavo!', '¡Acá se paga por adelantado!', '¡Aguante Boca!'];
-export const CEPI = { every: 2.6, windup: 0.45, keep: 6.5, spread: 1.4 };
+// tired: el jefe, después de cada tanda de pelotazos, se queda sin aire y se le puede pegar (ventana de castigo)
+export const CEPI = { every: 2.6, windup: 0.45, keep: 6.5, keepBoss: 4.5, spread: 1.4, tired: 1.6 };
 const MELEE_BUSY = ['windup', 'strike', 'ring', 'charge'];
 export const BOMBO = { every: 4, windup: 0.9, radius: 3.2, stun: 1 };
 export const MOZO = { every: 2.5, flight: 0.9, hitRadius: 0.75 };
@@ -457,13 +458,26 @@ export function createEnemies(ctx) {
           throwShot(e, new THREE.Vector3(e.throwX + (n > 1 ? off * 0.5 : 0), 0, Math.max(-3.2, Math.min(3.2, e.throwZ + off))), ballMat, 0.55);
         }
         ctx.audio?.sfx('swing');
+        if (e.k.miniBoss) {
+          e.tiredT = CEPI.tired;
+          fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.5), '¡Uf, uf…!', '#ffd36e', { size: 24, life: 1.2, rise: 0.25 });
+        }
       }
+      return;
+    }
+    // Sin aire: se queda quieto, jadeando (se le encadena el combo)
+    if (e.tiredT > 0) {
+      e.tiredT -= dt;
+      a.offsetX *= 0.9;
+      a.lean = Math.sin(e.tiredT * 12) * 0.08;
+      if (e.tiredT <= 0) a.lean = 0;
       return;
     }
     const side = dx > 0 ? -1 : 1;
     const lb = world.levelBounds;
-    let wantX = hp.x + side * CEPI.keep;
-    if (wantX < lb.minX + 1 || wantX > lb.maxX - 1) wantX = hp.x - side * CEPI.keep;
+    const keep = e.k.miniBoss ? CEPI.keepBoss : CEPI.keep;
+    let wantX = hp.x + side * keep;
+    if (wantX < lb.minX + 1 || wantX > lb.maxX - 1) wantX = hp.x - side * keep;
     approach(e, dt, wantX, hp.z + e.slotZ * 0.6, e.k.speed);
     a.offsetX *= 0.9;
     if (e.cd <= 0 && Math.abs(dx) < 11 && (e.k.miniBoss || rangedFree())) {

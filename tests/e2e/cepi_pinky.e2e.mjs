@@ -30,7 +30,7 @@ try {
       bar: !bar.classList.contains('hidden'), barName: bar.querySelector('span').textContent };
   });
   check(c.level === 2 && c.has, 'Cepi jefe aparece en el nivel 2 (oleada boulevard)');
-  check(c.hp >= 12, `Cepi aguanta como mini-jefe (vida ${c.hp})`);
+  check(c.hp >= 10, `Cepi aguanta como mini-jefe (vida ${c.hp})`);
   check(c.banners.some(t => t.includes('CEPI')), 'sale el cartel de CEPI «EL NIÑO»');
   check(c.bar && c.barName.includes('CEPI'), 'se ve la barra de vida con su nombre');
   check(/cepi_(actions_)?sheet/.test(c.sheet), 'Cepi usa su hoja de poses');

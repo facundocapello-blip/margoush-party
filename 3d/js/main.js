@@ -219,7 +219,78 @@ function setLevel(n) {
   world.setLevelBounds(L.minX, L.maxX);
 }
 
-function startRun(heroId, withIntro = false) {
+// ---------- checkpoints ----------
+// Al morir no se vuelve a Buenos Aires: se reintenta desde el último tramo al que se llegó
+// (Nivel 2, la persecución o BIG CHAKY). Queda guardado en el celu para «CONTINUAR» desde el menú.
+const CP_KEY = 'margoush3d_checkpoint';
+const CHECKPOINTS = {
+  francia: { label: 'NIVEL 2 · FRANCIA', short: 'Francia' },
+  chase: { label: 'LA FUGA DE CEPI', short: 'la fuga de Cepi' },
+  boss: { label: 'BIG CHAKY', short: 'BIG CHAKY' }
+};
+function saveCheckpoint(id) {
+  game.checkpoint = { id, heroId: game.heroId, score: game.score.total, time: Math.round(game.time) };
+  try { localStorage.setItem(CP_KEY, JSON.stringify(game.checkpoint)); } catch (_) {}
+}
+function storedCheckpoint() {
+  try {
+    const c = JSON.parse(localStorage.getItem(CP_KEY) || 'null');
+    return c && CHECKPOINTS[c.id] && HERO_CFG[c.heroId] ? c : null;
+  } catch (_) { return null; }
+}
+function clearCheckpoint() {
+  game.checkpoint = null;
+  try { localStorage.removeItem(CP_KEY); } catch (_) {}
+}
+game.storedCheckpoint = storedCheckpoint;
+// Menú: «CONTINUAR» aparece si quedó un checkpoint guardado (con quién y desde dónde)
+function paintContinue() {
+  const cp = storedCheckpoint(), btn = $('#btn-continue');
+  if (!btn) return;
+  btn.classList.toggle('hidden', !cp);
+  if (cp) $('#continue-where').textContent = `${HERO_CFG[cp.heroId].name} · ${CHECKPOINTS[cp.id].short}`;
+}
+
+// Arranca una partida directamente en un checkpoint, con la vida llena y el puntaje que había ahí
+function resumeAt(cp) {
+  if (!cp || !CHECKPOINTS[cp.id]) return startRun(game.heroId, false);
+  startRun(cp.heroId, false, { keepCheckpoint: true });
+  game.checkpoint = cp;
+  game.score.restore(cp.score);
+  game.time = cp.time || 0;
+  const first = { francia: WAVES.findIndex(w => w.level === 2), chase: WAVES.findIndex(w => w.chase), boss: WAVES.length }[cp.id];
+  WAVES.forEach((w, i) => {
+    if (i >= first) return;
+    game.waves[w.id] = 'cleared';
+    if (w.gate != null) { const g = world.gates[w.gate]; g.open = true; g.t = 0; }
+  });
+  world.border?.raise?.();
+  setLevel(2);
+  // Pinky ya se cruzó en Buenos Aires; en Francia vuelve a aparecer solo si se arranca desde el nivel 2
+  game.cameos.pinky.shown = { 1: true, 2: cp.id !== 'francia' };
+  game.cameos.onLevelStart();
+  const p = game.hero.actor.position;
+  if (cp.id === 'francia') p.set(LEVELS[1].start, 0, 0);
+  else if (cp.id === 'chase') p.set(WAVES[first].trigger - 0.5, 0, 0);
+  else p.set(GALPON_X + 8, 0, 0);
+  updateCamera(0, true);
+  if (cp.id === 'chase') {
+    game.chaseDone = true;
+    game.state = 'curtain';
+    audio.music('chase', { fade: 0 });
+    curtain(() => game.chase.start(), { label: CHECKPOINTS.chase.label });
+  } else if (cp.id === 'boss') {
+    game.chaseDone = true;
+    spawnBoss();
+  } else {
+    game.state = 'curtain';
+    curtain(() => { game.state = 'playing'; input.reset(); }, { label: CHECKPOINTS.francia.label });
+  }
+}
+game.resumeAt = resumeAt;
+
+function startRun(heroId, withIntro = false, { keepCheckpoint = false } = {}) {
+  if (!keepCheckpoint) clearCheckpoint();
   game.heroId = heroId;
   if (game.hero) game.hero.actor.dispose();
   clearRun();
@@ -307,6 +378,7 @@ function updateZones() {
       if (w.chase && !game.chaseDone) {
         if (game.enemies.alive() === 0) {
           game.chaseDone = true;
+          saveCheckpoint('chase');
           game.state = 'curtain';
           audio.music('chase', { fade: 0.4 });
           curtain(() => game.chase.start(), { label: 'LA FUGA DE CEPI' });
@@ -396,6 +468,7 @@ function endTransition() {
   $('#level-card').classList.remove('travel');
   game.state = 'playing';
   input.reset();
+  saveCheckpoint('francia');
 }
 game.startTransition = startTransition;
 
@@ -405,6 +478,7 @@ function spawnBoss({ instant = false } = {}) {
   input.reset();
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
   if (instant) { game.arena.start(); return; }
+  if (game.checkpoint?.id !== 'boss') saveCheckpoint('boss');
   game.state = 'curtain';
   curtain(() => game.arena.start(), { label: 'BIG CHAKY' });
 }
@@ -469,19 +543,32 @@ function finish(won) {
   $('#touch').classList.add('hidden');
   $('#boss-bar').classList.add('hidden');
   audio.music(null);
-  if (won) audio.sfx('fanfare');
-  ui.showResult(game.lastResult, game.heroId);
+  if (won) { audio.sfx('fanfare'); clearCheckpoint(); }
+  const cp = !won && game.checkpoint;
+  ui.showResult(game.lastResult, game.heroId, cp ? { label: CHECKPOINTS[cp.id].short, onRetry: () => resumeAt(cp) } : null);
 }
 game.finish = finish;
 
 // ---------- pausa ----------
 function pause() {
+  if (game.state === 'intro') endIntro(); // en la intro, la pausa también la saltea
   if (game.state !== 'playing' && game.state !== 'chase' && game.state !== 'arena') return;
   game.pausedFrom = game.state;
   game.state = 'paused';
   input.reset();
   audio.pauseMusic();
+  const cp = game.checkpoint;
+  $('#btn-restart').textContent = cp ? '🔁 Reintentar desde ' + CHECKPOINTS[cp.id].short : '🔁 Empezar de nuevo';
+  pauseConfirm(null);
   showScreen('screen-pause');
+}
+// Confirmación dentro de la pausa (reintentar y salir no se hacen de un solo toque)
+let confirmAction = null;
+function pauseConfirm(text, action) {
+  confirmAction = action || null;
+  $('#pause-main').classList.toggle('hidden', !!text);
+  $('#pause-confirm').classList.toggle('hidden', !text);
+  if (text) $('#pause-confirm-text').textContent = text;
 }
 function resume() {
   if (game.state !== 'paused') return;
@@ -570,7 +657,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.cameos?.onLevelStart(); game.state = 'menu'; audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.cameos?.onLevelStart(); game.state = 'menu'; paintContinue(); audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -634,8 +721,26 @@ async function boot() {
   });
   $('#btn-pause').addEventListener('click', pause);
   $('#btn-resume').addEventListener('click', resume);
-  $('#btn-restart').addEventListener('click', () => startRun(game.heroId));
-  $('#btn-home').addEventListener('click', () => game.goMenu());
+  $('#btn-restart').addEventListener('click', () => {
+    const cp = game.checkpoint;
+    pauseConfirm(cp ? `¿Volver a arrancar desde ${CHECKPOINTS[cp.id].short}?` : '¿Empezar todo de nuevo? Perdés lo que llevás.',
+      () => { showScreen(null); if (cp) resumeAt(cp); else startRun(game.heroId, false); });
+  });
+  $('#btn-home').addEventListener('click', () => {
+    const cp = game.checkpoint;
+    pauseConfirm(cp ? `¿Salir al menú? Después podés CONTINUAR desde ${CHECKPOINTS[cp.id].short}.` : '¿Salir al menú? Perdés lo que llevás de esta partida.',
+      () => game.goMenu());
+  });
+  $('#btn-confirm-yes').addEventListener('click', () => { const a = confirmAction; pauseConfirm(null); a?.(); });
+  $('#btn-confirm-no').addEventListener('click', () => { pauseConfirm(null); resume(); });
+  $('#btn-select-back').addEventListener('click', () => showScreen('screen-menu'));
+  $('#btn-continue').addEventListener('click', () => {
+    if (justStarted()) return;
+    const cp = storedCheckpoint();
+    if (!cp) return paintContinue();
+    audio.primeSpeech();
+    resumeAt(cp);
+  });
   $('#btn-ranking').addEventListener('click', () => { if (!justStarted()) ui.showRanking('screen-menu'); });
   const muteBtn = $('#btn-mute');
   const paintMute = () => { muteBtn.textContent = audio.muted ? '🔇' : '♪'; };
@@ -644,6 +749,7 @@ async function boot() {
 
   camera.position.set(6, 8, 14);
   camera.lookAt(camTarget);
+  paintContinue();
   showScreen('screen-menu');
   game.state = 'menu';
   requestAnimationFrame(frame);

@@ -18,7 +18,7 @@ for (const [hero, vp, mobile] of [['douge', { width: 960, height: 540 }, false],
     await shot(page, `arena-${hero}`);
     check(true, `${hero}: BIG CHAKY tira cosas`);
     // fase 2 → mano: se espera por estado
-    await G(page, () => window.__game.arena.logic._setHp(14));
+    await G(page, () => window.__game.arena.logic._setHp(11));
     await page.waitForFunction(() => window.__game.arena.state.hand.state !== 'none', null, { timeout: 30000 });
     await shot(page, `arena-hand-${hero}`);
     check(true, `${hero}: en fase 2 aparece la mano`);

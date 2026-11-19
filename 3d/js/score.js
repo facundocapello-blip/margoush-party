@@ -27,6 +27,8 @@ export function createScore() {
     // Puntos fijos (arena de BIG CHAKY: devolución, mano, esquive): sin multiplicador
     addFlat(n) { total += n; },
     addHit() { hits++; },
+    // Volver a un checkpoint: el puntaje que había al llegar ahí (sin combo)
+    restore(n) { total = Math.max(0, Math.round(n) || 0); hits = 0; },
     takeDamage() { hits = 0; },
     // Los bonus de vida y tiempo solo cuentan si se rescató a Margot
     finalize({ hpLeft, hpMax, seconds, won = true }) {

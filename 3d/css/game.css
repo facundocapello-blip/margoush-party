@@ -322,3 +322,10 @@ body.arena-on #labels, body.arena-on #combo { visibility: hidden; }
 #arena-ui .pop { z-index: 1; }
 /* En la arena la barra va arriba también en horizontal: abajo tapaba los pies del héroe y los avisos del piso */
 body.arena-on:not(.portrait) #boss-bar { top: calc(70px + var(--safe-t)); bottom: auto; }
+
+/* Checkpoints y confirmaciones */
+#btn-continue { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+#btn-continue small { font-family: Nunito, sans-serif; font-weight: 900; font-size: 13px; opacity: 0.85; margin-top: 2px; }
+.result-card .retry { width: 100%; font-size: 19px; }
+.confirm-text { color: #fff; font-weight: 900; font-size: 17px; text-align: center; max-width: 300px; margin: 0 0 4px; line-height: 1.3; }
+#btn-select-back { margin-top: 6px; }
