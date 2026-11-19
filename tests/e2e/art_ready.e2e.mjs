@@ -43,7 +43,7 @@ try {
 
   // BIG CHAKY camina con su tira
   await G(() => window.__game.setStage('galpon'));
-  check(await G(() => !!window.__game.boss.actor.poses.stomp && window.__game.boss.actor.poses.run.frames === 6), 'BIG CHAKY toma su caminata y su pisotón');
+  check(await G(() => window.__game.arena.active && window.__game.arena.state.bossTex.startsWith('arena_chaky')), 'BIG CHAKY aparece en su arena con su arte');
 
   // Objetos: cada uno sale de su cuadro de la grilla
   const it = await G(async () => { const m = await import('/3d/js/items.js'); const t = m.itemTex(window.__game.ctx.assets, 'pelota', '🎾'); return { rx: t.repeat.x, ox: t.offset.x, oy: t.offset.y }; });

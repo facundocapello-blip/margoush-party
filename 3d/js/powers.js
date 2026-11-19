@@ -57,11 +57,6 @@ export function createPowers(ctx) {
       onHit?.(e);
       n++;
     }
-    const b = game.boss;
-    if (b && !b.dead && inside(b.pos.x, b.pos.z, x, z, rx + 0.8, rz + 0.4)) {
-      const side = Math.sign(b.pos.x - x) || 1;
-      if (b.hitArea({ x: b.pos.x - side * 0.5, z: b.pos.z, facing: side, reach: 1, depth: 1, dmg, strength })) n++;
-    }
     n += game.props.hitArea({ x: x - rx, z, facing: 1, reach: rx * 2, depth: rz });
     return n;
   }
@@ -91,7 +86,6 @@ export function createPowers(ctx) {
       spins.push({ x, z, t: 0, meshes: [pan], pan });
       // aturde y quema a los de alrededor
       game.enemies.stunAround(x, z, P.radius, P.stun, 0);
-      game.boss?.stunAround?.(x, z, P.radius);
       hitAround(x, z, P.radius, P.depth, P.dmg, 3, 1.2);
       // fuego en el piso (no lastima a Marine)
       const disc = new THREE.Mesh(fireDisc, new THREE.MeshBasicMaterial({ color: 0xff6a1a, transparent: true, opacity: 0.4, depthWrite: false }));
@@ -156,7 +150,6 @@ export function createPowers(ctx) {
           for (const e of game.enemies.list) {
             if (e.hp > 0 && inside(e.pos.x, e.pos.z, f.x, f.z, F.radius, F.depth)) game.enemies.hitEnemy(e, Math.sign(e.pos.x - f.x) || 1, F.dmg, 1.5, 1);
           }
-          game.boss?.hitArea?.({ x: f.x - F.radius, z: f.z, facing: 1, reach: F.radius * 2, depth: F.depth, dmg: F.dmg, strength: 1 });
         }
         if (f.t <= 0) drop(fires, i);
       }

@@ -13,7 +13,7 @@ import { createPsycho } from './psycho.js';
 import { createPowers } from './powers.js';
 import { createFacu } from './facu.js';
 import { createCameos } from './cameos.js';
-import { createBoss } from './boss.js';
+import { createArena } from './arena.js';
 import { createChase } from './chase.js';
 import { createStory } from './story.js';
 import { createAudio } from './audio.js';
@@ -43,7 +43,6 @@ const game = {
   hero: null,
   enemies: null,
   props: null,
-  boss: null,
   score: createScore(),
   time: 0,
   stats: { maxMult: 1 },
@@ -196,6 +195,7 @@ function clearRun() {
   game.levelExit = false;
   game.chase?.dispose();
   game.chaseDone = false;
+  game.bossStarted = false;
   game.enemies?.resetIntros?.();
   game.enemies?.clear();
   game.butter?.clear();
@@ -203,8 +203,7 @@ function clearRun() {
   game.psycho?.stop();
   game.powers?.clear();
   game.traps?.reset();
-  game.boss?.dispose();
-  game.boss = null;
+  game.arena?.dispose();
   game.story?.endIntro();
   game.story?.resetCage();
   fx.clear();
@@ -310,7 +309,7 @@ function updateZones() {
     if (x >= end) { game.levelExit = false; startTransition(); return; }
   }
   const last = WAVES[WAVES.length - 1];
-  if (!game.boss && game.level === 2 && game.waves[last.id] === 'cleared' && x > world.galponX + 6) spawnBoss();
+  if (!game.bossStarted && game.level === 2 && game.waves[last.id] === 'cleared' && x > world.galponX + 6) spawnBoss();
 }
 
 // ---------- cambio de nivel ----------
@@ -384,10 +383,11 @@ function endTransition() {
 game.startTransition = startTransition;
 
 function spawnBoss() {
-  game.boss = createBoss(game.ctx, world.bounds.maxX - 14);
-  game.banner('👑 BIG CHAKY', '«¡De acá no pasa nadie! ¡La nena se queda conmigo!»');
+  game.bossStarted = true;
   game.ctx.audio?.music('boss');
   game.ctx.audio?.sfx('roar');
+  input.reset();
+  game.arena.start();
 }
 
 game.onBossDown = () => {
@@ -459,7 +459,7 @@ game.finish = finish;
 
 // ---------- pausa ----------
 function pause() {
-  if (game.state !== 'playing' && game.state !== 'chase') return;
+  if (game.state !== 'playing' && game.state !== 'chase' && game.state !== 'arena') return;
   game.pausedFrom = game.state;
   game.state = 'paused';
   input.reset();
@@ -470,7 +470,7 @@ function resume() {
   if (game.state !== 'paused') return;
   input.reset();
   showScreen(null);
-  game.state = game.pausedFrom === 'chase' && game.chase.active ? 'chase' : 'playing';
+  game.state = game.pausedFrom === 'chase' && game.chase.active ? 'chase' : game.pausedFrom === 'arena' && game.arena.active ? 'arena' : 'playing';
   audio.resumeMusic();
   last = 0;
 }
@@ -489,6 +489,13 @@ function frame(now) {
     if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
     if (game.chase.active) { game.chase.render(); requestAnimationFrame(frame); return; }
   }
+  // Arena de BIG CHAKY: también tiene su propia escena (sigue dibujándose en pausa)
+  if (game.arena.active && game.state !== 'arena' && game.state !== 'paused') game.arena.dispose();
+  if (game.arena.active) {
+    if (game.state === 'arena') game.arena.update(dt);
+    if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
+    if (game.arena.active) { game.arena.render(); requestAnimationFrame(frame); return; }
+  }
   if (game.state === 'playing') {
     const t0 = performance.now();
     if (input.consume('pause')) pause();
@@ -502,7 +509,6 @@ function frame(now) {
       game.powers.update(dt);
       game.facu.update(dt);
       game.cameos.update(dt);
-      game.boss?.update(dt);
       game.props.update(dt, game.time);
       updateZones();
       game.combo.update(dt);
@@ -519,7 +525,6 @@ function frame(now) {
   } else if (game.state === 'rescue') {
     game.rescueT += dt;
     const step = game.story.updateRescue(dt, game.rescueT);
-    game.boss?.update(dt);
     game.facu.update(dt);
     if (step === 'photo') game.wantPhoto = true;
     if (step === 'done') finish(true);
@@ -566,6 +571,11 @@ async function boot() {
   game.pickups = game.props.pickups;
   game.crates = game.props.crates;
   game.story = createStory(ctx);
+  game.arena = createArena({
+    game, input, audio, assets, renderer, banner: game.banner, updateHud, pause, POWER,
+    onWin() { game.state = 'playing'; last = 0; game.onBossDown(); },
+    onDown() { game.state = 'playing'; finish(false); }
+  });
   game.chase = createChase({
     game, input, audio, assets, renderer, banner: game.banner, updateHud, pause, POWER,
     // Lo alcanzaste: el BYD quedó sin batería y Cepi se baja con la paleta (oleada «boulevard»)

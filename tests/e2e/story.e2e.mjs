@@ -15,23 +15,22 @@ try {
   await page.waitForFunction(() => window.__game.state === 'playing', null, { timeout: 2000 });
   check(Date.now() - t0 < 1000, `un toque saltea la intro (${Date.now() - t0} ms)`);
 
-  // Jefe
+  // Jefe: la pelea es en la arena (escena propia)
   await G(() => window.__game.setStage('galpon'));
-  check(await G(() => window.__game.boss && window.__game.boss.hp === 30 && window.__game.boss.hpMax === 30), 'en el galpón aparece BIG CHAKY con 30 de vida');
+  await page.waitForFunction(() => window.__game.state === 'arena' && window.__game.arena.active, null, { timeout: 5000 });
+  check(await G(() => window.__game.arena.logic.state.hp === 30 && window.__game.arena.logic.state.hpMax === 30), 'en el galpón arranca la arena con BIG CHAKY y 30 de vida');
+  await G(() => { const h = window.__game.hero; h.hp = h.hpMax = 99; });
   await page.waitForTimeout(1500);
   await shot(page, 'boss');
-  // Con defensa: casi no siente golpes fuera de sus momentos expuestos
-  const guarded = await G(() => { const b = window.__game.boss; const h0 = b.hp; b.exposedT = 0; b.stun = 0; b.hitArea({ x: b.pos.x - 1, z: b.pos.z, facing: 1, reach: 2, depth: 1, dmg: 3, knock: 0, strength: 1 }); b.inv = 0; return h0 - b.hp; });
-  check(guarded > 0 && guarded < 1.5, `fuera de sus momentos expuestos casi no siente los golpes (${guarded.toFixed(2)} de 3)`);
-  const hit = (dmg) => G((d) => { const b = window.__game.boss; b.expose(3); b.inv = 0; return b.hitArea({ x: b.pos.x - 1, z: b.pos.z, facing: 1, reach: 2, depth: 1, dmg: d, knock: 0, strength: 1 }); }, dmg);
-  await hit(15);
-  check(await G(() => window.__game.boss.phase) === 2, 'a la mitad de vida pasa a la fase 2');
-  const before = await G(() => window.__game.score.total);
+  await G(() => window.__game.arena.logic._setHp(14));
   await page.waitForTimeout(300);
-  await hit(15);
-  await page.waitForTimeout(400);
+  check(await G(() => window.__game.arena.state.phase) === 2, 'a la mitad de vida pasa a la fase 2');
+  const before = await G(() => window.__game.score.total);
+  await G(() => window.__game.arena.logic._setHp(0));
+  // GPU por software: se espera por estado, no por tiempo
+  await page.waitForFunction(() => window.__game.state === 'rescue', null, { timeout: 15000 });
   check(await G(() => window.__game.score.total) - before >= 2000, 'derrotarlo da 2000 puntos');
-  check(await G(() => window.__game.state) === 'rescue', 'arranca el rescate');
+  check(true, 'arranca el rescate');
   await page.waitForTimeout(1200);
   await shot(page, 'rescue');
   await page.waitForFunction(() => window.__game.story.rescue?.picked, null, { timeout: 6000 });
