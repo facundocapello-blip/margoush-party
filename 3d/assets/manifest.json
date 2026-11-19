@@ -767,15 +767,5 @@
   "rows": 1,
   "skull": 141.0,
   "foot": 0.996
- },
- "douge_run_sheet": {
-  "file": "douge_run_sheet.webp",
-  "w": 3876,
-  "h": 512,
-  "frames": 12,
-  "cols": 12,
-  "rows": 1,
-  "skull": 138.0,
-  "foot": 0.99
  }
 }
