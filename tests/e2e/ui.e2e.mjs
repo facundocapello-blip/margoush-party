@@ -5,7 +5,7 @@ const posts = [];
 let rows = [];
 let offline = false;
 const routes = [
-  ['**/3d/js/config.js', r => r.fulfill({ contentType: 'application/javascript', body: `export const SUPABASE_URL='${SB}'; export const SUPABASE_ANON_KEY='test-key';` })],
+  [/\/3d\/js\/config\.js(\?.*)?$/, r => r.fulfill({ contentType: 'application/javascript', body: `export const SUPABASE_URL='${SB}'; export const SUPABASE_ANON_KEY='test-key';` })],
   [SB + '/**', async (route) => {
     if (offline) return route.abort();
     const req = route.request();
