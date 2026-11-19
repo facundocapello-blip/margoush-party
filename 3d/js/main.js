@@ -11,7 +11,6 @@ import { createProps } from './props.js';
 import { createButter } from './butter.js';
 import { createPsycho } from './psycho.js';
 import { createPowers } from './powers.js';
-import { createFacu } from './facu.js';
 import { createCameos } from './cameos.js';
 import { createArena } from './arena.js';
 import { createChase } from './chase.js';
@@ -227,8 +226,6 @@ function startRun(heroId, withIntro = false) {
   const ctx = game.ctx;
   game.hero = createHero(heroId, ctx);
   game.hero.actor.position.set(LEVELS[0].start, 0, 0.5);
-  game.facu?.dispose();
-  game.facu = createFacu(ctx);
   game.score = createScore();
   game.stats = { maxMult: 1 };
   game.props.reset();
@@ -244,7 +241,7 @@ function startRun(heroId, withIntro = false) {
   clearBanners();
   $('#boss-bar').classList.add('hidden');
   // En la intro no suena el tema del héroe (solo los efectos del secuestro); arranca al empezar a jugar
-  audio.music(withIntro ? null : heroId);
+  audio.music(withIntro ? null : 'street', { fade: 0 });
   if (withIntro) { game.state = 'intro'; game.story.startIntro(); }
   else game.state = 'playing';
   updateRotateHint();
@@ -253,9 +250,31 @@ function startRun(heroId, withIntro = false) {
 function endIntro() {
   game.story.endIntro();
   game.state = 'playing';
-  audio.music(game.heroId);
+  audio.music('street');
   input.reset();
 }
+
+// ---------- cortina entre tramos ----------
+// Tapa la pantalla con tres franjas en diagonal, hace el cambio (mid) con la pantalla tapada y destapa.
+// La usan todos los cambios de tramo para que se sientan iguales. label: nombre corto del tramo que empieza.
+let curtainBusy = false;
+function curtain(mid, { label = '', hold = 0 } = {}) {
+  const c = $('#curtain');
+  if (curtainBusy || !c) { mid(); return; }
+  curtainBusy = true;
+  c.querySelector('b').textContent = label;
+  c.classList.remove('open'); void c.offsetWidth; c.classList.add('close');
+  audio.sfx('whoosh');
+  const cover = 420 + (label ? 450 : 0) + hold * 1000;
+  setTimeout(() => {
+    try { mid(); } finally {
+      c.classList.remove('close'); void c.offsetWidth; c.classList.add('open');
+      setTimeout(() => { c.classList.remove('open'); curtainBusy = false; }, 560);
+    }
+  }, cover);
+}
+game.curtain = curtain;
+Object.defineProperty(game, 'curtainBusy', { get: () => curtainBusy });
 
 // ---------- zonas ----------
 function openGate(i) {
@@ -286,13 +305,16 @@ function updateZones() {
     if (st === 'idle' && x > w.trigger) {
       // Le boulevard: antes de la pelea, Cepi se escapa en su BYD y se lo persigue hacia el fondo
       if (w.chase && !game.chaseDone) {
-        if (game.enemies.alive() === 0) { game.chaseDone = true; game.chase.start(); }
+        if (game.enemies.alive() === 0) {
+          game.chaseDone = true;
+          game.state = 'curtain';
+          audio.music('chase', { fade: 0.4 });
+          curtain(() => game.chase.start(), { label: 'LA FUGA DE CEPI' });
+        }
         break;
       }
       game.waves[w.id] = 'active';
       game.enemies.spawnWave(w.id);
-      // Sin cartel de título por tanda; Facu sigue tirando sus comentarios
-      if (w.facu) game.facu.say(w.facu, 3.4);
       break;
     }
     if (st === 'active' && game.enemies.alive() === 0) {
@@ -350,15 +372,12 @@ function updateTransition(dt) {
   }
   a.setPose(walking ? 'run' : 'idle');
   a.update(dt, speed);
-  if (!game.transCrossed && p.x >= BORDER_X + 0.5) {
+  // Al cruzar la frontera (o si tarda demasiado) la cortina tapa y Francia arranca ya lista, sin esperas
+  if (!game.transCrossed && (p.x >= BORDER_X + 0.5 || game.transT > TRANSITION_MAX_S)) {
     game.transCrossed = true;
-    const w = $('#border-wipe');
-    w.classList.remove('go'); void w.offsetWidth; w.classList.add('go');
     audio.sfx('secret');
-    $('#level-card').classList.add('hidden');
+    curtain(() => { if (game.state === 'transition') endTransition(); }, { label: `NIVEL ${next.id} · ${next.name}` });
   }
-  game.facu.celebrate(dt);
-  if (p.x >= next.start || game.transT > TRANSITION_MAX_S) endTransition();
 }
 
 function endTransition() {
@@ -373,8 +392,6 @@ function endTransition() {
   h.actor.setPose('idle');
   h.hp = Math.min(h.hpMax, h.hp + 2);
   h.inv = 0;
-  game.facu.reset();
-  game.facu.france(L.start + 4); // Facu con boina y baguette: «¡Allez, allez!»
   $('#level-card').classList.add('hidden');
   $('#level-card').classList.remove('travel');
   game.state = 'playing';
@@ -382,12 +399,14 @@ function endTransition() {
 }
 game.startTransition = startTransition;
 
-function spawnBoss() {
+// La arena de BIG CHAKY: con la cortina en el juego; instant (atajo de pruebas) entra directo
+function spawnBoss({ instant = false } = {}) {
   game.bossStarted = true;
-  game.ctx.audio?.music('boss');
-  game.ctx.audio?.sfx('roar');
   input.reset();
-  game.arena.start();
+  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  if (instant) { game.arena.start(); return; }
+  game.state = 'curtain';
+  curtain(() => game.arena.start(), { label: 'BIG CHAKY' });
 }
 
 game.onBossDown = () => {
@@ -433,10 +452,8 @@ game.setStage = (id) => {
   setLevel(target.level);
   p.set(st.at, 0, 0);
   if (st.wave) { game.waves[st.wave] = 'active'; game.enemies.spawnWave(st.wave); }
-  if (st.boss) spawnBoss();
+  if (st.boss) spawnBoss({ instant: true });
   clearBanners();
-  // Saltar a una etapa (solo pruebas): Facu no aparece salvo que la prueba lo pida
-  game.facu.reset(); game.facu.jokeCd = 99;
   updateCamera(0, true);
 };
 
@@ -507,7 +524,6 @@ function frame(now) {
       game.butter.update(dt);
       game.psycho.update(dt);
       game.powers.update(dt);
-      game.facu.update(dt);
       game.cameos.update(dt);
       game.props.update(dt, game.time);
       updateZones();
@@ -525,7 +541,6 @@ function frame(now) {
   } else if (game.state === 'rescue') {
     game.rescueT += dt;
     const step = game.story.updateRescue(dt, game.rescueT);
-    game.facu.update(dt);
     if (step === 'photo') game.wantPhoto = true;
     if (step === 'done') finish(true);
   }

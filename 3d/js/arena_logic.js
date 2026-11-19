@@ -11,13 +11,14 @@
 export const ARENA = {
   hp: 30,
   xMax: 4.2, zNear: 0, zFar: -7, bossZ: -16, bossSway: 3,
-  returnWindow: 0.3,   // s antes de que el barril llegue al héroe en los que el golpe lo devuelve
-  returnDmg: 3.75,     // 4 devoluciones = la mitad de la vida
+  returnWindow: 0.45,  // s antes de que el barril llegue al héroe en los que el golpe lo devuelve (holgado en el celular)
+  returnDmg: 5,        // 3 devoluciones = la mitad de la vida
   handDmg: 1.5,        // multiplica el daño del golpe
   powerDmg: 4,
   hitR: 1.05,
-  phase1: { throwEvery: [2.2, 3.2], goldEvery: 3, barrelSpeed: 7, crateTime: 1.1 },
-  phase2: { throwEvery: [1.5, 2.3], goldEvery: 4, slamEvery: 2, slamWarn: 0.9, stuck: 2.0 },
+  // Ritmo: tira seguido y a veces en ráfaga (un segundo barril enseguida), así siempre hay algo para esquivar o devolver
+  phase1: { throwEvery: [1.2, 1.8], goldEvery: 2, barrelSpeed: 7, crateTime: 1.1, salvo: 0.35, salvoGap: 0.5 },
+  phase2: { throwEvery: [1.0, 1.6], goldEvery: 3, slamEvery: 2, slamWarn: 0.9, stuck: 2.0, salvo: 0.45, salvoGap: 0.45 },
   points: { returned: 300, hand: 50, dodge: 100 }
 };
 
@@ -48,6 +49,7 @@ export function createArenaLogic({ rand = Math.random } = {}) {
   let timer = 0;               // s hasta la próxima acción
   let throws = 0, barrels = 0; // contadores de la fase actual
   let sinceSlam = 0;           // tiros desde el último manotazo
+  let salvoed = false;         // el último tiro ya fue parte de una ráfaga
   let firstLine = false;
   let handLock = 0;            // s hasta poder volver a pegarle a la mano
   let poseName = null, poseT = 0; // pose forzada (hurt / rage) y cuánto dura
@@ -175,7 +177,14 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     if (poseT > 0) poseT -= dt;
     if (handLock > 0) handLock -= dt;
     timer -= dt;
-    if (timer <= 0) { release(hero, evs); timer = interval(); }
+    if (timer <= 0) {
+      const n = state.shots.length;
+      release(hero, evs);
+      const c = cfg(), threw = state.shots.length > n && state.shots[state.shots.length - 1].kind === 'barrel';
+      // ráfaga: después de un barril, a veces sale otro enseguida (nunca tres seguidos)
+      if (threw && !salvoed && c.salvo && rand() < c.salvo) { timer = c.salvoGap; salvoed = true; }
+      else { timer = interval(); salvoed = false; }
+    }
     moveShots(dt, hero, evs);
     if (state.phase !== 'ko') moveHand(dt, hero, evs);
     // si lo noquearon en este cuadro, ningún golpe al héroe del mismo cuadro vale

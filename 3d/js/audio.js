@@ -112,11 +112,14 @@ export function createAudio(assets) {
   let muted = false;
   try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (_) {}
   let ac = null, master = null, noise = null;
+  // Música por tramo, como en los juegos profesionales: un tema de calle (el mismo para los dos héroes),
+  // otro para la persecución y otro para el jefe; al cambiar de tramo se funde en vez de cortarse.
   const themes = {
-    douge: Object.assign(new Audio(assets.url('music_douge')), { loop: true, volume: 0.4, preload: 'none' }),
-    marine: Object.assign(new Audio(assets.url('music_marine')), { loop: true, volume: 0.4, preload: 'none' })
+    street: Object.assign(new Audio(assets.url('music_street')), { loop: true, volume: 0.4, preload: 'none' })
   };
-  let current = null; // 'douge' | 'marine' | 'boss' | 'menu' | null
+  let current = null; // 'street' | 'chase' | 'boss' | 'menu' | null
+  let musicBus = null, out = null; // out: adónde van los tonos (efectos → master, temas sintetizados → musicBus)
+  let fadeTimer = null;
   let paused = false;
 
   function ensure() {
@@ -128,6 +131,7 @@ export function createAudio(assets) {
       master.gain.value = muted ? 0 : 0.8;
       const comp = ac.createDynamicsCompressor();
       master.connect(comp); comp.connect(ac.destination);
+      musicBus = ac.createGain(); musicBus.connect(master); out = master;
       const len = ac.sampleRate * 0.4;
       noise = ac.createBuffer(1, len, ac.sampleRate);
       const d = noise.getChannelData(0);
@@ -138,7 +142,7 @@ export function createAudio(assets) {
         try {
           const src = ac.createMediaElementSource(t);
           const g = ac.createGain(); g.gain.value = MUSIC_GAIN;
-          src.connect(g); g.connect(master);
+          src.connect(g); g.connect(musicBus);
           t.volume = 1; t.routed = true;
         } catch (_) {}
       }
@@ -160,7 +164,7 @@ export function createAudio(assets) {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(master);
+    o.connect(g); g.connect(out || master);
     o.start(t); o.stop(t + dur + 0.05);
   }
   function hiss(dur, vol, freq, q = 1, delay = 0) {
@@ -169,7 +173,7 @@ export function createAudio(assets) {
     const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
     const g = ac.createGain();
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f); f.connect(g); g.connect(master);
+    s.connect(f); f.connect(g); g.connect(out || master);
     s.start(t); s.stop(t + dur + 0.05);
   }
 
@@ -261,13 +265,26 @@ export function createAudio(assets) {
       if (bar >= 4) for (const [at, f, len] of MENU_LEAD[bar % 4]) if (at === i) { tone('square', f, f, len * step * 0.95, 0.045, d); tone('triangle', f, f, len * step, 0.05, d); }
     } }
   };
+  // Persecución: rápido y con empuje (Re mayor, D–Bm–G–A), bombo en negras, bajo en corcheas y arpegio arriba
+  const CHASE_CHORDS = [[146.83, [293.66, 369.99, 440]], [123.47, [246.94, 293.66, 369.99]], [98, [196, 246.94, 293.66]], [110, [220, 277.18, 329.63]]];
+  SYNTH.chase = { step: 0.105, play(n, d) {
+    const i = n % 16, bar = Math.floor(n / 16) % 4;
+    const [root, triad] = CHASE_CHORDS[bar];
+    if (i % 4 === 0) tone('sine', 150, 45, 0.15, 0.5, d);
+    if (i === 4 || i === 12) { hiss(0.1, 0.22, 1900, 0.7, d); tone('triangle', 230, 180, 0.07, 0.07, d); }
+    if (i % 2 === 1) hiss(0.025, 0.05, 8500, 2, d);
+    if (i % 2 === 0) { const f = i % 4 === 2 ? root * 2 : root; tone('sawtooth', f, f, 0.18, 0.07, d); }
+    { const f = triad[[0, 1, 2, 1][i % 4]] * 2; tone('square', f, f, 0.09, i % 4 === 0 ? 0.035 : 0.022, d); }
+    if (i === 0) for (const f of triad) tone('triangle', f, f, 1.6, 0.025, d);
+  } };
   let synthTimer = null, synthStep = 0, synthNext = 0;
   function synthTick() {
     const theme = SYNTH[current];
     if (!ac || !theme || paused) { synthNext = ac ? ac.currentTime + 0.1 : 0; return; }
     if (synthNext < ac.currentTime) synthNext = ac.currentTime + 0.05;
     while (synthNext < ac.currentTime + 0.3) {
-      theme.play(synthStep, synthNext - ac.currentTime);
+      out = musicBus || master;
+      try { theme.play(synthStep, synthNext - ac.currentTime); } finally { out = master; }
       synthStep++; synthNext += theme.step;
     }
   }
@@ -292,22 +309,36 @@ export function createAudio(assets) {
       if (muted || !ensure()) return;
       try { SFX[name]?.(); } catch (_) {}
     },
-    music(name) {
-      stopAll();
-      current = name;
-      paused = false;
-      if (!name) return;
-      if (SYNTH[name]) {
-        if (!ensure()) return;
-        synthStep = 0; synthNext = ac.currentTime + 0.1;
-        synthTimer = setInterval(synthTick, 90);
-        return;
-      }
-      ensure();
-      const t = themes[name];
-      t.muted = muted && !t.routed;
-      try { t.currentTime = 0; } catch (_) {}
-      t.play().catch(() => {});
+    // Cambia de tema con un fundido corto (fade = segundos de salida). Si ya suena ese tema, sigue sin cortarse.
+    music(name, { fade = 0.45 } = {}) {
+      if (name === current && !paused && !fadeTimer) return;
+      if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null; }
+      const begin = () => {
+        fadeTimer = null;
+        stopAll();
+        current = name;
+        paused = false;
+        if (musicBus) { const g = musicBus.gain, t0 = ac.currentTime; g.cancelScheduledValues(t0); g.setValueAtTime(0.0001, t0); g.linearRampToValueAtTime(1, t0 + 0.35); }
+        if (!name) return;
+        if (SYNTH[name]) {
+          if (!ensure()) return;
+          synthStep = 0; synthNext = ac.currentTime + 0.1;
+          synthTimer = setInterval(synthTick, 90);
+          return;
+        }
+        ensure();
+        const t = themes[name];
+        if (!t) return;
+        t.muted = muted && !t.routed;
+        try { t.currentTime = 0; } catch (_) {}
+        t.play().catch(() => {});
+      };
+      const playing = current && !paused && musicBus && ac;
+      if (!playing || fade <= 0) return begin();
+      current = name; // ya cuenta como pedido (evita repetir el fundido)
+      const g = musicBus.gain, t0 = ac.currentTime;
+      g.cancelScheduledValues(t0); g.setValueAtTime(g.value, t0); g.linearRampToValueAtTime(0.0001, t0 + fade);
+      fadeTimer = setTimeout(begin, fade * 1000);
     },
     // Estira o acelera la música de fondo (hongo venenoso); 1 = normal
     warp(rate) {

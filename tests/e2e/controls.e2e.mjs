@@ -9,7 +9,7 @@ const box = async (s) => (await page.$(s)).boundingBox();
 const quiet = (x = 170) => G((x) => {
   const g = window.__game; g.setStage('francia-quiet'); g.enemies.clear(); g.traps.disable(); g.butter?.clear(); g.powers?.clear();
   for (const k in g.waves) g.waves[k] = 'cleared';
-  g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 0; g.hero.power = 0; g.hero.actor.position.set(x, 0, 0); g.hero.actor.setFacing(1); g.facu.jokeCd = 99;
+  g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 0; g.hero.power = 0; g.hero.actor.position.set(x, 0, 0); g.hero.actor.setFacing(1);
 }, x);
 
 try {

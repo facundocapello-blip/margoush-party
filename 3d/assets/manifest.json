@@ -137,25 +137,8 @@
   "rows": 2,
   "skull": 136.5
  },
- "facu": {
-  "file": "facu.webp",
-  "w": 395,
-  "h": 783,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 229.5
- },
- "music_douge": {
-  "file": "music_douge.mp3",
-  "w": 0,
-  "h": 0,
-  "frames": 0,
-  "cols": 0,
-  "rows": 0
- },
- "music_marine": {
-  "file": "music_marine.mp3",
+ "music_street": {
+  "file": "music_street.mp3",
   "w": 0,
   "h": 0,
   "frames": 0,

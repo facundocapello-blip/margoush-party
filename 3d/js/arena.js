@@ -13,7 +13,8 @@ const DASH_SPEED = 11;     // m/s durante el esquive
 const COMBO_WINDOW = 0.45; // s para encadenar el siguiente golpe
 const HURT_POSE = 0.5;     // s con la pose de golpeado
 const INV = 1.3;           // s invulnerable después de un golpe
-const END_DELAY = 1.6;     // s entre el ko (o caer) y salir de la arena
+const END_DELAY = 1.2;     // s entre el ko (o caer) y salir de la arena
+const ENTRANCE = 1.5;      // s de entrada: la cámara baja desde arriba, BIG CHAKY ruge y recién ahí empieza a tirar
 const HERO_H = 2.4, BOSS_H = 14, BARREL_H = 1.15, CRATE_H = 1.3;
 // BIG CHAKY parado sobre la tarima, enorme: la cámara va lejos y alta para que mida ≥ 2,5 veces al héroe en pantalla
 const TARIMA_H = 0.6, TARIMA_FRONT = ARENA.bossZ + 2.4, TARIMA_BACK = ARENA.bossZ - 5;
@@ -177,7 +178,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
 
     // Estado del héroe y de la escena
     let x = 0, z = -1.5, y = 0, vy = 0, t = 0;
-    let phase = 'fight', phaseT = 0, ended = false;
+    let phase = 'entrance', phaseT = 0, ended = false, closing = false;
     let dashT = 0, dashCd = 0, dashX = 0, dashZ = 0, inv = 0, hurtT = 0, holdT = 0, powT = 0;
     let swing = null, swingT = 0, swingHit = false, combo = 0, comboWindow = 0, buffer = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_chaky_idle';
@@ -244,6 +245,12 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       swing = SWINGS[combo]; swingT = 0; swingHit = false;
       sfx(combo === 2 ? 'hitHeavy' : 'swing');
     }
+    // Salida con la cortina (se tapa, cambia la escena y se destapa)
+    function close(won) {
+      if (closing) return;
+      closing = true;
+      if (game.curtain) game.curtain(() => end(won)); else end(won);
+    }
     function end(won) {
       if (ended) return;
       ended = true;
@@ -301,11 +308,13 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
 
       // La lógica de BIG CHAKY (se congela si el héroe cayó)
+      if (phase === 'entrance' && phaseT >= ENTRANCE) { phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.35, 0.45); }
       if (phase === 'fight') handle(logic.update(dt, { x, z, y, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
+      if (phase === 'fight' && hero.hp <= 0) { phase = 'down'; phaseT = 0; }
       else if (phase === 'ko') logic.update(dt, { x, z, y, dodging: false, inv: true });
 
-      if (phase === 'ko' && phaseT >= END_DELAY) return end(true);
-      if (phase === 'down' && phaseT >= END_DELAY) return end(false);
+      if (phase === 'ko' && phaseT >= END_DELAY) return close(true);
+      if (phase === 'down' && phaseT >= END_DELAY) return close(false);
       draw(dt);
       updateHud(dt);
     }
@@ -315,8 +324,10 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       // Cámara detrás y arriba del héroe, mirando a BIG CHAKY
       shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
-      cam.position.set(x * 0.4 + (Math.random() - 0.5) * sh, CAM.y + (Math.random() - 0.5) * sh, z + CAM.back);
-      cam.lookAt(0, CAM.lookY, ARENA.bossZ);
+      // Entrada: la cámara baja desde arriba y atrás hasta su lugar
+      const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
+      cam.position.set(x * 0.4 + (Math.random() - 0.5) * sh, CAM.y + e * 7 + (Math.random() - 0.5) * sh, z + CAM.back + e * 9);
+      cam.lookAt(0, CAM.lookY + e * 2, ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
       // BIG CHAKY: la pose de la lógica, salvo en el manotazo (una sola mano a la vista):

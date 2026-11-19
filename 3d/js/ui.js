@@ -1,5 +1,4 @@
 import { sanitizeNickname } from './ranking.js';
-import { FACU_LINES } from './facu.js';
 
 const NICK_KEY = 'margoush3d_nick';
 const HERO_NAME = { douge: 'Douge', marine: 'Marine' };
@@ -16,7 +15,7 @@ const el = (tag, props = {}, children = []) => {
   for (const c of [].concat(children)) if (c) n.append(c);
   return n;
 };
-// Si perdiste, en vez de Facu aparece Cepi «el Niño», el hermano, enojadísimo y tirando trompadas
+// Si perdiste, aparece Cepi «el Niño», el hermano, enojadísimo y tirando trompadas
 export const CEPI_LINES = ['¡¿Perdiste?! ¡No te lo puedo creer!', '¡Dale, que es fácil, che!', '¡Andá a jugar a la bolita!', '¡Hasta Margot lo hacía mejor!'];
 const fmt = (n) => Math.round(n).toLocaleString('es-AR');
 
@@ -34,11 +33,7 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
     resultEl.replaceChildren();
     const cepiSheet = assets.has?.('cepi_sheet');
     const host = result.won
-      // Facu asoma de golpe por un costado, dice una frase y se va (ya no presenta el puntaje)
-      ? el('div', { class: 'host peek' }, [
-        el('img', { src: assets.url('facu'), alt: 'Facu' }),
-        el('div', { class: 'host-bubble', text: FACU_LINES.result[Math.floor(Math.random() * FACU_LINES.result.length)] })
-      ])
+      ? null
       : el('div', { id: 'cepi', class: 'host cepi' + (cepiSheet ? '' : ' no-sheet') }, [
         cepiSheet
           ? el('div', { class: 'cepi-sprite', role: 'img', 'aria-label': 'Cepi, enojado', style: `background-image:url("${assets.url('cepi_sheet')}")` })
@@ -114,7 +109,7 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
       status,
       el('div', { class: 'btn-row' }, [again, toRank, menu])
     ]);
-    resultEl.append(el('div', { class: 'result-wrap' }, [host, card]));
+    resultEl.append(el('div', { class: 'result-wrap' }, host ? [host, card] : [card]));
     showScreen('screen-result');
 
     // El puntaje sube contando

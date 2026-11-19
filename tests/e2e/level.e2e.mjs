@@ -40,7 +40,7 @@ try {
   await waitFor(() => window.__game.state === 'playing' && window.__game.level === 2, 9000);
   const s2 = await G(() => ({ x: window.__game.hero.actor.position.x, hp: window.__game.hero.hp }));
   check(s2.x >= 152, `el Nivel 2 arranca en Francia (x=${s2.x.toFixed(1)})`);
-  check(await G(() => window.__game.transCrossed && document.querySelector('#border-wipe').classList.contains('go')), 'cruza caminando bajo el arco y pasa la franja azul-blanco-rojo');
+  check(await G(() => window.__game.transCrossed), 'cruza caminando bajo el arco y entra con la cortina');
   check(s2.hp === 4, `la transición cura 2 corazones (hp ${s2.hp})`);
   check(await G(() => window.__game.traps.active.length) === 0, 'ninguna trampa de Buenos Aires pasa a Francia');
 

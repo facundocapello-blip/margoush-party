@@ -208,7 +208,16 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       }
       pop(x, 2.6, -dist - 2, '👊', '#fff', 22);
     }
+    // Salida con la cortina: se tapa, se cambia de escena y se destapa (la música vuelve a la de la calle)
+    let closing = false;
+    function close(won) {
+      if (closing) return;
+      closing = true;
+      if (won) audio?.music?.('street', { fade: 0.4 });
+      if (game.curtain) game.curtain(() => end(won)); else end(won);
+    }
     function end(won) {
+      if (!cur) return;
       const secs = t;
       dispose();
       game.time += secs;
@@ -308,9 +317,9 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
           pop(x, 3, -dist, '¡ALCANZASTE A CEPI! +' + CHASE.catchBonus, '#ffd36e', 26); sfx('clear');
         }
         if (dist > stopAt) dist = stopAt;
-        if (phase === 'end' && phaseT > 2.2) return end(true);
+        if (phase === 'end' && phaseT > 1.3) return close(true);
       }
-      if (phase === 'down' && phaseT > 1.6) return end(false);
+      if (phase === 'down' && phaseT > 1.3) return close(false);
 
       // Batería del BYD = cuánto falta para el cargador
       const bat = Math.max(0, Math.round(100 * (1 - dist / (LEN - 6))));
@@ -321,7 +330,9 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
 
     function draw(dt, carZ = -(dist + gap)) {
       const pz = -dist;
-      cam.position.set(x * 0.55, 4.1 + y * 0.25, pz + 7.8); cam.lookAt(x * 0.3, 1.3, pz - 12);
+      // Entrada: la cámara llega desde arriba y atrás en el primer segundo (no aparece quieta)
+      const ik = Math.max(0, 1 - t / 1.1), ie = ik * ik * (3 - 2 * ik);
+      cam.position.set(x * 0.55, 4.1 + y * 0.25 + ie * 5, pz + 7.8 + ie * 7); cam.lookAt(x * 0.3, 1.3 - ie * 0.8, pz - 12);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? 74 : 58; cam.updateProjectionMatrix();
       road.position.set(0, 0, pz - 100); cobble.offset.y = dist / (260 / 46);
       for (const w of walks) w.position.z = pz - 100; walkTex.offset.y = dist / (260 / 40);
