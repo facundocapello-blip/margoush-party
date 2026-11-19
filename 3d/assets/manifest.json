@@ -785,5 +785,13 @@
   "frames": 3,
   "cols": 3,
   "rows": 1
+ },
+ "chase_ba_fondo": {
+  "file": "chase_ba_fondo.webp",
+  "w": 1200,
+  "h": 611,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
  }
 }
