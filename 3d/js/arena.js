@@ -7,6 +7,7 @@
 import { ARENA, createArenaLogic } from './arena_logic.js';
 import { SWINGS } from './hero.js';
 import { CHASE } from './chase.js';
+import { fillText, tr } from './i18n.js';
 
 const MOVE = 6;            // m/s con el joystick
 const DASH_SPEED = 11;     // m/s durante el esquive
@@ -161,12 +162,12 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     document.body.append(ui); document.body.classList.add('arena-on');
     const flashE = ui.querySelector('.arena-flash');
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
-    if (bar) { const sp = bar.querySelector('span'); if (sp) sp.textContent = 'BIG CHAKY'; bar.classList.remove('hidden'); }
+    if (bar) { const sp = bar.querySelector('span'); if (sp) sp.textContent = tr('BIG CHAKY'); bar.classList.remove('hidden'); }
     const setBar = () => { if (fill) fill.style.width = (100 * logic.state.hp / logic.state.hpMax).toFixed(1) + '%'; };
     setBar();
     const pops = [], seen = new Set(), scratch = new T.Vector3();
     const pop = (x, y, z, txt, col = '#ffd36e', size = 22, life = 1.1) => {
-      const e = document.createElement('div'); e.className = 'pop'; e.textContent = txt; e.style.color = col; e.style.fontSize = size + 'px';
+      const e = document.createElement('div'); e.className = 'pop'; fillText(e, txt); e.style.color = col; e.style.fontSize = size + 'px';
       ui.append(e); pops.push({ e, v: new T.Vector3(x, y, z), t: 0, life, w: e.offsetWidth }); // ancho medido una vez
     };
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };

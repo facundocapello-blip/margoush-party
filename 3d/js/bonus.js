@@ -5,6 +5,7 @@
 // El auto se va rompiendo a la vista (rajaduras, faroles apagados, abolladuras) y al final Cepi se baja
 // agarrándose la cabeza. Sin carteles de instrucciones: el reloj, la barra del auto y las frases de Cepi.
 // (los golpes SWINGS llegan de hero.js por parámetro: así la lógica se prueba en node sin Three.js)
+import { fillText, tr } from './i18n.js';
 
 export const BONUS = {
   time: 20,
@@ -141,12 +142,12 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     document.body.append(ui); document.body.classList.add('arena-on', 'bonus-on');
     const flashE = ui.querySelector('.bonus-flash'), clockE = ui.querySelector('.bonus-clock b');
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
-    if (bar) { bar.querySelector('span').textContent = 'EL BYD DE CEPI'; bar.classList.remove('hidden'); }
+    if (bar) { bar.querySelector('span').textContent = tr('EL BYD DE CEPI'); bar.classList.remove('hidden'); }
     const setBar = () => { if (fill) fill.style.width = (100 * logic.state.hp / BONUS.hp).toFixed(1) + '%'; };
     setBar();
     const pops = [], scratch = new T.Vector3();
     const pop = (x, y, z, txt, col = '#ffd36e', size = 22, life = 1.0) => {
-      const e = document.createElement('div'); e.className = 'pop'; e.textContent = txt; e.style.color = col; e.style.fontSize = size + 'px';
+      const e = document.createElement('div'); e.className = 'pop'; fillText(e, txt); e.style.color = col; e.style.fontSize = size + 'px';
       ui.append(e); pops.push({ e, v: new T.Vector3(x, y, z), t: 0, life, w: e.offsetWidth, vx: (Math.random() - 0.5) * 1.5 });
     };
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };

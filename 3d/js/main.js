@@ -21,6 +21,7 @@ import { createUi } from './ui.js';
 import { createRanking } from './ranking.js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { LEVELS, WAVES, SECRET_X, GALPON_X, BORDER_X } from './level.js';
+import { tr, fillText, translateDom, setLang, getLang, onLangChange } from './i18n.js';
 
 const freshWaves = () => Object.fromEntries(WAVES.map(w => [w.id, 'idle']));
 
@@ -121,8 +122,10 @@ function nextBanner() {
   }
   const body = document.createElement('div');
   const strong = document.createElement('b');
-  strong.textContent = bannerCurrent.title;
-  body.append(strong, document.createTextNode(bannerCurrent.text));
+  strong.textContent = tr(bannerCurrent.title);
+  const txt = document.createElement('span');
+  fillText(txt, bannerCurrent.text);
+  body.append(strong, txt);
   b.append(body);
   b.classList.toggle('with-avatar', !!bannerCurrent.avatar);
   b.classList.remove('hidden');
@@ -183,7 +186,7 @@ function updateHud(dt = 0) {
   const pw = Math.min(1, h.power), ready = pw >= 1;
   $('#hud-power-fill').style.width = (pw * 100).toFixed(1) + '%';
   $('#hud-power').classList.toggle('ready', ready);
-  $('#hud-power-text').textContent = ready ? (TOUCH ? '⚡ ¡LISTO!' : '⚡ ¡LISTO! (L)') : 'PODER';
+  $('#hud-power-text').textContent = ready ? tr(TOUCH ? '⚡ ¡LISTO!' : '⚡ ¡LISTO! (L)') : tr('PODER');
   const atk = $('#act-attack');
   atk.style.setProperty('--pw', pw.toFixed(3));
   atk.style.setProperty('--hold', Math.min(1, h.holdT / POWER.hold).toFixed(3));
@@ -250,7 +253,7 @@ function paintContinue() {
   const cp = storedCheckpoint(), btn = $('#btn-continue');
   if (!btn) return;
   btn.classList.toggle('hidden', !cp);
-  if (cp) $('#continue-where').textContent = `${HERO_CFG[cp.heroId].name} · ${CHECKPOINTS[cp.id].short}`;
+  if (cp) $('#continue-where').textContent = `${HERO_CFG[cp.heroId].name} · ${tr(CHECKPOINTS[cp.id].short)}`;
 }
 
 // Arranca una partida directamente en un checkpoint, con la vida llena y el puntaje que había ahí
@@ -335,7 +338,7 @@ function curtain(mid, { label = '', hold = 0 } = {}) {
   const c = $('#curtain');
   if (curtainBusy || !c) { mid(); return; }
   curtainBusy = true;
-  c.querySelector('b').textContent = label;
+  c.querySelector('b').textContent = tr(label);
   c.classList.remove('open'); void c.offsetWidth; c.classList.add('close');
   audio.sfx('whoosh');
   const cover = 420 + (label ? 450 : 0) + hold * 1000;
@@ -424,10 +427,10 @@ function startTransition() {
   game.hero.actor.setFacing(1);
   Object.assign(game.hero, { state: 'free', lift: 0, vy: 0, knock: 0, knockZ: 0 });
   const done = LEVELS[game.level - 1], next = LEVELS[game.level];
-  $('#level-done').textContent = `NIVEL ${done.id} COMPLETO`;
-  $('#level-name').textContent = done.name;
-  $('#level-pts').textContent = game.score.total.toLocaleString('es-AR') + ' puntos';
-  $('#level-next').textContent = `→ NIVEL ${next.id}: ${next.name}`;
+  $('#level-done').textContent = tr(`NIVEL ${done.id} COMPLETO`);
+  $('#level-name').textContent = tr(done.name);
+  $('#level-pts').textContent = tr(game.score.total.toLocaleString('es-AR') + ' puntos');
+  $('#level-next').textContent = tr(`→ NIVEL ${next.id}: ${next.name}`);
   $('#level-card').classList.remove('hidden');
   $('#level-card').classList.add('travel');
   audio.sfx('clear');
@@ -577,7 +580,7 @@ function pause() {
   input.reset();
   audio.pauseMusic();
   const cp = game.checkpoint;
-  $('#btn-restart').textContent = cp ? '🔁 Reintentar desde ' + CHECKPOINTS[cp.id].short : '🔁 Empezar de nuevo';
+  $('#btn-restart').textContent = tr(cp ? '🔁 Reintentar desde ' + CHECKPOINTS[cp.id].short : '🔁 Empezar de nuevo');
   pauseConfirm(null);
   showScreen('screen-pause');
 }
@@ -587,7 +590,7 @@ function pauseConfirm(text, action) {
   confirmAction = action || null;
   $('#pause-main').classList.toggle('hidden', !!text);
   $('#pause-confirm').classList.toggle('hidden', !text);
-  if (text) $('#pause-confirm-text').textContent = text;
+  if (text) $('#pause-confirm-text').textContent = tr(text);
 }
 function resume() {
   if (game.state !== 'paused') return;
@@ -774,6 +777,14 @@ async function boot() {
   const paintMute = () => { muteBtn.textContent = audio.muted ? '🔇' : '♪'; };
   paintMute();
   muteBtn.addEventListener('click', () => { audio.toggleMute(); paintMute(); muteBtn.blur(); });
+  // Idioma: banderitas en la portada (español / francés). Se recuerda en el celular.
+  const langBtns = [...document.querySelectorAll('#lang-pick [data-lang]')];
+  const paintLang = () => langBtns.forEach(b => b.classList.toggle('on', b.dataset.lang === getLang()));
+  langBtns.forEach(b => b.addEventListener('click', (ev) => { ev.stopPropagation(); setLang(b.dataset.lang); b.blur(); }));
+  onLangChange(() => { translateDom(); paintLang(); paintContinue(); });
+  document.documentElement.lang = getLang();
+  translateDom();
+  paintLang();
 
   camera.position.set(6, 8, 14);
   camera.lookAt(camTarget);

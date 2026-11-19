@@ -342,3 +342,12 @@ body.arena-on:not(.portrait) #boss-bar { top: calc(70px + var(--safe-t)); bottom
 body.bonus-on #hud-score, body.bonus-on #hud-mult { visibility: hidden; }
 body.portrait.bonus-on #bonus-ui .bonus-clock { top: calc(158px + var(--safe-t)); }
 body.bonus-on:not(.portrait) #boss-bar { top: calc(92px + var(--safe-t)); bottom: auto; }
+
+/* ---------- Idioma (i18n.js) ---------- */
+.lang-pick { position: absolute; top: calc(14px + var(--safe-t)); right: 14px; z-index: 5; display: flex; gap: 6px; }
+.lang-pick button { border: 2px solid #ffffff40; background: rgba(16, 10, 30, 0.6); color: #fff; font: 700 14px Fredoka, sans-serif; padding: 6px 10px; border-radius: 12px; cursor: pointer; opacity: 0.7; }
+.lang-pick button.on { border-color: #ffd36e; opacity: 1; box-shadow: 0 0 10px #ffd36e66; }
+/* Lo que dice un porteño queda en castellano y abajo va el subtítulo en francés */
+.pop small.sub { display: block; font-size: 0.62em; font-weight: 500; font-style: italic; opacity: 0.92; margin-top: 2px; }
+#banner small.sub, .host-bubble small.sub { display: block; font-size: 0.82em; font-style: italic; opacity: 0.85; margin-top: 2px; }
+html[lang=fr] #act-attack.ready::after { content: 'MAINTIENS'; }

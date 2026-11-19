@@ -1,4 +1,5 @@
 import { sanitizeNickname } from './ranking.js';
+import { fillText, tr } from './i18n.js';
 
 const NICK_KEY = 'margoush3d_nick';
 const HERO_NAME = { douge: 'Douge', marine: 'Marine' };
@@ -8,7 +9,8 @@ const OFFLINE_LIST = 'Sin conexión: mostrando los puntajes de este celular';
 const el = (tag, props = {}, children = []) => {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) {
-    if (k === 'text') n.textContent = v;
+    if (k === 'text') fillText(n, v);
+    else if (k === 'placeholder' || k === 'alt' || k === 'aria-label') n.setAttribute(k, tr(v));
     else if (k === 'class') n.className = v;
     else n.setAttribute(k, v);
   }
@@ -62,25 +64,25 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
     const menu = el('button', { id: 'btn-result-menu', class: 'ghost-btn', text: 'Menú' });
 
     // Sin puntos no hay nada para guardar
-    if (result.total <= 0) { save.disabled = true; save.textContent = 'Sin puntos todavía'; nick.disabled = true; }
+    if (result.total <= 0) { save.disabled = true; save.textContent = tr('Sin puntos todavía'); nick.disabled = true; }
     let saving = false;
     save.addEventListener('click', async () => {
       if (saving) return;
       const clean = sanitizeNickname(nick.value);
-      if (!clean) { status.textContent = 'Poné un apodo para entrar al ranking.'; nick.focus(); return; }
+      if (!clean) { status.textContent = tr('Poné un apodo para entrar al ranking.'); nick.focus(); return; }
       saving = true;
       save.disabled = true;
-      save.textContent = 'Guardando…';
+      save.textContent = tr('Guardando…');
       writeNick(clean);
       const res = await ranking.submit({ nickname: clean, hero: heroId, score: result.total });
       if (!res.ok) {
-        saving = false; save.disabled = false; save.textContent = 'Guardar puntaje';
-        status.textContent = res.error || 'No se pudo guardar.';
+        saving = false; save.disabled = false; save.textContent = tr('Guardar puntaje');
+        status.textContent = tr(res.error || 'No se pudo guardar.');
         return;
       }
       lastSaved = { nickname: clean, score: result.total };
-      save.textContent = res.online ? '¡Guardado!' : 'Guardado en el celular';
-      status.textContent = res.online ? '¡Listo! Ya estás en el ranking de la familia.' : OFFLINE_SAVE;
+      save.textContent = tr(res.online ? '¡Guardado!' : 'Guardado en el celular');
+      status.textContent = tr(res.online ? '¡Listo! Ya estás en el ranking de la familia.' : OFFLINE_SAVE);
     });
     nick.addEventListener('keydown', (e) => { if (e.key === 'Enter') save.click(); e.stopPropagation(); });
     again.addEventListener('click', onPlayAgain);
@@ -149,7 +151,7 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
       period = p;
       tabs.querySelector('#tab-week').classList.toggle('on', p === 'week');
       tabs.querySelector('#tab-all').classList.toggle('on', p === 'all');
-      status.textContent = 'Cargando…';
+      status.textContent = tr('Cargando…');
       const res = await ranking.top({ period: p, limit: 20 });
       const body = table.querySelector('tbody');
       body.replaceChildren();
@@ -166,7 +168,7 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
         body.append(tr);
       });
       if (!res.rows.length) body.append(el('tr', {}, el('td', { colspan: '5', class: 'empty', text: 'Todavía no hay puntajes. ¡Sé el primero!' })));
-      status.textContent = res.online ? 'Ranking en línea' : OFFLINE_LIST;
+      status.textContent = tr(res.online ? 'Ranking en línea' : OFFLINE_LIST);
       status.classList.toggle('off', !res.online);
     };
     tabs.querySelector('#tab-week').addEventListener('click', () => load('week'));
