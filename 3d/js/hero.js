@@ -11,6 +11,7 @@ export const HERO_CFG = {
 // Caminata: hasta `max` m/s (joystick a medias, o cuando camina solo) se usa la caminata en vez de correr.
 // stride: metros por cuadro (10 cuadros = dos pasos de ~1,5 m)
 export const WALK = { max: 3.9, stride: 0.3, auto: 3.4 };
+const RUN_STRIDE = 0.27; // m por cuadro de la carrera de 12 cuadros (dos zancadas ≈ 3,2 m)
 
 // Combo de 3: el tercero es el remate (la arena de BIG CHAKY usa los mismos tiempos)
 export const SWINGS = [
@@ -35,6 +36,8 @@ export function createHero(id, ctx) {
   if (A.has?.(id + '_actions_sheet')) ['jump', 'dodge', 'hurt', 'power'].forEach((n, i) => { poses[n] = { tex: id + '_actions_sheet', cell: i }; });
   // Caminata de 10 cuadros (sacada de un video hecho con IA): se usa yendo despacio; rápido sigue la de correr
   if (A.has?.(id + '_walk_sheet')) poses.walk = { tex: id + '_walk_sheet', stride: WALK.stride };
+  // Carrera de 12 cuadros (también de video): reemplaza la de 6 si está
+  if (A.has?.(id + '_run_sheet')) poses.run = { tex: id + '_run_sheet', stride: RUN_STRIDE };
   const actor = new SpriteActor(ctx.scene, ctx.assets, { poses, heightM: cfg.heightM, scaleRef: cfg.scaleRef });
   const has = (n) => !!actor.poses[n];
 
@@ -241,8 +244,9 @@ export function createHero(id, ctx) {
       actor.lean = 0; actor.offsetX = 0; actor.stretch = 0;
     } else if (speed > 0.3) {
       actor.setPose('run');
-      // rebote: dos pasos por ciclo de 6 cuadros
-      const phase = (actor.dist / actor.poses.run.stride) / 3 * Math.PI;
+      // rebote: dos pasos por ciclo de cuadros
+      const run = actor.poses.run;
+      const phase = (actor.dist / run.stride) / (run.frames / 2) * Math.PI;
       actor.lift = Math.abs(Math.sin(phase)) * 0.07;
       actor.lean = -0.06; actor.offsetX = 0; actor.stretch = 0;
     } else {
