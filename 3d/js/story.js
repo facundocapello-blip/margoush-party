@@ -9,7 +9,7 @@ const CREW = [
   { id: 'cepi', fallback: 'courier_cepi', line: '¡Bueno, ganaste… esta vez!' }
 ];
 
-// Intro (BIG CHAKY se lleva el cochecito) y rescate final en el galpón.
+// Intro (Cepi se lleva a Margot y escapa en su BYD) y rescate final en el galpón.
 export function createStory(ctx) {
   const { scene, assets, world, game, fx } = ctx;
   let intro = null;
@@ -144,16 +144,18 @@ export function createStory(ctx) {
       margot.update(0, 0);
     },
 
-    startIntro() {
-      const stroller = new SpriteActor(scene, assets, { poses: { sleep: { tex: 'margot_sheet', cell: 0 } }, heightM: 1.7 });
-      stroller.position.set(9, 0, -0.5);
+    // Intro del Nivel 1: el héroe está con Margot en el cochecito, aparece Cepi, se la lleva corriendo
+    // y se escapa en su BYD (después viene la persecución, chase.js).
+    startIntro(hero) {
+      const hx = hero?.actor.position.x ?? 4;
+      const stroller = new SpriteActor(scene, assets, { poses: { sleep: { tex: 'margot_sheet', cell: 0 }, cry: { tex: 'margot_sheet', cell: 2 } }, heightM: 1.7 });
+      stroller.position.set(hx + 1.9, 0, 0.3);
       stroller.update(0, 0);
-      const chaky = new SpriteActor(scene, assets, { poses: {
-        stand: { tex: 'kidnap_sheet', cell: 0 }, run: { tex: 'kidnap_sheet', cell: 1 }, push: { tex: 'kidnap_sheet', cell: 2 } }, heightM: 3.4 });
-      chaky.position.set(19, 0, -0.5);
-      chaky.setFacing(-1);
-      chaky.update(0, 0);
-      intro = { t: 0, stroller, chaky, phase: 0 };
+      const cepi = new SpriteActor(scene, assets, { poses: sheetPoses(assets, 'cepi', 'courier_cepi'), heightM: 2.25 });
+      cepi.position.set(hx + 15, 0, 0.3);
+      cepi.setFacing(-1);
+      cepi.update(0, 0);
+      intro = { t: 0, stroller, cepi, phase: 0, hero };
     },
 
     // Devuelve true cuando la intro terminó
@@ -161,31 +163,38 @@ export function createStory(ctx) {
       if (!intro) return true;
       const i = intro;
       i.t += dt;
-      const c = i.chaky;
-      if (i.phase === 0 && i.t > 0.6) { i.phase = 1; c.setPose('run'); }
+      const c = i.cepi, st = i.stroller;
+      if (i.phase === 0 && i.t > 0.7) { i.phase = 1; c.setPose(c.poses.walk ? 'walk' : 'step'); }
       if (i.phase === 1) {
-        c.position.x -= 6 * dt;
-        c.lift = Math.abs(Math.sin(i.t * 12)) * 0.12;
-        if (c.position.x <= 10.6) {
-          i.phase = 2;
-          c.setPose('push'); c.setFacing(1); c.lift = 0;
-          i.stroller.dispose(); i.stroller = null;
-          game.banner('¡BIG CHAKY SE LLEVÓ A MARGOT!', '¡Rescatala antes de que llegue al galpón!', 2.6);
-          ctx.audio?.sfx('roar');
+        c.position.x -= 7 * dt;
+        if (c.position.x <= st.position.x + 1.1) {
+          i.phase = 2; i.t2 = 0;
+          c.setPose('strike'); st.setPose('cry');
+          game.banner('¡CEPI SE LLEVÓ A MARGOT!', '¡Se escapa en su BYD! ¡Perseguilo!', 2.4);
+          ctx.audio?.sfx('laugh');
+          fx.popup(c.position.clone().setY(3), '¡Jua! ¡Me la llevo!', '#ff9b8a', { size: 20, life: 1.6, rise: 0.2 });
         }
       }
       if (i.phase === 2) {
-        c.position.x += 9 * dt;
-        c.lift = Math.abs(Math.sin(i.t * 14)) * 0.1;
-        if (c.position.x > 34) { this.endIntro(); return true; }
+        i.t2 += dt;
+        if (i.t2 > 0.6) {
+          c.setFacing(1); c.setPose(c.poses.walk ? 'walk' : 'step');
+          c.position.x += 10 * dt;
+          st.position.x = c.position.x + 1.1;
+          st.lift = Math.abs(Math.sin(i.t * 14)) * 0.08;
+          if (c.position.x > i.hero.actor.position.x + 16) { this.endIntro(); return true; }
+        }
+        // el héroe se da cuenta y sale corriendo atrás
+        if (i.hero && i.t2 > 0.9) { i.hero.actor.setPose(i.hero.actor.poses.run ? 'run' : 'idle'); i.hero.actor.position.x += 4 * dt; }
       }
-      c.update(dt, 0);
+      c.update(dt, i.phase === 2 ? 10 : 7);
+      st.update(dt, 0);
       return false;
     },
 
     endIntro() {
       if (!intro) return;
-      intro.chaky.dispose();
+      intro.cepi.dispose();
       intro.stroller?.dispose();
       intro = null;
     },

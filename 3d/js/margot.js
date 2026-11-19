@@ -1,6 +1,6 @@
 // Margot (la bebé de Douge y Marine) está presente todo el juego:
-// - Cada vez que despejás un tramo, BIG CHAKY cruza por la vereda del fondo empujando el cochecito
-//   y Margot llama a su papá o a su mamá (según con quién juegues). Así ves a quién vas a rescatar.
+// - cross(): BIG CHAKY cruzando al fondo con el cochecito. YA NO SE USA (19/11 Facu pidió sacarlo);
+//   ahora se la ve llorando en la luneta del BYD de Cepi durante la persecución (byd_margot.js).
 // - Su carita en el HUD: tranquila, contenta si venís bien, llorando si te pegan o si la ve pasar.
 export const SIGHT = { z: -4.2, heightM: 3.0, speed: 6.5, from: -11, to: 17, shout: 1.0, laugh: 2.3, cry: 3.2 };
 export const MARGOT_LINES = { douge: '¡Papááá!', marine: 'Mamaaan !', chaky: '¡Jua, jua, jua!' };

@@ -11,6 +11,8 @@ try {
   await page.tap('#pick-marine');
   check(await G(() => window.__spoken) > 0, 'la voz queda habilitada con el toque de elegir héroe');
   await page.tap('#game');
+  await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 15000 });
+  await page.evaluate(() => { const g = window.__game; g.chase.dispose(); g.quickStart(g.heroId); }); // la persecución se prueba en chase.e2e
   await page.waitForFunction(() => window.__game.state === 'playing');
   check(!(await G(() => document.querySelector('#rotate-hint'))), 'con el celu parado se juega directo (sin aviso de girar)');
   // En vertical: los personajes se ven grandes, el cartel y la barra del jefe no tapan los botones
