@@ -8,8 +8,8 @@ export const HERO_CFG = {
     idle: { tex: 'marine_idle' }, run: { tex: 'marine_run' }, attack: { tex: 'marine_attack' } } }
 };
 
-// Combo de 3: el tercero es el remate
-const SWINGS = [
+// Combo de 3: el tercero es el remate (la arena de BIG CHAKY usa los mismos tiempos)
+export const SWINGS = [
   { dur: 0.26, hitAt: 0.09, reach: 1.9, dmg: 1, knock: 2.5, strength: 1 },
   { dur: 0.26, hitAt: 0.09, reach: 1.9, dmg: 1, knock: 2.5, strength: 1 },
   { dur: 0.4, hitAt: 0.14, reach: 2.3, dmg: 2, knock: 8, strength: 1.6 }
