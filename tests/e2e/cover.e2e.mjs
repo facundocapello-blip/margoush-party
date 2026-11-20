@@ -33,13 +33,13 @@ for (const [w, h, name] of [[844, 390, 'acostado'], [390, 844, 'parado']]) {
     await page.tap('#btn-play');
     await page.tap('#pick-marine');
     await page.waitForTimeout(400);
-    check(await page.evaluate(() => window.__game.ctx.audio.current) === null, `${name}: en la intro no suena el tema (solo los efectos)`);
+    check(await page.evaluate(() => window.__game.ctx.audio.current) === 'intro', `${name}: en la intro suena el «¡uh, no!»`);
     await page.tap('#game');
     await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 15000 });
     check(await page.evaluate(() => window.__game.ctx.audio.current) === 'chase', `${name}: en la persecución suena su música`);
     await page.evaluate(() => { const g = window.__game; g.chase.dispose(); g.quickStart(g.heroId); }); // la persecución se prueba en chase.e2e
     await page.waitForFunction(() => window.__game.state === 'playing');
-    check(await page.evaluate(() => window.__game.ctx.audio.current) === 'street', `${name}: al jugar suena el tema de la calle`);
+    check(await page.evaluate(() => window.__game.ctx.audio.current) === 'ba', `${name}: en Buenos Aires suena la murga`);
     await page.evaluate(() => window.__game.goMenu());
     await page.waitForTimeout(500);
     check(await page.evaluate(() => window.__game.ctx.audio.current) === 'menu', `${name}: al volver al menú vuelve la música de portada`);

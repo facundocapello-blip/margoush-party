@@ -1,3 +1,4 @@
+import { makeThemes } from './music.js';
 // Música (temas del 2D + uno sintetizado para el jefe) y efectos sintetizados.
 const MUTE_KEY = 'margoush3d_muted';
 export const MUSIC_GAIN = 0.42; // la música por debajo de golpes y voces
@@ -117,7 +118,7 @@ export function createAudio(assets) {
   const themes = {
     street: Object.assign(new Audio(assets.url('music_street')), { loop: true, volume: 0.4, preload: 'none' })
   };
-  let current = null; // 'street' | 'chase' | 'boss' | 'menu' | null
+  let current = null; // 'menu' | 'intro' | 'chase' | 'byd' | 'ba' | 'francia' | 'boss' | 'rescate' | 'street' | null
   let musicBus = null, out = null; // out: adónde van los tonos (efectos → master, temas sintetizados → musicBus)
   let fadeTimer = null;
   let paused = false;
@@ -233,50 +234,9 @@ export function createAudio(assets) {
     goal: () => { hiss(1.3, 0.35, 900, 0.4); [523, 659, 784].forEach((f, i) => tone('square', f, f, 0.22, 0.1, 0.2 + i * 0.14)); }
   };
 
-  // Tema del jefe: pulso grave rápido sintetizado
-  // Temas sintetizados: el del jefe y el de la portada. Cada uno arma un paso de su compás.
-  const NOTE = { A2: 110, F2: 87.31, C3: 130.81, G2: 98, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880 };
-  const MENU_CHORDS = [[NOTE.A2, [220, 261.63, 329.63]], [NOTE.F2, [174.61, 220, 261.63]], [NOTE.C3, [261.63, 329.63, 392]], [NOTE.G2, [196, 246.94, 293.66]]];
-  const MENU_LEAD = [
-    [[0, NOTE.E5, 6], [6, NOTE.D5, 2], [8, NOTE.E5, 4], [12, NOTE.A5, 4]],
-    [[0, NOTE.F5, 6], [6, NOTE.E5, 2], [8, NOTE.C5, 8]],
-    [[0, NOTE.G5, 6], [6, NOTE.F5, 2], [8, NOTE.E5, 4], [12, NOTE.D5, 4]],
-    [[0, NOTE.D5, 8], [8, NOTE.B4, 4], [12, NOTE.D5, 4]]
-  ];
-  const SYNTH = {
-    boss: { step: 0.18, play(n, d) {
-      const bass = [110, 110, 131, 98];
-      const i = n % 16, bar = Math.floor(n / 16) % 4;
-      if (i % 4 === 0) { tone('sine', 120, 45, 0.16, 0.45, d); }
-      if (i % 2 === 0) tone('triangle', bass[bar], bass[bar], 0.18 * 1.6, 0.18, d);
-      if (i % 4 === 2) hiss(0.05, 0.12, 6000, 1.5, d);
-      if (i === 6 || i === 14) tone('square', bass[bar] * 4, bass[bar] * 4, 0.1, 0.05, d);
-    } },
-    // Portada: épico en La menor (Am–F–C–G), 8 compases; la melodía entra en el compás 5
-    menu: { step: 0.125, play(n, d) {
-      const step = 0.125, i = n % 16, bar = Math.floor(n / 16) % 8;
-      const [root, triad] = MENU_CHORDS[bar % 4];
-      if (i === 0 || i === 8 || (i === 10 && bar % 2)) tone('sine', 140, 45, 0.18, 0.5, d);
-      if (i === 4 || i === 12) { hiss(0.12, 0.26, 1800, 0.7, d); tone('triangle', 220, 170, 0.08, 0.08, d); }
-      if (i % 2 === 0) hiss(0.03, 0.05, 8000, 2, d);
-      if (i % 2 === 0) { const f = i % 4 === 2 ? root * 2 : root; tone('sawtooth', f, f, step * 1.8, 0.07, d); }
-      if (i === 0) for (const f of triad) tone('triangle', f * 2, f * 2, step * 15, 0.03, d);
-      if (bar < 4 && i % 4 === 0) { const f = triad[(i / 4) % 3] * 4; tone('triangle', f, f, step * 1.5, 0.03, d); }
-      if (bar >= 4) for (const [at, f, len] of MENU_LEAD[bar % 4]) if (at === i) { tone('square', f, f, len * step * 0.95, 0.045, d); tone('triangle', f, f, len * step, 0.05, d); }
-    } }
-  };
-  // Persecución: rápido y con empuje (Re mayor, D–Bm–G–A), bombo en negras, bajo en corcheas y arpegio arriba
-  const CHASE_CHORDS = [[146.83, [293.66, 369.99, 440]], [123.47, [246.94, 293.66, 369.99]], [98, [196, 246.94, 293.66]], [110, [220, 277.18, 329.63]]];
-  SYNTH.chase = { step: 0.105, play(n, d) {
-    const i = n % 16, bar = Math.floor(n / 16) % 4;
-    const [root, triad] = CHASE_CHORDS[bar];
-    if (i % 4 === 0) tone('sine', 150, 45, 0.15, 0.5, d);
-    if (i === 4 || i === 12) { hiss(0.1, 0.22, 1900, 0.7, d); tone('triangle', 230, 180, 0.07, 0.07, d); }
-    if (i % 2 === 1) hiss(0.025, 0.05, 8500, 2, d);
-    if (i % 2 === 0) { const f = i % 4 === 2 ? root * 2 : root; tone('sawtooth', f, f, 0.18, 0.07, d); }
-    { const f = triad[[0, 1, 2, 1][i % 4]] * 2; tone('square', f, f, 0.09, i % 4 === 0 ? 0.035 : 0.022, d); }
-    if (i === 0) for (const f of triad) tone('triangle', f, f, 1.6, 0.025, d);
-  } };
+  // Temas sintetizados (uno por momento del juego): ver music.js
+  const SYNTH = makeThemes(tone, hiss);
+  const musicCtx = { intensity: 0 };
   let synthTimer = null, synthStep = 0, synthNext = 0;
   function synthTick() {
     const theme = SYNTH[current];
@@ -284,8 +244,8 @@ export function createAudio(assets) {
     if (synthNext < ac.currentTime) synthNext = ac.currentTime + 0.05;
     while (synthNext < ac.currentTime + 0.3) {
       out = musicBus || master;
-      try { theme.play(synthStep, synthNext - ac.currentTime); } finally { out = master; }
-      synthStep++; synthNext += theme.step;
+      try { theme.play(synthStep, synthNext - ac.currentTime, musicCtx); } finally { out = master; }
+      synthStep++; synthNext += theme.stepFor ? theme.stepFor(musicCtx) : theme.step;
     }
   }
 
@@ -340,6 +300,8 @@ export function createAudio(assets) {
       g.cancelScheduledValues(t0); g.setValueAtTime(g.value, t0); g.linearRampToValueAtTime(0.0001, t0 + fade);
       fadeTimer = setTimeout(begin, fade * 1000);
     },
+    // 0..1: qué tan apurado va el tema (mini nivel del BYD: la carga de la batería)
+    setIntensity(x) { musicCtx.intensity = Math.max(0, Math.min(1, x || 0)); },
     // Estira o acelera la música de fondo (hongo venenoso); 1 = normal
     warp(rate) {
       for (const t of Object.values(themes)) { try { t.preservesPitch = false; t.playbackRate = rate; } catch (_) {} }

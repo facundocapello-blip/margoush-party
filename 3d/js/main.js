@@ -272,7 +272,7 @@ function resumeAt(cp) {
   // El mini nivel del BYD es al principio del Nivel 1 (después de la persecución)
   if (cp.id === 'byd') {
     game.state = 'curtain';
-    audio.music('chase', { fade: 0 });
+    audio.music('byd', { fade: 0 });
     curtain(() => startBydLevel(), { label: CHECKPOINTS.byd.label });
     return;
   }
@@ -295,7 +295,7 @@ function resumeAt(cp) {
     spawnBoss();
   } else {
     game.state = 'curtain';
-    curtain(() => { game.state = 'playing'; input.reset(); audio.music('street', { fade: 0 }); }, { label: CHECKPOINTS.francia.label });
+    curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0 }); }, { label: CHECKPOINTS.francia.label });
   }
 }
 game.resumeAt = resumeAt;
@@ -323,7 +323,7 @@ function startRun(heroId, withIntro = false, { keepCheckpoint = false, street = 
   clearBanners();
   $('#boss-bar').classList.add('hidden');
   // En la intro no suena el tema del héroe (solo los efectos del secuestro); arranca al empezar a jugar
-  audio.music(withIntro || !(keepCheckpoint || street) ? null : 'street', { fade: 0 });
+  audio.music(withIntro ? 'intro' : (keepCheckpoint || street) ? 'ba' : null, { fade: 0 });
   // El Nivel 1 arranca con Cepi llevándose a Margot y la persecución (sin intro, directo a la persecución)
   if (withIntro) { game.state = 'intro'; game.story.startIntro(game.hero); }
   else if (!keepCheckpoint && !street) startChaseRun();
@@ -347,7 +347,8 @@ function startChaseRun() {
 function startBydLevel() {
   if (game.checkpoint?.id !== 'byd') saveCheckpoint('byd');
   input.reset();
-  audio.music('chase', { fade: 0.3 });
+  audio.setIntensity?.(0);
+  audio.music('byd', { fade: 0.3 });
   game.bonus.start();
 }
 game.startBydLevel = startBydLevel;
@@ -360,7 +361,7 @@ function bydDone() {
   Object.assign(h, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.2 });
   updateCamera(0, true);
   input.reset();
-  audio.music('street', { fade: 0.4 });
+  audio.music('ba', { fade: 0.4 });
   game.banner('¡CEPI SE LLEVA A MARGOT!', 'Corre al galpón de BIG CHAKY. ¡Seguilo por Buenos Aires!', 3.2);
 }
 // Se cargó: Cepi se escapa, perdés un corazón y se vuelve a intentar (sin corazones, se terminó)
@@ -488,7 +489,7 @@ function updateTransition(dt) {
   if (!game.transCrossed && (p.x >= BORDER_X + 0.5 || game.transT > TRANSITION_MAX_S)) {
     game.transCrossed = true;
     audio.sfx('secret');
-    curtain(() => { if (game.state === 'transition') { endTransition(); audio.music('street', { fade: 0.4 }); } }, { label: 'NIVEL 2 · FRANCIA' });
+    curtain(() => { if (game.state === 'transition') { endTransition(); audio.music('francia', { fade: 0.4 }); } }, { label: 'NIVEL 2 · FRANCIA' });
   }
 }
 
@@ -534,6 +535,8 @@ game.onBossDown = () => {
   // El rescate es una escena: el héroe corre a la jaula, alza a Margot, llega la banda aplaudiendo y foto familiar
   game.story.startRescue(game.hero, HERO_CFG[game.heroId].name);
   game.ctx.audio?.sfx('fanfare');
+  // después de la fanfarria, la canción de cuna de Margot
+  setTimeout(() => { if (game.state === 'rescue' || game.state === 'result') audio.music('rescate', { fade: 0 }); }, 2200);
 };
 
 // Atajo para pruebas y para saltar a una parte del recorrido
@@ -584,8 +587,8 @@ function finish(won) {
   game.lastResult = { won, ...game.score.finalize({ hpLeft: game.hero.hp, hpMax: game.hero.hpMax, seconds: game.time, won }), photo: won ? game.photo : null };
   $('#touch').classList.add('hidden');
   $('#boss-bar').classList.add('hidden');
-  audio.music(null);
-  if (won) { audio.sfx('fanfare'); clearCheckpoint(); }
+  if (!(won && audio.current === 'rescate')) audio.music(null);
+  if (won) { audio.sfx('fanfare'); clearCheckpoint(); setTimeout(() => { if (game.state === 'result') audio.music('rescate', { fade: 0 }); }, 2200); }
   const cp = !won && game.checkpoint;
   ui.showResult(game.lastResult, game.heroId, cp ? { label: CHECKPOINTS[cp.id].short, onRetry: () => resumeAt(cp) } : null);
 }
