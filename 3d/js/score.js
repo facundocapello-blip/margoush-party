@@ -3,7 +3,7 @@ const KILL = { minion: 100, patovica: 250, bombo: 200, mozo: 200, lale: 200, del
 // Cortes de rango (múltiplos de 50). Un recorrido de los dos niveles sin recibir daño da ~22.600:
 // S ≈ 80 %, A ≈ 62 %, B ≈ 40 % de eso.
 export const RANKS = { S: 14800, A: 11500, B: 7400 };
-const PICKUP = { bottle: 50, secret: 500 };
+const PICKUP = { bottle: 50, secret: 500, coin: 10 };
 const MULT_STEP = 0.1;
 const MULT_MAX = 3;
 

@@ -37,7 +37,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
 const PITCH = THREE.MathUtils.degToRad(30);
 const BASE_DIST = 11.5;
-const PORTRAIT = { fov: 60, halfWidth: 4.0 };
+const PORTRAIT = { fov: 60, halfWidth: 3.2 }; // parado: más cerca (personajes más grandes); los que quedan afuera se marcan con flechas
 let camDist = BASE_DIST;
 const camTarget = new THREE.Vector3(6, 1.2, 0);
 
@@ -162,7 +162,7 @@ function updateRotateHint() {}
 function updateCamera(dt, snap = false) {
   if (!game.hero) return;
   const p = game.hero.actor.position;
-  const look = game.hero.actor.facing * 1.6;
+  const look = game.hero.actor.facing * (game.portrait ? 2.2 : 1.6);
   const tx = Math.min(world.bounds.maxX - 4, Math.max(world.bounds.minX + 4, p.x + look));
   const k = snap ? 1 : Math.min(1, dt * 4.5);
   camTarget.x += (tx - camTarget.x) * k;
@@ -192,11 +192,12 @@ function updateHud(dt = 0) {
   const mood = game.margot?.mood(h) || 'calm';
   const face = $('#hud-margot');
   if (face.dataset.mood !== mood) { face.dataset.mood = mood; face.classList.remove('bump'); void face.offsetWidth; face.classList.add('bump'); }
-  $('#hud-power-text').textContent = ready ? tr(TOUCH ? '⚡ ¡LISTO!' : '⚡ ¡LISTO! (L)') : tr('PODER');
+  $('#hud-power-text').textContent = ready ? tr(TOUCH ? '⚡ ¡PODER LISTO!' : '⚡ ¡PODER LISTO! (L)') : tr('PODER');
   const atk = $('#act-attack');
   atk.style.setProperty('--pw', pw.toFixed(3));
   atk.style.setProperty('--hold', Math.min(1, h.holdT / POWER.hold).toFixed(3));
   atk.classList.toggle('ready', ready);
+  if (ready && atk.dataset.ready !== tr('⚡ ¡PODER!')) atk.dataset.ready = tr('⚡ ¡PODER!');
   atk.classList.toggle('charging', ready && h.holdT > 0.08);
 }
 
@@ -238,6 +239,7 @@ const CP_KEY = 'margoush3d_checkpoint';
 const CHECKPOINTS = {
   francia: { label: 'NIVEL 2 · FRANCIA', short: 'Francia' },
   byd: { label: '¡ROMPÉ EL BYD!', short: 'el BYD de Cepi' },
+  calle: { label: 'NIVEL 1 · BUENOS AIRES', short: 'la calle porteña' },
   boss: { label: 'BIG CHAKY', short: 'BIG CHAKY' }
 };
 function saveCheckpoint(id) {
@@ -305,6 +307,13 @@ function resumeAt(cp) {
     game.state = 'curtain';
     audio.music('byd', { fade: 0 });
     curtain(() => startBydLevel(), { label: CHECKPOINTS.byd.label });
+    return;
+  }
+  // La calle de Buenos Aires (después de romper el BYD): no se repiten la persecución ni el BYD
+  if (cp.id === 'calle') {
+    game.chaseDone = true;
+    game.state = 'curtain';
+    curtain(() => { game.state = 'playing'; input.reset(); audio.music('ba', { fade: 0 }); }, { label: CHECKPOINTS.calle.label });
     return;
   }
   const first = { francia: WAVES.findIndex(w => w.level === 2), boss: WAVES.length }[cp.id];
@@ -398,6 +407,11 @@ function bydDone() {
 function bydPlay() {
   game.state = 'playing';
   const h = game.hero;
+  // Rompiste el BYD: Margot te da fuerzas (vida llena) y la calle queda guardada para reintentar desde acá
+  const healed = h.hpMax - h.hp;
+  h.hp = h.hpMax;
+  if (healed > 0) fx.popup?.(h.actor.position.clone().setY(2.6), '❤️ +' + healed, '#ff9bb0', { size: 26, life: 1.2, rise: 0.6 });
+  saveCheckpoint('calle');
   h.actor.position.set(LEVELS[0].start, 0, 0.5);
   h.actor.setFacing(1); h.actor.setPose('idle');
   h.inv = 1.2;
@@ -559,6 +573,8 @@ game.startTransition = startTransition;
 function spawnBoss({ instant = false } = {}) {
   game.bossStarted = true;
   input.reset();
+  // Antes de BIG CHAKY: +2 corazones, como al cruzar a Francia (no se llega a la pelea final con uno solo)
+  if (game.hero && !instant) game.hero.hp = Math.min(game.hero.hpMax, game.hero.hp + 2);
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
   if (instant) { game.arena.start(); return; }
   if (game.checkpoint?.id !== 'boss') saveCheckpoint('boss');
@@ -744,10 +760,37 @@ function frameStep(now) {
   if (game.hero) world.updateLook?.(game.hero.actor.position.x);
   fx.update(dt);
   if (game.state !== 'intro') updateCamera(dt); // en las escenas animadas la cámara la maneja cine.js
+  updateOffscreen();
   renderer.render(scene, camera);
   // Foto familiar del rescate: se saca justo después de dibujar el cuadro
   if (game.wantPhoto) { game.wantPhoto = false; try { game.photo = canvas.toDataURL('image/jpeg', 0.85); } catch (_) { game.photo = null; } }
   requestAnimationFrame(frame);
+}
+
+// Malos fuera de pantalla: una flechita en el borde, a la altura donde están (más grande cuanto más cerca)
+const offPool = [];
+const offV = new THREE.Vector3();
+function updateOffscreen() {
+  const layer = document.getElementById('offscreen');
+  if (!layer) return;
+  const list = game.state === 'playing' ? (game.enemies?.list || []).filter(e => e.hp > 0 && !e.dead) : [];
+  let n = 0;
+  for (const e of list) {
+    offV.copy(e.pos); offV.y += 1.1; offV.project(camera);
+    const sx = (offV.x + 1) / 2;
+    if (sx >= -0.02 && sx <= 1.02) continue;
+    const side = sx < 0 ? 'l' : 'r';
+    const dist = Math.abs(e.pos.x - game.hero.actor.position.x);
+    let el = offPool[n];
+    if (!el) { el = document.createElement('div'); el.className = 'off-arrow'; layer.append(el); offPool.push(el); }
+    el.style.display = '';
+    el.dataset.side = side;
+    const y = Math.min(0.78, Math.max(0.2, (1 - offV.y) / 2));
+    el.style.top = (y * 100).toFixed(1) + '%';
+    el.style.setProperty('--s', Math.max(0.65, Math.min(1.15, 1.25 - dist / 18)).toFixed(2));
+    n++;
+  }
+  for (let i = n; i < offPool.length; i++) offPool[i].style.display = 'none';
 }
 
 async function boot() {

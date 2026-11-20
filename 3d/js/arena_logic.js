@@ -9,7 +9,7 @@
 // Coordenadas: x a lo ancho (±xMax), z hacia el fondo negativo.
 
 export const ARENA = {
-  hp: 24,
+  hp: 30, // más aguante: con 24 se le ganaba moviéndose al azar
   xMax: 4.2, zNear: 0, zFar: -7, bossZ: -16, bossSway: 3,
   // Ritmo de «siempre hay algo para pegar»: TODOS los barriles se devuelven (los dorados pegan más)
   returnWindow: 0.6,   // s antes de que el barril llegue al héroe en los que el golpe lo devuelve (holgado en el celular)
@@ -21,7 +21,7 @@ export const ARENA = {
   hitR: 1.05,
   // Ritmo: tira seguido y a veces en ráfaga (un segundo barril enseguida), así siempre hay algo para esquivar o devolver
   phase1: { throwEvery: [1.0, 1.5], goldEvery: 2, barrelSpeed: 7, crateTime: 1.1, salvo: 0.35, salvoGap: 0.5 },
-  phase2: { throwEvery: [0.9, 1.4], goldEvery: 3, slamEvery: 1, slamWarn: 0.8, stuck: 1.8, salvo: 0.4, salvoGap: 0.45 },
+  phase2: { throwEvery: [0.9, 1.4], goldEvery: 3, slamEvery: 1, slamWarn: 0.8, stuck: 1.8, salvo: 0.4, salvoGap: 0.45, crateEvery: 3, crateTime: 0.8 },
   points: { returned: 300, returnedWhite: 120, hand: 50, dodge: 100 }
 };
 
@@ -111,7 +111,8 @@ export function createArenaLogic({ rand = Math.random } = {}) {
       Object.assign(state.hand, { state: 'warn', x: hero.x, z: hero.z, t: 0 });
       return;
     }
-    const kind = throws % 3 === 2 ? 'crate' : 'barrel';
+    // enojado (fase 2) tira cajones más seguido y caen más rápido: hay que moverse de verdad
+    const kind = (state.phase === 2 ? throws % A.phase2.crateEvery === 2 : throws % 3 === 2) ? 'crate' : 'barrel';
     throws++; sinceSlam++;
     const c = cfg();
     const shot = { id: nextId++, kind, gold: false, x: state.bossX, z: A.bossZ, y: 0, returning: false };
@@ -134,8 +135,9 @@ export function createArenaLogic({ rand = Math.random } = {}) {
       if (s.kind === 'crate') {
         const age = (crateT.get(s.id) || 0) + dt;
         crateT.set(s.id, age);
-        s.y = Math.max(0, CRATE_H * (1 - age / c.crateTime));
-        if (age < c.crateTime) { keep.push(s); continue; }
+        const fall = state.phase === 2 ? A.phase2.crateTime : c.crateTime;
+        s.y = Math.max(0, CRATE_H * (1 - age / fall));
+        if (age < fall) { keep.push(s); continue; }
         crateT.delete(s.id);
         if (Math.hypot(hero.x - s.x, hero.z - s.z) < A.hitR) touch(hero, 'crate', evs);
       } else if (s.returning) {

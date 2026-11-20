@@ -24,9 +24,12 @@ button { font: inherit; cursor: pointer; touch-action: none; }
 #hud-name { font-family: Fredoka, sans-serif; font-weight: 700; color: var(--gold); font-size: 15px; letter-spacing: 1px; }
 #hud-hearts { font-size: 15px; letter-spacing: 1px; }
 .hud-center { text-align: center; }
-#hud-score { font-family: Fredoka, sans-serif; font-weight: 700; font-size: 30px; color: #fff; text-shadow: 0 3px 0 #000a, 0 0 14px #ffd36e88; line-height: 1; }
+#hud-score { padding: 3px 12px 4px; border-radius: 14px; background: rgba(16, 10, 30, 0.5); font-variant-numeric: tabular-nums; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 30px; color: #fff; text-shadow: 0 3px 0 #000a, 0 0 14px #ffd36e88; line-height: 1; }
 #hud-mult { font-weight: 900; color: var(--gold); font-size: 14px; min-height: 18px; }
 .hud-right { display: flex; gap: 6px; pointer-events: auto; }
+/* Parado: el puntaje va en su cápsula debajo de ♪ y pausa (no pegado a los botones) */
+body.portrait .hud-center { position: absolute; right: 0; top: 50px; align-items: flex-end; }
+body.portrait #hud-score { font-size: 24px; }
 .icon-btn { width: 44px; height: 44px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.35); background: rgba(16, 10, 30, 0.7); color: #fff; font-size: 17px; }
 
 #boss-bar { position: absolute; bottom: calc(22px + var(--safe-b)); left: 50%; transform: translateX(-50%); width: min(380px, 40vw); text-align: center; font-family: Fredoka, sans-serif; font-weight: 700; color: #ff9b8f; z-index: 5; pointer-events: none; text-shadow: 0 2px 0 #000; }
@@ -45,6 +48,13 @@ button { font: inherit; cursor: pointer; touch-action: none; }
 @keyframes bump { from { transform: scale(1.4); } to { transform: scale(1); } }
 
 #labels { position: absolute; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
+/* Flechas de malos fuera de pantalla */
+#offscreen { position: absolute; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
+.off-arrow { position: absolute; width: 0; height: 0; border-block: 18px solid transparent; transform: translateY(-50%) scale(var(--s, 1)); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55)); animation: off-pulse 0.8s ease-in-out infinite alternate; }
+.off-arrow[data-side="l"] { left: calc(6px + var(--safe-l)); border-right: 26px solid #ff5a4f; transform-origin: left center; }
+.off-arrow[data-side="r"] { right: calc(6px + var(--safe-r)); border-left: 26px solid #ff5a4f; transform-origin: right center; }
+@keyframes off-pulse { to { opacity: 0.55; } }
+body.has-screen #offscreen, body.chasing #offscreen { visibility: hidden; }
 .pop { position: absolute; transform: translate(-50%, -50%); font-family: Fredoka, sans-serif; font-weight: 700; font-size: 20px; white-space: nowrap; text-shadow: 0 2px 0 #000, 0 0 10px #000a; }
 .tag-name { position: absolute; transform: translate(-50%, -100%); font-weight: 900; font-size: 12px; color: #9ed8ff; text-shadow: 0 1px 2px #000; white-space: nowrap; }
 .speech { position: absolute; transform: translate(-50%, -100%); background: #fff; color: #1a1433; font-weight: 900; font-size: 13px; padding: 6px 10px; border-radius: 12px; max-width: 220px; text-align: center; box-shadow: 0 4px 12px #0006; }
@@ -73,7 +83,7 @@ button { font: inherit; cursor: pointer; touch-action: none; }
   background: conic-gradient(var(--gold) calc(var(--pw, 0) * 360deg), rgba(255, 255, 255, 0.14) 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px)); }
 #act-attack.ready { border-color: var(--gold); animation: power-ready 0.9s ease-in-out infinite; }
-#act-attack.ready::after { content: 'MANTENÉ'; position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000; letter-spacing: 0.5px; white-space: nowrap; }
+#act-attack.ready::after { content: attr(data-ready); position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000; letter-spacing: 0.5px; white-space: nowrap; }
 #act-attack.ready .ico { transform: translateY(-7px); }
 #act-attack.charging .ring { background: conic-gradient(#fff calc(var(--hold, 0) * 360deg), var(--gold) 0); }
 @keyframes power-ready { 0%, 100% { box-shadow: 0 4px 10px #0007, 0 0 0 0 rgba(255, 211, 110, 0.7); } 50% { box-shadow: 0 4px 10px #0007, 0 0 0 10px rgba(255, 211, 110, 0); } }
@@ -84,9 +94,9 @@ body.portrait #boss-bar { bottom: auto; top: calc(100px + var(--safe-t)); width:
 body.portrait #combo { top: 24%; }
 
 /* Barra de poder del HUD */
-#hud-power { position: relative; margin-top: 3px; width: 104px; height: 16px; border-radius: 8px; background: #0009; border: 1.5px solid rgba(255, 211, 110, 0.55); overflow: hidden; }
+#hud-power { position: relative; margin-top: 3px; width: 124px; height: 16px; border-radius: 8px; background: #0009; border: 1.5px solid rgba(255, 211, 110, 0.55); overflow: hidden; }
 #hud-power-fill { position: absolute; inset: 0; width: 0; background: linear-gradient(90deg, #ffb347, var(--gold)); transition: width 0.15s ease-out; }
-#hud-power-text { position: relative; display: block; text-align: center; font-size: 12px; line-height: 13px; font-weight: 900; letter-spacing: 1px; color: #fff; text-shadow: 0 1px 2px #000; }
+#hud-power-text { position: relative; display: block; text-align: center; font-size: 11px; line-height: 13px; font-weight: 900; letter-spacing: 1px; color: #fff; text-shadow: 0 1px 2px #000; }
 #hud-power.ready { border-color: var(--gold); }
 #hud-power.ready #hud-power-text { color: #2a1a00; text-shadow: none; }
 
@@ -368,7 +378,7 @@ body.chasing #labels, body.chasing #combo, body.chasing #boss-bar { visibility: 
 #chase-hint { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); background: #a1263e; color: #fff; border: 2px solid var(--gold); border-radius: 20px; padding: 6px 16px;
   font-family: Fredoka, sans-serif; font-weight: 700; font-size: 16px; animation: banner-in 0.18s ease-out; }
 body.portrait #chase-bat { bottom: auto; top: calc(110px + var(--safe-t)); }
-@media (max-width: 740px) { #chase-bat span { display: none; } #chase-bat b { width: min(110px, 18vw); } }
+@media (max-width: 740px) { #chase-bat span { font-size: 13px; } #chase-bat b { width: min(96px, 22vw); } }
 
 /* ---------- Arena de BIG CHAKY (arena.js): solo fogonazo y textos que flotan (.pop) ---------- */
 body.arena-on #labels, body.arena-on #combo { visibility: hidden; }

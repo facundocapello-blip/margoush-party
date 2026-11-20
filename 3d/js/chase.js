@@ -189,7 +189,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
 
     // Carteles propios: batería del BYD, aviso de saque, destello rojo y textos que flotan
     const ui = document.createElement('div'); ui.id = 'chase-ui';
-    ui.innerHTML = '<div class="chase-flash"></div><div id="chase-bat"><span>BYD de Cepi</span><b><i></i></b><em>100%</em></div><div id="chase-hint" class="hidden">¡Cepi prepara el saque!</div>';
+    ui.innerHTML = '<div class="chase-flash"></div><div id="chase-bat"><span>🔋 BYD de Cepi</span><b><i></i></b><em>100%</em></div><div id="chase-hint" class="hidden">¡Cepi prepara el saque!</div>';
     translateDom(ui);
     document.body.append(ui); document.body.classList.add('chasing');
     const batI = ui.querySelector('#chase-bat i'), batE = ui.querySelector('#chase-bat em'), hintE = ui.querySelector('#chase-hint'), flash = ui.querySelector('.chase-flash');
@@ -212,8 +212,9 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
 
     function hurt(txt) {
       if (inv > 0 || dashT > 0 || powT > 0) return;
-      hero.hp = Math.max(0, hero.hp - 1); game.score.takeDamage(); game.combo?.reset?.();
-      hurtT = 0.75; inv = 1.3; v *= 0.55; setTex(P, pre + '_hit'); sfx('hurt');
+      // En la persecución no se pierde la partida: como mucho quedás con un corazón (después se cura al llegar a la calle)
+      hero.hp = Math.max(1, hero.hp - 1); game.score.takeDamage(); game.combo?.reset?.();
+      hurtT = 0.75; inv = 1.6; v *= 0.55; setTex(P, pre + '_hit'); sfx('hurt');
       pop(x, 2.8, -dist, txt, '#ff7c8f', 24);
       flash.style.opacity = '.45'; setTimeout(() => { flash.style.opacity = '0'; }, 120);
       if (hero.hp <= 0) { phase = 'down'; phaseT = 0; }
@@ -316,7 +317,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
           windT -= dt;
           if (windT <= 0) {
             shot = { r: gap, x0: cx, x1: x, t: 0 }; ball.visible = true; cepiTo('throw'); hintE.classList.add('hidden');
-            const [a, b] = CHASE.throwEvery; throwT = a + Math.random() * (b - a) - prog * 0.8; sfx('crate');
+            const [a, b] = CHASE.throwEvery; throwT = a + Math.random() * (b - a) - prog * 0.8 + (prog < 0.3 ? 1.2 : 0); // al principio tira menos sfx('crate');
           }
         }
         if (dist >= LEN - 40) {

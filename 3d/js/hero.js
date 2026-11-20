@@ -73,7 +73,9 @@ export function createHero(id, ctx) {
       const was = h.power >= 1;
       h.power = Math.min(1, h.power + k);
       if (!was && h.power >= 1) {
-        fx.popup(actor.position.clone().setY(3.1), '⚡ ¡PODER LISTO!', '#ffd36e', { size: 22, life: 1.1, rise: 0.4 });
+        // la primera vez se dice cómo se usa (mantener la piña); después alcanza con el aviso corto
+        const first = !h.toldHold; h.toldHold = true;
+        fx.popup(actor.position.clone().setY(3.1), first ? '⚡ ¡PODER LISTO! Mantené 👊' : '⚡ ¡PODER LISTO!', '#ffd36e', { size: 22, life: first ? 1.8 : 1.1, rise: 0.4 });
         ctx.audio?.sfx('pickup');
       }
     },
