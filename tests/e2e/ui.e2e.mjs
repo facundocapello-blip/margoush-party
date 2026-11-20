@@ -29,6 +29,7 @@ try {
   await page.click('#btn-play');
   await shot(page, 'select');
   await page.click('#pick-douge');
+  await page.waitForFunction(() => window.__game.state === 'intro', null, { timeout: 6000 }); // el festejo de la tarjeta dura ~1 s
   await page.waitForTimeout(500);
   await page.mouse.click(480, 300);
   await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 15000 });

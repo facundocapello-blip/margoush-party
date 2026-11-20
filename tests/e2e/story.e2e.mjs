@@ -7,6 +7,7 @@ try {
   // Intro real desde el menú, salteable con un toque
   await page.click('#btn-play');
   await page.click('#pick-marine');
+  await page.waitForFunction(() => window.__game.state === 'intro', null, { timeout: 6000 }); // el festejo de la tarjeta dura ~1 s
   await page.waitForTimeout(1200);
   check(await G(() => window.__game.state) === 'intro', 'arranca con la intro: Cepi se lleva a Margot');
   await page.waitForTimeout(1300);

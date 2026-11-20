@@ -8,6 +8,7 @@ try {
   await open(page);
   await page.tap('#btn-play');
   await page.tap('#pick-douge');
+  await page.waitForFunction(() => window.__game.state === 'intro', null, { timeout: 6000 }); // el festejo de la tarjeta dura ~1 s
   // Intro: un solo mensaje por vez; Facu ya no presenta: el primero es el secuestro
   const seen = [];
   let maxBoxes = 0;

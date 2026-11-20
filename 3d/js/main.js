@@ -776,11 +776,20 @@ async function boot() {
   addEventListener('keydown', (e) => { if (game.state === 'menu' && !game.coverStarted && !e.repeat) startCover(); });
   const justStarted = () => performance.now() - (game.coverStartedAt || 0) < 450;
   $('#btn-play').addEventListener('click', () => { if (!justStarted()) showScreen('screen-select'); });
+  // Elegir héroe: el personaje salta y gira, grita (Douge «¡Diuuushbag!», Marine «¡Messi Goku!») y arranca
+  let picking = false;
   for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => {
+    if (picking) return;
+    picking = true;
     audio.primeSpeech();
-    // Chiste: al elegir a Marine dice «¡Messi Goku!» (en vez de «merci beaucoup»)
-    if (card.dataset.hero === 'marine') audio.messiGoku();
-    startRun(card.dataset.hero, true);
+    if (card.dataset.hero === 'marine') audio.messiGoku(); else audio.sfx('diushbag');
+    audio.sfx('coin');
+    card.classList.add('chosen'); card.parentElement.classList.add('picking');
+    setTimeout(() => {
+      card.classList.remove('chosen'); card.parentElement.classList.remove('picking');
+      picking = false;
+      startRun(card.dataset.hero, true);
+    }, 1150);
   });
   $('#btn-pause').addEventListener('click', pause);
   $('#btn-resume').addEventListener('click', resume);
