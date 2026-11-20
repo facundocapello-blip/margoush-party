@@ -24,7 +24,7 @@ try {
   // Jefe: la pelea es en la arena (escena propia)
   await G(() => window.__game.setStage('galpon'));
   await page.waitForFunction(() => window.__game.state === 'arena' && window.__game.arena.active, null, { timeout: 5000 });
-  check(await G(() => window.__game.arena.logic.state.hp === 24 && window.__game.arena.logic.state.hpMax === 24), 'en el galpón arranca la arena con BIG CHAKY y 24 de vida');
+  check(await G(() => window.__game.arena.logic.state.hp === 30 && window.__game.arena.logic.state.hpMax === 30), 'en el galpón arranca la arena con BIG CHAKY y 30 de vida');
   await G(() => { const h = window.__game.hero; h.hp = h.hpMax = 99; });
   await page.waitForTimeout(1500);
   await shot(page, 'boss');

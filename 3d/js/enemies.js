@@ -20,7 +20,7 @@ export const KINDS = {
   lale: { tex: 'courier_lale', hp: 4, scale: 1, speed: 3.0, ai: 'lale', ranged: true, points: 'lale', name: 'LALE «MANTECOSO»', gait: { cadence: 1.5, bob: 0.1, sway: 0.05 } },
   // Los malos de la banda son amigos de Facu: Lale (manteca), Cepi (pelotazos de pádel) y Pinky (trapito)
   cepi: { tex: 'courier_cepi', hp: 4, scale: 1.05, speed: 3.0, ai: 'cepi', ranged: true, points: 'cepi', name: 'CEPI «EL NIÑO»', gait: { cadence: 1.5, bob: 0.1, sway: 0.06 } },
-  cepiJefe: { tex: 'courier_cepi', sheet: 'cepi', hp: 11, scale: 1.25, speed: 3.2, ai: 'cepi', ranged: true, burst: 3, points: 'cepiJefe', name: 'CEPI «EL NIÑO»', miniBoss: true, gait: { cadence: 1.4, bob: 0.1, sway: 0.06 } },
+  cepiJefe: { tex: 'courier_cepi', sheet: 'cepi', hp: 18, scale: 1.25, speed: 3.2, ai: 'cepi', ranged: true, burst: 3, points: 'cepiJefe', name: 'CEPI «EL NIÑO»', miniBoss: true, gait: { cadence: 1.4, bob: 0.1, sway: 0.06 } },
   pinky: { tex: 'courier_pinky', hp: 4, scale: 1.05, speed: 3.4, windup: 0.5, ai: 'melee', fee: 100, points: 'pinky', name: 'PINKY «EL TRAPITO»', gait: { cadence: 1.6, bob: 0.12, sway: 0.07 } },
   delivery: { tex: 'face_delivery_sheet', hp: 3, scale: 1, speed: 3.6, ai: 'delivery', ranged: true, points: 'delivery', gait: { cadence: 0, bob: 0 } }
 };

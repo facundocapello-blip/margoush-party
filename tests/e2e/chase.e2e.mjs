@@ -70,16 +70,15 @@ for (const hero of ['douge', 'marine']) {
   } finally { await browser.close(); }
 }
 
-// Perder todos los corazones en la persecución termina la partida
+// En la persecución no se pierde la partida: como mucho quedás con un corazón
 {
   const { browser, page, errors } = await launch({ viewport: { width: 960, height: 540 } });
   try {
     await open(page);
     await toBoulevard(page, 'douge');
     await G(page, () => { window.__game.hero.hp = 1; window.__game.timeScale = 2; });
-    await page.waitForFunction(() => window.__game.state === 'result', null, { timeout: 60000 });
-    check(true, 'si te quedás sin corazones en la persecución, se termina la partida');
-    check(await G(page, () => !document.querySelector('#chase-ui') && !window.__game.chase.active), 'y no queda nada de la persecución en pantalla');
+    await page.waitForTimeout(6000);
+    check(await G(page, () => window.__game.state === 'chase' && window.__game.hero.hp === 1), 'con un corazón la persecución sigue: los golpes no te dejan sin vida');
     check(errors.length === 0, `sin errores (${errors.join(' | ')})`);
   } finally { await browser.close(); }
 }

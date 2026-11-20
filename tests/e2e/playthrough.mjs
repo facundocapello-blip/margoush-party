@@ -16,7 +16,7 @@ const tap = async (k) => { await page.keyboard.down(k); await page.waitForTimeou
 try {
   await page.goto('http://game.local/3d/index.html');
   await page.waitForFunction(() => window.__game && window.__game.state === 'menu', null, { timeout: 30000 });
-  await shot('portada'); await page.tap('#press-start'); await page.waitForTimeout(700); await shot('menu');
+  await shot('portada');
   await page.tap('#btn-play'); await page.waitForTimeout(600); await shot('eleccion');
   if (from) await G(([h, f]) => window.__game.resumeAt({ id: f, heroId: h, score: 0, time: 0 }), [hero, from]); else await page.tap('#pick-' + hero);
   let last = '', lastHp = -1, lastBanner = '', lastStage = '', tick = 0, lastShot = 0, deaths = 0;

@@ -7,7 +7,7 @@ try {
   await startRun(page, 'douge');
 
   // Mamadera: +50 y +1 de vida
-  await G(() => { const g = window.__game; g.hero.hp = 3; const b = g.pickups.list.find(p => !p.taken); g.hero.actor.position.set(b.x, 0, b.z); });
+  await G(() => { const g = window.__game; g.hero.hp = 3; const b = g.pickups.list.find(p => !p.taken && (p.kind === 'beer' || p.kind === 'mushroom')); g.hero.actor.position.set(b.x, 0, b.z); });
   await page.waitForTimeout(400);
   const after = await G(() => ({ hp: window.__game.hero.hp, total: window.__game.score.total }));
   check(after.hp === 4, 'la mamadera suma 1 de vida');
