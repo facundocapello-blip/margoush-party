@@ -2,7 +2,7 @@
 //  a) Póster de película: la familia adelante, la sombra de BIG CHAKY atrás, atardecer porteño.
 //  b) Postal Buenos Aires → París: las dos ciudades del juego; el idioma son los sellos de cada ciudad.
 //  c) Fileteado arcade: marco porteño, Margot en la «O» y la tabla de récords de los fichines.
-// Sin parámetro queda la portada actual. Cada propuesta usa los mismos ids que la actual
+// Facu eligió la A (20/11): es la portada por defecto. ?portada=b|c muestra las otras; ?portada=vieja la de antes. Cada propuesta usa los mismos ids que la actual
 // (btn-play, lang-pick, btn-ranking, podium-*, btn-continue): main.js no cambia.
 
 const PLANE = '<svg class="plane" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8.5l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>';
@@ -78,7 +78,7 @@ const TEMPLATES = {
 export const COVER_VARIANT = (() => {
   let v = null;
   try { v = new URLSearchParams(location.search).get('portada'); } catch (_) {}
-  v = (v || '').toLowerCase();
+  v = (v || 'a').toLowerCase(); // la A (póster) es la portada elegida; ?portada=vieja muestra la anterior
   return TEMPLATES[v] ? v : null;
 })();
 
