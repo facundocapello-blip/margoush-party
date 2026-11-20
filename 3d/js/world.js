@@ -609,7 +609,7 @@ export function buildStreet(scene, assets) {
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.62), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map: canvasTex(512, 138, (c, w, h) => {
       c.fillStyle = '#f2b705'; c.fillRect(0, 0, w, h); c.fillStyle = '#1e1b22'; c.fillRect(8, 8, w - 16, h - 16);
       c.font = '900 64px Fredoka, "Arial Rounded MT Bold", Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillStyle = '#f2b705'; c.fillText('FRONTERA ✈', w / 2, h / 2 + 4);
+      c.fillStyle = '#f2b705'; c.fillText('EMBARQUE ✈', w / 2, h / 2 + 4);
     }) }));
     plate.position.set(0, -0.48, -len * 0.42);
     // luz que titila arriba del poste: roja mientras está cerrada, verde al abrirse
@@ -631,6 +631,7 @@ export function buildStreet(scene, assets) {
       }
     };
   })();
+  sign('✈ AEROPUERTO', BORDER_X - 5, 6.6, '#7ec8ff', 5); // fin del Nivel 1: se viaja en avión
   sign('GALPÓN DEL FONDO', GALPON_X + 18, 7.6, '#ff7a6b', 9);
 
   // Faroles con halo

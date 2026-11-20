@@ -9,13 +9,14 @@ try {
   await page.tap('#btn-play');
   await page.tap('#pick-douge');
   await page.waitForFunction(() => window.__game.state === 'intro', null, { timeout: 6000 }); // el festejo de la tarjeta dura ~1 s
-  // Intro: un solo mensaje por vez; Facu ya no presenta: el primero es el secuestro
+  // Intro (escena animada): un solo cartel por vez; Facu no presenta; arranca en Le Concept y termina con el secuestro
   const seen = [];
   let maxBoxes = 0;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0, t0 = Date.now(); Date.now() - t0 < 120000; i++) { // la escena dura ~16 s de juego (más lento sin placa de video)
     const s = await G(() => {
       const visible = [...document.querySelectorAll('#banner, .speech')].filter(e => !e.classList.contains('hidden') && getComputedStyle(e).display !== 'none');
-      return { n: visible.length, text: document.querySelector('#banner').classList.contains('hidden') ? '' : document.querySelector('#banner').textContent, state: window.__game.state };
+      const cap = document.querySelector('.cine-cap.on b')?.textContent || '';
+      return { n: visible.length, text: cap || (document.querySelector('#banner').classList.contains('hidden') ? '' : document.querySelector('#banner').textContent), state: window.__game.state };
     });
     maxBoxes = Math.max(maxBoxes, s.n);
     if (s.text && seen[seen.length - 1] !== s.text) seen.push(s.text);
@@ -24,7 +25,7 @@ try {
   }
   check(maxBoxes <= 1, `en la intro nunca hay dos carteles a la vez (máx ${maxBoxes})`);
   const iFacu = seen.findIndex(t => t.includes('FACU')), iKid = seen.findIndex(t => t.includes('SE LLEVÓ A MARGOT'));
-  check(iFacu < 0 && iKid >= 0, 'en la intro Facu no presenta y aparece el secuestro: ' + JSON.stringify(seen));
+  check(iFacu < 0 && iKid >= 0 && seen[0] === 'LE CONCEPT', 'en la intro Facu no presenta, arranca en Le Concept y aparece el secuestro: ' + JSON.stringify(seen));
   check(seen.every(t => t.length < 110), 'los mensajes son cortos (menos de 110 caracteres)');
 
   // Jugando: nada tapa el puntaje

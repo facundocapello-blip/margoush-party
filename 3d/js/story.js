@@ -1,5 +1,6 @@
 import { SpriteActor } from './sprites.js';
 import { sheetPoses } from './cast.js';
+import { createCine } from './cine.js';
 
 // Rescate: escena de ~8 s. El héroe corre a la jaula, alza a Margot, entra la banda aplaudiendo y foto familiar.
 export const RESCUE = { run: 1.3, bars: 1.0, pick: 1.7, crew: 2.4, photo: 6.3, done: 7.8 };
@@ -12,7 +13,7 @@ const CREW = [
 // Intro (Cepi se lleva a Margot y escapa en su BYD) y rescate final en el galpón.
 export function createStory(ctx) {
   const { scene, assets, world, game, fx } = ctx;
-  let intro = null;
+  const cine = createCine(ctx);
 
   // Jaula con Margot al fondo del galpón
   const cageX = world.bounds.maxX - 6;
@@ -144,62 +145,15 @@ export function createStory(ctx) {
       margot.update(0, 0);
     },
 
-    // Intro del Nivel 1: el héroe está con Margot en el cochecito, aparece Cepi, se la lleva corriendo
-    // y se escapa en su BYD (después viene la persecución, chase.js).
-    startIntro(hero) {
-      const hx = hero?.actor.position.x ?? 4;
-      const stroller = new SpriteActor(scene, assets, { poses: { sleep: { tex: 'margot_sheet', cell: 0 }, cry: { tex: 'margot_sheet', cell: 2 } }, heightM: 1.7 });
-      stroller.position.set(hx + 1.9, 0, 0.3);
-      stroller.update(0, 0);
-      const cepi = new SpriteActor(scene, assets, { poses: sheetPoses(assets, 'cepi', 'courier_cepi'), heightM: 2.25 });
-      cepi.position.set(hx + 15, 0, 0.3);
-      cepi.setFacing(-1);
-      cepi.update(0, 0);
-      intro = { t: 0, stroller, cepi, phase: 0, hero };
-    },
+    // Escenas animadas (cine.js): «intro» (Le Concept → Cepi se lleva a Margot) y «byd» (BIG CHAKY se la lleva a Francia)
+    startIntro(hero, heroId = 'douge', kind = 'intro') { cine.start(kind, hero, heroId); },
+    // Devuelve true cuando la escena terminó
+    updateIntro(dt) { return cine.update(dt); },
+    // Corta la escena (terminada o salteada) y devuelve cuál era
+    endIntro() { return cine.stop(); },
+    get cine() { return cine; },
 
-    // Devuelve true cuando la intro terminó
-    updateIntro(dt) {
-      if (!intro) return true;
-      const i = intro;
-      i.t += dt;
-      const c = i.cepi, st = i.stroller;
-      if (i.phase === 0 && i.t > 0.7) { i.phase = 1; c.setPose(c.poses.walk ? 'walk' : 'step'); }
-      if (i.phase === 1) {
-        c.position.x -= 7 * dt;
-        if (c.position.x <= st.position.x + 1.1) {
-          i.phase = 2; i.t2 = 0;
-          c.setPose('strike'); st.setPose('cry');
-          game.banner('¡CEPI SE LLEVÓ A MARGOT!', '¡Se escapa en su BYD! ¡Perseguilo!', 2.4);
-          ctx.audio?.sfx('laugh');
-          fx.popup(c.position.clone().setY(3), '¡Jua! ¡Me la llevo!', '#ff9b8a', { size: 20, life: 1.6, rise: 0.2 });
-        }
-      }
-      if (i.phase === 2) {
-        i.t2 += dt;
-        if (i.t2 > 0.6) {
-          c.setFacing(1); c.setPose(c.poses.walk ? 'walk' : 'step');
-          c.position.x += 10 * dt;
-          st.position.x = c.position.x + 1.1;
-          st.lift = Math.abs(Math.sin(i.t * 14)) * 0.08;
-          if (c.position.x > (i.hero?.actor.position.x ?? 4) + 16) { this.endIntro(); return true; }
-        }
-        // el héroe se da cuenta y sale corriendo atrás
-        if (i.hero?.actor && i.t2 > 0.9) { i.hero.actor.setPose(i.hero.actor.poses.run ? 'run' : 'idle'); i.hero.actor.position.x += 4 * dt; }
-      }
-      c.update(dt, i.phase === 2 ? 10 : 7);
-      st.update(dt, 0);
-      return false;
-    },
-
-    endIntro() {
-      if (!intro) return;
-      intro.cepi.dispose();
-      intro.stroller?.dispose();
-      intro = null;
-    },
-
-    get inIntro() { return !!intro; },
+    get inIntro() { return cine.active; },
 
   };
 }

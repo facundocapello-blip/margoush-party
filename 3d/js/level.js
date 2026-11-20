@@ -33,7 +33,7 @@ export const WAVES = [
     spawns: [{ dx: 9, dz: -1.5, kind: 'cepi' }, { dx: -8, dz: 1.5, kind: 'pinky' }] },
   { id: 'piquete', level: 1, trigger: 106, gate: 1, title: '¡PIQUETE!', text: 'Sacá a la banda para que levanten el corte.',
     spawns: [{ dx: 7, dz: -2, kind: 'lale' }, { dx: 8, dz: 2, kind: 'cepi' }, { dx: 5, dz: 0, kind: 'pinky' }] },
-  { id: 'le-concept', level: 1, trigger: 126, gate: null, endsLevel: true, title: '¡LLEGAMOS A LE CONCEPT!', text: 'La banda copó la puerta del restaurante.',
+  { id: 'le-concept', level: 1, trigger: 126, gate: null, endsLevel: true, title: '¡ÚLTIMA PARADA: EL AEROPUERTO!', text: 'La banda no te deja subir al avión.',
     spawns: [{ dx: 8, dz: 0, kind: 'pinky' }, { dx: 9, dz: 2.2, kind: 'cepi' }] },
 
   { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE', text: '¡La banda te siguió hasta Francia!',
