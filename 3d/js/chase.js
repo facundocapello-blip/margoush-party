@@ -1,7 +1,6 @@
 // «La fuga de Cepi»: arranque del Nivel 1 en Buenos Aires, se juega hacia el fondo (estilo Crash Bandicoot Warped).
 // Cepi se lleva a Margot en su BYD (se la ve llorando en la luneta) tirando pelotazos; el héroe lo persigue en su vehículo
-// (Douge en el Hongo móvil, Marine en la Maceta móvil). Corre solo: el joystick dobla, SALTO salta,
-// 👊 rompe cosas, ESQUIVE da invulnerabilidad corta y manteniendo 👊 con la barra llena sale el poder.
+// (Douge en el Hongo móvil, Marine en la Maceta móvil). Corre solo: el joystick dobla y SALTO salta (nada más).
 // Al final el BYD se queda sin batería en un cargador y sigue el mini nivel «¡ROMPÉ EL BYD!» (bonus.js).
 // Usa el mismo renderer, HUD, carteles, controles y sonidos que el resto del juego.
 import { fillText, translateDom } from './i18n.js';
@@ -31,7 +30,7 @@ export function buildTrack(seed = 7) {
   let s = seed;
   const rnd = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
   const obstacles = [], pickups = [];
-  // Pocas cosas y claras: mesas (se rompen con 👊), monopatines (se saltan) y piquetes (se esquivan).
+  // Pocas cosas y claras: mesas y piquetes (se esquivan doblando) y monopatines (se saltan).
   // Los hongos/hojitas solo aparecen en arco arriba de lo que se salta: premio por saltar.
   for (let at = 80; at < CHASE.length - 70; at += 34 + rnd() * 14) {
     const r = rnd();
@@ -267,10 +266,8 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       else if (phase === 'down') v = Math.max(0, v - dt * 20);
       if (playing) {
         if (input.consume('jump') && y <= 0) vy = CHASE.jump;
-        if (input.consume('dodge') && dashCd <= 0) { dashT = CHASE.dash.t; dashCd = CHASE.dash.cd; dashDir = Math.sign(mx) || (x > 0 ? -1 : 1); }
-        if (input.pressed('attack')) { holdT += dt; if (hero.power >= 1 && holdT >= POWER.hold) usePower(); } else holdT = 0;
-        if (input.consume('attack')) smashAhead();
-        if (input.consume('power') && hero.power >= 1) usePower();
+        // En la persecución solo se dobla y se salta (sin piña, esquive ni poder): más simple de entrada
+        input.consume('dodge'); input.consume('attack'); input.consume('power');
         let steer = mx * CHASE.steer;
         if (slipT > 0) { slipT -= dt; steer = slipDir * 7 + mx * 3; P.rotation.z = Math.sin(t * 20) * 0.25; } else P.rotation.z = 0;
         if (dashT > 0) { dashT -= dt; steer = dashDir * CHASE.dash.speed; }
@@ -362,7 +359,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       const pz = -dist;
       // Entrada: la cámara llega desde arriba y atrás en el primer segundo (no aparece quieta)
       const ik = Math.max(0, 1 - t / 1.1), ie = ik * ik * (3 - 2 * ik);
-      cam.position.set(x * 0.55, 4.1 + y * 0.25 + ie * 5, pz + 7.8 + ie * 7); cam.lookAt(x * 0.3, 1.3 - ie * 0.8, pz - 12);
+      cam.position.set(x * 0.5, 4.9 + y * 0.25 + ie * 5, pz + 9.8 + ie * 7); cam.lookAt(x * 0.3, 1.2 - ie * 0.8, pz - 13); // un poco más lejos: se ve venir lo que hay
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? 74 : 58; cam.updateProjectionMatrix();
       road.position.set(0, 0, pz - 100); cobble.offset.y = dist / (260 / 46);
       for (const w of walks) w.position.z = pz - 100; walkTex.offset.y = dist / (260 / 60);

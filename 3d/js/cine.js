@@ -98,7 +98,10 @@ export function createCine(ctx) {
     const H = hero.actor;
     ctx.world?.setIntroMode?.(true); game.pickups?.setTrailVisible?.(false);
     H.position.set(X - 1.9, 0, 0.5); H.setFacing(1); H.setPose('idle');
-    const partner = actor(sheetPoses(assets, other, other + '_idle'), 2.15, X + 0.9, 0.2, -1);
+    // El compañero parado tranquilo con su dibujo de siempre (el cuadro 0 de la hoja de acciones es la pose de pelea)
+    const partnerPoses = sheetPoses(assets, other, other + '_idle');
+    if (assets.has?.(other + '_idle')) partnerPoses.idle = { tex: other + '_idle' };
+    const partner = actor(partnerPoses, 2.15, X + 0.9, 0.2, -1);
     const stroller = actor(strollerPoses, 1.7, X - 0.5, 1.1, 1, 'happy');
     const chaky = actor(chakyPoses(), 2.5, X + 14, -0.4, -1, 'walk');
     const crew = [['pinky', 1.2, -1.4], ['lale', 2.2, 1.2], ['cepi', 3.1, 0.1]].map(([id, dx, z]) =>

@@ -620,3 +620,6 @@ body.cine-on #hud, body.cine-on #touch, body.cine-on #boss-bar { opacity: 0; poi
 @media (prefers-reduced-motion: reduce) {
   [data-v] *, [data-v] .pa-logo, [data-v] .pc-logo { animation: none !important; }
 }
+
+/* Persecución: solo volante y salto (sin piña, esquive ni barra de poder) */
+body.chasing #act-attack, body.chasing #act-dodge, body.chasing #hud-power { display: none !important; }
