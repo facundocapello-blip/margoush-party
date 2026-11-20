@@ -1,3 +1,4 @@
+import './cover.js'; // propuestas de portada (?portada=a|b|c): tiene que correr antes de conectar los botones
 import { loadAssets } from './assets.js';
 import { buildStreet } from './world.js';
 import { createInput } from './input.js';
