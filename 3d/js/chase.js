@@ -31,19 +31,16 @@ export function buildTrack(seed = 7) {
   let s = seed;
   const rnd = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
   const obstacles = [], pickups = [];
-  for (let at = 70; at < CHASE.length - 70; at += 20 + rnd() * 12) {
+  // Pocas cosas y claras: mesas (se rompen con 👊), monopatines (se saltan) y piquetes (se esquivan).
+  // Los hongos/hojitas solo aparecen en arco arriba de lo que se salta: premio por saltar.
+  for (let at = 80; at < CHASE.length - 70; at += 34 + rnd() * 14) {
     const r = rnd();
-    const kind = r < 0.22 ? 'table' : r < 0.38 ? 'barricade' : r < 0.58 ? 'scooter' : r < 0.78 ? 'butter' : 'pigeons';
+    const kind = r < 0.4 ? 'table' : r < 0.62 ? 'barricade' : 'scooter';
     const lane = Math.floor(rnd() * 3) - 1;
     let x = lane * CHASE.lane;
     if (kind === 'barricade') x = (rnd() < 0.5 ? -1 : 1) * CHASE.lane * 0.5; // tapa dos carriles
     obstacles.push({ kind, x, s: at });
-    if (OBST[kind].low && rnd() < 0.55) {
-      for (let j = -1; j <= 1; j++) pickups.push({ x, y: 1.3 + (1 - Math.abs(j)) * 1.1, s: at + j * 2.2 }); // arco: premio por saltar
-    } else if (rnd() < 0.8) {
-      const px = kind === 'barricade' ? -Math.sign(x) * CHASE.lane : (((lane + 1 + Math.floor(rnd() * 2)) % 3) - 1) * CHASE.lane;
-      for (let j = 0; j < 5; j++) pickups.push({ x: px, y: 1, s: at - 6 + j * 2.4 });
-    }
+    if (OBST[kind].low) for (let j = -1; j <= 1; j++) pickups.push({ x, y: 1.3 + (1 - Math.abs(j)) * 1.1, s: at + j * 2.2 });
   }
   return { obstacles, pickups };
 }
@@ -189,10 +186,10 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
 
     // Carteles propios: batería del BYD, aviso de saque, destello rojo y textos que flotan
     const ui = document.createElement('div'); ui.id = 'chase-ui';
-    ui.innerHTML = '<div class="chase-flash"></div><div id="chase-bat"><span>🔋 BYD de Cepi</span><b><i></i></b><em>100%</em></div><div id="chase-hint" class="hidden">¡Cepi prepara el saque!</div>';
+    ui.innerHTML = '<div class="chase-flash"></div><div id="chase-bat" aria-label="Distancia al cargador"><b><i></i><s>🚗</s></b><em>🔌</em></div><div id="chase-hint" class="hidden">¡Cepi prepara el saque!</div>';
     translateDom(ui);
     document.body.append(ui); document.body.classList.add('chasing');
-    const batI = ui.querySelector('#chase-bat i'), batE = ui.querySelector('#chase-bat em'), hintE = ui.querySelector('#chase-hint'), flash = ui.querySelector('.chase-flash');
+    const batI = ui.querySelector('#chase-bat i'), batCar = ui.querySelector('#chase-bat s'), hintE = ui.querySelector('#chase-hint'), flash = ui.querySelector('.chase-flash');
     const pops = [];
     const pop = (x, y, z, txt, col = '#ffd36e', size = 22) => { const e = document.createElement('div'); e.className = 'pop'; fillText(e, txt); e.style.color = col; e.style.fontSize = size + 'px'; ui.append(e); pops.push({ e, v: new T.Vector3(x, y, z), t: 0 }); };
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
@@ -209,6 +206,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       setTex(C, pose === 'drive' ? CEPI_DRIVE : pose === 'windup' ? 'chase_cepi_windup' : pose === 'throw' ? 'chase_cepi_throw' : 'chase_cepi_dead');
     };
     game.state = 'chase';
+    banner('¡SEGUÍ AL BYD!', 'Se está quedando sin batería: no lo pierdas hasta el cargador 🔌', 2.6);
 
     function hurt(txt) {
       if (inv > 0 || dashT > 0 || powT > 0) return;
@@ -228,7 +226,6 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       banner(isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? 'La hiedra atrapa todo lo que viene.' : 'La verdad duele: todo vuela por el aire.', 2);
       for (const o of obs) if (!o.dead && o.s > dist - 2 && o.s < dist + 48) {
         o.dead = true; o.vy = isM ? 3 : 9; o.spin = isM ? 0 : 6; game.score.addBonus(80);
-        pop(o.x, 2, -o.s, isM ? '🌿' : '¡VERDAD!', '#7ee0c3', 20);
       }
       if (shot) { shot = null; ball.visible = false; mark.visible = false; stunT = 1.6; gap = Math.max(6, gap - 4); game.score.addBonus(200); pop(cx, 3.4, -(dist + gap), '¡TOMÁ!', '#ffd36e', 26); }
     }
@@ -238,11 +235,10 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         const dz = o.s - dist;
         if (dz > -0.5 && dz < 5.2 && Math.abs(o.x - x) < o.w / 2 + 1.1) {
           o.dead = true; o.vy = o.birds ? 7 : 6; o.spin = o.birds ? 0 : 8; game.score.addBonus(o.smash);
-          pop(o.x, 2.2, -o.s, o.birds ? '¡CURRUCUCÚ!' : '¡PUM! +' + o.smash, '#ffd36e', 22); sfx('crate'); charge(0.08);
+          pop(o.x, 2.2, -o.s, '¡PUM!', '#ffd36e', 22); sfx('crate'); charge(0.08);
           return;
         }
       }
-      pop(x, 2.6, -dist - 2, '👊', '#fff', 22);
     }
     // Salida con la cortina: se tapa, se cambia de escena y se destapa (la música vuelve a la de la calle)
     let closing = false;
@@ -304,7 +300,6 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         p.got = true; p.m.visible = false;
         chain = t - lastPick < 0.6 ? chain + 1 : 0; lastPick = t;
         const pts = CHASE.pickup + chain * 10; game.score.addBonus(pts); charge(0.045);
-        pop(p.x, p.y + 0.8, -p.s, '+' + pts, '#7ee0c3', 18);
         if (chain % 3 === 0) sfx('pickup');
       }
       // Cepi en su BYD: se mantiene adelante, zigzaguea y tira pelotazos a donde estabas
@@ -317,7 +312,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
           windT -= dt;
           if (windT <= 0) {
             shot = { r: gap, x0: cx, x1: x, t: 0 }; ball.visible = true; cepiTo('throw'); hintE.classList.add('hidden');
-            const [a, b] = CHASE.throwEvery; throwT = a + Math.random() * (b - a) - prog * 0.8 + (prog < 0.3 ? 1.2 : 0); // al principio tira menos sfx('crate');
+            const [a, b] = CHASE.throwEvery; throwT = a + Math.random() * (b - a) - prog * 0.8 + (prog < 0.3 ? 1.2 : 0); sfx('crate'); // al principio tira menos
           }
         }
         if (dist >= LEN - 40) {
@@ -356,9 +351,9 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       }
       if (phase === 'down' && phaseT > 1.3) return close(false);
 
-      // Batería del BYD = cuánto falta para el cargador
-      const bat = Math.max(0, Math.round(100 * (1 - dist / (LEN - 6))));
-      batI.style.width = bat + '%'; batI.style.background = bat > 50 ? '#7ee0c3' : bat > 20 ? '#ffd36e' : '#ff7c8f'; batE.textContent = bat + '%';
+      // Camino del BYD hasta el cargador 🔌: cuando llega, se queda sin batería y se frena
+      const prog100 = Math.min(100, 100 * dist / (LEN - 6));
+      batI.style.width = prog100 + '%'; batCar.style.left = prog100 + '%';
       draw(dt, carZ);
       updateHud(dt);
     }

@@ -576,10 +576,12 @@ export function buildStreet(scene, assets) {
   sign('BUENOS AIRES', 9, 3.7, '#7ec8ff', 4.6);
   // Arco de bienvenida sobre la calle, en la frontera
   const archPoleMat = new THREE.MeshLambertMaterial({ color: 0x2b4fa8 });
+  const archParts = [];
   for (const z of [-3.95, 3.95]) {
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 5.2, 10), archPoleMat);
     pole.position.set(BORDER_X + 0.5, 2.6, z);
     scene.add(pole);
+    archParts.push(pole);
   }
   const welcome = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 1.25), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 152, (c, w, h) => {
     const third = w / 3;
@@ -635,7 +637,7 @@ export function buildStreet(scene, assets) {
       }
     };
   })();
-  sign('✈ AEROPUERTO', BORDER_X - 5, 6.6, '#7ec8ff', 5); // fin del Nivel 1: se viaja en avión
+  const airportSign = sign('✈ AEROPUERTO', BORDER_X - 5, 6.6, '#7ec8ff', 5); // fin del Nivel 1: se viaja en avión
   sign('GALPÓN DEL FONDO', GALPON_X + 18, 7.6, '#ff7a6b', 9);
 
   // Faroles con halo
@@ -999,8 +1001,17 @@ export function buildStreet(scene, assets) {
   });
   const look = createLook(scene, hemi, sun);
   look.update(LEVELS[0].start);
+  // Intro (domingo en Le Concept): todavía no hay aeropuerto ni frontera, y la cámara va más lejos,
+  // así que la bruma se aleja para que la escena no quede lavada/blanca.
+  const introHide = [...archParts, welcome, airportSign].filter(Boolean);
+  function setIntroMode(on) {
+    for (const m of introHide) m.visible = !on;
+    borderBar.setVisible(!on);
+    look.intro = on;
+    look.update(LEVELS[0].start, true);
+  }
 
-  return { treeXs, binXs, bounds: STREET, updateLook: look.update, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, border: borderBar, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
+  return { treeXs, binXs, bounds: STREET, updateLook: look.update, setIntroMode, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, border: borderBar, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
 }
 
 // ---------- Look por tramo (luz + bruma) ----------
@@ -1008,7 +1019,7 @@ export function buildStreet(scene, assets) {
 // fr: atardecer francés dorado, con una bruma más clara (la pintura de Francia ya es cálida y suave)
 // galpon: la guarida sigue oscura, pero con humo cálido en vez de violeta plano
 export const LOOKS = {
-  ba: { bg: 0xe7b9a4, fog: 0xe0b9b0, near: 3, far: 46, sky: 0xffe6d2, ground: 0x6a5a66, hemi: 1.25, sun: 0xffc896, sunI: 0.95, tint: 0xeadcd8 },
+  ba: { bg: 0xe7b9a4, fog: 0xd9b0aa, near: 7, far: 60, sky: 0xffe6d2, ground: 0x6a5a66, hemi: 1.25, sun: 0xffc896, sunI: 0.95, tint: 0xeadcd8 },
   fr: { bg: 0xe8c9a8, fog: 0xe2c6ae, near: 3, far: 50, sky: 0xfff0dc, ground: 0x5a4c50, hemi: 1.0, sun: 0xffd9a8, sunI: 0.7, tint: 0xf0e6dc },
   galpon: { bg: 0x3b2c3a, fog: 0x6a4a44, near: 10, far: 58, sky: 0xc9a2c4, ground: 0x4a3020, hemi: 1.0, sun: 0xffb070, sunI: 0.7, tint: 0xe2d4d0 }
 };
@@ -1027,20 +1038,22 @@ function createLook(scene, hemi, sun) {
   const tinted = [];
   scene.traverse((o) => { if (o.isMesh && o.material?.isMeshBasicMaterial && o.material.map && o.material.fog && !tinted.includes(o.material)) tinted.push(o.material); });
   let last = null;
-  return {
-    update(x) {
+  const api = {
+    intro: false,
+    update(x, force = false) {
       const { a, b, k } = lookAt(x);
-      const key = a + b + k.toFixed(2);
-      if (key === last) return;
+      const key = a + b + k.toFixed(2) + api.intro;
+      if (key === last && !force) return;
       last = key;
       const A = LOOKS[a], B = LOOKS[b], L = (p) => A[p] + (B[p] - A[p]) * k;
       col(scene.background, A.bg, B.bg, k);
       col(scene.fog.color, A.fog, B.fog, k);
-      scene.fog.near = L('near'); scene.fog.far = L('far');
+      scene.fog.near = api.intro ? 24 : L('near'); scene.fog.far = api.intro ? 110 : L('far');
       col(hemi.color, A.sky, B.sky, k); col(hemi.groundColor, A.ground, B.ground, k); hemi.intensity = L('hemi');
       col(sun.color, A.sun, B.sun, k); sun.intensity = L('sunI');
       // las fachadas pintadas apenas más apagadas: menos chillonas, mismo dibujo
       for (const m of tinted) col(m.color, A.tint, B.tint, k);
     }
   };
+  return api;
 }

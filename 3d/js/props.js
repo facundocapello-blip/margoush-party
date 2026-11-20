@@ -58,7 +58,11 @@ export function createProps(ctx) {
   const crateGeo = new THREE.BoxGeometry(1.1, 1.1, 1.1);
   const crateMat = new THREE.MeshLambertMaterial({ color: 0xc28a52 });
   const bandMat = new THREE.MeshLambertMaterial({ color: 0x6b4126 });
-  const pickups = { list: [] };
+  const pickups = {
+    list: [],
+    // en la intro no se ven las monedas del camino (todavía no se juega)
+    setTrailVisible(v) { for (const b of pickups.list) if (!b.taken && (b.kind === 'coin' || b.kind === 'croissant')) b.sprite.visible = v; }
+  };
   const crates = { list: [] };
 
   function build() {

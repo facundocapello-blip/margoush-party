@@ -371,14 +371,14 @@ body.chasing #labels, body.chasing #combo, body.chasing #boss-bar { visibility: 
 #chase-bat { position: absolute; left: 50%; bottom: calc(16px + var(--safe-b)); transform: translateX(-50%); display: flex; align-items: center; gap: 8px;
   background: rgba(16, 10, 30, 0.72); border: 2px solid rgba(255, 211, 110, 0.5); border-radius: 14px; padding: 5px 12px; font-weight: 900; font-size: 12px; letter-spacing: 1px; color: #fff; white-space: nowrap; }
 #chase-bat span { font-family: Fredoka, sans-serif; color: var(--gold); }
-#chase-bat b { position: relative; width: min(150px, 22vw); height: 12px; border-radius: 4px; border: 2px solid #fff; background: #0008; }
-#chase-bat b::after { content: ""; position: absolute; right: -6px; top: 2px; width: 3px; height: 4px; background: #fff; border-radius: 1px; }
-#chase-bat i { position: absolute; left: 1px; top: 1px; bottom: 1px; border-radius: 2px; transition: width 0.2s; }
-#chase-bat em { font-style: normal; min-width: 36px; font-variant-numeric: tabular-nums; }
+#chase-bat b { position: relative; width: min(190px, 46vw); height: 10px; border-radius: 6px; border: 2px solid rgba(255, 255, 255, 0.85); background: #0008; }
+#chase-bat s { position: absolute; top: 50%; left: 0; transform: translate(-50%, -54%) scaleX(-1); font-size: 22px; text-decoration: none; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
+#chase-bat i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, #7ee0c3, #ffd36e); }
+#chase-bat em { font-style: normal; font-size: 22px; line-height: 1; }
 #chase-hint { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); background: #a1263e; color: #fff; border: 2px solid var(--gold); border-radius: 20px; padding: 6px 16px;
   font-family: Fredoka, sans-serif; font-weight: 700; font-size: 16px; animation: banner-in 0.18s ease-out; }
 body.portrait #chase-bat { bottom: auto; top: calc(110px + var(--safe-t)); }
-@media (max-width: 740px) { #chase-bat span { font-size: 13px; } #chase-bat b { width: min(96px, 22vw); } }
+
 
 /* ---------- Arena de BIG CHAKY (arena.js): solo fogonazo y textos que flotan (.pop) ---------- */
 body.arena-on #labels, body.arena-on #combo { visibility: hidden; }
