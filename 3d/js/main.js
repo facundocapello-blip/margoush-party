@@ -733,7 +733,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); audio.music(game.coverStarted ? 'menu' : null); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); audio.music('menu'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -842,6 +842,9 @@ async function boot() {
   paintContinue();
   showScreen('screen-menu');
   game.state = 'menu';
+  // La música de la portada arranca apenas carga el juego. Si el navegador no deja sonar
+  // sin un toque (Safari/iPhone), queda lista y se escucha con el primer toque en cualquier lado.
+  audio.music('menu');
   requestAnimationFrame(frame);
 }
 

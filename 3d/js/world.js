@@ -621,6 +621,9 @@ export function buildStreet(scene, assets) {
       x,
       get open() { return target > 0; },
       get lift() { return k; },
+      // La intro (domingo en Le Concept) pasa antes del viaje: ahí la barrera del aeropuerto no está
+      // y así BIG CHAKY y la banda no la atraviesan al entrar ni Cepi al escaparse
+      setVisible(v) { for (const m of [post, rest, pivot, lamp]) m.visible = v; },
       raise() { target = 1; lamp.material.color.set(0x5ee08a); },
       reset() { target = 0; k = 0; pivot.rotation.x = 0; lamp.material.color.set(0xff3b3b); },
       update(dt) {

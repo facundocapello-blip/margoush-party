@@ -152,9 +152,11 @@ export function createAudio(assets) {
     return true;
   }
   // Safari exige un gesto del usuario para habilitar el sonido
+  // (iOS cuenta como gesto el toque al soltar o el click, no el pointerdown: se escuchan todos)
   const unlock = () => { ensure(); };
-  addEventListener('pointerdown', unlock, { passive: true });
-  addEventListener('keydown', unlock);
+  for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, unlock, { passive: true, capture: true });
+  // iPhone con la llave de silencio: Web Audio queda muda salvo que la sesión sea de «reproducción»
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
 
   function tone(type, f0, f1, dur, vol, delay = 0) {
     const t = ac.currentTime + delay;
