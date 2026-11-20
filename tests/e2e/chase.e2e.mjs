@@ -53,7 +53,8 @@ for (const hero of ['douge', 'marine']) {
     await page.keyboard.press('KeyL'); await page.keyboard.press('KeyJ'); await page.keyboard.press('KeyK');
     await page.waitForTimeout(200);
     check((await G(page, () => window.__game.hero.power)) === 1, `${hero}: en la persecución no hay poder`);
-    check(await G(page, () => ['#act-attack', '#act-dodge'].every(q => { const e = document.querySelector(q); return !e || getComputedStyle(e).display === 'none'; })), `${hero}: no se ven los botones de piña ni esquive`);
+    check(await G(page, () => ['#act-attack', '#act-dodge', '#joystick'].every(q => { const e = document.querySelector(q); return !e || !e.getClientRects().length; })), `${hero}: no se ven el joystick ni los botones (se maneja deslizando y tocando)`);
+    check(await G(page, () => !!document.querySelector('#chase-pad') && !!document.querySelector('#chase-tip')), `${hero}: hay panel de gestos y ayuda de cómo se juega`);
     await shot(page, `chase_${hero}`);
 
     // Hasta el final (rápido): el BYD se queda sin batería y sigue el mini nivel de romperlo

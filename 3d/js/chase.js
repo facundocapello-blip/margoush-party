@@ -32,7 +32,7 @@ export function buildTrack(seed = 7) {
   const obstacles = [], pickups = [];
   // Pocas cosas y claras: mesas y piquetes (se esquivan doblando) y monopatines (se saltan).
   // Los hongos/hojitas solo aparecen en arco arriba de lo que se salta: premio por saltar.
-  for (let at = 80; at < CHASE.length - 70; at += 34 + rnd() * 14) {
+  for (let at = 110; at < CHASE.length - 70; at += 34 + rnd() * 14) { // el primero llega después del cartel y la ayuda
     const r = rnd();
     const kind = r < 0.4 ? 'table' : r < 0.62 ? 'barricade' : 'scooter';
     const lane = Math.floor(rnd() * 3) - 1;
@@ -186,15 +186,38 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     // Carteles propios: batería del BYD, aviso de saque, destello rojo y textos que flotan
     const ui = document.createElement('div'); ui.id = 'chase-ui';
     ui.innerHTML = '<div class="chase-flash"></div><div id="chase-bat" aria-label="Distancia al cargador"><b><i></i><s>🚗</s></b><em>🔌</em></div><div id="chase-hint" class="hidden">¡Cepi prepara el saque!</div>';
+    // Controles de la persecución (como los juegos de autos/carreras del celu): deslizar ← → cambia de carril
+    // y tocar (o deslizar ↑) salta. En compu: flechas ← → y Espacio. Sin joystick ni botones.
+    const pad = document.createElement('div'); pad.id = 'chase-pad';
+    const hint = document.createElement('div'); hint.id = 'chase-tip';
+    hint.innerHTML = matchMedia('(pointer: coarse)').matches
+      ? '<span><b>👈 👉</b>Deslizá para cambiar de carril</span><span><b>👆</b>Tocá para saltar</span>'
+      : '<span><b>← →</b>Cambiá de carril</span><span><b>Espacio</b>Saltá</span>';
+    ui.append(hint);
     translateDom(ui);
-    document.body.append(ui); document.body.classList.add('chasing');
+    document.body.append(pad, ui); document.body.classList.add('chasing'); // el panel de gestos va debajo del HUD (pausa y música siguen andando)
+    let lane = 0, swipe = null, tapJump = false, lastMx = 0;
+    const laneStep = (d) => { const nl = Math.max(-1, Math.min(1, lane + d)); if (nl !== lane) { lane = nl; sfx('whoosh'); } };
+    pad.addEventListener('pointerdown', (e) => { swipe = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false, id: e.pointerId }; try { pad.setPointerCapture(e.pointerId); } catch (_) {} });
+    pad.addEventListener('pointermove', (e) => {
+      if (!swipe || e.pointerId !== swipe.id) return;
+      const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+      if (Math.abs(dx) > 26 && Math.abs(dx) > Math.abs(dy)) { laneStep(Math.sign(dx)); swipe.x = e.clientX; swipe.y = e.clientY; swipe.moved = true; }
+      else if (dy < -34 && Math.abs(dy) > Math.abs(dx)) { tapJump = true; swipe.y = e.clientY; swipe.moved = true; }
+    });
+    const up = (e) => {
+      if (!swipe || e.pointerId !== swipe.id) return;
+      if (!swipe.moved && performance.now() - swipe.t < 350) tapJump = true;
+      swipe = null;
+    };
+    pad.addEventListener('pointerup', up); pad.addEventListener('pointercancel', () => { swipe = null; });
     const batI = ui.querySelector('#chase-bat i'), batCar = ui.querySelector('#chase-bat s'), hintE = ui.querySelector('#chase-hint'), flash = ui.querySelector('.chase-flash');
     const pops = [];
     const pop = (x, y, z, txt, col = '#ffd36e', size = 22) => { const e = document.createElement('div'); e.className = 'pop'; fillText(e, txt); e.style.color = col; e.style.fontSize = size + 'px'; ui.append(e); pops.push({ e, v: new T.Vector3(x, y, z), t: 0 }); };
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
 
     // Estado
-    let dist = 0, x = 0, y = 0, vy = 0, v = 0, t = 0, phase = 'intro', phaseT = 0, gap = 13, cx = 0;
+    let dist = 0, x = 0, y = 0, vy = 0, v = 0, t = 0, phase = 'intro', phaseT = 0, gap = 14, cx = 0;
     let dashT = 0, dashCd = 0, dashDir = 1, slipT = 0, slipDir = 1, hurtT = 0, inv = 0, holdT = 0, powT = 0, stunT = 0;
     let throwT = 3.2, windT = 0, shot = null, lastPick = 0, chain = 0;
     // Cepi maneja mirando adelante; se da vuelta para sacar y vuelve al volante (turnT = «giro» del cambio de pose)
@@ -205,7 +228,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       setTex(C, pose === 'drive' ? CEPI_DRIVE : pose === 'windup' ? 'chase_cepi_windup' : pose === 'throw' ? 'chase_cepi_throw' : 'chase_cepi_dead');
     };
     game.state = 'chase';
-    banner('¡SEGUÍ AL BYD!', 'Se está quedando sin batería: no lo pierdas hasta el cargador 🔌', 2.6);
+    banner('¡SEGUÍ AL BYD!', 'Se está quedando sin batería: no lo pierdas hasta el cargador 🔌', 2.4);
 
     function hurt(txt) {
       if (inv > 0 || dashT > 0 || powT > 0) return;
@@ -260,18 +283,20 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       t += dt; phaseT += dt;
       inv = Math.max(0, inv - dt); dashCd = Math.max(0, dashCd - dt); stunT = Math.max(0, stunT - dt);
       const mx = input.moveX, prog = dist / LEN, playing = phase === 'run' || phase === 'intro';
+      if (t > 4.5 && !hint.classList.contains('out')) hint.classList.add('out');
       if (phase === 'intro') { v = Math.min(v + dt * 9, 6); if (phaseT > 1.4) phase = 'run'; }
       else if (phase === 'run') { const top = CHASE.speed + prog * CHASE.speedGain; v += (top - v) * Math.min(1, dt * (hurtT > 0 ? 0.6 : 1.6)); }
       else if (phase === 'battery') v = Math.max(2.5, Math.min(v, (LEN - 6 - dist) * 1.7));
       else if (phase === 'down') v = Math.max(0, v - dt * 20);
       if (playing) {
-        if (input.consume('jump') && y <= 0) vy = CHASE.jump;
-        // En la persecución solo se dobla y se salta (sin piña, esquive ni poder): más simple de entrada
+        if ((input.consume('jump') || tapJump) && y <= 0) { vy = CHASE.jump; sfx('jump'); }
+        tapJump = false;
+        // En la persecución solo se cambia de carril y se salta (sin piña, esquive ni poder)
         input.consume('dodge'); input.consume('attack'); input.consume('power');
-        let steer = mx * CHASE.steer;
-        if (slipT > 0) { slipT -= dt; steer = slipDir * 7 + mx * 3; P.rotation.z = Math.sin(t * 20) * 0.25; } else P.rotation.z = 0;
-        if (dashT > 0) { dashT -= dt; steer = dashDir * CHASE.dash.speed; }
-        x = Math.max(-CHASE.xMax, Math.min(CHASE.xMax, x + steer * dt));
+        const km = Math.sign(Math.round(mx)); if (km !== 0 && km !== lastMx) laneStep(km); lastMx = km; // flechas: un carril por toque
+        const tx = lane * CHASE.lane;
+        x += (tx - x) * Math.min(1, dt * 11);
+        P.rotation.z = (tx - x) * -0.06; // se inclina al cambiar de carril
       }
       hero.holdT = holdT;
       vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
@@ -301,7 +326,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       }
       // Cepi en su BYD: se mantiene adelante, zigzaguea y tira pelotazos a donde estabas
       if (phase === 'run') {
-        const want = stunT > 0 ? 6 : 8 + Math.sin(t * 0.7) * 1.8;
+        const want = stunT > 0 ? 9 : 12 + Math.sin(t * 0.7) * 1.5; // el BYD va más adelante: no tapa lo que viene
         gap += (want - gap) * dt * 0.8;
         cx += (Math.sin(t * 0.55) * 2.3 - cx) * dt * 1.2;
         if (!shot && stunT <= 0 && windT <= 0) { throwT -= dt; if (throwT <= 0) { windT = CHASE.windup; cepiTo('windup'); } } // sin cartel: se ve a Cepi asomarse y la marca roja en el piso
@@ -359,7 +384,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       const pz = -dist;
       // Entrada: la cámara llega desde arriba y atrás en el primer segundo (no aparece quieta)
       const ik = Math.max(0, 1 - t / 1.1), ie = ik * ik * (3 - 2 * ik);
-      cam.position.set(x * 0.5, 4.9 + y * 0.25 + ie * 5, pz + 9.8 + ie * 7); cam.lookAt(x * 0.3, 1.2 - ie * 0.8, pz - 13); // un poco más lejos: se ve venir lo que hay
+      cam.position.set(x * 0.45, 6.2 + y * 0.25 + ie * 5, pz + 10.5 + ie * 7); cam.lookAt(x * 0.3, 1.0 - ie * 0.8, pz - 20); // alta y lejos: se ve por encima del BYD lo que viene
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? 74 : 58; cam.updateProjectionMatrix();
       road.position.set(0, 0, pz - 100); cobble.offset.y = dist / (260 / 46);
       for (const w of walks) w.position.z = pz - 100; walkTex.offset.y = dist / (260 / 60);
@@ -409,7 +434,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     }
 
     function dispose() {
-      ui.remove(); document.body.classList.remove('chasing');
+      ui.remove(); pad.remove(); document.body.classList.remove('chasing');
       for (const o of own) o.dispose?.();
       cur = null;
     }

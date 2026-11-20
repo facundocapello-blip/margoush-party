@@ -622,4 +622,9 @@ body.cine-on #hud, body.cine-on #touch, body.cine-on #boss-bar { opacity: 0; poi
 }
 
 /* Persecución: solo volante y salto (sin piña, esquive ni barra de poder) */
-body.chasing #act-attack, body.chasing #act-dodge, body.chasing #hud-power { display: none !important; }
+body.chasing #touch, body.chasing #hud-power { display: none !important; }
+#chase-pad { position: fixed; inset: 28% 0 0 0; z-index: 4; touch-action: none; pointer-events: auto; }
+#chase-tip { position: fixed; left: 50%; bottom: calc(30px + var(--safe-b)); transform: translateX(-50%); z-index: 5; display: flex; gap: 12px; pointer-events: none; transition: opacity 0.5s ease-out; }
+#chase-tip span { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 120px; padding: 10px 14px; border-radius: 16px; background: rgba(16, 10, 30, 0.72); color: #fff; font: 900 14px / 1.2 Nunito, sans-serif; text-align: center; }
+#chase-tip b { font: 700 24px Fredoka, sans-serif; color: var(--gold); }
+#chase-tip.out { opacity: 0; }
