@@ -142,7 +142,7 @@ function asphalt(ctx, w, h) {
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
   const zy = (z) => (5.4 + z) * PPM; // z del mundo → fila de la textura
-  ctx.fillStyle = '#3b3443'; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#433f49'; ctx.fillRect(0, 0, w, h);
   // manchas grandes de tono (el asfalto nunca es parejo)
   for (let n = 0; n < 26; n++) {
     const x = rnd() * w, y = zy(-3.8) + rnd() * (zy(4.2) - zy(-3.8)), r = 60 + rnd() * 170;
@@ -347,7 +347,8 @@ export function streetSpotsBA(assets, { lcLeft, lcRight }) {
 export function buildStreet(scene, assets) {
   scene.background = new THREE.Color(0x2c2350);
   scene.fog = new THREE.Fog(0x2c2350, 30, 75);
-  scene.add(new THREE.HemisphereLight(0x9a8ce0, 0x4a3020, 1.0));
+  const hemi = new THREE.HemisphereLight(0x9a8ce0, 0x4a3020, 1.0);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffd9a8, 0.55);
   sun.position.set(-20, 30, 25);
   scene.add(sun);
@@ -355,7 +356,7 @@ export function buildStreet(scene, assets) {
   // Piso: asfalto porteño hasta la frontera, adoquines franceses hasta el galpón
   const baLen = BORDER_X + 20;
   // 22 m de fondo × 64 px/m = 1408 px; cada copia cubre 16 m de calle (1024 px)
-  const asphaltFloor = new THREE.Mesh(new THREE.PlaneGeometry(baLen, 22), new THREE.MeshLambertMaterial({ color: 0xc9c2cf, map: canvasTex(1024, 1408, asphalt, baLen / 16, 1) }));
+  const asphaltFloor = new THREE.Mesh(new THREE.PlaneGeometry(baLen, 22), new THREE.MeshLambertMaterial({ color: 0xd8d0d4, map: canvasTex(1024, 1408, asphalt, baLen / 16, 1) }));
   asphaltFloor.rotation.x = -Math.PI / 2;
   asphaltFloor.position.set(BORDER_X - baLen / 2, 0, 5.6);
   scene.add(asphaltFloor);
@@ -990,5 +991,56 @@ export function buildStreet(scene, assets) {
     return pos;
   }
 
-  return { treeXs, binXs, bounds: STREET, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, border: borderBar, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
+  // Look por tramo, como la persecución: luz de atardecer y una bruma que suaviza lo lejano.
+  // Las fachadas pintadas reciben la bruma (antes la ignoraban y brillaban a todo volumen).
+  scene.traverse((o) => {
+    const m = o.material;
+    if (o.isMesh && m && m.isMeshBasicMaterial && m.map && !m.transparent && m.fog === false && o.position.z < BACK_Z + 1.2) { m.fog = true; m.needsUpdate = true; }
+  });
+  const look = createLook(scene, hemi, sun);
+  look.update(LEVELS[0].start);
+
+  return { treeXs, binXs, bounds: STREET, updateLook: look.update, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, border: borderBar, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
+}
+
+// ---------- Look por tramo (luz + bruma) ----------
+// ba: atardecer porteño, el mismo de la persecución por la 9 de Julio
+// fr: atardecer francés dorado, con una bruma más clara (la pintura de Francia ya es cálida y suave)
+// galpon: la guarida sigue oscura, pero con humo cálido en vez de violeta plano
+export const LOOKS = {
+  ba: { bg: 0xe7b9a4, fog: 0xe0b9b0, near: 3, far: 46, sky: 0xffe6d2, ground: 0x6a5a66, hemi: 1.25, sun: 0xffc896, sunI: 0.95, tint: 0xeadcd8 },
+  fr: { bg: 0xe8c9a8, fog: 0xe2c6ae, near: 3, far: 50, sky: 0xfff0dc, ground: 0x5a4c50, hemi: 1.0, sun: 0xffd9a8, sunI: 0.7, tint: 0xf0e6dc },
+  galpon: { bg: 0x3b2c3a, fog: 0x6a4a44, near: 10, far: 58, sky: 0xc9a2c4, ground: 0x4a3020, hemi: 1.0, sun: 0xffb070, sunI: 0.7, tint: 0xe2d4d0 }
+};
+// Dónde se mezcla un look con el siguiente (x de la calle)
+export function lookAt(x) {
+  const mix = (a, b, k) => ({ a, b, k: Math.max(0, Math.min(1, k)) });
+  if (x < BORDER_X - 4) return mix('ba', 'ba', 0);
+  if (x < BORDER_X + 4) return mix('ba', 'fr', (x - (BORDER_X - 4)) / 8);
+  if (x < GALPON_X - 14) return mix('fr', 'fr', 0);
+  if (x < GALPON_X - 2) return mix('fr', 'galpon', (x - (GALPON_X - 14)) / 12);
+  return mix('galpon', 'galpon', 0);
+}
+function createLook(scene, hemi, sun) {
+  const ca = new THREE.Color(), cb = new THREE.Color();
+  const col = (target, a, b, k) => target.copy(ca.setHex(a)).lerp(cb.setHex(b), k);
+  const tinted = [];
+  scene.traverse((o) => { if (o.isMesh && o.material?.isMeshBasicMaterial && o.material.map && o.material.fog && !tinted.includes(o.material)) tinted.push(o.material); });
+  let last = null;
+  return {
+    update(x) {
+      const { a, b, k } = lookAt(x);
+      const key = a + b + k.toFixed(2);
+      if (key === last) return;
+      last = key;
+      const A = LOOKS[a], B = LOOKS[b], L = (p) => A[p] + (B[p] - A[p]) * k;
+      col(scene.background, A.bg, B.bg, k);
+      col(scene.fog.color, A.fog, B.fog, k);
+      scene.fog.near = L('near'); scene.fog.far = L('far');
+      col(hemi.color, A.sky, B.sky, k); col(hemi.groundColor, A.ground, B.ground, k); hemi.intensity = L('hemi');
+      col(sun.color, A.sun, B.sun, k); sun.intensity = L('sunI');
+      // las fachadas pintadas apenas más apagadas: menos chillonas, mismo dibujo
+      for (const m of tinted) col(m.color, A.tint, B.tint, k);
+    }
+  };
 }
