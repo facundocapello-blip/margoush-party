@@ -11,17 +11,17 @@ for (const [w, h, name] of [[844, 390, 'acostado'], [390, 844, 'parado']]) {
     await page.waitForFunction(() => window.__game && window.__game.state === 'menu', null, { timeout: 20000 });
     // deja terminar la entrada animada (logo que cae, personajes que entran)
     await page.waitForFunction(() => document.getAnimations().filter(a => a.effect?.target?.closest?.('#screen-menu') && a.effect.getComputedTiming().iterations !== Infinity).every(a => a.playState === 'finished'), null, { timeout: 8000 });
-    check(await visible(page, '#screen-menu .logo'), `${name}: se ve el logo`);
+    check(await visible(page, '.pa-logo'), `${name}: se ve el logo del póster`);
+    check(await visible(page, '.pa-family'), `${name}: se ve la familia con Margot`);
     check(await page.$$eval('#cover-chaky, #cover-heroes, #cover-facu, #screen-menu .ribbon', n => n.length) === 0, `${name}: la portada no muestra a BIG CHAKY ni a nadie más`);
     check(!(await page.textContent('#screen-select')).includes('Facu te acompaña'), `${name}: la selección no promete a Facu todo el camino`);
     // Apenas entrás: ¡JUGAR!, el idioma al lado y el podio, sin un toque previo
     check(await visible(page, '#btn-play') && await visible(page, '#lang-pick') && await visible(page, '#cover-podium'), `${name}: de entrada se ven ¡JUGAR!, el idioma y el podio`);
-    const play = await rect(page, '#btn-play'), lang = await rect(page, '#lang-pick'), pod = await rect(page, '#cover-podium'), logo = await rect(page, '#screen-menu .logo');
-    check(Math.abs((play.top + play.bottom) / 2 - (lang.top + lang.bottom) / 2) < 12 && lang.left > play.right - 2, `${name}: el idioma está al lado de ¡JUGAR!`);
-    if (w > h) check(pod.left > play.right && pod.left > w * 0.5, `${name}: el podio queda a la derecha`);
+    const play = await rect(page, '#btn-play'), lang = await rect(page, '#lang-pick'), pod = await rect(page, '#cover-podium'), logo = await rect(page, '.pa-logo');
+    check(lang.bottom < play.top - 40, `${name}: el idioma va arriba, lejos de ¡JUGAR!`);
     for (const r of [play, lang, pod]) check(r.left >= 0 && r.right <= w && r.top >= 0 && r.bottom <= h, `${name}: ${JSON.stringify([Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)])} entra en pantalla`);
     for (const r of [play, lang, pod]) check(!overlap(logo, r), `${name}: el logo no tapa nada`);
-    check(!overlap(pod, play) && !overlap(pod, lang), `${name}: el podio no tapa los botones`);
+    check(!overlap(pod, play), `${name}: el récord no tapa ¡JUGAR!`);
     await shot(page, `cover-${name}`);
     await page.tap('#lang-pick [data-lang="fr"]');
     check(await page.textContent('#btn-play') === 'JOUER !' && /Podium/.test(await page.textContent('#podium-title')), `${name}: el idioma cambia la portada al toque`);
