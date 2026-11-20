@@ -352,6 +352,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     function draw(dt) {
       const S = logic.state;
       clockE.textContent = '⚡' + Math.floor(S.bat) + '%';
+      audio?.setIntensity?.(S.bat / 100);
       clockE.parentElement.classList.toggle('hurry', S.bat >= 70 && !S.over);
       screen.material.color.setHex(S.cepiStun > 0 ? 0xff4d5e : (Math.sin(t * 8) > 0 ? 0x2fd36b : 0x9cffc0));
       // Cepi: enchufando (parado), golpeado o tirado; el cable cae al piso mientras está desenchufado
