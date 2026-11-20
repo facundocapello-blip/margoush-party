@@ -5,7 +5,7 @@ import { TRAPS } from './level.js';
 import { SpriteActor } from './sprites.js';
 
 export const TIMING = {
-  colectivo: { warn: 1.0, speed: 28, lane: 1.3, length: 10 },
+  colectivo: { warn: 1.4, speed: 28, lane: 1.3, length: 10 },
   trottinette: { warn: 0.85, speed: 20, lane: 0.8, length: 1.4, clearLift: 0.7 },
   boletas: { fall: 1.1, radius: 0.65, penalty: 100 },
   palomas: { warn: 0.8, fly: 1.6, count: 24 },
@@ -22,6 +22,83 @@ function canvasTex(w, h, draw) {
   return t;
 }
 const emoji = (e) => canvasTex(128, 128, (c) => { c.font = '96px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(e, 64, 72); });
+
+// ---------- Colectivo (dibujos) ----------
+function drawBusSide(c, w, h) {
+  // franjas: techo crema, ventanillas, filete, chapa roja, zócalo
+  c.fillStyle = '#f0e2c0'; c.fillRect(0, 0, w, h);
+  c.fillStyle = '#c8312e'; c.fillRect(0, h * 0.52, w, h * 0.48);
+  c.fillStyle = '#8f1f1d'; c.fillRect(0, h * 0.9, w, h * 0.1);
+  // ventanillas con pasajeros (el frente queda a la derecha de la textura: el colectivo va hacia +x)
+  const wy = h * 0.12, wh = h * 0.33;
+  for (let i = 0; i < 7; i++) {
+    const x = w * 0.04 + i * w * 0.112, ww = w * 0.098;
+    const gl = c.createLinearGradient(0, wy, 0, wy + wh);
+    gl.addColorStop(0, '#5b7aa6'); gl.addColorStop(1, '#22304d');
+    c.fillStyle = '#1b1f2b'; c.fillRect(x - 4, wy - 4, ww + 8, wh + 8);
+    c.fillStyle = gl; c.fillRect(x, wy, ww, wh);
+    // pasajero (cabeza y hombros) en casi todas
+    if (i % 3 !== 1) {
+      c.fillStyle = 'rgba(20,16,26,.75)';
+      const px = x + ww * (0.35 + 0.3 * ((i * 37) % 10) / 10);
+      c.beginPath(); c.arc(px, wy + wh * 0.5, wh * 0.16, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.ellipse(px, wy + wh * 0.98, wh * 0.32, wh * 0.3, 0, Math.PI, 0); c.fill();
+    }
+    // reflejo
+    c.fillStyle = 'rgba(255,255,255,.22)';
+    c.beginPath(); c.moveTo(x + ww * 0.15, wy); c.lineTo(x + ww * 0.35, wy); c.lineTo(x + ww * 0.1, wy + wh); c.lineTo(x - ww * 0.1 < x ? x : x, wy + wh); c.closePath(); c.fill();
+  }
+  // puerta delantera con vidrio partido
+  const dx = w * 0.84, dw = w * 0.085;
+  c.fillStyle = '#1b1f2b'; c.fillRect(dx - 4, h * 0.1, dw + 8, h * 0.8);
+  c.fillStyle = '#34486e'; c.fillRect(dx, h * 0.12, dw / 2 - 3, h * 0.76); c.fillRect(dx + dw / 2 + 3, h * 0.12, dw / 2 - 3, h * 0.76);
+  // parabrisas lateral del chofer
+  c.fillStyle = '#1b1f2b'; c.fillRect(w * 0.94, h * 0.1, w * 0.06, h * 0.4);
+  c.fillStyle = '#4f6c99'; c.fillRect(w * 0.945, h * 0.12, w * 0.055, h * 0.36);
+  // filete porteño: doble línea dorada con rulos
+  c.strokeStyle = '#ffcf4a'; c.lineWidth = 7;
+  c.beginPath(); c.moveTo(0, h * 0.55); c.lineTo(w * 0.83, h * 0.55); c.stroke();
+  c.strokeStyle = '#2b6fd6'; c.lineWidth = 3;
+  c.beginPath(); c.moveTo(0, h * 0.6); c.lineTo(w * 0.83, h * 0.6); c.stroke();
+  c.strokeStyle = '#ffcf4a'; c.lineWidth = 4;
+  for (let i = 0; i < 6; i++) {
+    const cx = w * 0.08 + i * w * 0.135, cy = h * 0.72;
+    c.beginPath(); c.arc(cx, cy, 14, Math.PI, Math.PI * 2.6); c.stroke();
+    c.beginPath(); c.arc(cx + 30, cy, 14, Math.PI * 0.4, Math.PI * 2); c.stroke();
+    c.fillStyle = '#2b6fd6'; c.beginPath(); c.arc(cx + 15, cy + 4, 5, 0, Math.PI * 2); c.fill();
+  }
+  // número de línea
+  c.fillStyle = '#1b1f2b'; c.beginPath(); c.roundRect ? c.roundRect(w * 0.7, h * 0.64, w * 0.11, h * 0.2, 10) : c.rect(w * 0.7, h * 0.64, w * 0.11, h * 0.2); c.fill();
+  c.fillStyle = '#ffd36e'; c.font = '900 50px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('60', w * 0.755, h * 0.745);
+  // pasos de rueda
+  c.fillStyle = '#2a1414';
+  for (const u of [0.17, 0.8]) { c.beginPath(); c.arc(w * u, h, h * 0.2, Math.PI, 0); c.fill(); }
+}
+function drawBusFront(c, w, h) {
+  c.fillStyle = '#c8312e'; c.fillRect(0, 0, w, h);
+  c.fillStyle = '#f0e2c0'; c.fillRect(0, 0, w, h * 0.5);
+  // cartel de recorrido luminoso
+  c.fillStyle = '#121212'; c.fillRect(w * 0.06, h * 0.03, w * 0.88, h * 0.1);
+  c.fillStyle = '#ffb000'; c.font = '900 22px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('60  CONSTITUCIÓN', w / 2, h * 0.085);
+  // parabrisas
+  const gl = c.createLinearGradient(0, h * 0.15, 0, h * 0.5);
+  gl.addColorStop(0, '#6c8cba'); gl.addColorStop(1, '#22304d');
+  c.fillStyle = '#1b1f2b'; c.fillRect(w * 0.05, h * 0.15, w * 0.9, h * 0.37);
+  c.fillStyle = gl; c.fillRect(w * 0.07, h * 0.17, w * 0.86, h * 0.33);
+  c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.moveTo(w * 0.2, h * 0.17); c.lineTo(w * 0.38, h * 0.17); c.lineTo(w * 0.22, h * 0.5); c.lineTo(w * 0.08, h * 0.5); c.closePath(); c.fill();
+  // chofer
+  c.fillStyle = 'rgba(20,16,26,.7)'; c.beginPath(); c.arc(w * 0.68, h * 0.35, 16, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.ellipse(w * 0.68, h * 0.5, 30, 22, 0, Math.PI, 0); c.fill();
+  // filete y parrilla
+  c.fillStyle = '#ffcf4a'; c.fillRect(0, h * 0.54, w, 7);
+  c.fillStyle = '#1b1f2b'; c.fillRect(w * 0.3, h * 0.66, w * 0.4, h * 0.13);
+  c.fillStyle = '#c0c4cc'; for (let i = 0; i < 5; i++) c.fillRect(w * 0.31, h * (0.675 + i * 0.024), w * 0.38, 3);
+  // faros y paragolpes
+  c.fillStyle = '#fff6c8'; for (const u of [0.13, 0.87]) { c.beginPath(); c.arc(w * u, h * 0.72, 17, 0, Math.PI * 2); c.fill(); }
+  c.fillStyle = '#2a2a30'; c.fillRect(0, h * 0.86, w, h * 0.14);
+}
 
 export function createTraps(ctx) {
   const { scene, world, fx, game, assets } = ctx;
@@ -96,32 +173,60 @@ export function createTraps(ctx) {
   }
 
   // ---------- eventos de tramo ----------
+  // Carril marcado con flechas que corren en el sentido en que viene (como el aviso de la persecución)
+  const chevron = canvasTex(128, 64, (c, w, h) => {
+    c.fillStyle = 'rgba(255,59,48,.55)'; c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(255,255,255,.95)'; c.strokeStyle = 'rgba(60,10,10,.6)'; c.lineWidth = 3;
+    c.beginPath(); c.moveTo(w * 0.28, h * 0.12); c.lineTo(w * 0.62, h * 0.5); c.lineTo(w * 0.28, h * 0.88); c.lineTo(w * 0.44, h * 0.88); c.lineTo(w * 0.78, h * 0.5); c.lineTo(w * 0.44, h * 0.12); c.closePath(); c.fill(); c.stroke();
+  });
   function laneStripe(len, width) {
-    const m = flat(new THREE.PlaneGeometry(len, width), warnMat.clone(), 0.04);
+    const map = chevron.clone(); map.needsUpdate = true;
+    map.wrapS = THREE.RepeatWrapping; map.repeat.set(len / (width * 1.2), 1);
+    const m = flat(new THREE.PlaneGeometry(len, width), new THREE.MeshBasicMaterial({ map, transparent: true, opacity: 0.35, depthWrite: false }), 0.04);
     return m;
   }
 
+  // Colectivo porteño dibujado por código: rojo y crema con filete dorado, ventanillas con pasajeros,
+  // puerta, número 60 y cartel de recorrido. Mismo tamaño y lógica que antes.
+  const busTex = (() => {
+    let cache = null;
+    return () => cache || (cache = {
+      side: canvasTex(1024, 288, drawBusSide),
+      front: canvasTex(256, 288, drawBusFront),
+      roof: canvasTex(512, 128, (c, w, h) => {
+        const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#a99c86'); gr.addColorStop(0.5, '#cdbf9f'); gr.addColorStop(1, '#a99c86');
+        c.fillStyle = gr; c.fillRect(0, 0, w, h);
+        c.fillStyle = '#c8312e'; c.fillRect(0, 0, w, 7); c.fillRect(0, h - 7, w, 7);
+        c.fillStyle = '#8d8a86'; c.strokeStyle = '#5b5956'; c.lineWidth = 3;
+        for (const u of [0.2, 0.55]) { c.fillRect(w * u, h * 0.28, w * 0.16, h * 0.44); c.strokeRect(w * u, h * 0.28, w * 0.16, h * 0.44); }
+        c.fillStyle = 'rgba(0,0,0,.15)'; for (let i = 0; i < 12; i++) c.fillRect(w * (0.05 + i * 0.08), h * 0.1, 2, h * 0.8);
+      }),
+      back: canvasTex(256, 288, (c, w, h) => { c.fillStyle = '#c8312e'; c.fillRect(0, 0, w, h); c.fillStyle = '#f0e2c0'; c.fillRect(0, 0, w, h * 0.42); c.fillStyle = '#2a3550'; c.fillRect(w * 0.15, h * 0.08, w * 0.7, h * 0.26); c.fillStyle = '#ff5a3c'; c.fillRect(w * 0.08, h * 0.7, w * 0.16, h * 0.08); c.fillRect(w * 0.76, h * 0.7, w * 0.16, h * 0.08); c.fillStyle = '#ffd36e'; c.font = '900 64px Arial'; c.textAlign = 'center'; c.fillText('60', w / 2, h * 0.68); })
+    });
+  })();
   function buildBus() {
     const g = new THREE.Group();
-    const L = TIMING.colectivo.length;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(L, 1.6, 2.4), new THREE.MeshLambertMaterial({ color: 0xc8312e }));
-    body.position.y = 1.1;
-    const top = new THREE.Mesh(new THREE.BoxGeometry(L, 1.1, 2.4), new THREE.MeshLambertMaterial({ color: 0xf0e2c0 }));
-    top.position.y = 2.45;
-    const win = new THREE.Mesh(new THREE.BoxGeometry(L - 1.2, 0.7, 2.45), new THREE.MeshBasicMaterial({ color: 0x2a3550 }));
-    win.position.set(-0.3, 2.45, 0);
-    const front = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 2.0), new THREE.MeshBasicMaterial({ color: 0x2a3550 }));
-    front.position.set(L / 2 + 0.01, 2.3, 0);
-    const num = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: canvasTex(128, 64, (c, w, h) => { c.fillStyle = '#111'; c.fillRect(0, 0, w, h); c.fillStyle = '#ffb000'; c.font = '900 44px Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('60', w / 2, h / 2 + 2); }) }));
-    num.position.set(L / 2 - 1.2, 3.1, 1.22);
-    const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 14);
-    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x151518 });
-    for (const x of [-L / 2 + 1.6, L / 2 - 1.8]) for (const z of [-1.15, 1.15]) {
-      const w = new THREE.Mesh(wheelGeo, wheelMat); w.rotation.x = Math.PI / 2; w.position.set(x, 0.5, z); g.add(w);
+    const L = TIMING.colectivo.length, H = 2.75, W = 2.4, Y0 = 0.42;
+    const T = busTex();
+    const lam = (map) => new THREE.MeshLambertMaterial({ map });
+    const roof = lam(T.roof);
+    // caras de la caja: +x frente, -x cola, +y techo, -y piso, +z/-z costados
+    const body = new THREE.Mesh(new THREE.BoxGeometry(L, H, W), [lam(T.front), lam(T.back), roof, roof, lam(T.side), lam(T.side)]);
+    body.position.y = Y0 + H / 2;
+    const wheelGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.32, 18);
+    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1e });
+    const hubMat = new THREE.MeshLambertMaterial({ color: 0xd9d4cc });
+    const hubGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.34, 12);
+    for (const x of [-L / 2 + 1.7, L / 2 - 2.0]) for (const z of [-W / 2 + 0.05, W / 2 - 0.05]) {
+      const w = new THREE.Mesh(wheelGeo, wheelMat); w.rotation.x = Math.PI / 2; w.position.set(x, 0.52, z); g.add(w);
+      const hb = new THREE.Mesh(hubGeo, hubMat); hb.rotation.x = Math.PI / 2; hb.position.set(x, 0.52, z); g.add(hb);
     }
-    const light = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xfff1b0, transparent: true, opacity: 0.9 }));
-    light.scale.set(0.5, 0.5, 1); light.position.set(L / 2 + 0.1, 1.2, 0.8);
-    g.add(body, top, win, front, num, light);
+    // faros encendidos adelante
+    const glow = new THREE.SpriteMaterial({ color: 0xfff1b0, transparent: true, opacity: 0.95, depthWrite: false });
+    for (const z of [-0.8, 0.8]) { const l = new THREE.Sprite(glow); l.scale.set(0.55, 0.55, 1); l.position.set(L / 2 + 0.06, Y0 + 0.55, z); g.add(l); }
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(L + 0.6, W + 0.5), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false }));
+    shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.03;
+    g.add(body, shadow);
     scene.add(g);
     return g;
   }
@@ -197,8 +302,11 @@ export function createTraps(ctx) {
   }
 
   function finish(a) {
-    if (a.stripe) { scene.remove(a.stripe); a.stripe.geometry.dispose(); }
-    if (a.mesh) scene.remove(a.mesh);
+    if (a.stripe) { scene.remove(a.stripe); a.stripe.geometry.dispose(); a.stripe.material.map?.dispose(); a.stripe.material.dispose(); }
+    if (a.mesh) {
+      scene.remove(a.mesh);
+      if (a.kind === 'colectivo') a.mesh.traverse((o) => { if (o.isMesh || o.isSprite) { o.geometry?.dispose(); [].concat(o.material).forEach(m => m.dispose()); } });
+    }
     a.rider?.dispose();
     if (a.shadow) { scene.remove(a.shadow); a.shadow.geometry.dispose(); }
     if (a.paper) scene.remove(a.paper);
@@ -220,7 +328,8 @@ export function createTraps(ctx) {
       if (a.kind === 'colectivo' || a.kind === 'trottinette') {
         const T = TIMING[a.kind];
         if (a.state === 'warn') {
-          a.stripe.material.opacity = Math.floor(a.t * 10) % 2 ? 0.45 : 0.18;
+          a.stripe.material.opacity = Math.floor(a.t * 8) % 2 ? 0.9 : 0.45;
+          if (a.stripe.material.map) a.stripe.material.map.offset.x -= a.dir * dt * 2.2;
           a.stripe.position.x = hp.x;
           if (a.t >= a.warn) {
             lastWarnMs[a.kind] = Math.round(a.t * 1000);

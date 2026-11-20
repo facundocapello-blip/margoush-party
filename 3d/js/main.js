@@ -710,6 +710,7 @@ function frameStep(now) {
   // el cartel corre con el reloj real (no se frena con los golpes ni con la cámara lenta)
   if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
   world.updateGates(dt);
+  if (game.hero) world.updateLook?.(game.hero.actor.position.x);
   fx.update(dt);
   if (game.state !== 'intro') updateCamera(dt); // en las escenas animadas la cámara la maneja cine.js
   renderer.render(scene, camera);

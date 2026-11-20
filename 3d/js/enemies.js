@@ -1,3 +1,4 @@
+import { makeWarning } from './telegraph.js';
 import { SpriteActor } from './sprites.js';
 import { WAVES } from './level.js';
 import { sheetPoses } from './cast.js';
@@ -405,12 +406,11 @@ export function createEnemies(ctx) {
     if (e.cd <= 0 && Math.abs(dx) < 11 && rangedFree()) {
       e.cd = MOZO.every;
       const target = new THREE.Vector3(hp.x, 0, hp.z);
-      const mark = new THREE.Mesh(new THREE.CircleGeometry(MOZO.hitRadius, 24), markMat);
-      mark.rotation.x = -Math.PI / 2; mark.position.set(target.x, 0.05, target.z);
+      const mark = makeWarning(scene, target.x, target.z, MOZO.hitRadius);
       const s = new THREE.Sprite(croissantMat); s.scale.set(0.8, 0.8, 1);
       const from = origin || e.pos.clone().setY(1.7);
       s.position.copy(from);
-      scene.add(mark, s);
+      scene.add(s);
       shots.push({ from, target, t: 0, sprite: s, mark, owner: e });
       a.offsetX = 0.2;
       ctx.audio?.sfx('whoosh');
@@ -491,12 +491,11 @@ export function createEnemies(ctx) {
   }
 
   function throwShot(e, target, mat, size, origin = null) {
-    const mark = new THREE.Mesh(new THREE.CircleGeometry(MOZO.hitRadius, 24), markMat);
-    mark.rotation.x = -Math.PI / 2; mark.position.set(target.x, 0.05, target.z);
+    const mark = makeWarning(scene, target.x, target.z, MOZO.hitRadius);
     const sp = new THREE.Sprite(mat); sp.scale.set(size, size, 1);
     const from = origin || e.pos.clone().setY(1.7);
     sp.position.copy(from);
-    scene.add(mark, sp);
+    scene.add(sp);
     shots.push({ from, target, t: 0, sprite: sp, mark, owner: e });
   }
 
@@ -509,13 +508,12 @@ export function createEnemies(ctx) {
       s.sprite.position.lerpVectors(s.from, s.target, k);
       s.sprite.position.y = s.from.y * (1 - k) + Math.sin(k * Math.PI) * 3 + 0.3 * k;
       s.sprite.material.rotation = k * 8;
-      s.mark.scale.setScalar(0.6 + 0.4 * k);
-      s.mark.material.opacity = 0.3 + 0.4 * k;
+      s.mark.update(k);
       if (k >= 1) {
         if (Math.hypot(hp.x - s.target.x, hp.z - s.target.z) < MOZO.hitRadius && heroCanBeHit(hero, 0.8)) hero.hurt(1, s.target.x - 0.1);
         fx.dust(s.target);
-        scene.remove(s.sprite, s.mark);
-        s.mark.geometry.dispose();
+        scene.remove(s.sprite);
+        s.mark.dispose();
         shots.splice(i, 1);
       }
     }
@@ -703,7 +701,7 @@ export function createEnemies(ctx) {
       if (list.some(e => e.k.miniBoss)) document.querySelector('#boss-bar')?.classList.add('hidden');
       for (const e of list) remove(e);
       list.length = 0;
-      for (const s of shots) { scene.remove(s.sprite, s.mark); s.mark.geometry.dispose(); }
+      for (const s of shots) { scene.remove(s.sprite); s.mark.dispose(); }
       shots.length = 0;
     }
   };
