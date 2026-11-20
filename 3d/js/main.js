@@ -262,6 +262,36 @@ function paintContinue() {
   if (cp) $('#continue-where').textContent = `${HERO_CFG[cp.heroId].name} · ${tr(CHECKPOINTS[cp.id].short)}`;
 }
 
+// Portada: el podio (los 5 mejores de la semana; si nadie jugó esta semana, los mejores de siempre)
+let podiumSeq = 0;
+async function paintPodium() {
+  const list = $('#podium-list'), empty = $('#podium-empty'), title = $('#podium-title');
+  if (!list || !game.ranking) return;
+  const seq = ++podiumSeq;
+  let period = 'week', res = await game.ranking.top({ period, limit: 5 }).catch(() => ({ rows: [] }));
+  if (!res.rows?.length) {
+    const all = await game.ranking.top({ period: 'all', limit: 5 }).catch(() => ({ rows: [] }));
+    if (all.rows?.length) { period = 'all'; res = all; }
+  }
+  if (seq !== podiumSeq) return;
+  const rows = res.rows || [];
+  title.textContent = tr(period === 'week' ? 'Podio de la semana' : 'Los mejores de siempre');
+  empty.classList.toggle('hidden', rows.length > 0);
+  list.replaceChildren(...rows.map((r, i) => {
+    const li = document.createElement('li');
+    const pos = document.createElement('span'); pos.className = 'pos'; pos.textContent = String(i + 1);
+    const who = document.createElement('span'); who.className = 'who';
+    const hero = HERO_CFG[r.hero] ? r.hero : 'douge';
+    who.style.backgroundImage = `url(${assets.url(HERO_CFG[hero].poses.idle.tex)})`;
+    who.title = HERO_CFG[hero].name;
+    const nick = document.createElement('span'); nick.className = 'nick'; nick.textContent = r.nickname;
+    const pts = document.createElement('span'); pts.className = 'pts'; pts.textContent = Number(r.score).toLocaleString('es-AR');
+    li.append(pos, who, nick, pts);
+    return li;
+  }));
+}
+game.paintPodium = paintPodium;
+
 // Arranca una partida directamente en un checkpoint, con la vida llena y el puntaje que había ahí
 function resumeAt(cp) {
   if (!cp || !CHECKPOINTS[cp.id]) return startRun(game.heroId, false);
@@ -734,7 +764,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); audio.music('menu'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); paintPodium(); audio.music('menu'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -833,7 +863,7 @@ async function boot() {
   const langBtns = [...document.querySelectorAll('#lang-pick [data-lang]')];
   const paintLang = () => langBtns.forEach(b => b.classList.toggle('on', b.dataset.lang === getLang()));
   langBtns.forEach(b => b.addEventListener('click', (ev) => { ev.stopPropagation(); setLang(b.dataset.lang); b.blur(); }));
-  onLangChange(() => { translateDom(); paintLang(); paintContinue(); });
+  onLangChange(() => { translateDom(); paintLang(); paintContinue(); paintPodium(); });
   document.documentElement.lang = getLang();
   translateDom();
   paintLang();
@@ -841,6 +871,7 @@ async function boot() {
   camera.position.set(6, 8, 14);
   camera.lookAt(camTarget);
   paintContinue();
+  paintPodium();
   showScreen('screen-menu');
   game.state = 'menu';
   // La música de la portada arranca apenas carga el juego. Si el navegador no deja sonar
