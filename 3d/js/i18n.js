@@ -208,6 +208,7 @@ export const TEXTOS = {
   'Domingo en Buenos Aires': 'Dimanche à Buenos Aires',
   'Se escapa en su BYD. ¡Seguilo!': "Il s'enfuit dans sa BYD. Suis-le !",
   '¡SEGUÍ AL BYD!': 'SUIS LA BYD !',
+  'Se está quedando sin batería: no lo pierdas hasta el cargador 🔌': 'Sa batterie se vide : ne la lâche pas jusqu’au chargeur 🔌',
   'SALTAR ⏭': 'PASSER ⏭',
   'BIG CHAKY SE LLEVA A MARGOT A FRANCIA': 'BIG CHAKY EMMÈNE MARGOT EN FRANCE',
   '¡Corré al aeropuerto antes de que despegue! ✈': "Cours à l'aéroport avant qu'il décolle ! ✈",

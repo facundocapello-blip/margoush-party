@@ -96,7 +96,7 @@ export function createCine(ctx) {
   function intro(hero, heroId) {
     const X = LE_CONCEPT_X, other = heroId === 'douge' ? 'marine' : 'douge';
     const H = hero.actor;
-    ctx.world?.border?.setVisible?.(false);
+    ctx.world?.setIntroMode?.(true); game.pickups?.setTrailVisible?.(false);
     H.position.set(X - 1.9, 0, 0.5); H.setFacing(1); H.setPose('idle');
     const partner = actor(sheetPoses(assets, other, other + '_idle'), 2.15, X + 0.9, 0.2, -1);
     const stroller = actor(strollerPoses, 1.7, X - 0.5, 1.1, 1, 'happy');
@@ -158,7 +158,7 @@ export function createCine(ctx) {
       }
       if (heroRun) { H.setFacing(1); H.setPose(H.poses.run ? 'run' : 'walk'); H.position.x += 4 * dt; H.update(dt, 4); } else H.update(dt, 0);
     };
-    const dispose = () => { ctx.world?.border?.setVisible?.(true); partner.dispose(); stroller.dispose(); chaky.dispose(); crew.forEach(c => c.a.dispose()); };
+    const dispose = () => { ctx.world?.setIntroMode?.(false); game.pickups?.setTrailVisible?.(true); partner.dispose(); stroller.dispose(); chaky.dispose(); crew.forEach(c => c.a.dispose()); };
     return timeline(ev, 15.6, frame, dispose, 'intro');
   }
 
