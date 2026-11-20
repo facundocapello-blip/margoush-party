@@ -368,3 +368,31 @@ html[lang=fr] #act-attack.ready::after { content: 'MAINTIENS'; }
 #hud-margot[data-mood="cry"] { background-position: 100% 50%; border-color: #9ad7ff; box-shadow: 0 0 12px #9ad7ff88; }
 #hud-margot.bump { animation: margot-bump 0.35s ease-out; }
 @keyframes margot-bump { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
+
+/* ---------- Escenas animadas (cine.js): franjas de cine, cartel, subtítulos y SALTAR ---------- */
+#cine { position: absolute; inset: 0; z-index: 30; pointer-events: none; }
+#cine.hidden { display: none; }
+body.cine-on #hud, body.cine-on #touch, body.cine-on #boss-bar { opacity: 0; pointer-events: none; }
+.cine-bar { position: absolute; left: 0; right: 0; height: 13vh; background: #0b0712; animation: cine-in 0.45s ease-out both; }
+.cine-bar.top { top: 0; transform-origin: top; }
+.cine-bar.bottom { bottom: 0; transform-origin: bottom; display: flex; align-items: center; justify-content: center; padding: 0 4vw calc(env(safe-area-inset-bottom) * 0.5); }
+@keyframes cine-in { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.cine-sub { margin: 0; max-width: 92vw; text-align: center; font-weight: 800; font-size: clamp(15px, min(4.4vw, 5vh), 26px); line-height: 1.2; color: #fff; opacity: 0; }
+.cine-sub.on { opacity: 1; }
+.cine-sub.cpop { animation: sub-pop 0.25s ease-out; }
+.cine-sub b { display: block; font-family: Fredoka, sans-serif; font-size: 0.72em; letter-spacing: 0.14em; color: #ffd36e; }
+.cine-sub small { display: block; font-size: 0.75em; font-weight: 700; opacity: 0.8; }
+@keyframes sub-pop { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.cine-cap { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); width: min(92vw, 720px); text-align: center; opacity: 0; }
+.cine-cap.on { opacity: 1; }
+.cine-cap.cpop { animation: cap-pop 0.5s cubic-bezier(.3,1.6,.5,1); }
+.cine-cap b { display: block; font-family: Fredoka, sans-serif; font-weight: 700; font-size: clamp(26px, min(8vw, 9vh), 56px); line-height: 1.02; color: #ffd36e; text-shadow: 0 4px 0 #3a1d4f, 0 8px 18px #000a; text-wrap: balance; }
+.cine-cap small { display: block; margin-top: 6px; font-weight: 800; font-size: clamp(14px, min(4vw, 4.5vh), 22px); color: #fff; text-shadow: 0 2px 8px #000c; }
+@keyframes cap-pop { from { transform: translateX(-50%) scale(0.6); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+.cine-skip { position: absolute; top: calc(13vh + 10px); right: max(12px, env(safe-area-inset-right)); pointer-events: auto; font: 800 15px Fredoka, sans-serif; letter-spacing: 0.08em; color: #fff; background: #0008; border: 2px solid #fff6; border-radius: 999px; padding: 8px 14px; }
+@media (prefers-reduced-motion: reduce) { .cine-bar, .cine-sub.cpop, .cine-cap.cpop { animation: none; } }
+
+/* Viaje en avión entre Buenos Aires y Francia: un avioncito cruza la pantalla */
+#level-card.travel::before { content: '✈'; position: absolute; top: -70px; left: 50%; font-size: clamp(40px, 10vw, 72px); color: #fff; text-shadow: 0 6px 14px #0008; animation: plane-fly 2.6s ease-in-out 0.3s both; }
+@keyframes plane-fly { from { transform: translate(-75vw, 40px) rotate(-8deg); } to { transform: translate(75vw, -30px) rotate(-14deg); } }
+@media (prefers-reduced-motion: reduce) { #level-card.travel::before { animation: none; display: none; } }

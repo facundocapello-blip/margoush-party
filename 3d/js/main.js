@@ -325,23 +325,26 @@ function startRun(heroId, withIntro = false, { keepCheckpoint = false, street = 
   // En la intro no suena el tema del héroe (solo los efectos del secuestro); arranca al empezar a jugar
   audio.music(withIntro ? 'intro' : (keepCheckpoint || street) ? 'ba' : null, { fade: 0 });
   // El Nivel 1 arranca con Cepi llevándose a Margot y la persecución (sin intro, directo a la persecución)
-  if (withIntro) { game.state = 'intro'; game.story.startIntro(game.hero); }
+  if (withIntro) { game.state = 'intro'; game.story.startIntro(game.hero, heroId, 'intro'); }
   else if (!keepCheckpoint && !street) startChaseRun();
   else game.state = 'playing';
   updateRotateHint();
 }
 
+// Termina (o se saltea) una escena animada: después de la intro viene la persecución;
+// después de la del BYD, la calle de Buenos Aires
 function endIntro() {
-  game.story.endIntro();
+  const kind = game.story.endIntro();
   input.reset();
-  startChaseRun();
+  if (kind === 'byd') bydPlay();
+  else startChaseRun();
 }
 // La persecución de Cepi (se llevó a Margot en su BYD): primer tramo del Nivel 1
 function startChaseRun() {
   game.chaseDone = true;
   game.state = 'curtain';
   audio.music('chase', { fade: 0.3 });
-  curtain(() => game.chase.start(), { label: 'LA FUGA DE CEPI' });
+  curtain(() => game.chase.start(), { label: '¡SEGUÍ AL BYD!' });
 }
 // Mini nivel: romper el BYD antes de que Cepi lo cargue (bonus.js)
 function startBydLevel() {
@@ -352,17 +355,24 @@ function startBydLevel() {
   game.bonus.start();
 }
 game.startBydLevel = startBydLevel;
-// Lo rompiste: Cepi se lleva a Margot corriendo al galpón de BIG CHAKY y arranca la calle de Buenos Aires
+// Lo rompiste: escena «BIG CHAKY se la lleva a Francia» y después la calle de Buenos Aires
 function bydDone() {
+  const h = game.hero;
+  Object.assign(h, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.2 });
+  input.reset();
+  audio.music('intro', { fade: 0.3 });
+  game.state = 'intro';
+  game.story.startIntro(h, game.heroId, 'byd');
+}
+function bydPlay() {
   game.state = 'playing';
   const h = game.hero;
   h.actor.position.set(LEVELS[0].start, 0, 0.5);
   h.actor.setFacing(1); h.actor.setPose('idle');
-  Object.assign(h, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.2 });
+  h.inv = 1.2;
   updateCamera(0, true);
   input.reset();
   audio.music('ba', { fade: 0.4 });
-  game.banner('¡CEPI SE LLEVA A MARGOT!', 'Corre al galpón de BIG CHAKY. ¡Seguilo por Buenos Aires!', 3.2);
 }
 // Se cargó: Cepi se escapa, perdés un corazón y se vuelve a intentar (sin corazones, se terminó)
 function bydFailed() {
@@ -464,7 +474,7 @@ function startTransition() {
   $('#level-done').textContent = tr(`NIVEL ${done.id} COMPLETO`);
   $('#level-name').textContent = tr(done.name);
   $('#level-pts').textContent = tr(game.score.total.toLocaleString('es-AR') + ' puntos');
-  $('#level-next').textContent = tr(`→ NIVEL ${next.id}: ${next.name}`);
+  $('#level-next').textContent = (next.id === 2 ? '✈ ' : '→ ') + tr(`NIVEL ${next.id}: ${next.name}`);
   $('#level-card').classList.remove('hidden');
   $('#level-card').classList.add('travel');
   audio.sfx('clear');
@@ -689,7 +699,6 @@ function frameStep(now) {
   } else if (game.state === 'intro') {
     game.time = 0;
     if (game.story.updateIntro(dt)) endIntro();
-    game.hero.actor.update(dt, 0);
   } else if (game.state === 'transition') {
     updateTransition(dt);
   } else if (game.state === 'rescue') {
@@ -702,7 +711,7 @@ function frameStep(now) {
   if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
   world.updateGates(dt);
   fx.update(dt);
-  updateCamera(dt);
+  if (game.state !== 'intro') updateCamera(dt); // en las escenas animadas la cámara la maneja cine.js
   renderer.render(scene, camera);
   // Foto familiar del rescate: se saca justo después de dibujar el cuadro
   if (game.wantPhoto) { game.wantPhoto = false; try { game.photo = canvas.toDataURL('image/jpeg', 0.85); } catch (_) { game.photo = null; } }
@@ -756,6 +765,7 @@ async function boot() {
     onDown() { game.state = 'playing'; finish(false); }
   });
   for (const el of [canvas, $('#stick-zone')]) el.addEventListener('pointerdown', () => { if (game.state === 'intro') endIntro(); });
+  game.story.cine.ui.skipButton.addEventListener('click', (e) => { e.stopPropagation(); if (game.state === 'intro') endIntro(); });
   addEventListener('keydown', () => { if (game.state === 'intro') endIntro(); });
   game.heroScreen = () => { const v = game.hero.actor.position.clone(); v.y += 1; v.project(camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 }; };
   // Atajos de pruebas: directo a la calle de Buenos Aires, o desde la persecución

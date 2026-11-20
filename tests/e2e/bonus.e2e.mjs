@@ -44,7 +44,7 @@ for (const [name, vp] of [['vertical', { width: 390, height: 844 }], ['horizonta
     check(await g(() => window.__game.hero.hp) === hp0 - 1, `${name}: si se carga, perdés un corazón y se vuelve a intentar`);
     // romperlo del todo
     await g(() => { const B = window.__game.bonus; for (let i = 0; i < 80 && !B.logic.state.over; i++) B.logic.punch({ x: 99, dmg: 2, spotX: () => 0 }); });
-    await page.waitForFunction(() => window.__game.state === 'playing', null, { timeout: 20000 }).catch(() => {});
+    await page.waitForFunction(() => window.__game.state === 'playing', null, { timeout: 45000 }).catch(() => {}); // antes pasa la escena «BIG CHAKY se la lleva a Francia»
     const st = await g(() => ({ state: window.__game.state, level: window.__game.level, x: window.__game.hero.actor.position.x, bonus: window.__game.bonus.active }));
     check(st.level === 1 && st.state === 'playing' && !st.bonus && st.x < 8, `${name}: después sigue la calle de Buenos Aires desde el principio (${JSON.stringify(st)})`);
     check(errors.length === 0, `${name}: sin errores ` + errors.join(' | '));

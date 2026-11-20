@@ -191,6 +191,17 @@ export const TEXTOS = {
   '¡CEPI SE LLEVA A MARGOT!': 'CEPI EMMÈNE MARGOT !',
   'Corre al galpón de BIG CHAKY. ¡Seguilo por Buenos Aires!': "Il court à l'entrepôt de BIG CHAKY. Suis-le dans Buenos Aires !",
   '¡PIQUETE!': 'BARRAGE !',
+  // ---------- Escenas animadas y aeropuerto ----------
+  'LE CONCEPT': 'LE CONCEPT',
+  'Domingo en Buenos Aires': 'Dimanche à Buenos Aires',
+  'Se escapa en su BYD. ¡Seguilo!': "Il s'enfuit dans sa BYD. Suis-le !",
+  '¡SEGUÍ AL BYD!': 'SUIS LA BYD !',
+  'SALTAR ⏭': 'PASSER ⏭',
+  'BIG CHAKY SE LLEVA A MARGOT A FRANCIA': 'BIG CHAKY EMMÈNE MARGOT EN FRANCE',
+  '¡Corré al aeropuerto antes de que despegue! ✈': "Cours à l'aéroport avant qu'il décolle ! ✈",
+  '¡ÚLTIMA PARADA: EL AEROPUERTO!': "DERNIER ARRÊT : L'AÉROPORT !",
+  'La banda no te deja subir al avión.': "La bande t'empêche de monter dans l'avion.",
+  'NIVEL 2: FRANCIA': 'NIVEAU 2 : FRANCE',
 };
 
 export const DICHOS = {
@@ -253,6 +264,15 @@ export const DICHOS = {
   '¡Enchufado de nuevo!': 'Rebranché !',
   '¡Ya casi carga!': 'Elle est presque chargée !',
   '¡Cargá, cargá, cargá!': 'Charge, charge, charge !',
+  '¡Qué lindo domingo, Margot!': 'Quel beau dimanche, Margot !',
+  '¡Ajó, ajó!': 'Areuh, areuh !',
+  '¡Esa bebé va a ser mía! ¡Jua, jua, jua!': 'Ce bébé sera à moi ! Mouahaha !',
+  '¡Les pago lo que quieran! ¡Tráiganmela!': 'Je vous paie ce que vous voulez ! Ramenez-la-moi !',
+  '💵 ¡Estacionamiento pago!': '💵 Parking payé !',
+  '🧈 ¡Manteca de por vida!': '🧈 Du beurre à vie !',
+  '🔌 ¡Un cargador para mi BYD!': '🔌 Un chargeur pour ma BYD !',
+  '¡Gracias, Niño! ¡A Margot me la llevo a Francia!': "Merci, gamin ! J'emmène Margot en France !",
+  '¡Me rompiste el BYD! ¡Ahora es personal!': "Tu as cassé ma BYD ! Maintenant c'est personnel !",
 };
 
 // Plantillas ({x}, {n}) armadas una sola vez
