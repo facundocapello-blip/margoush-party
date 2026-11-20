@@ -32,6 +32,7 @@ for (const [w, h, name] of [[844, 390, 'acostado'], [390, 844, 'parado']]) {
 
     await page.tap('#btn-play');
     await page.tap('#pick-marine');
+    await page.waitForFunction(() => window.__game.state === 'intro', null, { timeout: 6000 }); // el festejo de la tarjeta dura ~1 s
     await page.waitForTimeout(400);
     check(await page.evaluate(() => window.__game.ctx.audio.current) === 'intro', `${name}: en la intro suena el «¡uh, no!»`);
     await page.tap('#game');

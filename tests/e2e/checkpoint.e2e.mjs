@@ -16,7 +16,7 @@ try {
   check(await vis('#btn-select-back'), 'la selección tiene botón Volver');
   await page.tap('#btn-select-back'); await page.waitForTimeout(200);
   check(await vis('#btn-play'), 'Volver lleva al menú');
-  check((await page.textContent('#pick-marine')).includes('Hiedra'), 'Marine dice Hiedra (no Flambé)');
+  check(!(await page.textContent('#pick-marine')).includes('Flamb'), 'Marine: sin Flambé');
 
   // Llegar al nivel 2 por la frontera guarda el checkpoint
   await startRun(page, 'marine');

@@ -9,6 +9,7 @@ try {
   await G(() => { window.__spoken = 0; speechSynthesis.speak = () => { window.__spoken++; }; });
   await page.tap('#btn-play');
   await page.tap('#pick-marine');
+  await page.waitForFunction(() => window.__game.state === 'intro', null, { timeout: 6000 }); // el festejo de la tarjeta dura ~1 s
   check(await G(() => window.__spoken) > 0, 'la voz queda habilitada con el toque de elegir héroe');
   await page.tap('#game');
   await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 15000 });
