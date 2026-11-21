@@ -200,7 +200,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     let dashT = 0, dashCd = 0, dashX = 0, dashZ = 0, inv = 0, hurtT = 0, holdT = 0, powT = 0;
     let swing = null, swingT = 0, swingHit = false, combo = 0, comboWindow = 0, buffer = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_chaky_idle';
-    let prevPose = 'idle', poseT = 0;
+    let prevPose = 'idle', poseT = 0, stepT = 0;
     game.state = 'arena';
 
     const shake = (a, s = 0.3) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, s); };
@@ -409,8 +409,18 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : moving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
       setTex(P, heroPre + heroPose);
       P.visible = !(inv > 0 && hurtT <= 0 && Math.floor(t * 14) % 2 === 0);
-      place(P, x, y, z);
-      P.rotation.z = dashT > 0 ? -dashX * 0.25 : 0;
+      // Movimiento de la carrera (hasta tener los cuadros de carrera de espaldas): rebote al paso, la pose
+      // espejada en cada paso (alterna la pierna de adelante) e inclinación hacia donde va
+      let bob = 0, lean = 0, mirror = 1;
+      if (heroPose === 'run' && y <= 0.05 && dashT <= 0) {
+        stepT += dt * 2 * Math.PI * 2.6;
+        bob = Math.abs(Math.sin(stepT)) * 0.14;
+        mirror = Math.sin(stepT) >= 0 ? 1 : -1;
+        lean = -input.moveX * 0.09;
+      } else if (heroPose === 'idle') { stepT = 0; bob = Math.sin(t * 2.4) * 0.015; }
+      place(P, x, y + bob, z);
+      P.scale.x = Math.abs(P.scale.x) * mirror;
+      P.rotation.z = dashT > 0 ? -dashX * 0.25 : lean;
       P.userData.sh.visible = true; P.userData.sh.scale.set(1.6 * (1 - Math.min(0.5, y * 0.2)), 1, 0.8);
 
       // Mano: sombra que crece durante el aviso; la mano cae desde arriba, tiembla trabada y se levanta
