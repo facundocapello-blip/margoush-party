@@ -640,12 +640,12 @@
  },
  "arena_chaky_hurt": {
   "file": "arena_chaky_hurt.webp",
-  "w": 430,
+  "w": 452,
   "h": 768,
   "frames": 1,
   "cols": 1,
   "rows": 1,
-  "v": "bfaa8380"
+  "v": "101743d8"
  },
  "arena_chaky_idle": {
   "file": "arena_chaky_idle.webp",
@@ -799,5 +799,97 @@
   "frames": 1,
   "cols": 1,
   "rows": 1
+ },
+ "arena_douge_back_jump": {
+  "file": "arena_douge_back_jump.webp",
+  "w": 344,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "88384aca",
+  "hk": 1.15
+ },
+ "arena_douge_back_run0": {
+  "file": "arena_douge_back_run0.webp",
+  "w": 318,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "9b7618aa"
+ },
+ "arena_douge_back_run1": {
+  "file": "arena_douge_back_run1.webp",
+  "w": 287,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "18b145d9"
+ },
+ "arena_douge_back_run2": {
+  "file": "arena_douge_back_run2.webp",
+  "w": 317,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "5284ade9"
+ },
+ "arena_douge_back_run3": {
+  "file": "arena_douge_back_run3.webp",
+  "w": 286,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "a4b798dc"
+ },
+ "arena_marine_back_jump": {
+  "file": "arena_marine_back_jump.webp",
+  "w": 500,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "9ff54fa1",
+  "hk": 1.15
+ },
+ "arena_marine_back_run0": {
+  "file": "arena_marine_back_run0.webp",
+  "w": 320,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "1ec34539"
+ },
+ "arena_marine_back_run1": {
+  "file": "arena_marine_back_run1.webp",
+  "w": 278,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "43bc02be"
+ },
+ "arena_marine_back_run2": {
+  "file": "arena_marine_back_run2.webp",
+  "w": 318,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "118937c3"
+ },
+ "arena_marine_back_run3": {
+  "file": "arena_marine_back_run3.webp",
+  "w": 285,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "f0499ea2"
  }
 }
