@@ -120,7 +120,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       if (m.userData.key === key) return;
       const c = CUSTOM[key], meta = c || assets.meta(key);
       m.material.map = c ? c.map : assets.texture(key); m.material.needsUpdate = true; m.userData.key = key;
-      const h = m.userData.h * (c ? c.hk : 1);
+      const h = m.userData.h * (c ? c.hk : (meta.hk || 1)); // hk: el salto con los brazos arriba es más alto
       m.userData.w = h * meta.w / meta.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
     };
     function sprite(key, h, shadow = 1, centered = false) {
@@ -412,19 +412,20 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
 
       // Héroe de espaldas
       heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : moving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
-      setTex(P, heroPre + heroPose);
-      P.visible = !(inv > 0 && hurtT <= 0 && Math.floor(t * 14) % 2 === 0);
-      // Movimiento de la carrera (hasta tener los cuadros de carrera de espaldas): rebote al paso, la pose
-      // espejada en cada paso (alterna la pierna de adelante) e inclinación hacia donde va
-      let bob = 0, lean = 0, mirror = 1;
-      if (heroPose === 'run' && y <= 0.05 && dashT <= 0) {
-        stepT += dt * 2 * Math.PI * 2.6;
-        bob = Math.abs(Math.sin(stepT)) * 0.14;
-        mirror = Math.sin(stepT) >= 0 ? 1 : -1;
-        lean = -input.moveX * 0.09;
+      // Carrera de espaldas: 4 cuadros (~10 por segundo) con un rebote chico; en el aire, la pose de salto
+      let bob = 0, lean = 0, key = heroPre + heroPose;
+      if (heroPose === 'run') {
+        if (y > 0.15) key = heroPre + 'jump';
+        else {
+          stepT += dt * 2 * Math.PI * 2.6;
+          key = heroPre + 'run' + (Math.floor(stepT / (Math.PI / 2)) % 4);
+          bob = Math.abs(Math.sin(stepT * 2)) * 0.05;
+          lean = -input.moveX * 0.07;
+        }
       } else if (heroPose === 'idle') { stepT = 0; bob = Math.sin(t * 2.4) * 0.015; }
+      setTex(P, key);
+      P.visible = !(inv > 0 && hurtT <= 0 && Math.floor(t * 14) % 2 === 0);
       place(P, x, y + bob, z);
-      P.scale.x = Math.abs(P.scale.x) * mirror;
       P.rotation.z = dashT > 0 ? -dashX * 0.25 : lean;
       P.userData.sh.visible = true; P.userData.sh.scale.set(1.6 * (1 - Math.min(0.5, y * 0.2)), 1, 0.8);
 
