@@ -22,7 +22,7 @@ function runUntil(logic, hero, cond, max = 60, evs = []) {
   return evs;
 }
 const ofType = (evs, type) => evs.filter(e => e.type === type);
-const H = ARENA.hp, HALF = ARENA.hp / 2;
+const H = ARENA.hp, HALF = 11; // HALF: vida de prueba ya en la fase 3 (enojado)
 const goldFree = (logic) => logic.state.shots.find(s => s.kind === 'barrel' && s.gold && !s.returning);
 
 // Espera un dorado, se para en su línea y lo devuelve de un golpe; corre hasta que le pega al jefe
@@ -45,25 +45,153 @@ function giveReturn(logic, hero) {
   return evs;
 }
 
-test('starts in phase 1 with full life', () => {
+test('starts in phase 1 with full life, attacking', () => {
   const l = mk();
   assert.equal(l.state.phase, 1);
+  assert.equal(l.state.mode, 'attack');
   assert.equal(l.state.hp, H);
   assert.equal(l.state.hpMax, H);
 });
 
-test('every third barrel is gold and crates never are', () => {
-  const l2 = mk(), hero = safeHero(), seen = new Map(), throws = [];
-  for (let i = 0; i < 40 * 60; i++) {
-    throws.push(...l2.update(FPS, hero).filter(e => e.type === 'throw'));
-    for (const s of l2.state.shots) if (!seen.has(s.id)) seen.set(s.id, { kind: s.kind, gold: s.gold });
+test('phase 1 throws series of 3 that follow the patterns, end in gold, then rests', () => {
+  const l = mk(), hero = safeHero(), seen = new Map(), modes = new Set();
+  for (let i = 0; i < 25 * 60; i++) {
+    l.update(FPS, hero); modes.add(l.state.mode);
+    for (const s of l.state.shots) if (!seen.has(s.id)) seen.set(s.id, s.type);
   }
-  const shots = [...seen.values()];
-  const barrels = shots.filter(s => s.kind === 'barrel'), crates = shots.filter(s => s.kind === 'crate');
-  assert.ok(barrels.length >= 6 && crates.length >= 2, `barrels ${barrels.length} crates ${crates.length}`);
-  assert.equal(throws.length, shots.length);
-  barrels.forEach((b, i) => assert.equal(!!b.gold, (i + 1) % ARENA.phase1.goldEvery === 0, `barrel ${i}`));
-  assert.ok(crates.every(c => !c.gold));
+  const types = [...seen.values()];
+  const want = ARENA.phase1.patterns.flat();
+  assert.ok(types.length >= 9, `shots ${types.length}`);
+  types.forEach((ty, i) => assert.equal(ty, want[i % want.length], `shot ${i}`));
+  assert.ok(modes.has('recover'), 'rests after a series');
+  assert.ok(!types.includes('crate') && !types.includes('giant'), 'no crates or giants in phase 1');
+});
+
+test('the curve barrel starts in another lane and ends in the hero\'s', () => {
+  const l = mk(), hero = { x: 2, z: -1.5, y: 0, dodging: false, inv: 99 };
+  runUntil(l, hero, () => l.state.shots.some(s => s.type === 'curve'));
+  const c = l.state.shots.find(s => s.type === 'curve');
+  assert.ok(Math.abs(c.x - 2) >= ARENA.phase1.curveShift - 1e-9, `starts away: ${c.x}`);
+  runUntil(l, hero, () => c.z > -2.5);
+  assert.ok(Math.abs(c.x - 2) < 0.2, `ends in the lane: ${c.x}`);
+});
+
+test('the bouncing barrel cannot be returned and jumping clears it', () => {
+  const l = mk(), hero = { x: 0, z: -1.5, y: 0, dodging: false, inv: 0 };
+  // segunda serie: bounce, roll, gold
+  runUntil(l, hero, () => l.state.shots.some(s => s.type === 'bounce'), 30);
+  const b = l.state.shots.find(s => s.type === 'bounce');
+  hero.x = b.x;
+  while (hero.z - b.z > 2) l.update(FPS, hero);
+  assert.equal(ofType(l.punch({ x: hero.x, z: hero.z, reach: 1.9, dmg: 1 }), 'returned').length, 0);
+  hero.y = 1.5; // en el aire
+  const evs = run(l, 0.6, hero);
+  assert.ok(!evs.some(e => e.type === 'hurt'), 'jumping over it is safe');
+});
+
+test('punching a gold barrel in the window sends it back and hurts the boss', () => {
+  const l = mk(), hero = safeHero();
+  const evs = giveReturn(l, hero);
+  const hit = ofType(evs, 'bossHit')[0];
+  assert.equal(hit.dmg, ARENA.returnDmg);
+  assert.equal(hit.by, 'barrel');
+  assert.equal(l.state.hp, H - ARENA.returnDmg);
+  assert.ok(evs.some(e => e.type === 'voice' && e.event === 'returned'));
+  assert.ok(evs.some(e => e.type === 'voice' && e.event === 'attack'));
+});
+
+test('two gold returns open «Chaky dice» (phase 2) after a short transition', () => {
+  const l = mk(), hero = safeHero(), evs = [];
+  for (let i = 0; i < 2; i++) evs.push(...giveReturn(l, hero));
+  assert.equal(l.state.phase, 2);
+  assert.equal(l.state.mode, 'transition');
+  assert.equal(l.state.shots.length, 0);
+  assert.ok(evs.some(e => e.type === 'phase' && e.to === 2));
+  assert.ok(evs.some(e => e.type === 'voice' && e.event === 'dice'));
+  evs.push(...run(l, ARENA.dice.start + ARENA.dice.prep + 0.1, hero));
+  assert.equal(l.state.mode, 'dice');
+  const d = ofType(evs, 'dice')[0];
+  assert.ok(d && d.cmd, 'the sign shows a command');
+  assert.equal(l.state.dice.round, 0);
+});
+
+// Lleva al minijuego y juega las 6 rondas: answer(cmd) → acción del héroe (o null = esperar quieto)
+function playDice(l, answer, rand) {
+  const hero = { x: 0, z: -1.5, y: 0, moving: false, dodging: false, inv: 99 };
+  l._setHp(ARENA.diceAt); // entra en la fase 2
+  const evs = [];
+  runUntil(l, hero, () => l.state.mode === 'dice', 5, evs);
+  for (let i = 0; i < 60 * 60 && l.state.phase === 2; i++) {
+    const d = l.state.dice;
+    if (d && d.stage === 'window' && d.t > 0.2 && d.t < 0.25) {
+      const a = answer(d.cmd, d);
+      if (a === 'move') hero.moving = true;
+      else if (a) evs.push(...l.act(a));
+    }
+    evs.push(...l.update(FPS, hero));
+    hero.moving = false;
+  }
+  return evs;
+}
+
+test('«Chaky dice»: doing what the sign says hurts him, 5 right heal you', () => {
+  const l = mk();
+  const evs = playDice(l, (cmd) => cmd === 'still' ? null : cmd);
+  const res = ofType(evs, 'diceResult');
+  assert.equal(res.length, ARENA.dice.rounds);
+  assert.ok(res.every(r => r.ok), 'all right');
+  assert.equal(ofType(evs, 'heal').length, 1);
+  assert.ok(!evs.some(e => e.type === 'hurt'));
+  assert.equal(l.state.phase, 3);
+  assert.ok(evs.some(e => e.type === 'rage'));
+  assert.equal(l.state.hp, Math.max(ARENA.rageAt, ARENA.diceAt - ARENA.dice.rounds * ARENA.dice.dmg));
+  assert.ok(ofType(evs, 'dice').some(d => d.cmd === 'still'), 'at least one «quieto»');
+});
+
+test('«Chaky dice»: wrong answers do not hurt him and 3 wrong cost a heart', () => {
+  const l = mk();
+  const evs = playDice(l, (cmd) => cmd === 'still' ? 'move' : (cmd === 'jump' ? 'attack' : 'jump'));
+  const res = ofType(evs, 'diceResult');
+  assert.ok(res.every(r => !r.ok), 'all wrong');
+  assert.equal(l.state.hp, ARENA.diceAt);
+  assert.equal(evs.filter(e => e.type === 'hurt' && e.by === 'dice').length, 1);
+  assert.equal(ofType(evs, 'heal').length, 0);
+});
+
+test('«Chaky dice»: from round 3 he sometimes shouts something else, never before', () => {
+  let i = 0; const seq = [0.1, 0.6, 0.3, 0.9, 0.2, 0.7, 0.05, 0.45];
+  const l = createArenaLogic({ rand: () => seq[i++ % seq.length] });
+  const evs = playDice(l, (cmd) => cmd === 'still' ? null : cmd);
+  const signs = ofType(evs, 'dice');
+  assert.ok(signs.slice(0, ARENA.dice.trickFrom).every(s => s.shout === s.cmd));
+  assert.ok(signs.some(s => s.shout !== s.cmd), 'some trick');
+  assert.ok(ofType(evs, 'diceResult').every(r => r.ok), 'following the sign is always right');
+});
+
+test('phase 3 throws a giant barrel that cannot be returned and only dodging saves you', () => {
+  const l = mk(), hero = { x: 0, z: -1.5, y: 0, dodging: false, inv: 99 };
+  l._setHp(HALF);
+  runUntil(l, hero, () => l.state.shots.some(s => s.type === 'giant'), 40);
+  const g = l.state.shots.find(s => s.type === 'giant');
+  hero.x = g.x;
+  while (hero.z - g.z > 1) l.update(FPS, hero);
+  assert.equal(ofType(l.punch({ x: hero.x, z: hero.z, reach: 1.9, dmg: 1 }), 'returned').filter(() => g.returning).length, 0);
+  assert.equal(g.returning, false);
+  hero.inv = 0; hero.y = 1.5; // saltar no alcanza
+  const evs = run(l, 0.5, hero);
+  assert.ok(evs.some(e => e.type === 'hurt' && e.by === 'barrel'));
+});
+
+test('power clears every shot and hurts him', () => {
+  const l = mk(), hero = safeHero();
+  runUntil(l, hero, () => l.state.shots.length > 0);
+  const p = l.power();
+  assert.equal(l.state.shots.length, 0);
+  const hit = ofType(p, 'bossHit');
+  assert.equal(hit.length, 1);
+  assert.equal(hit[0].dmg, ARENA.powerDmg);
+  assert.equal(hit[0].by, 'power');
+  assert.equal(l.state.hp, H - ARENA.powerDmg);
 });
 
 test('punching a gold barrel in the window sends it back and hurts the boss', () => {
@@ -106,35 +234,29 @@ test('punching a barrel too early does nothing and it still hurts', () => {
 
 test('mashing punch from a corner (off the barrels\' line) never lowers his life', () => {
   const l = mk(), hero = { x: -4.2, z: -3, y: 0, dodging: false, inv: 99 };
-  run(l, 60, hero, () => l.punch({ x: hero.x, z: hero.z, reach: 1.9, dmg: 1 }));
+  // los de curva se meten en su carril: se corre al costado contrario del barril que viene, nunca queda en la línea
+  run(l, 60, hero, () => {
+    const inc = l.state.shots.filter(s => s.kind === 'barrel' && !s.returning && s.z < hero.z + 0.5);
+    const b = inc.find(s => s.type === 'curve') || inc[0];
+    if (b) hero.x = (b.type === 'curve' ? b.x1 : b.x) > 0 ? -4.2 : 4.2;
+    l.punch({ x: hero.x, z: hero.z, reach: 1.9, dmg: 1 });
+  });
   assert.equal(l.state.hp, H);
   assert.equal(l.state.phase, 1);
-});
-
-test('gold returns switch to phase 2 with rage', () => {
-  const l = mk(), hero = safeHero(), evs = [];
-  for (let i = 0; i < 3; i++) evs.push(...giveReturn(l, hero));
-  evs.push(...run(l, 0.1, hero));
-  assert.equal(l.state.phase, 2);
-  assert.equal(l.state.hp, H - 3 * ARENA.returnDmg);
-  assert.equal(ofType(evs, 'rage').length, 1);
-  assert.ok(evs.some(e => e.type === 'line' && e.text === '¡Ahora sí me enojé!'));
-  assert.ok(evs.some(e => e.type === 'line' && e.text === '¡Tomá, barrilito!'));
-  assert.ok(evs.some(e => e.type === 'line' && e.text === '¡Me devolviste el barril, atrevido!'));
 });
 
 test('the hand warns, lands, stays stuck and takes extra damage', () => {
   const l = mk(), hero = { x: -2, z: -4, y: 0, dodging: false, inv: 99 };
   l._setHp(HALF);
-  assert.equal(l.state.phase, 2);
+  assert.equal(l.state.phase, 3);
   const evs = runUntil(l, hero, () => l.state.hand.state === 'warn');
   assert.equal(l.state.hand.x, -2);
   assert.equal(l.state.hand.z, -4);
-  evs.push(...run(l, ARENA.phase2.slamWarn + 0.15 + 0.05, hero));
+  evs.push(...run(l, ARENA.phase3.slamWarn + 0.15 + 0.05, hero));
   assert.equal(l.state.hand.state, 'stuck');
   assert.ok(ofType(evs, 'slam').length >= 1);
   assert.deepEqual(ofType(evs, 'slam')[0], { type: 'slam', x: -2, z: -4 });
-  run(l, ARENA.phase2.stuck - 0.5, hero);
+  run(l, ARENA.phase3.stuck - 0.5, hero);
   assert.equal(l.state.hand.state, 'stuck');
   const p = l.punch({ x: -2, z: -4, reach: 1.9, dmg: 1 });
   const hh = ofType(p, 'handHit');
@@ -166,19 +288,6 @@ test('the hand hurts if you stay under it, dodging is rewarded', () => {
   const dodged = frameOfSlam({ x: 4.2, z: -3, y: 0, dodging: true, inv: 0 });
   assert.ok(dodged.some(e => e.type === 'dodge'));
   assert.ok(!dodged.some(e => e.type === 'hurt'));
-});
-
-test('power clears every shot and hurts him', () => {
-  const l = mk(), hero = safeHero();
-  runUntil(l, hero, () => l.state.shots.length > 0);
-  const p = l.power();
-  assert.equal(l.state.shots.length, 0);
-  const hit = ofType(p, 'bossHit');
-  assert.equal(hit.length, 1);
-  assert.equal(hit[0].dmg, ARENA.powerDmg);
-  assert.equal(hit[0].by, 'power');
-  assert.ok(p.some(e => e.type === 'line' && e.text === '¡Eso no vale!'));
-  assert.equal(l.state.hp, H - ARENA.powerDmg);
 });
 
 function toStuckHand(l, hero) {
@@ -244,12 +353,12 @@ test('the stuck hand cannot be mashed: hits are locked out for 0.2 s', () => {
   runUntil(l, hero, () => l.state.hand.state === 'stuck');
   const hand = l.state.hand, evs = [];
   let hits = 0;
-  while (l.state.phase === 2 && (l.state.hand.state === 'stuck' || hits === 0)) {
+  while (l.state.phase === 3 && (l.state.hand.state === 'stuck' || hits === 0)) {
     const p = l.punch({ x: hand.x, z: hand.z, reach: 1.9, dmg: 0.1 }); // golpe flojo: sin tope no llega al ko
     hits += ofType(p, 'handHit').length;
     evs.push(...p, ...l.update(FPS, hero));
   }
   assert.ok(hits >= 2, `hits ${hits}`);
-  assert.ok(hits <= Math.ceil(ARENA.phase2.stuck / 0.2), `hits ${hits}`);
-  assert.ok(HALF - l.state.hp <= Math.ceil(ARENA.phase2.stuck / 0.2) * ARENA.handDmg * 0.1 + 1e-9);
+  assert.ok(hits <= Math.ceil(ARENA.phase3.stuck / 0.2), `hits ${hits}`);
+  assert.ok(HALF - l.state.hp <= Math.ceil(ARENA.phase3.stuck / 0.2) * ARENA.handDmg * 0.1 + 1e-9);
 });
