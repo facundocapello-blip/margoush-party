@@ -25,8 +25,9 @@ export const DICE_SIGN = { jump: ['⤴', '¡SALTÁ!'], attack: ['👊', '¡PIÑA
 // BIG CHAKY parado sobre la tarima, enorme: la cámara va lejos y alta para que mida ≥ 2,5 veces al héroe en pantalla
 const TARIMA_H = 0.6, TARIMA_FRONT = ARENA.bossZ + 2.4, TARIMA_BACK = ARENA.bossZ - 5;
 const CAM = { y: 6, back: 11, lookY: 6, fov: 66, fovPortrait: 70 };
-// Manotazo: la pose `slam` recortada por arriba de la mano (filas 0..545 de 768) y la mano sola (recorte 20,505 430×263)
-const SLAM_CUT = 545 / 768, HAND_CROP = { x: 20, y: 505, w: 430, h: 263 }, HAND_W = 2.8, HAND_FALL = 7;
+// Manotazo: la pose `slam` recortada por arriba de la mano (filas 0..545 de 768) y la mano sola (recorte 80,530 215×238;
+// de ese recorte solo queda la piel: el pantalón y las zapatillas que asoman se borran por color)
+const SLAM_CUT = 545 / 768, HAND_CROP = { x: 80, y: 530, w: 215, h: 238 }, HAND_W = 3.2, HAND_FALL = 7;
 
 export function createArena({ game, input, audio, assets, renderer, banner, updateHud, pause, POWER, onWin, onDown }) {
   let cur = null;
@@ -104,7 +105,11 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     slamTop.needsUpdate = true; slamTop.offset.set(0, 1 - SLAM_CUT); slamTop.repeat.set(1, SLAM_CUT);
     const handTex = canvasTex(HAND_CROP.w, HAND_CROP.h, (g) => {
       g.drawImage(assets.texture('arena_chaky_slam').image, HAND_CROP.x, HAND_CROP.y, HAND_CROP.w, HAND_CROP.h, 0, 0, HAND_CROP.w, HAND_CROP.h);
-      g.clearRect(0, 0, 102, 115); g.clearRect(348, 0, 82, 113); // las botas que quedan al costado de la mano
+      try {
+        const d = g.getImageData(0, 0, HAND_CROP.w, HAND_CROP.h), px = d.data;
+        for (let i = 0; i < px.length; i += 4) if (px[i] - px[i + 2] < 38) px[i + 3] = 0; // no es piel (gris/negro)
+        g.putImageData(d, 0, 0);
+      } catch (_) {}
     });
     handTex.wrapS = handTex.wrapT = T.ClampToEdgeWrapping; handTex.repeat.set(1, 1);
     const CUSTOM = {
