@@ -634,6 +634,34 @@ game.setStage = (id) => {
 
 game.onHeroDown = () => finish(false);
 
+// ---------- Links de prueba: ?probar=<tramo> ----------
+// Después de elegir héroe entra directo a ese tramo (sin intro ni tramos anteriores) y no toca el
+// «continuar» del juego normal. Ej.: .../3d/?probar=chaky  ·  ?probar=chaky-cartel  ·  ?probar=chaky-enojado
+const QUICK_TESTS = {
+  chaky: { stage: 'galpon' },
+  'chaky-cartel': { stage: 'galpon', bossHp: 21 },
+  'chaky-enojado': { stage: 'galpon', bossHp: 11 },
+  persecucion: { run: () => startChaseRun() },
+  byd: { run: () => startBydLevel() },
+  calle: {},
+  francia: { stage: 'francia' }
+};
+const PROBAR = (() => { try { const v = (new URLSearchParams(location.search).get('probar') || '').toLowerCase(); return QUICK_TESTS[v] ? v : null; } catch (_) { return null; } })();
+game.probar = PROBAR;
+function quickTest(heroId, id) {
+  const q = QUICK_TESTS[id];
+  startRun(heroId, false, { street: true });
+  if (q.stage) game.setStage(q.stage);
+  if (q.run) q.run();
+  if (q.bossHp) {
+    const t0 = performance.now();
+    const wait = () => { if (game.arena.active) game.arena.logic._setHp(q.bossHp); else if (performance.now() - t0 < 8000) setTimeout(wait, 100); };
+    wait();
+  }
+  clearCheckpoint();
+  setTimeout(clearCheckpoint, 1500); // lo que se guarde al entrar (jefe, BYD) no queda como «continuar»
+}
+
 function finish(won) {
   if (game.state !== 'playing' && game.state !== 'rescue') return;
   game.state = 'result';
@@ -873,7 +901,8 @@ async function boot() {
     setTimeout(() => {
       card.classList.remove('chosen'); card.parentElement.classList.remove('picking');
       picking = false;
-      startRun(card.dataset.hero, true);
+      if (PROBAR) quickTest(card.dataset.hero, PROBAR);
+      else startRun(card.dataset.hero, true);
     }, 1150);
   });
   $('#btn-pause').addEventListener('click', pause);
