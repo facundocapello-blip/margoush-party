@@ -642,3 +642,33 @@ body.chasing #touch, body.chasing #hud-power { display: none !important; }
 @keyframes sign-pop { 0% { transform: translate(-50%, -100%) scale(.6); } 100% { transform: translate(-50%, -100%) rotate(-3deg) scale(1); } }
 body.portrait #arena-ui .chaky-sign { min-width: 120px; }
 body.portrait #arena-ui .chaky-sign .txt { font-size: 22px; }
+/* Cambio de fase en la arena: cartel grande al centro */
+#arena-ui .phase-card { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%) scale(.6); opacity: 0; text-align: center; padding: 14px 26px 16px; border-radius: 18px; background: rgba(20, 10, 30, .82); border: 4px solid #ffd36e; box-shadow: 0 10px 30px #000a; font-family: Fredoka, sans-serif; color: #fff; z-index: 5; pointer-events: none; min-width: 240px; }
+#arena-ui .phase-card.on { animation: card-in .35s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+#arena-ui .phase-card.hidden { display: none; }
+#arena-ui .phase-card small { display: block; font-size: 15px; letter-spacing: 3px; color: #ffd36e; font-weight: 700; }
+#arena-ui .phase-card b { display: block; font-size: 40px; line-height: 1.1; font-weight: 700; text-shadow: 0 3px 0 #0008; }
+#arena-ui .phase-card span { display: block; margin-top: 4px; font-size: 18px; color: #ffe9b8; }
+#arena-ui .phase-card.p2 { border-color: #6ee0ff; } #arena-ui .phase-card.p2 small { color: #6ee0ff; }
+#arena-ui .phase-card.p3 { border-color: #ff6b4a; } #arena-ui .phase-card.p3 small { color: #ff8a6b; }
+@keyframes card-in { to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+/* «Chaky dice»: el resto se oscurece, barra de tiempo en el cartel, rondas y veredicto */
+#arena-ui.dice-mode::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 62%; background: radial-gradient(ellipse at 50% 35%, transparent 35%, rgba(10, 0, 25, .5) 85%); pointer-events: none; }
+#arena-ui .chaky-sign .timer { display: block; height: 7px; margin: 6px -6px 0; border-radius: 4px; background: #0002; overflow: hidden; }
+#arena-ui .chaky-sign .timer i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ff5a3c, #ffd36e); border-radius: 4px; }
+#arena-ui .dice-dots { position: absolute; left: 50%; top: 128px; transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; }
+#arena-ui .dice-dots.hidden { display: none; }
+#arena-ui .dice-dots i { width: 14px; height: 14px; border-radius: 50%; background: #ffffff40; border: 2px solid #fff8; }
+#arena-ui .dice-dots i.now { background: #ffd36e; animation: dot-now .6s ease-in-out infinite alternate; }
+#arena-ui .dice-dots i.ok { background: #4fd16b; border-color: #c9ffb8; }
+#arena-ui .dice-dots i.bad { background: #e5484d; border-color: #ffc4c4; }
+@keyframes dot-now { to { transform: scale(1.35); } }
+#arena-ui .dice-verdict { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%) scale(.5); font-family: Fredoka, sans-serif; font-weight: 700; font-size: 64px; color: #fff; text-shadow: 0 4px 0 #0009, 0 0 24px currentColor; z-index: 5; pointer-events: none; opacity: 0; }
+#arena-ui .dice-verdict.hidden { display: none; }
+#arena-ui .dice-verdict.ok { color: #6dff8a; } #arena-ui .dice-verdict.bad { color: #ff5a5f; }
+#arena-ui .dice-verdict.on { animation: verdict .65s ease-out forwards; }
+@keyframes verdict { 0% { transform: translate(-50%, -50%) scale(.5); opacity: 0; } 12% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; } 100% { transform: translate(-50%, -60%) scale(1); opacity: 0; } }
+/* El botón que pide el cartel late y brilla; con ¡QUIETO! se apagan todos */
+#touch .act.want { animation: want-btn .45s ease-in-out infinite alternate; box-shadow: 0 0 0 5px #ffd36e, 0 0 28px 8px #ffd36ecc !important; z-index: 3; }
+@keyframes want-btn { to { transform: scale(1.18); } }
+#touch.want-still .act { opacity: .35; filter: grayscale(1); }
