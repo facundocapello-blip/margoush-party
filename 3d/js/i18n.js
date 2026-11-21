@@ -281,6 +281,11 @@ export const DICHOS = {
   '¡PIÑA!': 'COGNE !',
   '¡ESQUIVÁ!': 'ESQUIVE !',
   '¡QUIETO!': 'BOUGE PAS !',
+  'FASE 1': 'PHASE 1', 'FASE 2': 'PHASE 2', 'FASE 3': 'PHASE 3',
+  '¡BARRILES!': 'TONNEAUX !', 'Devolvele los dorados 👊': 'Renvoie-lui les dorés 👊',
+  '¡CHAKY DICE!': 'CHAKY DIT !', 'Hacé lo que dice el cartel': 'Fais ce que dit le panneau',
+  '¡ENOJADO!': 'FURIEUX !', 'Pegale a la mano trabada 👊': 'Frappe la main coincée 👊',
+  '¡BIEN!': 'BRAVO !', '¡NO!': 'NON !',
   // Margot y BIG CHAKY cuando cruzan al fondo
   '¡Papááá!': 'Papaaa !',
   '¡Jua, jua, jua!': 'Mouahaha !',

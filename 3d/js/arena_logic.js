@@ -35,7 +35,7 @@ export const ARENA = {
     patterns: [['roll', 'curve', 'gold'], ['bounce', 'roll', 'gold'], ['curve', 'bounce', 'gold']],
     curveShift: 2.6, bounceH: 1.8, bounceHops: 4
   },
-  dice: { rounds: 6, prep: 0.75, window: [1.7, 1.15], result: 0.75, dmg: 1.5, trickFrom: 2, trickChance: 0.5, healAt: 5, hurtAt: 3, start: 1.8 },
+  dice: { rounds: 6, prep: 0.9, window: [1.7, 1.15], result: 0.75, dmg: 1.5, trickFrom: 2, trickChance: 0.5, healAt: 5, hurtAt: 3, start: 2.6 },
   phase3: { throwEvery: [0.9, 1.4], goldEvery: 3, slamEvery: 1, slamWarn: 0.8, stuck: 1.8, salvo: 0.4, salvoGap: 0.45, crateEvery: 3, crateTime: 0.8, giantEvery: 5, giantSpeed: 4.4, giantR: 1.9 },
   transition: 1.6,
   points: { returned: 300, returnedWhite: 120, hand: 50, dodge: 100, dice: 150 }
