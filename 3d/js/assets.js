@@ -3,14 +3,15 @@ export async function loadAssets(manifestUrl, onProgress = () => {}) {
   // Versión en un solo HTML (tools/build_single.mjs): el manifiesto y los archivos vienen adentro de la página
   const embed = window.__EMBED || null;
   const base = embed ? '' : new URL('.', new URL(manifestUrl, location.href)).href;
-  const manifest = embed ? embed.manifest : await (await fetch(manifestUrl)).json();
+  const manifest = embed ? embed.manifest : await (await fetch(manifestUrl, { cache: 'no-cache' })).json();
   const src = (file) => (embed ? embed.files[file] : base + file);
   const loader = new THREE.TextureLoader();
   const textures = {};
   const images = Object.entries(manifest).filter(([, m]) => m.file.endsWith('.webp'));
   let done = 0;
   await Promise.all(images.map(([name, m]) => new Promise((resolve, reject) => {
-    loader.load(src(m.file), (tex) => {
+    // `v` (hash del archivo) evita que Safari muestre una imagen vieja con las medidas nuevas
+    loader.load(src(m.file) + (m.v && !embed ? '?v=' + m.v : ''), (tex) => {
       tex.encoding = THREE.sRGBEncoding;
       tex.anisotropy = 4;
       textures[name] = tex;
