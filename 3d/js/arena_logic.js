@@ -86,7 +86,7 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     timer = next === 2 ? D.start : A.transition;
     clearAll();
     if (next === 3) {
-      state.pose = poseName = 'rage'; poseT = 1.2;
+      state.pose = poseName = 'rage'; poseT = A.transition; // furioso toda la transición
       throws = 0; barrels = 0; sinceSlam = 0;
       evs.push({ type: 'phase', to: 3 }, { type: 'rage' }, { type: 'voice', event: 'phase' });
     } else {

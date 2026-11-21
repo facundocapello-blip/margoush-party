@@ -190,7 +190,8 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     const pops = [], seen = new Set(), scratch = new T.Vector3();
     const pop = (x, y, z, txt, col = '#ffd36e', size = 22, life = 1.1) => {
       const e = document.createElement('div'); e.className = 'pop'; fillText(e, txt); e.style.color = col; e.style.fontSize = size + 'px';
-      ui.append(e); pops.push({ e, v: new T.Vector3(x, y, z), t: 0, life, w: e.offsetWidth }); // ancho medido una vez
+      const q = { e, v: new T.Vector3(x, y, z), t: 0, life, w: e.offsetWidth }; // ancho medido una vez
+      ui.append(e); pops.push(q); return q;
     };
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
     let flashTimer = 0;
@@ -218,9 +219,13 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     function charge(a) { hero.power = Math.min(1, hero.power + a); }
 
     // Voz + globo de BIG CHAKY (voice.js decide si habla: prioridad, sin repetir, esperas)
+    let speech = null;
     function speak(event) {
       const text = voice.say('chaky', event);
-      if (text) { const p = bossChest(); pop(p.x, p.y, p.z, text, '#ffffff', 28, 1.9); }
+      if (!text) return;
+      // un solo globo de Chaky a la vez: el nuevo reemplaza al anterior (antes se pisaban)
+      if (speech && speech.t < speech.life) speech.t = Math.max(speech.t, speech.life - 0.12);
+      const p = bossChest(); speech = pop(p.x, p.y, p.z, text, '#ffffff', 28, 1.9);
     }
     function handle(evs) {
       for (const e of evs) {
@@ -254,7 +259,8 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             showSign(e.cmd, 'on');
             // grita (a veces otra cosa): globo desde la boca y la voz
             const p = bossChest(), shout = DICE_SIGN[e.shout][1];
-            pop(p.x + 2.2, p.y + 3.2, p.z, shout, '#ffffff', 30, Math.max(0.9, e.win));
+            if (speech && speech.t < speech.life) speech.t = Math.max(speech.t, speech.life - 0.12);
+            speech = pop(p.x + 2.2, p.y + 3.2, p.z, shout, '#ffffff', 30, Math.max(0.9, e.win));
             try { audio.bossLine?.(shout, PROFILES.chaky, 0.8); } catch (_) {}
             sfx('whoosh');
             break;
@@ -382,7 +388,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       const sh = shakeA * Math.min(1, shakeT * 4);
       // Entrada: la cámara baja desde arriba y atrás hasta su lugar
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
-      cam.position.set(x * 0.4 + (Math.random() - 0.5) * sh, CAM.y + e * 7 + (Math.random() - 0.5) * sh, z + CAM.back + e * 9);
+      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.7 : 0.4) + (Math.random() - 0.5) * sh, CAM.y + e * 7 + (Math.random() - 0.5) * sh, z + CAM.back + e * 9);
       cam.lookAt(0, CAM.lookY + e * 2, ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
@@ -493,7 +499,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt; q.v.y += dt * 0.8;
         const sp = scratch.copy(q.v).project(cam);
-        const half = Math.min(innerWidth / 2, q.w / 2 + 8); // las frases largas no se cortan en el borde
+        const half = Math.min(innerWidth / 2, q.w / 2 + 18); // las frases largas no se cortan en el borde
         q.e.style.left = Math.max(half, Math.min(innerWidth - half, (sp.x + 1) / 2 * innerWidth)) + 'px'; q.e.style.top = (1 - sp.y) / 2 * innerHeight + 'px';
         q.e.style.opacity = String(Math.max(0, Math.min(1, (q.life - q.t) / 0.35)));
         if (q.t > q.life) { q.e.remove(); pops.splice(i, 1); }
