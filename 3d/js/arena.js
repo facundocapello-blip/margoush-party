@@ -4,7 +4,10 @@
 // módulo dibuja, lee los controles y convierte los eventos de la lógica en vida, puntos y efectos.
 // Puntos: solo `dodge` (+100), `handHit` (+50) y `returned` (+300); `bossHit` es solo barra y feedback.
 // Sin carteles de instrucciones: solo las frases de BIG CHAKY, el grito del poder y los puntos.
+// En la fase 2 («Chaky dice») el cartel que levanta es parte de la pelea, no una instrucción.
+// Voces: voice.js (provisorias con la voz del sistema hasta tener grabaciones).
 import { ARENA, createArenaLogic } from './arena_logic.js';
+import { createVoice, PROFILES } from './voice.js';
 import { SWINGS } from './hero.js';
 import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
@@ -16,7 +19,9 @@ const HURT_POSE = 0.5;     // s con la pose de golpeado
 const INV = 1.3;           // s invulnerable después de un golpe
 const END_DELAY = 1.2;     // s entre el ko (o caer) y salir de la arena
 const ENTRANCE = 1.5;      // s de entrada: la cámara baja desde arriba, BIG CHAKY ruge y recién ahí empieza a tirar
-const HERO_H = 2.4, BOSS_H = 14, BARREL_H = 1.15, CRATE_H = 1.3;
+const HERO_H = 2.4, BOSS_H = 14, BARREL_H = 1.15, CRATE_H = 1.3, GIANT_H = 2.7;
+// Cartel de «Chaky dice»: texto e ícono de cada orden
+export const DICE_SIGN = { jump: ['⤴', '¡SALTÁ!'], attack: ['👊', '¡PIÑA!'], dodge: ['💨', '¡ESQUIVÁ!'], still: ['✋', '¡QUIETO!'] };
 // BIG CHAKY parado sobre la tarima, enorme: la cámara va lejos y alta para que mida ≥ 2,5 veces al héroe en pantalla
 const TARIMA_H = 0.6, TARIMA_FRONT = ARENA.bossZ + 2.4, TARIMA_BACK = ARENA.bossZ - 5;
 const CAM = { y: 6, back: 11, lookY: 6, fov: 66, fovPortrait: 70 };
@@ -31,6 +36,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     const T = THREE, hero = game.hero, isM = game.heroId === 'marine';
     const heroPre = 'arena_' + (isM ? 'marine' : 'douge') + '_back_';
     const logic = createArenaLogic();
+    const voice = createVoice({ speak: (text, prof, o) => { try { audio.bossLine?.(text, prof, o.dur); } catch (_) {} } });
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 300);
@@ -133,16 +139,19 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     const haloTex = radial([[0, 'rgba(255,214,90,.95)'], [0.45, 'rgba(255,170,40,.45)'], [1, 'rgba(255,150,30,0)']]);
     const ringG = keep(new T.RingGeometry(0.55, 0.78, 28)); ringG.rotateX(-Math.PI / 2);
     const GOLD = L('#ffcc33'), WHITE = new T.Color(1, 1, 1);
-    const pool = { barrel: [], crate: [] }, live = new Map();
+    const pool = { barrel: [], crate: [], giant: [] }, live = new Map();
     function take(kind) {
       const p = pool[kind].pop();
       if (p) { p.m.visible = true; return p; }
-      const isB = kind === 'barrel';
-      const m = sprite(isB ? 'arena_barril' : 'arena_cajon', isB ? BARREL_H : CRATE_H, 0.7, true);
+      const isB = kind !== 'crate';
+      const m = sprite(isB ? 'arena_barril' : 'arena_cajon', kind === 'giant' ? GIANT_H : isB ? BARREL_H : CRATE_H, kind === 'giant' ? 1.2 : 0.7, true);
       const e = { kind, m };
       if (isB) {
         e.halo = new T.Sprite(keep(new T.SpriteMaterial({ map: haloTex, blending: T.AdditiveBlending, transparent: true, depthWrite: false })));
         e.halo.visible = false; scene.add(e.halo);
+        // aviso en el piso: dónde se mete el de curva y el carril del gigante
+        e.ring = new T.Mesh(ringG, keep(new T.MeshBasicMaterial({ color: L('#ff7a2e'), transparent: true, opacity: 0.8, depthWrite: false })));
+        e.ring.renderOrder = 2; e.ring.visible = false; scene.add(e.ring);
       } else {
         e.ring = new T.Mesh(ringG, keep(new T.MeshBasicMaterial({ color: L('#ff4d5e'), transparent: true, opacity: 0.85, depthWrite: false })));
         e.ring.renderOrder = 2; scene.add(e.ring);
@@ -158,11 +167,19 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
 
     // Carteles propios: solo el fogonazo y los textos que flotan
     const ui = document.createElement('div'); ui.id = 'arena-ui';
-    ui.innerHTML = '<div class="arena-flash"></div>';
+    ui.innerHTML = '<div class="arena-flash"></div><div class="chaky-sign hidden"><b class="ico"></b><span class="txt"></span></div>';
     document.body.append(ui); document.body.classList.add('arena-on');
     const flashE = ui.querySelector('.arena-flash');
+    const signE = ui.querySelector('.chaky-sign'), signIco = signE.querySelector('.ico'), signTxt = signE.querySelector('.txt');
+    function showSign(cmd, cls = '') {
+      signE.className = 'chaky-sign ' + cls;
+      if (cmd) { signIco.textContent = DICE_SIGN[cmd][0]; fillText(signTxt, DICE_SIGN[cmd][1]); }
+      else { signIco.textContent = '?'; signTxt.textContent = ''; }
+    }
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
-    if (bar) { const sp = bar.querySelector('span'); if (sp) sp.textContent = tr('BIG CHAKY'); bar.classList.remove('hidden'); }
+    const barName = bar?.querySelector('span');
+    const setBarName = () => { if (barName) barName.textContent = tr('BIG CHAKY') + ' · ' + (logic.state.phase === 'ko' ? 3 : logic.state.phase) + '/3'; };
+    if (bar) { setBarName(); bar.classList.remove('hidden'); }
     const setBar = () => { if (fill) fill.style.width = (100 * logic.state.hp / logic.state.hpMax).toFixed(1) + '%'; };
     setBar();
     const pops = [], seen = new Set(), scratch = new T.Vector3();
@@ -195,6 +212,11 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     }
     function charge(a) { hero.power = Math.min(1, hero.power + a); }
 
+    // Voz + globo de BIG CHAKY (voice.js decide si habla: prioridad, sin repetir, esperas)
+    function speak(event) {
+      const text = voice.say('chaky', event);
+      if (text) { const p = bossChest(); pop(p.x, p.y, p.z, text, '#ffffff', 28, 1.9); }
+    }
     function handle(evs) {
       for (const e of evs) {
         switch (e.type) {
@@ -202,6 +224,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             hero.hp = Math.max(0, hero.hp - 1); game.score.takeDamage(); game.combo?.reset?.();
             hurtT = HURT_POSE; inv = INV; swing = null; buffer = 0;
             flash('#ff4d5e', 0.45); shake(0.35, 0.35); sfx('hurt');
+            if (hero.hp > 0) speak('taunt');
             if (hero.hp <= 0 && phase === 'fight') { phase = 'down'; phaseT = 0; }
             break;
           case 'dodge':
@@ -215,9 +238,33 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             break;
           case 'bossHit':
             setBar(); bossFlash = 0.18; flash('#fff2c4', 0.22);
+            if (e.by !== 'dice' && e.by !== 'barrel') speak('hurt');
+            break;
+          case 'phase':
+            setBarName(); showSign(null, 'hidden');
+            if (e.to === 2) { flash('#ffd36e', 0.35); shake(0.3, 0.4); sfx('roar'); }
+            break;
+          case 'voice': speak(e.event); break;
+          case 'dice': {
+            showSign(e.cmd, 'on');
+            // grita (a veces otra cosa): globo desde la boca y la voz
+            const p = bossChest(), shout = DICE_SIGN[e.shout][1];
+            pop(p.x + 2.2, p.y + 3.2, p.z, shout, '#ffffff', 30, Math.max(0.9, e.win));
+            try { audio.bossLine?.(shout, PROFILES.chaky, 0.8); } catch (_) {}
+            sfx('whoosh');
+            break;
+          }
+          case 'diceResult':
+            showSign(logic.state.dice?.cmd || null, e.ok ? 'on ok' : 'on bad');
+            if (e.ok) { addPts(ARENA.points.dice, x, 3, z - 1); charge(POWER.hit); sfx('hitHeavy'); shake(0.2, 0.2); }
+            else { sfx('boo'); }
+            break;
+          case 'heal':
+            hero.hp = Math.min(hero.hpMax || hero.hp + 1, hero.hp + 1);
+            pop(x, HERO_H + 0.8, z, '+❤', '#ff6b8a', 34, 1.4); sfx('pickup');
             break;
           case 'rage':
-            setBar(); flash('#ff7a2e', 0.4); shake(0.5, 0.8); sfx('roar');
+            setBar(); setBarName(); showSign(null, 'hidden'); flash('#ff7a2e', 0.4); shake(0.5, 0.8); sfx('roar');
             break;
           case 'ko': {
             setBar(); flash('#ffffff', 0.6); shake(0.6, 0.9); sfx('ko');
@@ -227,9 +274,11 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             phase = 'ko'; phaseT = 0;
             break;
           }
-          case 'throw': sfx('whoosh'); break;
+          case 'throw':
+            sfx(e.shot === 'giant' ? 'roar' : 'whoosh');
+            if (Math.random() < 0.25) speak('attack');
+            break;
           case 'slam': shake(0.5, 0.4); sfx('slam'); break;
-          case 'line': { const p = bossChest(); pop(p.x, p.y, p.z, e.text, '#ffffff', 30, 1.8); break; }
         }
       }
     }
@@ -274,15 +323,16 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       moving = false;
       if (phase === 'fight') {
         // Controles
-        if (input.consume('jump') && y <= 0) { vy = CHASE.jump; sfx('jump'); }
+        if (input.consume('jump')) { if (y <= 0) { vy = CHASE.jump; sfx('jump'); } handle(logic.act('jump')); }
         if (input.consume('dodge') && dashCd <= 0 && dashT <= 0) {
           dashT = CHASE.dash.t; dashCd = CHASE.dash.cd;
           const mx = input.moveX, mz = input.moveZ, len = Math.hypot(mx, mz);
           if (len > 0.2) { dashX = mx / len; dashZ = mz / len; } else { dashX = x > 0 ? -1 : 1; dashZ = 0; }
           sfx('dodge');
+          handle(logic.act('dodge'));
         }
         if (input.pressed('attack')) { holdT += dt; if (hero.power >= 1 && holdT >= POWER.hold) usePower(); } else holdT = 0;
-        if (input.consume('attack')) { if (!swing) startSwing(); else buffer = 0.2; }
+        if (input.consume('attack')) { handle(logic.act('attack')); if (!swing) startSwing(); else buffer = 0.2; }
         if (input.consume('power') && hero.power >= 1) usePower();
         // Movimiento
         let vx, vz;
@@ -309,8 +359,8 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
 
       // La lógica de BIG CHAKY (se congela si el héroe cayó)
-      if (phase === 'entrance' && phaseT >= ENTRANCE) { phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.35, 0.45); }
-      if (phase === 'fight') handle(logic.update(dt, { x, z, y, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
+      if (phase === 'entrance' && phaseT >= ENTRANCE) { phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.35, 0.45); speak('intro'); }
+      if (phase === 'fight') handle(logic.update(dt, { x, z, y, moving: moving || dashT > 0, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
       if (phase === 'fight' && hero.hp <= 0) { phase = 'down'; phaseT = 0; }
       else if (phase === 'ko') logic.update(dt, { x, z, y, dodging: false, inv: true });
 
@@ -377,7 +427,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       else {
         handSh.visible = true; handSh.position.set(H.x, 0.04, H.z);
         let s = 2.8, op = 1;
-        if (H.state === 'warn') { const k = Math.min(1, H.t / ARENA.phase2.slamWarn); s = 0.6 + 2.2 * k; op = 0.45 + 0.55 * k; }
+        if (H.state === 'warn') { const k = Math.min(1, H.t / ARENA.phase3.slamWarn); s = 0.6 + 2.2 * k; op = 0.45 + 0.55 * k; }
         else if (H.state === 'up') { const k = Math.min(1, H.t / 0.4); op = 1 - k; }
         else s = 2.8 + Math.sin(t * 18) * 0.06;
         handSh.scale.set(s, 1, s); handM.opacity = op;
@@ -389,17 +439,23 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
         seen.add(s.id);
         let e = live.get(s.id);
         if (!e) {
-          e = take(s.kind); live.set(s.id, e);
+          e = take(s.type === 'giant' ? 'giant' : s.kind); live.set(s.id, e);
           if (s.kind === 'crate') e.from = { x: S.bossX, y: TARIMA_H + BOSS_H * 0.85, z: ARENA.bossZ + 0.5 };
         }
         if (s.kind === 'barrel') {
           e.m.material.color.copy(s.gold ? GOLD : WHITE);
           const by0 = s.z < TARIMA_FRONT ? TARIMA_H : 0; // ruedan por la tarima y bajan
-          place(e.m, s.x, BARREL_H / 2 + by0, s.z);
+          const bh = s.type === 'giant' ? GIANT_H : BARREL_H;
+          place(e.m, s.x, bh / 2 + by0 + (s.y || 0), s.z);
+          if (e.m.userData.sh) { const k = 1 - Math.min(0.6, (s.y || 0) * 0.3); e.m.userData.sh.scale.set(bh * 0.56 * k, 1, bh * 0.28 * k); }
+          // aviso en el piso: la curva marca su carril final; el gigante, el suyo
+          const warnZ = -3.5, warn = !s.returning && (s.type === 'curve' || s.type === 'giant') && s.z < warnZ;
+          e.ring.visible = warn;
+          if (warn) { e.ring.position.set(s.type === 'curve' ? s.x1 : s.x, 0.05, warnZ); e.ring.scale.setScalar(s.type === 'giant' ? 2.6 : 1.3 + Math.sin(t * 12) * 0.12); }
           if (e.m.userData.sh) e.m.userData.sh.position.y = by0 + 0.03;
-          e.m.rotation.z -= dt * (s.returning ? -14 : 9);
+          e.m.rotation.z -= dt * (s.returning ? -14 : s.type === 'giant' ? 4 : 9);
           e.halo.visible = s.gold;
-          if (s.gold) { const p = 1.9 + Math.sin(t * 10) * 0.35; e.halo.position.set(s.x, BARREL_H / 2 + by0, s.z + 0.05); e.halo.scale.set(p, p, 1); e.halo.material.opacity = 0.65 + Math.sin(t * 10) * 0.25; }
+          if (s.gold) { const p = 1.9 + Math.sin(t * 10) * 0.35; e.halo.position.set(s.x, BARREL_H / 2 + by0 + (s.y || 0), s.z + 0.05); e.halo.scale.set(p, p, 1); e.halo.material.opacity = 0.65 + Math.sin(t * 10) * 0.25; }
         } else {
           const k = Math.max(0, Math.min(1, 1 - s.y / 8));
           const cx = e.from.x + (s.x - e.from.x) * k, cz = e.from.z + (s.z - e.from.z) * k;
@@ -412,6 +468,11 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       }
       for (const [id, e] of live) if (!seen.has(id)) { drop(e); live.delete(id); }
 
+      // Cartel de «Chaky dice»: sobre las manos de BIG CHAKY
+      if (!signE.classList.contains('hidden')) {
+        const sp = scratch.set(B.position.x, B.position.y + B.userData.hh * 0.93, B.position.z).project(cam);
+        signE.style.left = ((sp.x + 1) / 2 * innerWidth) + 'px'; signE.style.top = ((1 - sp.y) / 2 * innerHeight) + 'px';
+      }
       // Textos que flotan
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt; q.v.y += dt * 0.8;
@@ -445,6 +506,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       get state() { return logic.state; },
       punch: (area) => { const evs = logic.punch(area); handle(evs); return evs; },
       power: () => { const evs = logic.power(); handle(evs); return evs; },
+      act: (k) => { const evs = logic.act(k); handle(evs); return evs; },
       _setHp: (hp) => { const evs = logic._setHp(hp); handle(evs); return evs; }
     };
     const inst = cur = {
