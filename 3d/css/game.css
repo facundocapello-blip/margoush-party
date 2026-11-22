@@ -706,18 +706,24 @@ body.portrait #arena-ui .piu .rec, body.portrait #arena-ui .piu .note { width: 5
 body.cepi-duel-on #touch { display: none; }
 #arena-ui .cepi-duel { position: absolute; left: 0; right: 0; bottom: 0; top: 0; pointer-events: none; z-index: 4; }
 #arena-ui .cepi-duel.hidden { display: none; }
-#arena-ui .cepi-tell { position: absolute; left: 50%; top: calc(140px + var(--safe-t)); transform: translateX(-50%); padding: 10px 20px; border-radius: 16px; background: rgba(12, 24, 52, .88); border: 3px solid #7cc6ff; color: #fff; font: 700 22px Fredoka, sans-serif; text-shadow: 0 2px 0 #000a; white-space: nowrap; max-width: 92vw; text-align: center; }
-#arena-ui .cepi-tell.alert { border-color: #ff4d5e; background: rgba(90, 12, 24, .92); color: #ffe066; animation: dot-now .28s ease-in-out infinite alternate; }
+#arena-ui .cepi-tell { position: absolute; left: 50%; top: calc(138px + var(--safe-t)); transform: translateX(-50%); padding: 9px 18px; border-radius: 16px; background: rgba(12, 24, 52, .9); border: 3px solid #7cc6ff; color: #fff; font: 700 clamp(16px, 4.4vw, 22px) / 1.15 Fredoka, sans-serif; text-shadow: 0 2px 0 #000a; max-width: 90vw; text-align: center; }
+#arena-ui .cepi-tell.alert { border-color: #ff4d5e; background: rgba(96, 12, 24, .94); color: #ffe066; animation: pulse-center .28s ease-in-out infinite alternate; }
 #arena-ui .cepi-tell.ok { border-color: #6dff8a; color: #9bf7c4; }
 #arena-ui .cepi-tell.bad { border-color: #ff4d5e; color: #ff9b9b; }
-#arena-ui .cepi-btns { position: absolute; left: 16px; right: 16px; bottom: calc(26px + var(--safe-b)); display: grid; grid-template-columns: 1fr 1fr; gap: 14px; pointer-events: auto; max-width: 520px; margin: 0 auto; }
-#arena-ui .cepi-btns button { min-height: 76px; border-radius: 20px; border: 3px solid #9fe4ff; background: rgba(16, 46, 98, .88); color: #fff; font: 700 26px Fredoka, sans-serif; box-shadow: 0 6px 0 #091c3e; touch-action: none; }
+#arena-ui .cepi-btns { position: absolute; left: 16px; right: 16px; bottom: calc(24px + var(--safe-b)); display: grid; grid-template-columns: 1fr 1fr; gap: 14px; pointer-events: auto; max-width: 520px; margin: 0 auto; }
+#arena-ui .cepi-btns button { min-height: 76px; border-radius: 20px; border: 3px solid #9fe4ff; background: rgba(16, 46, 98, .88); color: #fff; font: 700 26px Fredoka, sans-serif; box-shadow: 0 6px 0 #091c3e; touch-action: none; transition: background .12s, border-color .12s, box-shadow .12s; }
+#arena-ui .cepi-btns button.safe { border-color: #6dff8a; background: rgba(18, 96, 56, .92); box-shadow: 0 6px 0 #0b3d22, 0 0 24px #6dff8a99; }
 #arena-ui .cepi-btns button.picked, #arena-ui .cepi-btns button:active { background: #2f8cff; border-color: #ffe066; transform: translateY(3px); box-shadow: 0 3px 0 #091c3e; }
 /* Arena final de Pinky — botón de remate heroico de Margot */
-#arena-ui .margot-btn { position: absolute; left: 50%; top: calc(146px + var(--safe-t)); transform: translateX(-50%); padding: 12px 24px; border-radius: 22px; border: 3px solid #ffe066; background: linear-gradient(180deg, #ff5e99, #c82568); color: #fff; font: 700 22px Fredoka, sans-serif; box-shadow: 0 6px 0 #6e1036, 0 0 24px #ff77aa99; pointer-events: auto; touch-action: none; z-index: 6; animation: want-btn .48s ease-in-out infinite alternate; white-space: nowrap; }
+#arena-ui .margot-btn { position: absolute; left: 50%; top: calc(144px + var(--safe-t)); transform: translateX(-50%); padding: 12px 24px; border-radius: 22px; border: 3px solid #ffe066; background: linear-gradient(180deg, #ff5e99, #c82568); color: #fff; font: 700 clamp(18px, 4.8vw, 22px) Fredoka, sans-serif; box-shadow: 0 6px 0 #6e1036, 0 0 24px #ff77aa99; pointer-events: auto; touch-action: none; z-index: 6; animation: pulse-center .48s ease-in-out infinite alternate; white-space: nowrap; max-width: 92vw; }
 #arena-ui .margot-btn.hidden { display: none; }
-#arena-ui .margot-btn:active { transform: translateX(-50%) scale(.95); }
+#arena-ui .margot-btn:active { transform: translateX(-50%) scale(.95); animation: none; }
+@keyframes pulse-center { to { transform: translateX(-50%) scale(1.08); } }
+@media (orientation: landscape) {
+  #arena-ui .cepi-tell { top: calc(102px + var(--safe-t)); padding: 6px 16px; font-size: 16px; }
+  #arena-ui .cepi-btns { bottom: calc(12px + var(--safe-b)); max-width: 440px; }
+  #arena-ui .cepi-btns button { min-height: 54px; font-size: 20px; border-radius: 16px; }
+  #arena-ui .margot-btn { top: calc(106px + var(--safe-t)); padding: 8px 18px; font-size: 18px; }
+}
 /* Pantalla de victoria — arte de Grupo E cuando exista */
 .host.victory img { max-height: 240px; width: auto; object-fit: contain; filter: drop-shadow(0 10px 18px #0006); }
-
-

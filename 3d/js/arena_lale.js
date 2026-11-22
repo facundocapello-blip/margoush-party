@@ -47,7 +47,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       g.fillStyle = r; g.fillRect(0, 0, 64, 64);
     });
 
-    // Piso de baldosas crema/terracota del obrador de Le Blé
+    // Piso de baldosas crema/terracota del obrador de Le Blé (ancho completo para evitar vacíos oscuros en horizontal)
     const tileTex = canvasTex(256, 256, (g, w, h) => {
       const n = 4, s = w / n;
       for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
@@ -56,18 +56,24 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
         g.strokeStyle = 'rgba(110,75,45,.25)'; g.lineWidth = 3;
         g.strokeRect(c * s + 1, r * s + 1, s - 2, s - 2);
       }
-    }, 3, 7);
-    const outer = mk(new T.PlaneGeometry(60, 44), new T.MeshLambertMaterial({ color: L('#2a1a10') }));
+    }, 10, 8);
+    const outer = mk(new T.PlaneGeometry(70, 44), new T.MeshLambertMaterial({ color: L('#4a2f1d') }));
     outer.rotation.x = -Math.PI / 2; outer.position.set(0, -0.02, -6);
-    const floor = mk(new T.PlaneGeometry(LALE_ARENA.xMax * 2 + 1, 24), new T.MeshLambertMaterial({ map: tileTex }));
+    const floor = mk(new T.PlaneGeometry(34, 26), new T.MeshLambertMaterial({ map: tileTex }));
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -7);
+    // Molduras cálidas de madera marcando los límites jugables del obrador
+    const railM = keep(new T.MeshLambertMaterial({ color: L('#7b4822') }));
+    for (const sd of [-1, 1]) {
+      const rail = new T.Mesh(keep(new T.BoxGeometry(0.32, 0.36, 22)), railM);
+      rail.position.set(sd * (LALE_ARENA.xMax + 0.55), 0.18, -6); scene.add(rail);
+    }
 
-    // Mesada/horno cálido al fondo + fondo pintado del obrador (o le_ble de respaldo)
+    // Fondo pintado del obrador (BW=84 para llenar celular horizontal sin franjas negras)
     const bgKey = assets.has('arena_lale_fondo') ? 'arena_lale_fondo' : 'le_ble';
     const bgMeta = assets.meta(bgKey);
-    const BH = 34, BW = Math.max(46, BH * bgMeta.w / bgMeta.h);
+    const BW = 84, BH = Math.max(40, BW * bgMeta.h / bgMeta.w);
     const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(bgKey), fog: false }));
-    back.position.set(0, BH * 0.33, LALE_ARENA.bossZ - 9);
+    back.position.set(0, BH * 0.34, LALE_ARENA.bossZ - 9);
 
     // Respaldo por cuadros de lale_actions_sheet + tira de caminata/patinada de 6 cuadros (lale_walk_sheet)
     const fallbackTex = {}, walkTex = {};
@@ -130,15 +136,55 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     const B = sprite('arena_lale_idle', BOSS_H, 0.9, 'idle');
     const P = sprite(heroPre + 'idle', HERO_H, 0.9);
 
-    // Barras de manteca, charcos dorados y bolsas de harina 3D
+    // Bolsa de harina ilustrada (reemplaza al cilindro liso) con etiqueta «HARINA» + nube voladora + aviso de patín
+    const flourBagTex = canvasTex(256, 256, (g, w, h) => {
+      g.clearRect(0, 0, w, h);
+      // Sombra interna suave + cuerpo regordete del saco
+      const grad = g.createLinearGradient(50, 70, 206, 238);
+      grad.addColorStop(0, '#fffdf7'); grad.addColorStop(0.55, '#f4e6cc'); grad.addColorStop(1, '#d8be94');
+      g.fillStyle = grad; g.strokeStyle = '#6d4724'; g.lineWidth = 7;
+      g.beginPath();
+      g.moveTo(92, 68); g.quadraticCurveTo(40, 122, 46, 208);
+      g.quadraticCurveTo(50, 240, 128, 242); g.quadraticCurveTo(206, 240, 210, 208);
+      g.quadraticCurveTo(216, 122, 164, 68); g.closePath();
+      g.fill(); g.stroke();
+      // Cuello arrugado arriba
+      g.beginPath(); g.moveTo(92, 68); g.lineTo(74, 28); g.quadraticCurveTo(128, 42, 182, 28); g.lineTo(164, 68); g.closePath();
+      g.fill(); g.stroke();
+      // Piolín rojo atado
+      g.strokeStyle = '#d63638'; g.lineWidth = 10; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(86, 68); g.quadraticCurveTo(128, 78, 170, 68); g.stroke();
+      // Polvo blanco alrededor de la boca
+      g.fillStyle = 'rgba(255,255,255,.88)';
+      for (const [cx, cy, r] of [[78, 24, 14], [128, 18, 18], [176, 26, 13], [104, 28, 11], [154, 24, 12]]) {
+        g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fill();
+      }
+      // Etiqueta roja/crema HARINA
+      g.fillStyle = '#c83434'; g.fillRect(62, 128, 132, 48);
+      g.strokeStyle = '#fff5dc'; g.lineWidth = 4; g.strokeRect(66, 132, 124, 40);
+      g.fillStyle = '#fff'; g.font = '900 28px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('HARINA', 128, 154);
+      g.fillStyle = '#6d4724'; g.font = '900 18px Fredoka, sans-serif';
+      g.fillText('👊 ¡PEGALE!', 128, 204);
+    });
+    flourBagTex.wrapS = flourBagTex.wrapT = T.ClampToEdgeWrapping; flourBagTex.repeat.set(1, 1);
+    const bagMat = keep(new T.MeshBasicMaterial({ map: flourBagTex, alphaTest: 0.25, transparent: true, side: T.DoubleSide }));
     const butterG = keep(new T.BoxGeometry(0.9, 0.42, 0.5));
     const butterM = keep(new T.MeshStandardMaterial({ color: L('#ffe169'), emissive: L('#664c00'), roughness: 0.25 }));
     const puddleG = keep(new T.CircleGeometry(LALE_ARENA.puddleR, 20)); puddleG.rotateX(-Math.PI / 2);
     const puddleM = keep(new T.MeshBasicMaterial({ color: L('#ffd447'), transparent: true, opacity: 0.72, depthWrite: false }));
-    const bagG = keep(new T.CylinderGeometry(0.55, 0.68, 1.35, 12));
-    const bagM = keep(new T.MeshStandardMaterial({ color: L('#fff7ea'), emissive: L('#554422'), roughness: 0.7 }));
-    const ringG = keep(new T.RingGeometry(0.75, 1.05, 24)); ringG.rotateX(-Math.PI / 2);
-    const ringM = keep(new T.MeshBasicMaterial({ color: L('#ffffff'), transparent: true, opacity: 0.75, side: T.DoubleSide, depthWrite: false }));
+    const ringG = keep(new T.RingGeometry(0.8, 1.15, 24)); ringG.rotateX(-Math.PI / 2);
+    const ringM = keep(new T.MeshBasicMaterial({ color: L('#ffffff'), transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false }));
+    // Banda dorada de aviso antes de cada patinada de Lale + aro de vulnerabilidad cuando está enharinado
+    const skateWarnM = keep(new T.MeshBasicMaterial({ color: L('#ffd447'), transparent: true, opacity: 0.45, depthWrite: false }));
+    const skateWarnPlane = new T.Mesh(keep(new T.PlaneGeometry(LALE_ARENA.xMax * 2 + 0.6, 1.8)), skateWarnM);
+    skateWarnPlane.rotation.x = -Math.PI / 2; skateWarnPlane.visible = false; scene.add(skateWarnPlane);
+    const vulnRing = new T.Mesh(keep(new T.RingGeometry(1.5, 2.05, 28)), keep(new T.MeshBasicMaterial({ color: L('#ffffff'), transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false })));
+    vulnRing.rotation.x = -Math.PI / 2; vulnRing.visible = false; scene.add(vulnRing);
+    // Nube de harina que vuela desde la bolsa hasta Lale al explotarla
+    const puffG = keep(new T.SphereGeometry(0.65, 10, 8));
+    const puffM = keep(new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 }));
+    const flourClouds = [];
     const liveShots = new Map(), livePuddles = new Map(), liveBags = new Map();
 
     // Capa de UI
@@ -191,9 +237,14 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_lale_idle';
-    let lastSpeech = null;
+    let lastSpeech = null, lastBarHp = -1, lastBarPhase = null;
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
-    const addPts = (n, px, py, pz) => { const g = game.score.add(n, game.combo.hit()); pop(px, py, pz, '+' + g, '#ffd36e', 24); };
+    const addPts = (n, px, py, pz) => {
+      const before = game.score.total;
+      game.score.addFlat(n);
+      game.combo?.add?.(1);
+      pop(px, py, pz, '+' + (game.score.total - before), '#ffd36e', 24);
+    };
     const charge = (n) => { hero.power = Math.min(1, hero.power + n); };
     const speak = (ev) => {
       const text = voice.say('lale', ev);
@@ -201,6 +252,18 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       if (lastSpeech) { lastSpeech.e.remove(); const i = pops.indexOf(lastSpeech); if (i >= 0) pops.splice(i, 1); }
       lastSpeech = pop(logic.state.bossX, BOSS_H + 0.6, logic.state.bossZ, text, '#ffe9a8', 17, 2.3);
     };
+    function spawnFlourCloud(fx0, fz0) {
+      const g = new T.Group();
+      for (let i = 0; i < 4; i++) {
+        const p = new T.Mesh(puffG, puffM);
+        p.position.set((i - 1.5) * 0.35, (i % 2) * 0.3, (i % 3 - 1) * 0.25);
+        p.scale.setScalar(0.8 + (i % 2) * 0.35);
+        g.add(p);
+      }
+      g.position.set(fx0, 1.3, fz0);
+      scene.add(g);
+      flourClouds.push({ g, x0: fx0, z0: fz0, t: 0, dur: 0.3 });
+    }
 
     function handle(evs) {
       for (const e of evs) {
@@ -208,7 +271,8 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
           case 'throw': sfx('swing'); break;
           case 'skateStart': sfx('roar'); pop(0, 3.8, -4, '¡A PATINAR!', '#ffe066', 24, 1.0); break;
           case 'bagBurst':
-            sfx('perfect'); flash('#ffffff', 0.35); shake(0.26, 0.2);
+            sfx('perfect'); flash('#ffffff', 0.32); shake(0.26, 0.2);
+            spawnFlourCloud(e.x, e.z);
             pop(e.x, 2.5, e.z, '¡HARINA!', '#ffffff', 26, 1.1);
             break;
           case 'floured':
@@ -230,15 +294,18 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
           case 'bossHit': bossFlash = 0.22; setBar(); sfx('hit'); shake(0.26, 0.2); break;
           case 'hurt':
             hero.hp = Math.max(0, hero.hp - 1); hurtT = HURT_POSE; inv = INV;
-            game.combo.reset(); sfx('hurt'); flash('#ff3b52', 0.45); shake(0.35, 0.28);
+            game.score.takeDamage(); game.combo?.reset?.();
+            sfx('hurt'); flash('#ff3b52', 0.45); shake(0.35, 0.28);
             break;
           case 'phase': setBarName(); phaseCard(e.phase, 2.1); shake(0.32, 0.3); sfx('roar'); break;
           case 'voice': speak(e.event); break;
-          case 'ko':
+          case 'ko': {
             phase = 'ko'; phaseT = 0; setBar(); setBarName();
+            const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.55); shake(0.48, 0.45);
-            pop(logic.state.bossX, BOSS_H * 0.7, LALE_ARENA.bossZ, '¡K.O.!', '#ffe066', 34, 1.5);
+            pop(logic.state.bossX, BOSS_H * 0.7, LALE_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.5);
             break;
+          }
         }
       }
     }
@@ -319,7 +386,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
 
       if (phase === 'entrance' && phaseT >= ENTRANCE) {
         phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.22, 0.25);
-        phaseCard(1, 2.0);
+        phaseCard(logic.state.phase === 'ko' ? 3 : logic.state.phase, 2.0);
         setTimeout(() => { if (!disposed) speak('intro'); }, 1900);
       }
       if (phase === 'fight') handle(logic.update(dt, { x, z, y, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
@@ -334,6 +401,9 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
 
     function draw(dt) {
       const S = logic.state;
+      if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
+        lastBarHp = S.hp; lastBarPhase = S.phase; setBar(); setBarName();
+      }
       shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
@@ -371,6 +441,28 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
         B.material.color.setRGB(1.4, 1.4, 1.4); // brillo blanco enharinado en respaldo
       } else {
         B.material.color.setRGB(1, bossFlash > 0 ? 0.55 : 1, bossFlash > 0 ? 0.55 : 1);
+      }
+
+      // Banda dorada de aviso antes de cada patinada + aro blanco cuando Lale está enharinado
+      skateWarnPlane.visible = S.mode === 'skateWarn';
+      if (skateWarnPlane.visible) {
+        skateWarnPlane.position.set(0, 0.03, S.skateWarnZ);
+        skateWarnM.opacity = 0.25 + Math.abs(Math.sin(t * 22)) * 0.35;
+      }
+      vulnRing.visible = S.mode === 'floured';
+      if (vulnRing.visible) {
+        vulnRing.position.set(S.bossX, 0.04, LALE_ARENA.meleeZ);
+        vulnRing.scale.setScalar(1 + Math.sin(t * 12) * 0.12);
+      }
+
+      // Nubes de harina volando desde la bolsa explotada hasta Lale
+      for (let i = flourClouds.length - 1; i >= 0; i--) {
+        const c = flourClouds[i]; c.t += dt;
+        const p = Math.min(1, c.t / c.dur);
+        c.g.position.set(c.x0 + (S.bossX - c.x0) * p, 1.3 + Math.sin(p * Math.PI) * 2.2, c.z0 + (S.bossZ - c.z0) * p);
+        c.g.scale.setScalar(1 + p * 1.4);
+        c.g.rotation.y += dt * 7;
+        if (c.t >= c.dur) { scene.remove(c.g); flourClouds.splice(i, 1); }
       }
 
       // Héroe de espaldas
@@ -427,24 +519,29 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
         scene.remove(m); livePuddles.delete(id);
       }
 
-      // Bolsas de harina (anillo blanco pulsante para invitar a golpearlas)
+      // Bolsas de harina ilustradas («HARINA · 👊 ¡PEGALE!») con anillo blanco pulsante
       const bagIds = new Set();
       for (const b of S.bags) {
         if (!b.alive) continue;
         bagIds.add(b.id);
         let obj = liveBags.get(b.id);
         if (!obj) {
-          const m = new T.Mesh(bagG, bagM); scene.add(m);
+          const m = new T.Mesh(unit, bagMat); m.scale.set(1.9, 1.9, 1); scene.add(m);
+          const sh = new T.Mesh(shG, shM); sh.scale.set(1.4, 1, 0.7); sh.renderOrder = 1; scene.add(sh);
           const r = new T.Mesh(ringG, ringM); r.renderOrder = 2; scene.add(r);
-          obj = { m, r }; liveBags.set(b.id, obj);
+          obj = { m, sh, r }; liveBags.set(b.id, obj);
         }
-        obj.m.position.set(b.x, 0.68 + Math.sin(t * 5 + b.id) * 0.08, b.z);
+        const byBob = Math.abs(Math.sin(t * 4.5 + b.id)) * 0.12;
+        obj.m.position.set(b.x, byBob, b.z);
+        obj.m.rotation.y = Math.atan2(cam.position.x - b.x, cam.position.z - b.z) * 0.55;
+        obj.m.rotation.z = Math.sin(t * 5 + b.id) * 0.06;
+        obj.sh.position.set(b.x, 0.03, b.z);
         obj.r.position.set(b.x, 0.04, b.z);
         obj.r.scale.setScalar(1 + Math.sin(t * 7) * 0.14);
       }
       for (const [id, obj] of liveBags) {
         if (bagIds.has(id)) continue;
-        scene.remove(obj.m); scene.remove(obj.r); liveBags.delete(id);
+        scene.remove(obj.m); scene.remove(obj.sh); scene.remove(obj.r); liveBags.delete(id);
       }
 
       // Textos flotantes
@@ -474,6 +571,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       logic, update,
       render: () => renderer.render(scene, cam),
       dispose,
+      syncBar: () => { lastBarHp = logic.state.hp; lastBarPhase = logic.state.phase; setBar(); setBarName(); },
       get state() { return logic.state; },
       get heroPose() { return heroPose; },
       get bossKey() { return bossKey; }
@@ -486,6 +584,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     update: (dt) => cur?.update(dt),
     render: () => cur?.render(),
     dispose: () => cur?.dispose(),
+    syncBar: () => cur?.syncBar(),
     get active() { return !!cur; },
     get logic() { return cur?.logic || null; },
     get state() { return cur?.state || null; }

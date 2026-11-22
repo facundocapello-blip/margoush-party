@@ -24,9 +24,9 @@ export const CEPI_ARENA = {
   returnZMax: 1.5,
   meleeZ: -6.3,    // cerca de la red para pegarle de frente o voltear cartones
   meleeX: 2.1,
-  lanes: [-3.0, 0, 3.0],
-  duel: { hide: 1.15, tell: 0.95, result: 1.1 },
-  points: { returned: 300, melee: 180, duel: 250, cardboard: 100, dodge: 100 }
+  lanes: [-2.65, 0, 2.65],
+  duel: { hide: 1.05, tell: 1.25, tellFast: 1.05, result: 1.05 },
+  points: { returned: 300, normalReturn: 120, melee: 180, duel: 250, cardboard: 100, dodge: 100 }
 };
 
 export function createCepiArenaLogic({ rand = Math.random } = {}) {
@@ -47,7 +47,7 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
   };
 
   let nextId = 1;
-  let timer = 0.9;
+  let timer = 0.85;
   let seriesLeft = 3;
   let poseName = 'idle', poseT = 0;
   let afterPhase = null;
@@ -80,6 +80,8 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
     };
     state.pointDir = 0;
     state.mode = 'duel';
+    state.pose = 'back';
+    setPose('back', A.duel.hide);
     state.bossX = 0;
     state.shots.length = 0;
   }
@@ -164,7 +166,8 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
       }
     } else if (d.stage === 'tell') {
       state.pose = 'point';
-      if (d.t >= A.duel.tell) {
+      const tellDur = d.round <= 1 ? A.duel.tell : A.duel.tellFast;
+      if (d.t >= tellDur) {
         // Chequea de qué lado quedó el héroe (o si eligió lado con tap/esquive)
         const heroSide = d.picked !== 0 ? d.picked : (hero.x < -0.35 ? -1 : hero.x > 0.35 ? 1 : 0);
         const safe = heroSide === -d.dir; // lado CONTRARIO al que apunta Cepi
@@ -275,14 +278,20 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
         evs.push({ type: 'glassBounce', x: s.x, z: s.z });
       }
       if (s.returning) {
-        // Va derecho al Cepi real
+        // Va derecho al Cepi real: la dorada aturde (4 HP), la normal solo raspa (1 HP) sin aturdir
         if (s.z <= A.bossZ + 1.0) {
           state.shots.splice(i, 1);
-          state.mode = 'stun';
-          timer = 2.4;
-          setPose('stun', 2.4);
-          evs.push({ type: 'voice', event: 'hurt' });
-          damage(4, 'returned', evs);
+          if (s.gold) {
+            state.mode = 'stun';
+            timer = 2.4;
+            setPose('stun', 2.4);
+            evs.push({ type: 'voice', event: 'hurt' });
+            damage(4, 'returned', evs);
+          } else {
+            setPose('block', 0.35);
+            evs.push({ type: 'voice', event: 'taunt' });
+            damage(1, 'returnedNormal', evs);
+          }
           continue;
         }
       } else {
@@ -324,7 +333,7 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
     const evs = [];
     if (state.phase === 'ko' || state.mode === 'duel' || state.mode === 'transition') return evs;
 
-    // 1. Devolver una pelota en la ventana (la dorada hace mucho daño y aturde; la normal devuelve más suave)
+    // 1. Devolver una pelota en la ventana (la dorada hace 4 HP y aturde; la normal hace 1 HP sin aturdir)
     for (const s of state.shots) {
       if (s.returning) continue;
       const dz = s.z - area.z;
@@ -348,6 +357,14 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
             c.alive = false;
             hitLock = 0.25;
             evs.push({ type: 'cardboard', x: c.x, id: c.id });
+            // Si volteó los dos cartones, Cepi queda aturdido y expuesto para pegarle directo
+            if (state.decoys.every(d => !d.alive) && state.mode !== 'stun') {
+              state.mode = 'stun';
+              timer = 2.1;
+              setPose('stun', 2.1);
+              evs.push({ type: 'decoysCleared' });
+              evs.push({ type: 'voice', event: 'hurt' });
+            }
             return evs;
           }
         }

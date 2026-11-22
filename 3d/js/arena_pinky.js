@@ -47,40 +47,55 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       g.fillStyle = r; g.fillRect(0, 0, 64, 64);
     });
 
-    // Piso de hormigón de estacionamiento con 3 cajones amarillos
+    // Piso de hormigón orgánico de estacionamiento (sin patrón en grilla para evitar muaré) + ancho completo
     const concTex = canvasTex(256, 256, (g, w, h) => {
-      g.fillStyle = '#3b3f49'; g.fillRect(0, 0, w, h);
-      for (let i = 0; i < 1200; i++) {
-        g.fillStyle = i % 2 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.07)';
-        g.fillRect((i * 89) % w, (i * 53) % h, 4, 4);
+      g.fillStyle = '#383c46'; g.fillRect(0, 0, w, h);
+      let seed = 1337;
+      const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+      for (let i = 0; i < 1800; i++) {
+        g.fillStyle = i % 2 ? 'rgba(255,255,255,.035)' : 'rgba(0,0,0,.055)';
+        g.fillRect(rnd() * w, rnd() * h, 2 + rnd() * 5, 2 + rnd() * 5);
       }
-    }, 3, 7);
-    const outer = mk(new T.PlaneGeometry(60, 44), new T.MeshLambertMaterial({ color: L('#23262e') }));
+      g.strokeStyle = 'rgba(20,22,28,.18)'; g.lineWidth = 2;
+      for (let k = 0; k < 5; k++) {
+        g.beginPath();
+        const x0 = rnd() * w, y0 = rnd() * h;
+        g.moveTo(x0, y0); g.lineTo(x0 + (rnd() - 0.5) * 60, y0 + (rnd() - 0.5) * 60); g.stroke();
+      }
+    }, 8, 8);
+    const outer = mk(new T.PlaneGeometry(70, 44), new T.MeshLambertMaterial({ color: L('#23262e') }));
     outer.rotation.x = -Math.PI / 2; outer.position.set(0, -0.02, -6);
-    const floor = mk(new T.PlaneGeometry(PINKY_ARENA.xMax * 2 + 1.2, 24), new T.MeshLambertMaterial({ map: concTex }));
+    const floor = mk(new T.PlaneGeometry(34, 26), new T.MeshLambertMaterial({ map: concTex }));
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -7);
 
-    // Líneas amarillas de los 3 cajones
+    // Líneas amarillas de los 3 cajones + topes laterales de estacionamiento
     const yelM = keep(new T.MeshBasicMaterial({ color: L('#f6c945') }));
     for (const lx of [-4.35, -1.45, 1.45, 4.35]) {
       const l = new T.Mesh(keep(new T.PlaneGeometry(0.14, 15)), yelM);
       l.rotation.x = -Math.PI / 2; l.position.set(lx, 0.015, -4); scene.add(l);
     }
+    const curbM = keep(new T.MeshLambertMaterial({ color: L('#d8a828') }));
+    for (const sd of [-1, 1]) {
+      const curb = new T.Mesh(keep(new T.BoxGeometry(0.35, 0.28, 18)), curbM);
+      curb.position.set(sd * (PINKY_ARENA.xMax + 0.55), 0.14, -5); scene.add(curb);
+    }
 
-    // Franjas rojas de aviso por cajón (cuando entra un auto marcha atrás)
+    // Franjas rojas de aviso por cajón (cuando entra un auto marcha atrás) + aro verde cuando Pinky cobra
     const warnPlanes = PINKY_ARENA.lanes.map((lx) => {
       const m = new T.Mesh(keep(new T.PlaneGeometry(2.65, 14)), keep(new T.MeshBasicMaterial({ color: L('#ff3b52'), transparent: true, opacity: 0.35, depthWrite: false })));
       m.rotation.x = -Math.PI / 2; m.position.set(lx, 0.022, -4); m.visible = false;
       scene.add(m);
       return m;
     });
+    const chargeRing = new T.Mesh(keep(new T.RingGeometry(1.5, 2.05, 28)), keep(new T.MeshBasicMaterial({ color: L('#6dff8a'), transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false })));
+    chargeRing.rotation.x = -Math.PI / 2; chargeRing.visible = false; scene.add(chargeRing);
 
-    // Fondo pintado del estacionamiento (respaldo: galpon)
+    // Fondo pintado del estacionamiento (BW=84 para cubrir horizontal sin franjas negras)
     const bgKey = assets.has('arena_pinky_fondo') ? 'arena_pinky_fondo' : 'galpon';
     const bgMeta = assets.meta(bgKey);
-    const BH = 34, BW = Math.max(46, BH * bgMeta.w / bgMeta.h);
+    const BW = 84, BH = Math.max(40, BW * bgMeta.h / bgMeta.w);
     const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(bgKey), fog: false }));
-    back.position.set(0, BH * 0.33, PINKY_ARENA.bossZ - 9);
+    back.position.set(0, BH * 0.34, PINKY_ARENA.bossZ - 9);
 
     // Respaldo por cuadros de pinky_actions_sheet + tira de 6 cuadros agitando el trapo rojo (pinky_walk_sheet)
     const fallbackTex = {}, walkTex = {};
@@ -159,11 +174,15 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const waveRing = new T.Mesh(keep(new T.RingGeometry(0.6, 1.0, 32)), keep(new T.MeshBasicMaterial({ color: L('#ff99cc'), transparent: true, opacity: 0.8, side: T.DoubleSide, depthWrite: false })));
     waveRing.rotation.x = -Math.PI / 2; waveRing.visible = false; scene.add(waveRing);
 
-    // Autos compactos rojos entrando marcha atrás (usa sprite arena_pinky_car si existe, o modelo 3D)
-    const carBodyG = keep(new T.BoxGeometry(2.1, 1.05, 3.4));
-    const carTopG = keep(new T.BoxGeometry(1.7, 0.72, 1.8));
+    // Autos compactos rojos entrando marcha atrás (ruedas, paragolpes y luces blancas de reversa que parpadean en warn)
+    const carBodyG = keep(new T.BoxGeometry(2.1, 0.98, 3.3));
+    const carTopG = keep(new T.BoxGeometry(1.68, 0.68, 1.75));
+    const bumperG = keep(new T.BoxGeometry(2.16, 0.24, 0.22));
+    const wheelG = keep(new T.CylinderGeometry(0.34, 0.34, 0.24, 12)); wheelG.rotateZ(Math.PI / 2);
     const carRedM = keep(new T.MeshStandardMaterial({ color: L('#d92b3a'), roughness: 0.3 }));
     const carGlassM = keep(new T.MeshStandardMaterial({ color: L('#22324a'), roughness: 0.2 }));
+    const bumperM = keep(new T.MeshStandardMaterial({ color: L('#2c303a'), roughness: 0.6 }));
+    const wheelM = keep(new T.MeshLambertMaterial({ color: L('#14161a') }));
     const revLightG = keep(new T.BoxGeometry(0.36, 0.22, 0.08));
     const revLightM = keep(new T.MeshBasicMaterial({ color: 0xffffff }));
     const tailLightM = keep(new T.MeshBasicMaterial({ color: L('#ff2233') }));
@@ -172,18 +191,23 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     function makeCar() {
       if (assets.has('arena_pinky_car')) {
         const sp = sprite('arena_pinky_car', 2.4, 1.1);
-        return { root: sp, isSprite: true };
+        return { root: sp, isSprite: true, revLights: [] };
       }
       const g = new T.Group();
-      const body = new T.Mesh(carBodyG, carRedM); body.position.y = 0.7; g.add(body);
-      const top = new T.Mesh(carTopG, carGlassM); top.position.set(0, 1.48, -0.2); g.add(top);
-      // Luces traseras + luces blancas de reversa mirando hacia el jugador (+Z)
+      const body = new T.Mesh(carBodyG, carRedM); body.position.y = 0.78; g.add(body);
+      const top = new T.Mesh(carTopG, carGlassM); top.position.set(0, 1.52, -0.2); g.add(top);
+      const bumper = new T.Mesh(bumperG, bumperM); bumper.position.set(0, 0.42, 1.66); g.add(bumper);
+      for (const wx of [-1.02, 1.02]) for (const wz of [-1.0, 1.0]) {
+        const w = new T.Mesh(wheelG, wheelM); w.position.set(wx, 0.34, wz); g.add(w);
+      }
+      const revLights = [];
       for (const sd of [-0.68, 0.68]) {
-        const tl = new T.Mesh(revLightG, tailLightM); tl.position.set(sd, 0.82, 1.72); g.add(tl);
-        const rl = new T.Mesh(revLightG, revLightM); rl.position.set(sd * 0.55, 0.55, 1.72); g.add(rl);
+        const tl = new T.Mesh(revLightG, tailLightM); tl.position.set(sd, 0.88, 1.67); g.add(tl);
+        const rl = new T.Mesh(revLightG, revLightM); rl.position.set(sd * 0.55, 0.64, 1.67); g.add(rl);
+        revLights.push(rl);
       }
       scene.add(g);
-      return { root: g, isSprite: false };
+      return { root: g, isSprite: false, revLights };
     }
 
     // Capa de UI + botón de Remate de Margot en Fase 3
@@ -244,9 +268,14 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_pinky_reveal';
-    let lastSpeech = null;
+    let lastSpeech = null, lastBarHp = -1, lastBarPhase = null;
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
-    const addPts = (n, px, py, pz) => { const g = game.score.add(n, game.combo.hit()); pop(px, py, pz, '+' + g, '#ffd36e', 24); };
+    const addPts = (n, px, py, pz) => {
+      const before = game.score.total;
+      game.score.addFlat(n);
+      game.combo?.add?.(1);
+      pop(px, py, pz, '+' + (game.score.total - before), '#ffd36e', 24);
+    };
     const charge = (n) => { hero.power = Math.min(1, hero.power + n); };
     const speak = (ev) => {
       const text = voice.say('pinky', ev);
@@ -288,15 +317,18 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
           case 'hurt':
             hero.hp = Math.max(0, hero.hp - 1); hurtT = HURT_POSE; inv = INV;
             if (e.penalty) { game.score.addPenalty(e.penalty); pop(x, 2.6, z, '-$' + e.penalty, '#ff8080', 22); }
-            game.combo.reset(); sfx('hurt'); flash('#ff3b52', 0.45); shake(0.38, 0.3);
+            game.score.takeDamage(); game.combo?.reset?.();
+            sfx('hurt'); flash('#ff3b52', 0.45); shake(0.38, 0.3);
             break;
           case 'phase': setBarName(); phaseCard(e.phase, 2.1); shake(0.35, 0.32); sfx('roar'); break;
           case 'voice': speak(e.event); break;
-          case 'ko':
+          case 'ko': {
             phase = 'ko'; phaseT = 0; setBar(); setBarName();
+            const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.6); shake(0.55, 0.5);
-            pop(logic.state.bossX, BOSS_H * 0.7, PINKY_ARENA.bossZ, '¡K.O.!', '#ffe066', 36, 1.6);
+            pop(logic.state.bossX, BOSS_H * 0.7, PINKY_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.6);
             break;
+          }
         }
       }
     }
@@ -374,7 +406,8 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       if (phase === 'entrance' && phaseT >= ENTRANCE) {
         phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.26, 0.3);
         speak('intro');
-        setTimeout(() => { if (!disposed) phaseCard(1, 2.0); }, 1800);
+        const curPhase = logic.state.phase === 'ko' ? 3 : logic.state.phase;
+        setTimeout(() => { if (!disposed) phaseCard(curPhase, 1.9); }, 1100);
       }
       if (phase === 'fight') handle(logic.update(dt, { x, z, y, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
       if (phase === 'fight' && hero.hp <= 0) { phase = 'down'; phaseT = 0; }
@@ -388,6 +421,9 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
 
     function draw(dt) {
       const S = logic.state;
+      if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
+        lastBarHp = S.hp; lastBarPhase = S.phase; setBar(); setBarName();
+      }
       shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
@@ -420,6 +456,13 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       bossFlash = Math.max(0, bossFlash - dt);
       B.material.color.setRGB(1, bossFlash > 0 ? 0.55 : 1, bossFlash > 0 ? 0.55 : 1);
 
+      // Aro verde cuando Pinky está distraído cobrando (invita a correr y pegarle)
+      chargeRing.visible = S.mode === 'charge';
+      if (chargeRing.visible) {
+        chargeRing.position.set(S.bossX, 0.04, PINKY_ARENA.meleeZ);
+        chargeRing.scale.setScalar(1 + Math.sin(t * 12) * 0.12);
+      }
+
       // Botón + animación de Margot heroica en Fase 3
       margotBtn.classList.toggle('hidden', !S.margotReady || phase !== 'fight');
       if (S.margotT > 0) {
@@ -435,17 +478,21 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         waveRing.visible = false;
       }
 
-      // Avisos en los 3 cajones + autos entrando marcha atrás
+      // Avisos en los 3 cajones + autos asomando cola con luces de reversa parpadeando en `warn`
       const warned = new Set();
       const carIds = new Set();
+      const blinkOn = Math.floor(t * 14) % 2 === 0;
       for (const c of S.cars) {
         carIds.add(c.id);
         if (c.stage === 'warn') warned.add(c.lane);
         let obj = liveCars.get(c.id);
         if (!obj) { obj = makeCar(); liveCars.set(c.id, obj); }
-        obj.root.visible = c.stage === 'drive';
-        if (obj.isSprite) place(obj.root, c.x, 0, c.z);
-        else obj.root.position.set(c.x, 0, c.z);
+        obj.root.visible = true;
+        const cz = c.stage === 'warn' ? (PINKY_ARENA.bossZ + 0.3 + Math.sin(t * 45) * 0.06) : c.z;
+        const cy = c.stage === 'warn' ? Math.abs(Math.sin(t * 36)) * 0.05 : 0;
+        if (obj.isSprite) place(obj.root, c.x, cy, cz);
+        else obj.root.position.set(c.x, cy, cz);
+        for (const rl of obj.revLights) rl.visible = c.stage === 'drive' || blinkOn;
       }
       for (let l = 0; l < warnPlanes.length; l++) {
         warnPlanes[l].visible = warned.has(l);
@@ -505,6 +552,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       logic, update,
       render: () => renderer.render(scene, cam),
       dispose,
+      syncBar: () => { lastBarHp = logic.state.hp; lastBarPhase = logic.state.phase; setBar(); setBarName(); },
       get state() { return logic.state; },
       get heroPose() { return heroPose; },
       get bossKey() { return bossKey; }
@@ -517,6 +565,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     update: (dt) => cur?.update(dt),
     render: () => cur?.render(),
     dispose: () => cur?.dispose(),
+    syncBar: () => cur?.syncBar(),
     get active() { return !!cur; },
     get logic() { return cur?.logic || null; },
     get state() { return cur?.state || null; }

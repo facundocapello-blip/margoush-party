@@ -37,13 +37,14 @@ test('lale arena: punching flour bag flours Lale and opens melee damage; punchin
   assert.ok(l.state.hp < hpAfterFlour);
 });
 
-test('lale arena: phase 2 skates across court and phase 3 reaches KO cleanly', () => {
+test('lale arena: phase 2 telegraphs skateWarn then skates across court and phase 3 reaches KO cleanly', () => {
   const l = createLaleArenaLogic({ rand: () => 0.5 });
   l._setHp(LALE_ARENA.p2At);
   assert.equal(l.state.phase, 2);
-  assert.equal(l.state.mode, 'skate');
+  assert.equal(l.state.mode, 'skateWarn');
   const x0 = l.state.bossX;
-  step(l, 0.3, { x: 0, z: 2, y: 0, dodging: false, inv: true });
+  step(l, 0.85, { x: 0, z: 2, y: 0, dodging: false, inv: true });
+  assert.equal(l.state.mode, 'skate');
   assert.notEqual(l.state.bossX, x0);
 
   l._setHp(LALE_ARENA.p3At);

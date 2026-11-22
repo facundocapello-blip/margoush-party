@@ -40,8 +40,8 @@ export function createPinkyArenaLogic({ rand = Math.random } = {}) {
   };
 
   let nextId = 1;
-  let timer = 2.0; // duración de la revelación inicial
-  let wavesLeft = 3;
+  let timer = 1.25; // revelación ágil al empezar
+  let wavesLeft = 2;
   let poseName = 'reveal', poseT = 0;
   let afterPhase = null;
   let hitLock = 0;
@@ -82,10 +82,10 @@ export function createPinkyArenaLogic({ rand = Math.random } = {}) {
     state.phase = p;
     state.mode = 'transition';
     state.cars.length = 0;
-    timer = 1.6;
+    timer = 1.45;
     afterPhase = p;
     if (p === 3) state.margotReady = true;
-    setPose('reveal', 1.2);
+    setPose('reveal', 1.1);
     evs.push({ type: 'phase', phase: p });
     evs.push({ type: 'voice', event: 'phase' });
   }
@@ -121,8 +121,8 @@ export function createPinkyArenaLogic({ rand = Math.random } = {}) {
       timer -= dt;
       if (timer <= 0) {
         state.mode = 'wave';
-        wavesLeft = 3;
-        timer = 0.55;
+        wavesLeft = 2;
+        timer = 0.4;
       }
       return evs;
     }
@@ -131,8 +131,8 @@ export function createPinkyArenaLogic({ rand = Math.random } = {}) {
       timer -= dt;
       if (timer <= 0) {
         state.mode = 'wave';
-        wavesLeft = state.phase === 3 ? 2 : 3;
-        timer = 0.6;
+        wavesLeft = state.phase === 3 ? 2 : 2;
+        timer = 0.45;
         if (afterPhase === 3) evs.push({ type: 'margotReady' });
         afterPhase = null;
       }
@@ -143,8 +143,12 @@ export function createPinkyArenaLogic({ rand = Math.random } = {}) {
       timer -= dt;
       if (timer <= 0) {
         state.mode = 'wave';
-        wavesLeft = state.phase === 3 ? 2 : 3;
-        timer = 0.6;
+        wavesLeft = 2;
+        timer = 0.45;
+        if (state.phase === 3 && !state.margotReady) {
+          state.margotReady = true;
+          evs.push({ type: 'margotReady' });
+        }
       }
     } else if (state.mode === 'wave') {
       state.bossX = Math.sin(state.t * 1.2) * 2.2;
@@ -152,15 +156,15 @@ export function createPinkyArenaLogic({ rand = Math.random } = {}) {
       if (wavesLeft <= 0 && state.cars.length === 0 && timer <= 0) {
         state.mode = 'charge';
         state.bossX = 0;
-        timer = 2.7;
-        setPose('charge', 2.7);
+        timer = 3.0;
+        setPose('charge', 3.0);
         evs.push({ type: 'charging' });
         evs.push({ type: 'voice', event: 'taunt' });
       } else if (wavesLeft > 0 && timer <= 0 && state.cars.length === 0) {
         const count = state.phase >= 2 ? 2 : 1;
         spawnCarWave(count, evs);
         wavesLeft--;
-        timer = wavesLeft <= 0 ? 1.2 : (state.phase === 3 ? 1.15 : 1.35);
+        timer = wavesLeft <= 0 ? 0.75 : (state.phase === 3 ? 0.8 : 0.9);
       }
     }
 

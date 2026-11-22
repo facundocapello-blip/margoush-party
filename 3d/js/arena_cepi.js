@@ -72,14 +72,14 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     addLine(courtW - 0.6, 0.14, 0, 1.5);
     addLine(courtW - 0.6, 0.14, 0, -14.5);
 
-    // Paredes laterales de vidrio translúcido (para los rebotes «por el vidrio»)
-    const glassM = keep(new T.MeshBasicMaterial({ color: L('#7cc6ff'), transparent: true, opacity: 0.16, side: T.DoubleSide, depthWrite: false }));
+    // Paredes laterales de vidrio translúcido (abiertas para no tapar a Cepi en Fase 3)
+    const glassM = keep(new T.MeshBasicMaterial({ color: L('#7cc6ff'), transparent: true, opacity: 0.14, side: T.DoubleSide, depthWrite: false }));
     const frameM = keep(new T.MeshLambertMaterial({ color: L('#1a2436') }));
     for (const sd of [-1, 1]) {
       const gw = new T.Mesh(keep(new T.PlaneGeometry(24, 4.2)), glassM);
-      gw.rotation.y = Math.PI / 2; gw.position.set(sd * (CEPI_ARENA.xMax + 0.25), 2.1, -7); scene.add(gw);
+      gw.rotation.y = Math.PI / 2; gw.position.set(sd * (CEPI_ARENA.xMax + 0.55), 2.1, -7); scene.add(gw);
       const topBar = new T.Mesh(keep(new T.BoxGeometry(0.14, 0.14, 24)), frameM);
-      topBar.position.set(sd * (CEPI_ARENA.xMax + 0.25), 4.2, -7); scene.add(topBar);
+      topBar.position.set(sd * (CEPI_ARENA.xMax + 0.55), 4.2, -7); scene.add(topBar);
     }
 
     // Red de pádel en el medio (z = CEPI_ARENA.netZ)
@@ -101,12 +101,19 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     warnPlane.rotation.x = -Math.PI / 2; warnPlane.position.set(0, 0.025, -3.2); warnPlane.visible = false;
     scene.add(warnPlane);
 
-    // Fondo pintado de la cancha techada en Francia
+    // Fondo pintado de la cancha techada en Francia: recortamos la parte superior (techo, luces, banderines y vidrio)
+    // para que no se duplique la cancha 3D y lo ensanchamos a BW=84 para eliminar franjas negras en celular horizontal
     const fondoKey = assets.has('arena_cepi_fondo') ? 'arena_cepi_fondo' : 'arena_fondo';
-    const fondo = assets.meta(fondoKey);
-    const BH = 38, BW = Math.max(46, BH * fondo.w / fondo.h);
-    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(fondoKey), fog: false }));
-    back.position.set(0, BH * 0.34, CEPI_ARENA.bossZ - 9);
+    let backMap = assets.texture(fondoKey);
+    if (fondoKey === 'arena_cepi_fondo') {
+      backMap = keep(backMap.clone());
+      backMap.needsUpdate = true;
+      backMap.repeat.set(1, 0.48);
+      backMap.offset.set(0, 0.52);
+    }
+    const BW = 84, BH = 34;
+    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: backMap, fog: false }));
+    back.position.set(0, BH * 0.44, CEPI_ARENA.bossZ - 9);
 
     // Sprites
     const shG = keep(new T.PlaneGeometry(1, 1)); shG.rotateX(-Math.PI / 2);
@@ -224,9 +231,14 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_cepi_idle';
-    let lastSpeech = null, duelOn = false;
+    let lastSpeech = null, duelOn = false, lastBarHp = -1, lastBarPhase = null;
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
-    const addPts = (n, px, py, pz) => { const g = game.score.add(n, game.combo.hit()); pop(px, py, pz, '+' + g, '#ffd36e', 24); };
+    const addPts = (n, px, py, pz) => {
+      const before = game.score.total;
+      game.score.addFlat(n);
+      game.combo?.add?.(1);
+      pop(px, py, pz, '+' + (game.score.total - before), '#ffd36e', 24);
+    };
     const charge = (n) => { hero.power = Math.min(1, hero.power + n); };
     const speak = (ev) => {
       const text = voice.say('cepi', ev);
@@ -263,9 +275,11 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             pop(x, 3.4, z, '¡JUSTO!', '#9bf7c4', 20);
             break;
           case 'returned':
-            addPts(CEPI_ARENA.points.returned, e.x, 2.4, e.z); charge(0.22);
-            sfx('perfect'); shake(0.28, 0.2); freezeT = 0.05;
-            pop(e.x, 2.8, e.z, e.gold ? '¡PUNTO DE ORO!' : '¡DEVUELTA!', '#ffe066', 24);
+            addPts(e.gold ? CEPI_ARENA.points.returned : CEPI_ARENA.points.normalReturn, e.x, 2.4, e.z);
+            charge(e.gold ? 0.24 : 0.1);
+            sfx(e.gold ? 'perfect' : 'hit'); shake(e.gold ? 0.3 : 0.16, e.gold ? 0.22 : 0.12);
+            if (e.gold) freezeT = 0.06;
+            pop(e.x, 2.8, e.z, e.gold ? '¡PUNTO DE ORO!' : '¡DEVUELTA!', e.gold ? '#ffe066' : '#9fe4ff', e.gold ? 24 : 20);
             break;
           case 'meleeHit':
             addPts(CEPI_ARENA.points.melee, e.x, 2.6, CEPI_ARENA.bossZ); charge(POWER.hit);
@@ -279,6 +293,10 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             addPts(CEPI_ARENA.points.cardboard, e.x, 2.6, CEPI_ARENA.bossZ);
             sfx('hit'); shake(0.2, 0.15);
             pop(e.x, 3.2, CEPI_ARENA.bossZ, '¡CARTÓN!', '#f5c28b', 24);
+            break;
+          case 'decoysCleared':
+            sfx('perfect'); flash('#9bf7c4', 0.25);
+            pop(logic.state.bossX, BOSS_H + 0.2, CEPI_ARENA.bossZ, '¡ATURDIDO! ¡PEGALE!', '#9bf7c4', 22, 1.4);
             break;
           case 'tired':
             pop(logic.state.bossX, BOSS_H + 0.2, CEPI_ARENA.bossZ, '¡CANSADO! ¡PEGALE!', '#9bf7c4', 20, 1.3);
@@ -302,7 +320,8 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             break;
           case 'hurt':
             hero.hp = Math.max(0, hero.hp - 1); hurtT = HURT_POSE; inv = INV;
-            game.combo.reset(); sfx('hurt'); flash('#ff3b52', 0.45); shake(0.35, 0.28);
+            game.score.takeDamage(); game.combo?.reset?.();
+            sfx('hurt'); flash('#ff3b52', 0.45); shake(0.35, 0.28);
             break;
           case 'phase':
             setBarName(); phaseCard(e.phase, 2.1); shake(0.35, 0.35); sfx('roar');
@@ -311,11 +330,13 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             pop(0, 4.2, CEPI_ARENA.bossZ, '¿CUÁL ES EL REAL?', '#ffe066', 22, 1.2);
             break;
           case 'voice': speak(e.event); break;
-          case 'ko':
+          case 'ko': {
             phase = 'ko'; phaseT = 0; setBar(); setBarName();
+            const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.55); shake(0.5, 0.45);
-            pop(logic.state.bossX, BOSS_H * 0.7, CEPI_ARENA.bossZ, '¡K.O.!', '#ffe066', 34, 1.5);
+            pop(logic.state.bossX, BOSS_H * 0.7, CEPI_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.5);
             break;
+          }
         }
       }
     }
@@ -401,7 +422,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
 
       if (phase === 'entrance' && phaseT >= ENTRANCE) {
         phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.25, 0.3);
-        phaseCard(1, 2.0);
+        phaseCard(logic.state.phase === 'ko' ? 3 : logic.state.phase, 2.0);
         setTimeout(() => { if (!disposed) speak('intro'); }, 1900);
       }
       if (phase === 'fight') handle(logic.update(dt, { x, z, y, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
@@ -414,8 +435,15 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       updateHud(dt);
     }
 
+    const retRingG = keep(new T.RingGeometry(0.65, 0.98, 24)); retRingG.rotateX(-Math.PI / 2);
+    const retRingGoldM = keep(new T.MeshBasicMaterial({ color: L('#ffe066'), transparent: true, opacity: 0.92, side: T.DoubleSide, depthWrite: false }));
+    const retRingNormM = keep(new T.MeshBasicMaterial({ color: L('#8cffb8'), transparent: true, opacity: 0.72, side: T.DoubleSide, depthWrite: false }));
+
     function draw(dt) {
       const S = logic.state;
+      if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
+        lastBarHp = S.hp; lastBarPhase = S.phase; setBar(); setBarName();
+      }
       shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
@@ -461,7 +489,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
         if (m.userData.sh) m.userData.sh.visible = m.visible;
       }
 
-      // UI + aviso de piso del Duelo de la Flechita (Fase 2)
+      // UI + aviso de piso del Duelo de la Flechita (Fase 2) — instrucción directa + botón seguro resaltado en verde
       const isDuel = S.mode === 'duel' && !!S.duel;
       if (isDuel !== duelOn) {
         duelOn = isDuel;
@@ -470,6 +498,8 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       }
       if (isDuel) {
         const d = S.duel;
+        const safeSide = d.stage === 'tell' ? -d.dir : 0;
+        for (const b of duelBtns) b.classList.toggle('safe', safeSide !== 0 && Number(b.dataset.side) === safeSide);
         if (d.stage === 'hide') {
           warnPlane.visible = false;
           tellE.className = 'cepi-tell wait';
@@ -477,9 +507,9 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
         } else if (d.stage === 'tell') {
           warnPlane.visible = true;
           warnPlane.position.x = d.dir * (CEPI_ARENA.xMax * 0.52);
-          warnM.opacity = 0.25 + Math.abs(Math.sin(t * 22)) * 0.25;
+          warnM.opacity = 0.28 + Math.abs(Math.sin(t * 22)) * 0.28;
           tellE.className = 'cepi-tell alert';
-          fillText(tellE, d.dir < 0 ? '¡SACA A LA IZQ! → ANDÁ A LA DER' : '¡SACA A LA DER! ← ANDÁ A LA IZQ');
+          fillText(tellE, d.dir < 0 ? '¡CORRÉ A LA DERECHA! →' : '← ¡CORRÉ A LA IZQUIERDA!');
         } else {
           warnPlane.visible = false;
           tellE.className = 'cepi-tell ' + (d.last === 'ok' ? 'ok' : 'bad');
@@ -511,7 +541,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       P.rotation.z = dashT > 0 && !hasDodge ? -dashX * 0.25 : lean;
       P.userData.sh.visible = true; P.userData.sh.scale.set(1.55 * (1 - Math.min(0.5, y * 0.2)), 1, 0.75);
 
-      // Pelotas de pádel
+      // Pelotas de pádel (con aro brillante en el piso cuando entran en rango de devolución)
       const activeIds = new Set();
       for (const s of S.shots) {
         activeIds.add(s.id);
@@ -519,22 +549,30 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
         if (!obj) {
           const m = new T.Mesh(ballG, s.gold ? ballGoldM : ballNormM); scene.add(m);
           const sh = new T.Mesh(shG, shM); sh.scale.set(0.9, 1, 0.9); sh.renderOrder = 2; scene.add(sh);
+          const ring = new T.Mesh(retRingG, s.gold ? retRingGoldM : retRingNormM); ring.renderOrder = 2; ring.visible = false; scene.add(ring);
           let halo = null;
           if (s.gold) {
             halo = new T.Sprite(keep(new T.SpriteMaterial({ map: haloTex, blending: T.AdditiveBlending, transparent: true, depthWrite: false })));
             halo.scale.set(1.7, 1.7, 1); scene.add(halo);
           }
-          obj = { m, sh, halo }; liveBalls.set(s.id, obj);
+          obj = { m, sh, ring, halo }; liveBalls.set(s.id, obj);
         }
         const arcY = 0.85 + Math.abs(Math.sin((s.z - CEPI_ARENA.bossZ) * 0.45)) * 1.1;
         obj.m.position.set(s.x, arcY, s.z);
         obj.m.rotation.x += dt * 14;
         obj.sh.position.set(s.x, 0.04, s.z);
+        const dz = s.z - z;
+        const inRange = !s.returning && dz >= CEPI_ARENA.returnZMin - 1.2 && dz <= CEPI_ARENA.returnZMax;
+        obj.ring.visible = inRange;
+        if (inRange) {
+          obj.ring.position.set(s.x, 0.045, s.z);
+          obj.ring.scale.setScalar(1 + Math.sin(t * 20) * 0.16);
+        }
         if (obj.halo) obj.halo.position.set(s.x, arcY, s.z);
       }
       for (const [id, obj] of liveBalls) {
         if (activeIds.has(id)) continue;
-        scene.remove(obj.m); scene.remove(obj.sh); if (obj.halo) scene.remove(obj.halo);
+        scene.remove(obj.m); scene.remove(obj.sh); scene.remove(obj.ring); if (obj.halo) scene.remove(obj.halo);
         liveBalls.delete(id);
       }
 
@@ -567,6 +605,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       update,
       render: () => renderer.render(scene, cam),
       dispose,
+      syncBar: () => { lastBarHp = logic.state.hp; lastBarPhase = logic.state.phase; setBar(); setBarName(); },
       get state() { return logic.state; },
       get heroPose() { return heroPose; },
       get bossKey() { return bossKey; }
@@ -579,6 +618,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     update: (dt) => cur?.update(dt),
     render: () => cur?.render(),
     dispose: () => cur?.dispose(),
+    syncBar: () => cur?.syncBar(),
     get active() { return !!cur; },
     get logic() { return cur?.logic || null; },
     get state() { return cur?.state || null; }

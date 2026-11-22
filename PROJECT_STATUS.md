@@ -230,3 +230,24 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - Peso total de `3d/assets/`: **8,89 MB** (< 9,2 MB). Versiones selladas en `3d/index.html` con `node tools/stamp_versions.mjs`. Chupete Rush (`index.html`) y `preview-v*/` intactos. Ranking sigue local.
 - Verificación ejecutada: `node --check` en los 4 archivos modificados, `node tools/stamp_versions.mjs`, **78/78 pruebas unitarias en verde** + 3/3 chequeos JS de `tests/assets.test.mjs` (manifest con `arena_lale_idle`, presupuesto < 9,2 MB, metadata). Pendiente: prueba en Safari físico de iPhone, `tests/check_sprites.py` (sin `numpy` en VM), y generación del resto de poses individuales de Grupos C (6), D (7), E (4) y F (1) al liberarse la cuota.
 - Rollback: volver `main` a `66516da`.
+
+## Actualización 2026-11-22 (5) · Auditoría AAA y correcciones P0 + P1 + P2 en las 3 arenas nuevas
+- **Bloque P0 (estabilidad crítica):**
+  - Corregido crash `game.combo.hit is not a function` / `game.score.add` en `arena_cepi.js`, `arena_lale.js` y `arena_pinky.js` (ahora usan `game.score.addFlat`, `game.combo.add(1)`, `game.score.takeDamage()` y `game.score.addKill('boss')`).
+  - Corregidos `@keyframes pulse-center` en `3d/css/game.css` para `.cepi-tell.alert` y `.margot-btn` (preservan `translateX(-50%)`, cero desplazamiento hacia la derecha) y ajustados en horizontal (`@media (orientation: landscape)`) para no tapar a los jefes.
+  - Sincronización inmediata de `#boss-bar` / `#boss-fill` (`syncBar()` + chequeo en `draw()`) al saltar de fase con `?probar=...`; `startDuelRound()` fija `pose = 'back'` desde el cuadro 0; `onBossDown()` posiciona al héroe frente a la jaula del Galpón al ganar `?probar=pinky*`.
+- **Bloque P1 (gráficos en vertical y horizontal):**
+  - **Cepi (`arena_cepi.js`)**: recorte UV superior de `arena_cepi_fondo.webp` (solo techo, luces, banderines y tribunas, eliminando la cancha duplicada) sobre telón ancho `BW=84` sin franjas negras en horizontal; paredes de vidrio abiertas y carriles Fase 3 en `[-2.65, 0, 2.65]` para no cruzar la gorra de Cepi.
+  - **Lale (`arena_lale.js`)**: nueva bolsa de harina ilustrada con etiqueta **`HARINA · 👊 ¡PEGALE!`** (reemplaza al cilindro liso), nube blanca animada volando desde la bolsa hasta Lale al explotarla, banda dorada de aviso antes de cada patinada, aro blanco de vulnerabilidad, piso de baldosas completo con molduras de madera y telón `BW=84`.
+  - **Pinky (`arena_pinky.js`)**: hormigón orgánico sin efecto muaré, cordones amarillos, telón `BW=84`, autos 3D con ruedas, paragolpes y luces blancas de reversa parpadeando mientras asoman la cola durante `warn`, más aro verde cuando está distraído cobrando.
+- **Bloque P2 (balance, intuición y diversión):**
+  - **Cepi**: pelota normal devuelta hace `1 HP` sin stun vs **Punto de Oro** (`4 HP` + `stun` + hitstop); aro brillante en el piso al entrar en rango de devolución; Duelo con ventana `1,25 s` (ronda 1) / `1,05 s`, texto directo (`← ¡CORRÉ A LA IZQUIERDA!` / `¡CORRÉ A LA DERECHA! →`, traducido ES/FR en `i18n.js`) y botón seguro resaltado en verde (`.safe`); voltear los 2 cartones en Fase 3 aturde a Cepi.
+  - **Lale**: aviso `skateWarn` (`0,48 s`) antes de cada pasada de patín y contraataque experto al golpearlo justo cuando pasa patinando.
+  - **Pinky**: ritmo más ágil (`reveal` `1,25 s`, `2` autos en Fase 1, olas más seguidas, ventana `charge` de `3,0 s`) y recarga del **Grito de Margot** tras otro ciclo si Pinky sobrevive en Fase 3.
+- **Verificación ejecutada:**
+  - `node --check` en los 8 JS modificados, `node tools/stamp_versions.mjs`, **78/78 pruebas unitarias en verde** + 3/3 chequeos JS de `tests/assets.test.mjs`.
+  - **Nueva prueba E2E en Chromium móvil** (`tests/e2e/boss_arenas.e2e.py`): **18/18 verificaciones en verde** en vertical (`390×844`) y horizontal (`844×390`) sobre Cepi, Lale y Pinky + inspección visual de las 11 capturas post-fix (`0` `pageerror`, `0` `frameErrors`, puntaje real > 0, barras y botones centrados). **Nota:** Chromium emulado no equivale a Safari físico en iPhone.
+  - Chupete Rush (`index.html`, `preview-v*/`) intacto. Ranking sigue local.
+- **Pendiente:** prueba real en Safari físico de iPhone, `tests/check_sprites.py` (sin `numpy` en VM), y generación de las 18 poses individuales restantes del kit (Grupos C/D/E/F) cuando se libere la cuota.
+- **Rollback:** volver `main` a `925ded8`.
+

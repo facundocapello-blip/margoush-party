@@ -46,7 +46,7 @@ test('pinky arena: punching Pinky while waving is guarded; punching while chargi
   assert.ok(l.state.hp < PINKY_ARENA.hpMax);
 });
 
-test('pinky arena: phase 3 unlocks Margot heroic cry which clears cars and sets up KO', () => {
+test('pinky arena: phase 3 unlocks Margot heroic cry, recharges if Pinky survives, and sets up KO', () => {
   const l = createPinkyArenaLogic({ rand: () => 0.5 });
   l._setHp(PINKY_ARENA.p3At);
   assert.equal(l.state.phase, 3);
@@ -59,6 +59,11 @@ test('pinky arena: phase 3 unlocks Margot heroic cry which clears cars and sets 
   assert.equal(l.state.cars.length, 0);
   assert.equal(l.state.hp, PINKY_ARENA.p3At - 6);
   assert.equal(l.state.mode, 'charge');
+  assert.equal(l.state.margotReady, false);
+
+  // If Pinky survives the charge window, Margot recharges for another cry
+  step(l, 3.0, { x: 4, z: -1, y: 0, dodging: false, inv: true });
+  assert.equal(l.state.margotReady, true);
 
   const koEvs = l.power();
   assert.ok(koEvs.some(e => e.type === 'ko'));

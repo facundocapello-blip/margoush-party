@@ -660,9 +660,9 @@ function spawnCepi({ instant = false, hp = null } = {}) {
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaCepi.start();
-    if (hp != null) game.arenaCepi.logic._setHp(hp);
+    if (hp != null) { game.arenaCepi.logic._setHp(hp); game.arenaCepi.syncBar?.(); }
   };
-  if (instant) { wait.then(go); return; }
+  if (instant) { game.state = 'curtain'; wait.then(go); return; }
   if (game.checkpoint?.id !== 'cepi') saveCheckpoint('cepi');
   game.state = 'curtain';
   curtain(go, { label: CHECKPOINTS.cepi.label, wait });
@@ -675,9 +675,9 @@ function spawnLale({ instant = false, hp = null } = {}) {
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaLale.start();
-    if (hp != null) game.arenaLale.logic._setHp(hp);
+    if (hp != null) { game.arenaLale.logic._setHp(hp); game.arenaLale.syncBar?.(); }
   };
-  if (instant) { wait.then(go); return; }
+  if (instant) { game.state = 'curtain'; wait.then(go); return; }
   if (game.checkpoint?.id !== 'lale') saveCheckpoint('lale');
   game.state = 'curtain';
   curtain(go, { label: CHECKPOINTS.lale.label, wait });
@@ -691,9 +691,9 @@ function spawnPinky({ instant = false, hp = null } = {}) {
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaPinky.start();
-    if (hp != null) game.arenaPinky.logic._setHp(hp);
+    if (hp != null) { game.arenaPinky.logic._setHp(hp); game.arenaPinky.syncBar?.(); }
   };
-  if (instant) { wait.then(go); return; }
+  if (instant) { game.state = 'curtain'; wait.then(go); return; }
   if (game.checkpoint?.id !== 'pinky') saveCheckpoint('pinky');
   game.state = 'curtain';
   curtain(go, { label: CHECKPOINTS.pinky.label, wait });
@@ -733,6 +733,12 @@ function enterAct4Street() {
 }
 
 game.onBossDown = () => {
+  // Si se ganó desde ?probar=pinky*, ubicar al héroe frente a la jaula del Galpón para evitar volar desde Buenos Aires
+  if (game.hero && game.hero.actor.position.x < GALPON_X) {
+    setLevel(2);
+    game.hero.actor.position.set(GALPON_X + 6, 0, 0);
+    updateCamera(0, true);
+  }
   game.state = 'rescue';
   game.rescueT = 0;
   audio.music(null); // se corta la música del jefe: suena solo la fanfarria del rescate

@@ -35,61 +35,78 @@ test('cepi arena: punching Cepi upfront while attacking triggers block, while ti
   assert.ok(l.state.hp < CEPI_ARENA.hpMax);
 });
 
-test('cepi arena: returning a ball hits Cepi and stuns him', () => {
+test('cepi arena: normal ball return chips 1 HP without stun; gold ball deals 4 HP and stuns', () => {
   const l = createCepiArenaLogic({ rand: () => 0.5 });
-  const hero = { x: 0, z: -1, y: 0, dodging: false, inv: false };
-  step(l, 1.0, hero);
+  const hero = { x: 0, z: -1, y: 0, dodging: false, inv: true };
+  step(l, 0.9, hero);
   assert.ok(l.state.shots.length >= 1);
-  // Advance until ball reaches hero return window
-  let returned = false;
-  for (let i = 0; i < 60 && !returned; i++) {
+  assert.equal(l.state.shots[0].gold, false);
+  // Return first (normal) ball
+  let returnedNormal = false;
+  for (let i = 0; i < 60 && !returnedNormal; i++) {
     l.update(0.05, hero);
     const s = l.state.shots[0];
-    if (s && Math.abs(s.z - hero.z) < 1.0) {
-      const evs = l.punch({ x: s.x, z: hero.z, reach: 2, dmg: 1 });
-      returned = evs.some(e => e.type === 'returned');
+    if (s && !s.gold && Math.abs(s.z - hero.z) < 1.0) {
+      returnedNormal = l.punch({ x: s.x, z: hero.z, reach: 2, dmg: 1 }).some(e => e.type === 'returned');
     }
   }
-  assert.ok(returned, 'ball should be returned');
+  assert.ok(returnedNormal, 'normal ball should be returned');
+  const normEvs = step(l, 1.0, hero);
+  assert.ok(normEvs.some(e => e.type === 'bossHit' && e.source === 'returnedNormal' && e.dmg === 1));
+  assert.notEqual(l.state.mode, 'stun', 'normal ball should not stun Cepi');
+
+  // Wait for 3rd ball (gold) and return it
+  let returnedGold = false;
+  for (let i = 0; i < 120 && !returnedGold; i++) {
+    l.update(0.05, hero);
+    const g = l.state.shots.find(s => s.gold && !s.returning);
+    if (g && Math.abs(g.z - hero.z) < 1.0) {
+      returnedGold = l.punch({ x: g.x, z: hero.z, reach: 2, dmg: 1 }).some(e => e.type === 'returned' && e.gold);
+    }
+  }
+  assert.ok(returnedGold, 'gold ball should be returned');
   const hitEvs = step(l, 1.2, hero);
-  assert.ok(hitEvs.some(e => e.type === 'bossHit' && e.source === 'returned'));
+  assert.ok(hitEvs.some(e => e.type === 'bossHit' && e.source === 'returned' && e.dmg === 4));
   assert.equal(l.state.mode, 'stun');
   assert.equal(l.state.pose, 'stun');
 });
 
-test('cepi arena: phase 2 duel turns back, points, and rewards dodging to the opposite side', () => {
+test('cepi arena: phase 2 duel turns back immediately, points, and rewards dodging to the opposite side', () => {
   const l = createCepiArenaLogic({ rand: () => 0.1 }); // dir = -1 (left)
   l._setHp(CEPI_ARENA.p2At);
   assert.equal(l.state.phase, 2);
   assert.equal(l.state.mode, 'duel');
-  step(l, 0.4);
   assert.equal(l.state.pose, 'back');
 
   // Wait for tell
-  const tellEvs = step(l, 0.9);
+  const tellEvs = step(l, 1.15);
   const tell = tellEvs.find(e => e.type === 'duelTell');
   assert.ok(tell);
   assert.equal(l.state.pose, 'point');
 
   // Pick opposite side (+1 when dir is -1)
   l.pickSide(-tell.dir);
-  const resEvs = step(l, 1.1);
+  const resEvs = step(l, 1.35);
   assert.ok(resEvs.some(e => e.type === 'duelResult' && e.ok === true));
   assert.ok(l.state.hp < CEPI_ARENA.p2At);
 });
 
-test('cepi arena: phase 3 spawns 2 cardboard decoys + real Cepi, decoys can be knocked down and boss can be KOd', () => {
+test('cepi arena: phase 3 spawns 2 cardboard decoys + real Cepi; knocking both stuns Cepi and KO works', () => {
   const l = createCepiArenaLogic({ rand: () => 0.5 });
   l._setHp(CEPI_ARENA.p3At);
   assert.equal(l.state.phase, 3);
   assert.equal(l.state.decoys.length, 2);
   assert.ok(l.state.decoys.every(c => c.alive && c.lane !== l.state.bossLane));
 
-  // Knock down a cardboard decoy
-  const d0 = l.state.decoys[0];
-  const cbEvs = l.punch({ x: d0.x, z: CEPI_ARENA.meleeZ - 0.5, reach: 2, dmg: 1 });
-  assert.ok(cbEvs.some(e => e.type === 'cardboard'));
+  // Knock down both cardboard decoys
+  const d0 = l.state.decoys[0], d1 = l.state.decoys[1];
+  const cbEvs0 = l.punch({ x: d0.x, z: CEPI_ARENA.meleeZ - 0.5, reach: 2, dmg: 1 });
+  assert.ok(cbEvs0.some(e => e.type === 'cardboard'));
   assert.equal(d0.alive, false);
+  step(l, 0.3, { x: 4, z: 2, y: 0, dodging: false, inv: true });
+  const cbEvs1 = l.punch({ x: d1.x, z: CEPI_ARENA.meleeZ - 0.5, reach: 2, dmg: 1 });
+  assert.ok(cbEvs1.some(e => e.type === 'decoysCleared'));
+  assert.equal(l.state.mode, 'stun');
 
   // Power twice finishes Cepi cleanly to KO
   l.power();

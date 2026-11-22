@@ -18,11 +18,12 @@ export const LALE_ARENA = {
   butterHitR: 0.9,
   puddleR: 1.35,
   puddleLife: 6.5,
-  bagHitR: 1.8,
+  bagHitR: 1.9,
   meleeZ: -6.5,
-  meleeX: 2.3,
+  meleeX: 2.4,
   skateZ: -3.2,
-  skateSpeed: 8.8,
+  skateSpeed: 8.6,
+  skateWarn: 0.48,
   points: { flour: 250, melee: 180, dodge: 100, power: 300 }
 };
 
@@ -32,11 +33,12 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     hp: A.hpMax,
     hpMax: A.hpMax,
     phase: 1,          // 1 | 2 | 3 | 'ko'
-    mode: 'attack',    // 'attack' | 'skate' | 'floured' | 'transition' | 'ko'
+    mode: 'attack',    // 'attack' | 'skateWarn' | 'skate' | 'floured' | 'transition' | 'ko'
     pose: 'idle',      // idle | throw | skate | floured | hurt | ko
     bossX: 0,
     bossZ: A.bossZ,
     skateDir: 1,
+    skateWarnZ: A.skateZ,
     shots: [],         // [{ id, x, z, vx, vz, targetZ }]
     puddles: [],       // [{ id, x, z, life }]
     bags: [],          // [{ id, x, z, alive }]
@@ -75,9 +77,9 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     state.shots.length = 0;
     state.bags.length = 0;
     state.bossZ = A.bossZ;
-    timer = 1.6;
+    timer = 1.5;
     afterPhase = p;
-    setPose('idle', 1.6);
+    setPose('idle', 1.5);
     evs.push({ type: 'phase', phase: p });
     evs.push({ type: 'voice', event: 'phase' });
   }
@@ -101,15 +103,17 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     else if (state.phase === 2 && state.hp <= A.p3At) enterPhase(3, evs);
   }
 
-  function startSkate(evs) {
-    state.mode = 'skate';
+  function startSkate(evs, targetZ = A.skateZ) {
+    state.mode = 'skateWarn';
     state.skateDir = state.bossX >= 0 ? -1 : 1;
     state.bossX = -state.skateDir * (A.xMax - 0.3);
-    state.bossZ = A.skateZ;
+    state.skateWarnZ = targetZ;
+    state.bossZ = targetZ;
+    timer = A.skateWarn;
     skatePasses = state.phase === 3 ? 2 : 3;
     spawnBag(state.phase === 3 ? 2 : 1);
-    setPose('skate', 0.4);
-    evs.push({ type: 'skateStart', dir: state.skateDir });
+    setPose('skate', A.skateWarn);
+    evs.push({ type: 'skateStart', dir: state.skateDir, z: targetZ });
     evs.push({ type: 'voice', event: 'attack' });
   }
 
@@ -173,13 +177,20 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     if (state.mode === 'floured') {
       timer -= dt;
       if (timer <= 0) {
-        if (state.phase === 2) startSkate(evs);
+        if (state.phase === 2) startSkate(evs, Math.max(-5.5, Math.min(-1.0, hero.z)));
         else {
           state.mode = 'attack';
           throwsLeft = 3;
           timer = 0.7;
           spawnBag(state.phase === 3 ? 2 : 1);
         }
+      }
+    } else if (state.mode === 'skateWarn') {
+      state.pose = 'skate';
+      timer -= dt;
+      if (timer <= 0) {
+        state.mode = 'skate';
+        state.bossZ = state.skateWarnZ;
       }
     } else if (state.mode === 'skate') {
       state.pose = 'skate';
@@ -201,7 +212,8 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
         state.bossX = Math.sign(state.bossX) * (A.xMax - 0.15);
         state.skateDir = -state.skateDir;
         skatePasses--;
-        state.bossZ = Math.max(-5.5, Math.min(-1.0, hero.z));
+        state.skateWarnZ = Math.max(-5.5, Math.min(-1.0, hero.z));
+        state.bossZ = state.skateWarnZ;
         if (skatePasses <= 0) {
           state.bossZ = A.bossZ;
           if (state.phase === 3) {
@@ -216,6 +228,9 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
             timer = 0.8;
             spawnBag(1);
           }
+        } else {
+          state.mode = 'skateWarn';
+          timer = A.skateWarn * 0.85;
         }
       }
     } else if (state.mode === 'attack') {
@@ -227,7 +242,7 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
         throwButter(hero, evs);
         throwsLeft--;
         if (throwsLeft <= 0) {
-          if (state.phase >= 2) startSkate(evs);
+          if (state.phase >= 2) startSkate(evs, Math.max(-5.5, Math.min(-1.0, hero.z)));
           else { throwsLeft = 3; timer = 1.4; }
         } else {
           timer = state.phase === 3 ? 0.65 : 0.85;
@@ -261,7 +276,7 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     if (state.phase === 'ko') return evs.filter(e => e.type !== 'hurt');
     if (poseT > 0) state.pose = poseName;
     else if (state.mode === 'floured') state.pose = 'floured';
-    else if (state.mode === 'skate') state.pose = 'skate';
+    else if (state.mode === 'skate' || state.mode === 'skateWarn') state.pose = 'skate';
     else state.pose = 'idle';
     return evs;
   }
@@ -280,15 +295,27 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
       }
     }
 
-    // 2. Golpe directo a Lale cuando está enharinado (o cerca si está patinando/al frente)
-    const dist = Math.hypot(area.x - state.bossX, area.z - (state.mode === 'skate' ? state.bossZ : A.meleeZ));
-    if (hitLock <= 0 && dist < A.meleeX && (state.mode === 'skate' || area.z <= A.meleeZ + 1.0)) {
+    // 2. Golpe directo a Lale cuando está enharinado, o contraataque experto al cruzar patinando
+    const skating = state.mode === 'skate' || state.mode === 'skateWarn';
+    const dist = Math.hypot(area.x - state.bossX, area.z - (skating ? state.bossZ : A.meleeZ));
+    if (hitLock <= 0 && dist < A.meleeX && (skating || area.z <= A.meleeZ + 1.0)) {
       hitLock = 0.35;
       if (state.mode === 'floured') {
         setPose('hurt', 0.35);
         evs.push({ type: 'meleeHit', dmg: 2, x: state.bossX });
         evs.push({ type: 'voice', event: 'hurt' });
         damage(2, 'melee', evs);
+      } else if (skating && dist < 1.7) {
+        // Contraataque con timing justo mientras patina: lo frena y hace 2 de daño
+        setPose('hurt', 0.4);
+        evs.push({ type: 'meleeHit', dmg: 2, x: state.bossX });
+        evs.push({ type: 'voice', event: 'hurt' });
+        damage(2, 'skateCounter', evs);
+        if (state.hp > 0 && state.mode !== 'transition') {
+          state.mode = 'floured';
+          state.bossZ = A.bossZ;
+          timer = 2.0;
+        }
       } else {
         // Resbaloso de manteca: zafa hasta que lo enharines
         evs.push({ type: 'slipAway', x: state.bossX });
