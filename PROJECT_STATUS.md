@@ -178,3 +178,18 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - «¡Messi Goku!» de Marine solo al elegirla (se sacó de la cerveza).
 - Mini Facu en Francia: boina dibujada (antes era un cilindro que se veía como un cuadradito gris).
 - Pruebas: `npm test` 31 ok; toda la carpeta e2e en verde (Chrome sin pantalla).
+
+## Actualización 2026-11-22 · Kit completo (`MARGOUSH_kit_completo.zip` desde Drive/Gemini) — Grupo A + esquive de héroes en arena
+- Fuente: `MARGOUSH_kit_completo.zip` (carpeta `Gemini` de Google Drive, 42 carpetas en 6 grupos A–F con bases y prompts).
+- Generadas, recortadas de fondo verde croma y publicadas en `3d/assets/` + `3d/assets/manifest.json`:
+  - **Grupo A (`A_chaky_baile`, 5 poses de Chaky profesor de baile disco)**: `arena_chaky_dance_idle`, `arena_chaky_dance_jump`, `arena_chaky_dance_attack`, `arena_chaky_dance_dodge`, `arena_chaky_dance_laugh`. La fase 2 (Pump It Up) de `3d/js/arena.js` ya las usa en lugar de `DANCE_FALLBACK`, espejando izquierda/derecha según flecha (`↖`/`↗`, `↙`/`↘`) y con rebote sutil al ritmo.
+  - **Grupo E parcial (`E_heroes/1` y `2`, esquive de espaldas en arena)**: `arena_douge_back_dodge`, `arena_marine_back_dodge`, cableados en `3d/js/arena.js` al esquivar (`dashT > 0`, espejados según dirección).
+- Peso total de `3d/assets/`: 8,47 MB (dentro del límite de 8,5 MB de `tests/assets.test.mjs`). Versiones selladas en `3d/index.html` con `node tools/stamp_versions.mjs`.
+- Chupete Rush (`index.html`) y `preview-v*/` sin cambios.
+- Verificación ejecutada: `node --test` (69/70 OK: arena, versions, manifest, presupuesto < 8,5 MB, bonus, chase, score, ranking, voice, music, etc.; único pendiente local es `tests/check_sprites.py` por faltar `numpy` en el Python de este entorno). Sin prueba todavía en Safari físico de iPhone.
+- Rollback: volver `main` al commit `2342729`.
+- Pendientes del kit (para aplicar por grupos incrementales según decisión de Facu):
+  - **Grupo E restante (4 imágenes)**: `3_douge_victoria`, `4_marine_victoria`, `5_margot_heroica`, `6_familia_festejo` (requiere cablear UI de victoria / remate final).
+  - **Grupo F (`F_objetos`)**: los 6 props (`prop_arbol`, `prop_contenedor`, `prop_cajones`, `prop_maceta`, `prop_fuente`, `prop_galpon`) ya existen pintados en `3d/assets/`; resta `7_fondo_aeropuerto_chaky` si se decide mover la pelea de Chaky al aeropuerto (fin nivel 1).
+  - **Grupos B (`B_cepi_jefe`, 10), C (`C_lale_jefe`, 7) y D (`D_pinky_final`, 7)**: 24 imágenes para 3 nuevas arenas de jefes (Niveles 2, 3 y 4) cuyo código de arena aún no está implementado (y requerirá subir el presupuesto de `3d/assets/`).
+

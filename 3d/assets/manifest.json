@@ -891,5 +891,71 @@
   "cols": 1,
   "rows": 1,
   "v": "f0499ea2"
+ },
+ "arena_chaky_dance_idle": {
+  "file": "arena_chaky_dance_idle.webp",
+  "w": 420,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "61d352e6"
+ },
+ "arena_chaky_dance_jump": {
+  "file": "arena_chaky_dance_jump.webp",
+  "w": 582,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "ba9ca02d",
+  "hk": 1.04
+ },
+ "arena_chaky_dance_attack": {
+  "file": "arena_chaky_dance_attack.webp",
+  "w": 429,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "7d98a91d",
+  "hk": 1.08
+ },
+ "arena_chaky_dance_dodge": {
+  "file": "arena_chaky_dance_dodge.webp",
+  "w": 597,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "3486adbb",
+  "hk": 0.9
+ },
+ "arena_chaky_dance_laugh": {
+  "file": "arena_chaky_dance_laugh.webp",
+  "w": 350,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "20ee9138"
+ },
+ "arena_douge_back_dodge": {
+  "file": "arena_douge_back_dodge.webp",
+  "w": 462,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "9a3eade3"
+ },
+ "arena_marine_back_dodge": {
+  "file": "arena_marine_back_dodge.webp",
+  "w": 503,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "1d82352c"
  }
 }

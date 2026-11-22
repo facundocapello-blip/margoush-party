@@ -495,6 +495,11 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       else if (pose === 'slamtop') { by = -0.25; if (H.state === 'stuck') { bx += (Math.random() - 0.5) * 0.18; by += Math.random() * 0.05; } } // forcejea con la mano trabada
       else if (pose === 'rage') { bx += Math.sin(t * 40) * 0.12; sy = 1 + Math.sin(t * 12) * 0.03; }
       else if (pose === 'idle') { sy = 1 + Math.sin(t * 2.2) * 0.015; by = Math.abs(Math.sin(t * 1.2)) * 0.05; }
+      else if (pose === 'dance_idle') { sy = 1 + Math.sin(t * 6.5) * 0.02; by = Math.abs(Math.sin(t * 3.25)) * 0.12; rz = Math.sin(t * 3.25) * 0.03; }
+      else if (pose === 'dance_jump') { by = 0.75 + Math.sin(Math.min(1, poseT / 0.35) * Math.PI) * 0.45; }
+      else if (pose === 'dance_attack') { if (S.dice?.step === 3) sx = -1; by = 0.08; }
+      else if (pose === 'dance_dodge') { if (S.dice?.step === 0) sx = -1; }
+      else if (pose === 'dance_laugh') { sy = 1 + Math.sin(t * 16) * 0.03; by = Math.abs(Math.sin(t * 8)) * 0.14; }
       place(B, bx, TARIMA_H + by, ARENA.bossZ);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);
@@ -502,10 +507,14 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       B.userData.sh.position.y = TARIMA_H + 0.02; B.userData.sh.scale.set(8, 1, 3);
 
       // Héroe de espaldas
-      heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : moving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
-      // Carrera de espaldas: 4 cuadros (~10 por segundo) con un rebote chico; en el aire, la pose de salto
-      let bob = 0, lean = 0, key = heroPre + heroPose;
-      if (heroPose === 'run') {
+      const hasDodge = assets.has(heroPre + 'dodge');
+      heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : dashT > 0 && hasDodge ? 'dodge' : moving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
+      // Carrera de espaldas: 4 cuadros (~10 por segundo) con un rebote chico; en el aire, la pose de salto; al esquivar, la pose de esquive
+      let bob = 0, lean = 0, key = heroPre + heroPose, hsx = 1;
+      if (heroPose === 'dodge') {
+        bob = 0.18;
+        hsx = dashX < 0 ? -1 : 1;
+      } else if (heroPose === 'run') {
         if (y > 0.15) key = heroPre + 'jump';
         else {
           stepT += dt * 2 * Math.PI * 2.6;
@@ -515,9 +524,10 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
         }
       } else if (heroPose === 'idle') { stepT = 0; bob = Math.sin(t * 2.4) * 0.015; }
       setTex(P, key);
+      P.scale.x = P.userData.w * hsx;
       P.visible = !(inv > 0 && hurtT <= 0 && Math.floor(t * 14) % 2 === 0);
       place(P, x, y + bob, z);
-      P.rotation.z = dashT > 0 ? -dashX * 0.25 : lean;
+      P.rotation.z = dashT > 0 && !hasDodge ? -dashX * 0.25 : lean;
       P.userData.sh.visible = true; P.userData.sh.scale.set(1.6 * (1 - Math.min(0.5, y * 0.2)), 1, 0.8);
 
       // Mano: sombra que crece durante el aviso; la mano cae desde arriba, tiembla trabada y se levanta

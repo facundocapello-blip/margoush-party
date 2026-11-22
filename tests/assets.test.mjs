@@ -10,8 +10,9 @@ const NAMES = ['douge_idle','douge_run','douge_attack','marine_idle','marine_run
   'face_secuaz_sheet','face_patovica_sheet','face_bombo_sheet','face_mozo_sheet','face_delivery_sheet',
   'pinky_sheet','cepi_sheet','lale_sheet',
   'arena_chaky_idle','arena_chaky_throw','arena_chaky_slam','arena_chaky_hurt','arena_chaky_rage','arena_chaky_ko',
-  'arena_douge_back_idle','arena_douge_back_run','arena_douge_back_punch','arena_douge_back_hurt',
-  'arena_marine_back_idle','arena_marine_back_run','arena_marine_back_punch','arena_marine_back_hurt',
+  'arena_chaky_dance_idle','arena_chaky_dance_jump','arena_chaky_dance_attack','arena_chaky_dance_dodge','arena_chaky_dance_laugh',
+  'arena_douge_back_idle','arena_douge_back_run','arena_douge_back_punch','arena_douge_back_hurt','arena_douge_back_dodge',
+  'arena_marine_back_idle','arena_marine_back_run','arena_marine_back_punch','arena_marine_back_hurt','arena_marine_back_dodge',
   'arena_barril','arena_cajon','arena_fondo'];
 
 test('manifest lists every asset and each file exists', () => {
