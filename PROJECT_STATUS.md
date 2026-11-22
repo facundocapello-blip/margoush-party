@@ -193,3 +193,16 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
   - **Grupo F (`F_objetos`)**: los 6 props (`prop_arbol`, `prop_contenedor`, `prop_cajones`, `prop_maceta`, `prop_fuente`, `prop_galpon`) ya existen pintados en `3d/assets/`; resta `7_fondo_aeropuerto_chaky` si se decide mover la pelea de Chaky al aeropuerto (fin nivel 1).
   - **Grupos B (`B_cepi_jefe`, 10), C (`C_lale_jefe`, 7) y D (`D_pinky_final`, 7)**: 24 imágenes para 3 nuevas arenas de jefes (Niveles 2, 3 y 4) cuyo código de arena aún no está implementado (y requerirá subir el presupuesto de `3d/assets/`).
 
+## Actualización 2026-11-22 (2) · Grupo B completo (`B_cepi_jefe` — Arena de Cepi)
+- Generados, recortados y registrados en `3d/assets/` + `3d/assets/manifest.json` los **10 assets del Grupo B**:
+  - `arena_cepi_idle`, `arena_cepi_smash`, `arena_cepi_block`, `arena_cepi_tired`, `arena_cepi_stun`, `arena_cepi_back`, `arena_cepi_point`, `arena_cepi_cardboard`, `arena_cepi_fondo` (generados desde `BASE_cepi.jpg` y `BASE_estilo_fondo_arena.jpg`), y `arena_cepi_ko` (extraído del cuadro KO de `cepi_actions_sheet.webp` por tope temporal de cuota de generación tras la 9.ª imagen; reemplazable si se quiere la pose sentado abrazando la paleta).
+- Arena de pádel completa en 3 fases implementada en `3d/js/arena_cepi_logic.js` + `3d/js/arena_cepi.js` + estilos en `3d/css/game.css` + integración en `3d/js/main.js` (sin tocar la campaña actual, BIG CHAKY ni Chupete Rush):
+  - **Fase 1 (`?probar=cepi`)**: Saque y remate (pelotas normales, rebote «por el vidrio» y «¡Punto de Oro!» devolvible que aturde; bloqueo con paleta si le pegás de frente entero; ventana `tired` tras cada serie).
+  - **Fase 2 (`?probar=cepi-duelo`)**: Duelo de la flechita (Cepi se da vuelta `back`, apunta a un lado `point`/espejado con aviso en el piso y botones grandes `← IZQ` / `DER →` para esquivar al lado contrario).
+  - **Fase 3 (`?probar=cepi-carton`)**: Señuelos de cartón (2 gigantografías `cardboard` tumbables + 1 Cepi real en 3 carriles, baraja tras cada golpe hasta `ko`).
+- Peso total de `3d/assets/`: **8,85 MB** (presupuesto actualizado a 9,2 MB en `tests/assets.test.mjs`). Versiones selladas en `3d/index.html` con `node tools/stamp_versions.mjs`.
+- Verificación ejecutada: `node --check`, `node tools/stamp_versions.mjs`, 71/71 pruebas unitarias (incluyendo 5 nuevas en `tests/arena_cepi.test.mjs` + `versions.test.mjs`) y 3/3 chequeos JS de `tests/assets.test.mjs` (manifest + presupuesto < 9,2 MB + metadata). Pendiente: prueba en Safari físico de iPhone y `tests/check_sprites.py` (sin `numpy` en esta VM).
+- Rollback: volver `main` a `d5fffe7`.
+- Pendientes del kit: Grupo E restante (4 imágenes), Grupo F (`7_fondo_aeropuerto_chaky`), Grupo C (`C_lale_jefe`, 7) y Grupo D (`D_pinky_final`, 7), además de integrar el orden de 4 niveles cuando estén listos los jefes.
+
+

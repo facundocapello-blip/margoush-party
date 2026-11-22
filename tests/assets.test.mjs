@@ -13,6 +13,7 @@ const NAMES = ['douge_idle','douge_run','douge_attack','marine_idle','marine_run
   'arena_chaky_dance_idle','arena_chaky_dance_jump','arena_chaky_dance_attack','arena_chaky_dance_dodge','arena_chaky_dance_laugh',
   'arena_douge_back_idle','arena_douge_back_run','arena_douge_back_punch','arena_douge_back_hurt','arena_douge_back_dodge',
   'arena_marine_back_idle','arena_marine_back_run','arena_marine_back_punch','arena_marine_back_hurt','arena_marine_back_dodge',
+  'arena_cepi_idle','arena_cepi_smash','arena_cepi_block','arena_cepi_tired','arena_cepi_stun','arena_cepi_back','arena_cepi_point','arena_cepi_cardboard','arena_cepi_ko','arena_cepi_fondo',
   'arena_barril','arena_cajon','arena_fondo'];
 
 test('manifest lists every asset and each file exists', () => {
@@ -23,10 +24,10 @@ test('manifest lists every asset and each file exists', () => {
   }
 });
 
-test('assets weigh less than 8.5 MB in total', () => {
-  // 8,5 MB desde la arena de BIG CHAKY; 6,6 MB desde la persecución de Cepi; 7 MB desde el kit de objetos pintados (árbol, contenedor, cajones, maceta, fuente, galpón)
+test('assets weigh less than 9.2 MB in total', () => {
+  // 9,2 MB desde el Grupo B (arena de Cepi, 10 assets); 8,5 MB desde la arena de BIG CHAKY; 7 MB desde props pintados; 6,6 MB desde la persecución
   const total = fs.readdirSync(dir).reduce((s, f) => s + fs.statSync(path.join(dir, f)).size, 0);
-  assert.ok(total < 8_500_000, `total ${total}`);
+  assert.ok(total < 9_200_000, `total ${total}`);
 });
 
 test('sheet metadata', () => {

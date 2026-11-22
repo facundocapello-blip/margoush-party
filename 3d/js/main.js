@@ -14,6 +14,7 @@ import { createPsycho } from './psycho.js';
 import { createPowers } from './powers.js';
 import { createCameos } from './cameos.js';
 import { createArena } from './arena.js';
+import { createCepiArena } from './arena_cepi.js';
 import { createChase } from './chase.js';
 import { createBonus } from './bonus.js';
 import { createStory } from './story.js';
@@ -215,6 +216,7 @@ function clearRun() {
   game.powers?.clear();
   game.traps?.reset();
   game.arena?.dispose();
+  game.arenaCepi?.dispose();
   game.bonus?.dispose();
   game.story?.endIntro();
   game.story?.resetCage();
@@ -636,11 +638,20 @@ game.onHeroDown = () => finish(false);
 
 // ---------- Links de prueba: ?probar=<tramo> ----------
 // Después de elegir héroe entra directo a ese tramo (sin intro ni tramos anteriores) y no toca el
-// «continuar» del juego normal. Ej.: .../3d/?probar=chaky  ·  ?probar=chaky-cartel  ·  ?probar=chaky-enojado
+// «continuar» del juego normal. Ej.: .../3d/?probar=chaky  ·  ?probar=cepi  ·  ?probar=cepi-duelo  ·  ?probar=cepi-carton
+function startCepiArena(hp = null) {
+  input.reset();
+  game.ctx.audio?.music('boss', { fade: 0 });
+  game.arenaCepi.start();
+  if (hp != null) game.arenaCepi.logic._setHp(hp);
+}
 const QUICK_TESTS = {
   chaky: { stage: 'galpon' },
   'chaky-cartel': { stage: 'galpon', bossHp: 21 },
   'chaky-enojado': { stage: 'galpon', bossHp: 11 },
+  cepi: { run: () => startCepiArena() },
+  'cepi-duelo': { run: () => startCepiArena(20) },
+  'cepi-carton': { run: () => startCepiArena(10) },
   persecucion: { run: () => startChaseRun() },
   byd: { run: () => startBydLevel() },
   calle: {},
@@ -682,7 +693,7 @@ game.finish = finish;
 // ---------- pausa ----------
 function pause() {
   if (game.state === 'intro') endIntro(); // en la intro, la pausa también la saltea
-  if (game.state !== 'playing' && game.state !== 'chase' && game.state !== 'arena' && game.state !== 'bonus') return;
+  if (game.state !== 'playing' && game.state !== 'chase' && game.state !== 'arena' && game.state !== 'arena-cepi' && game.state !== 'bonus') return;
   game.pausedFrom = game.state;
   game.state = 'paused';
   input.reset();
@@ -704,7 +715,7 @@ function resume() {
   if (game.state !== 'paused') return;
   input.reset();
   showScreen(null);
-  const back = { chase: game.chase.active, arena: game.arena.active, bonus: game.bonus.active };
+  const back = { chase: game.chase.active, arena: game.arena.active, 'arena-cepi': game.arenaCepi.active, bonus: game.bonus.active };
   game.state = back[game.pausedFrom] ? game.pausedFrom : 'playing';
   audio.resumeMusic();
   last = 0;
@@ -750,6 +761,13 @@ function frameStep(now) {
     if (game.state === 'arena') game.arena.update(dt);
     if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
     if (game.arena.active) { game.arena.render(); requestAnimationFrame(frame); return; }
+  }
+  // Arena de Cepi (Nivel 2 — cancha de pádel): escena propia
+  if (game.arenaCepi.active && game.state !== 'arena-cepi' && game.state !== 'paused') game.arenaCepi.dispose();
+  if (game.arenaCepi.active) {
+    if (game.state === 'arena-cepi') game.arenaCepi.update(dt);
+    if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
+    if (game.arenaCepi.active) { game.arenaCepi.render(); requestAnimationFrame(frame); return; }
   }
   if (game.state === 'playing') {
     const t0 = performance.now();
@@ -836,7 +854,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); paintPodium(); audio.music('menu'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.arenaCepi?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); paintPodium(); audio.music('menu'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -856,6 +874,11 @@ async function boot() {
   game.arena = createArena({
     game, input, audio, assets, renderer, banner: game.banner, updateHud, pause, POWER,
     onWin() { game.state = 'playing'; last = 0; game.onBossDown(); },
+    onDown() { game.state = 'playing'; finish(false); }
+  });
+  game.arenaCepi = createCepiArena({
+    game, input, audio, assets, renderer, updateHud, pause, POWER,
+    onWin() { game.state = 'playing'; last = 0; finish(true); },
     onDown() { game.state = 'playing'; finish(false); }
   });
   game.bonus = createBonus({ game, input, audio, assets, renderer, updateHud, pause, POWER, SWINGS,

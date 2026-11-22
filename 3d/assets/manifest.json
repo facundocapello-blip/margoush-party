@@ -957,5 +957,100 @@
   "cols": 1,
   "rows": 1,
   "v": "1d82352c"
+ },
+ "arena_cepi_idle": {
+  "file": "arena_cepi_idle.webp",
+  "w": 416,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "7a7c70e7"
+ },
+ "arena_cepi_smash": {
+  "file": "arena_cepi_smash.webp",
+  "w": 455,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "b6d5dc1c",
+  "hk": 1.12
+ },
+ "arena_cepi_block": {
+  "file": "arena_cepi_block.webp",
+  "w": 362,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "01f378bb"
+ },
+ "arena_cepi_tired": {
+  "file": "arena_cepi_tired.webp",
+  "w": 368,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "bed44179",
+  "hk": 0.94
+ },
+ "arena_cepi_stun": {
+  "file": "arena_cepi_stun.webp",
+  "w": 429,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "552c5847",
+  "hk": 1.06
+ },
+ "arena_cepi_back": {
+  "file": "arena_cepi_back.webp",
+  "w": 382,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "e5e1b3b2"
+ },
+ "arena_cepi_point": {
+  "file": "arena_cepi_point.webp",
+  "w": 411,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "52ca62da"
+ },
+ "arena_cepi_cardboard": {
+  "file": "arena_cepi_cardboard.webp",
+  "w": 421,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "cf2a2b9c",
+  "hk": 1.12
+ },
+ "arena_cepi_ko": {
+  "file": "arena_cepi_ko.webp",
+  "w": 443,
+  "h": 344,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "e20c277f",
+  "hk": 0.65
+ },
+ "arena_cepi_fondo": {
+  "file": "arena_cepi_fondo.webp",
+  "w": 714,
+  "h": 1280,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "4bb9b413"
  }
 }
