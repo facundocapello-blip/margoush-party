@@ -112,8 +112,26 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     const shG = keep(new T.PlaneGeometry(1, 1)); shG.rotateX(-Math.PI / 2);
     const shM = keep(new T.MeshBasicMaterial({ map: radial([[0, 'rgba(5,12,35,.65)'], [1, 'rgba(5,12,35,0)']]), transparent: true, depthWrite: false }));
     const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
+    // Cuadros de carrera lateral de Cepi (cepi_walk_sheet, 6 cuadros)
+    const walkTex = {};
+    const walkCols = assets.has('cepi_walk_sheet') ? (assets.meta('cepi_walk_sheet').cols || 6) : 0;
+    if (walkCols) {
+      const wm = assets.meta('cepi_walk_sheet');
+      for (let i = 0; i < walkCols; i++) {
+        const tx = keep(assets.texture('cepi_walk_sheet').clone());
+        tx.needsUpdate = true; tx.repeat.set(1 / walkCols, 1); tx.offset.set(i / walkCols, 0);
+        walkTex['arena_cepi_walk' + i] = { map: tx, w: wm.w / walkCols, h: wm.h, hk: 1 };
+      }
+    }
     const setTex = (m, key) => {
       if (m.userData.key === key) return;
+      const custom = walkTex[key];
+      if (custom) {
+        m.material.map = custom.map; m.material.needsUpdate = true; m.userData.key = key;
+        const h = m.userData.h * custom.hk;
+        m.userData.w = h * custom.w / custom.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+        return;
+      }
       const k = assets.has(key) ? key : 'arena_cepi_idle';
       const meta = assets.meta(k);
       m.material.map = assets.texture(k); m.material.needsUpdate = true; m.userData.key = key;
@@ -405,15 +423,28 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       cam.lookAt(0, CAM.lookY + e * 1.5, CEPI_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
-      // Cepi real
-      bossKey = 'arena_cepi_' + S.pose;
-      setTex(B, bossKey);
+      // Cepi real (corre en 6 cuadros al desplazarse por la cancha + animaciones de golpe/bloqueo/aturdido)
+      const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;
+      B.userData.prevX = S.bossX;
+      const walking = S.pose === 'idle' && walkCols > 0 && Math.abs(bvx) > 0.35;
       let bx = S.bossX, by = 0, rz = 0, sx = 1, sy = 1;
-      if (S.pose === 'smash') { by = 0.65; }
-      else if (S.pose === 'point') { sx = S.pointDir < 0 ? -1 : 1; }
-      else if (S.pose === 'stun') { rz = Math.sin(t * 14) * 0.08; }
-      else if (S.pose === 'tired') { sy = 1 + Math.sin(t * 7) * 0.03; }
-      else if (S.pose === 'idle') { by = Math.abs(Math.sin(t * 2.5)) * 0.08; }
+      if (walking) {
+        B.userData.stepT = (B.userData.stepT || 0) + dt * 11;
+        bossKey = 'arena_cepi_walk' + (Math.floor(B.userData.stepT) % walkCols);
+        sx = bvx < 0 ? -1 : 1;
+        by = Math.abs(Math.sin(B.userData.stepT * Math.PI)) * 0.16;
+        rz = -Math.sign(bvx) * 0.06;
+      } else {
+        bossKey = 'arena_cepi_' + S.pose;
+      }
+      setTex(B, bossKey);
+      if (S.pose === 'smash') { by = 0.72 + Math.abs(Math.sin(t * 14)) * 0.16; sy = 1.07; sx = 0.95; rz = Math.sin(t * 16) * 0.05; }
+      else if (S.pose === 'block') { sy = 0.95; sx = 1.06; by = 0.04; }
+      else if (S.pose === 'point') { sx = S.pointDir < 0 ? -1 : 1; by = 0.1; sy = 1.04; rz = S.pointDir * 0.05; }
+      else if (S.pose === 'stun') { rz = Math.sin(t * 14) * 0.11; bx += Math.sin(t * 9) * 0.12; }
+      else if (S.pose === 'tired') { sy = 0.96 + Math.sin(t * 8) * 0.04; }
+      else if (S.pose === 'back') { by = Math.abs(Math.sin(t * 4)) * 0.06; rz = Math.sin(t * 5) * 0.03; }
+      else if (S.pose === 'idle' && !walking) { by = Math.abs(Math.sin(t * 2.8)) * 0.09; sy = 1 + Math.sin(t * 5.6) * 0.02; }
       place(B, bx, by, CEPI_ARENA.bossZ);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);

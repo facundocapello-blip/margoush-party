@@ -220,5 +220,13 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - Verificación ejecutada: `node --check`, `node tools/stamp_versions.mjs`, **78/78 pruebas unitarias en verde** (`arena_lale` 3, `arena_pinky` 4, `arena_cepi` 5, `arena`, `versions`, `bonus`, `chase`, `margot`, `music`, `poses`, `ranking`, `score`, `voice`) + 3/3 chequeos JS de `tests/assets.test.mjs`. Pendiente: prueba en Safari físico de iPhone, `tests/check_sprites.py` (sin `numpy` en VM), y Etapa 5 (generar/enchufar arte final de Grupos C, D, E restante, F aeropuerto y opcional `cepi_ko` cuando se libere cuota).
 - Rollback: volver `main` a `89ae059`.
 
-
-
+## Actualización 2026-11-22 (4) · Animaciones de movimiento de los 4 jefes + `arena_lale_idle`
+- **Movimientos reales de 6 cuadros en las 4 arenas de jefes** (usando las tiras `*_walk_sheet.webp` que ya existían en `3d/assets/` pero no estaban conectadas a las arenas + squash/stretch/rebote/retroceso en acciones):
+  - **BIG CHAKY** (`3d/js/arena.js`): caminata lateral en 6 cuadros (`chaky_walk_sheet`) espejada según dirección con pisada pesada, más squash/stretch en `throw`, `rage`, `hurt` y pasos disco (`dance_*`).
+  - **Cepi «el Niño»** (`3d/js/arena_cepi.js`): carrera lateral en 6 cuadros (`cepi_walk_sheet`) al desplazarse por el fondo de la cancha, más impulso y rebote en `smash`, `block`, `point`, `stun`, `tired`, `back`.
+  - **Lale «Mantecoso»** (`3d/js/arena_lale.js`): caminata (10 FPS) y patinada rápida en manteca (15 FPS inclinada) en 6 cuadros (`lale_walk_sheet`), nueva pose principal **`arena_lale_idle.webp`** generada desde `BASE_lale.jpg` y recortada sin halo verde (`409×768`, 34 KB, `v=1877d8fc`), más animaciones de lanzamiento, enharinado y golpe.
+  - **Pinky «el Trapito»** (`3d/js/arena_pinky.js`): caminata agitando el trapo rojo en 6 cuadros (`pinky_walk_sheet`, 11 FPS) durante la fase `wave`, más animaciones en `reveal`, `charge` y `hurt`.
+- Todos los slots de poses individuales restantes del kit (`arena_lale_*`, `arena_pinky_*`, `arena_margot_hero`, `arena_aeropuerto_fondo`, `arena_douge_victory`, `arena_marine_victory`, `arena_familia_festejo`) quedan intactos para enchufarse automáticamente apenas se generen (cuota móvil del generador de imágenes pausada ~2h50m tras generar `arena_lale_idle`).
+- Peso total de `3d/assets/`: **8,89 MB** (< 9,2 MB). Versiones selladas en `3d/index.html` con `node tools/stamp_versions.mjs`. Chupete Rush (`index.html`) y `preview-v*/` intactos. Ranking sigue local.
+- Verificación ejecutada: `node --check` en los 4 archivos modificados, `node tools/stamp_versions.mjs`, **78/78 pruebas unitarias en verde** + 3/3 chequeos JS de `tests/assets.test.mjs` (manifest con `arena_lale_idle`, presupuesto < 9,2 MB, metadata). Pendiente: prueba en Safari físico de iPhone, `tests/check_sprites.py` (sin `numpy` en VM), y generación del resto de poses individuales de Grupos C (6), D (7), E (4) y F (1) al liberarse la cuota.
+- Rollback: volver `main` a `66516da`.

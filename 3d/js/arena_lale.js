@@ -69,8 +69,8 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(bgKey), fog: false }));
     back.position.set(0, BH * 0.33, LALE_ARENA.bossZ - 9);
 
-    // Respaldo por cuadros de lale_actions_sheet si todavía no llegaron las poses del Grupo C
-    const fallbackTex = {};
+    // Respaldo por cuadros de lale_actions_sheet + tira de caminata/patinada de 6 cuadros (lale_walk_sheet)
+    const fallbackTex = {}, walkTex = {};
     if (assets.has('lale_actions_sheet')) {
       const m = assets.meta('lale_actions_sheet');
       const cols = m.cols || 4;
@@ -80,12 +80,28 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
         fallbackTex[i] = { map: tx, w: m.w / cols, h: m.h, hk: 1 };
       }
     }
+    const walkCols = assets.has('lale_walk_sheet') ? (assets.meta('lale_walk_sheet').cols || 6) : 0;
+    if (walkCols) {
+      const wm = assets.meta('lale_walk_sheet');
+      for (let i = 0; i < walkCols; i++) {
+        const tx = keep(assets.texture('lale_walk_sheet').clone());
+        tx.needsUpdate = true; tx.repeat.set(1 / walkCols, 1); tx.offset.set(i / walkCols, 0);
+        walkTex['arena_lale_walk' + i] = { map: tx, w: wm.w / walkCols, h: wm.h, hk: 1 };
+      }
+    }
 
     const shG = keep(new T.PlaneGeometry(1, 1)); shG.rotateX(-Math.PI / 2);
     const shM = keep(new T.MeshBasicMaterial({ map: radial([[0, 'rgba(40,20,5,.6)'], [1, 'rgba(40,20,5,0)']]), transparent: true, depthWrite: false }));
     const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
     const setTex = (m, key, fbPose = null) => {
       if (m.userData.key === key) return;
+      if (walkTex[key]) {
+        const wt = walkTex[key];
+        m.material.map = wt.map; m.material.needsUpdate = true; m.userData.key = key;
+        const h = m.userData.h * wt.hk;
+        m.userData.w = h * wt.w / wt.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+        return;
+      }
       if (assets.has(key)) {
         const meta = assets.meta(key);
         m.material.map = assets.texture(key); m.material.needsUpdate = true; m.userData.key = key;
@@ -325,13 +341,29 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       cam.lookAt(0, CAM.lookY + e * 1.5, LALE_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
-      // Lale
-      bossKey = 'arena_lale_' + S.pose;
+      // Lale (camina y patina en 6 cuadros reales + pose nueva arena_lale_idle y animaciones de ataque/harina)
+      const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;
+      B.userData.prevX = S.bossX;
+      const useWalk = walkCols > 0 && ((S.pose === 'idle' && Math.abs(bvx) > 0.35) || (S.pose === 'skate' && !assets.has('arena_lale_skate')));
+      let sx = 1, sy = 1, rz = 0, by = 0;
+      if (useWalk) {
+        const fps = S.pose === 'skate' ? 15 : 10;
+        B.userData.stepT = (B.userData.stepT || 0) + dt * fps;
+        bossKey = 'arena_lale_walk' + (Math.floor(B.userData.stepT) % walkCols);
+        const dir = S.pose === 'skate' ? S.skateDir : (bvx < 0 ? -1 : 1);
+        sx = dir < 0 ? -1 : 1;
+        by = Math.abs(Math.sin(B.userData.stepT * Math.PI)) * (S.pose === 'skate' ? 0.2 : 0.14);
+        rz = -dir * (S.pose === 'skate' ? 0.2 : 0.06);
+        if (S.pose === 'skate') sy = 0.94 + Math.abs(Math.sin(t * 14)) * 0.08;
+      } else {
+        bossKey = 'arena_lale_' + S.pose;
+        if (S.pose === 'skate' && S.skateDir < 0) sx = -1;
+        else if (S.pose === 'throw') { sx = x < S.bossX ? -1 : 1; sy = 0.95; rz = sx * 0.08; by = 0.14; }
+        else if (S.pose === 'floured') { rz = Math.sin(t * 20) * 0.09; sy = 0.95 + Math.abs(Math.sin(t * 14)) * 0.08; }
+        else if (S.pose === 'hurt') { rz = 0.16; sy = 0.92; by = 0.18; }
+        else if (S.pose === 'idle') { by = Math.abs(Math.sin(t * 2.5)) * 0.08; sy = 1 + Math.sin(t * 5) * 0.02; }
+      }
       setTex(B, bossKey, S.pose);
-      let sx = S.pose === 'skate' && S.skateDir < 0 ? -1 : 1, sy = 1, rz = 0, by = 0;
-      if (S.pose === 'skate') { rz = -S.skateDir * 0.14; by = Math.abs(Math.sin(t * 10)) * 0.12; }
-      else if (S.pose === 'floured') { rz = Math.sin(t * 16) * 0.06; }
-      else if (S.pose === 'idle') { by = Math.abs(Math.sin(t * 2.2)) * 0.06; }
       place(B, S.bossX, by, S.bossZ);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);

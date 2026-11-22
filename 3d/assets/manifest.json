@@ -1052,5 +1052,14 @@
   "cols": 1,
   "rows": 1,
   "v": "4bb9b413"
+ },
+ "arena_lale_idle": {
+  "file": "arena_lale_idle.webp",
+  "w": 409,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "1877d8fc"
  }
 }

@@ -121,6 +121,15 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       arena_chaky_slamtop: { map: slamTop, w: slamMeta.w, h: slamMeta.h * SLAM_CUT, hk: SLAM_CUT },
       arena_chaky_hand: { map: handTex, w: HAND_CROP.w, h: HAND_CROP.h, hk: 1 }
     };
+    const walkCols = assets.has('chaky_walk_sheet') ? (assets.meta('chaky_walk_sheet').cols || 6) : 0;
+    if (walkCols) {
+      const wm = assets.meta('chaky_walk_sheet');
+      for (let i = 0; i < walkCols; i++) {
+        const tx = keep(assets.texture('chaky_walk_sheet').clone());
+        tx.needsUpdate = true; tx.repeat.set(1 / walkCols, 1); tx.offset.set(i / walkCols, 0);
+        CUSTOM['arena_chaky_walk' + i] = { map: tx, w: wm.w / walkCols, h: wm.h, hk: 1 };
+      }
+    }
     const setTex = (m, key) => {
       if (m.userData.key === key) return;
       const c = CUSTOM[key], meta = c || assets.meta(key);
@@ -488,19 +497,31 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       }
       if (pose !== prevPose) { prevPose = pose; poseT = 0; }
       poseT += dt;
-      bossKey = 'arena_chaky_' + pose;
-      if (!assets.has(bossKey) && DANCE_FALLBACK[pose]) bossKey = 'arena_chaky_' + DANCE_FALLBACK[pose];
-      setTex(B, bossKey);
+      const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;
+      B.userData.prevX = S.bossX;
+      const walking = pose === 'idle' && walkCols > 0 && Math.abs(bvx) > 0.35;
       let bx = S.bossX, by = 0, rz = 0, sx = 1, sy = 1;
-      if (pose === 'throw') { const k = Math.min(1, poseT / 0.6); by = Math.abs(Math.sin(k * Math.PI * 2)) * 0.35; rz = Math.sin(poseT * 9) * 0.06; }
+      if (walking) {
+        B.userData.stepT = (B.userData.stepT || 0) + dt * 9;
+        bossKey = 'arena_chaky_walk' + (Math.floor(B.userData.stepT) % walkCols);
+        sx = bvx < 0 ? -1 : 1;
+        by = Math.abs(Math.sin(B.userData.stepT * Math.PI)) * 0.22;
+        rz = -Math.sign(bvx) * 0.04;
+      } else {
+        bossKey = 'arena_chaky_' + pose;
+        if (!assets.has(bossKey) && DANCE_FALLBACK[pose]) bossKey = 'arena_chaky_' + DANCE_FALLBACK[pose];
+      }
+      setTex(B, bossKey);
+      if (pose === 'throw') { const k = Math.min(1, poseT / 0.55); by = Math.abs(Math.sin(k * Math.PI)) * 0.48; sy = 1 + Math.sin(k * Math.PI) * 0.07; rz = Math.sin(poseT * 10) * 0.07; }
       else if (pose === 'slamtop') { by = -0.25; if (H.state === 'stuck') { bx += (Math.random() - 0.5) * 0.18; by += Math.random() * 0.05; } } // forcejea con la mano trabada
-      else if (pose === 'rage') { bx += Math.sin(t * 40) * 0.12; sy = 1 + Math.sin(t * 12) * 0.03; }
-      else if (pose === 'idle') { sy = 1 + Math.sin(t * 2.2) * 0.015; by = Math.abs(Math.sin(t * 1.2)) * 0.05; }
-      else if (pose === 'dance_idle') { sy = 1 + Math.sin(t * 6.5) * 0.02; by = Math.abs(Math.sin(t * 3.25)) * 0.12; rz = Math.sin(t * 3.25) * 0.03; }
-      else if (pose === 'dance_jump') { by = 0.75 + Math.sin(Math.min(1, poseT / 0.35) * Math.PI) * 0.45; }
-      else if (pose === 'dance_attack') { if (S.dice?.step === 3) sx = -1; by = 0.08; }
-      else if (pose === 'dance_dodge') { if (S.dice?.step === 0) sx = -1; }
-      else if (pose === 'dance_laugh') { sy = 1 + Math.sin(t * 16) * 0.03; by = Math.abs(Math.sin(t * 8)) * 0.14; }
+      else if (pose === 'rage') { bx += Math.sin(t * 40) * 0.12; sy = 1 + Math.sin(t * 12) * 0.04; sx = 1 + Math.cos(t * 12) * 0.03; }
+      else if (pose === 'hurt') { rz = Math.sin(poseT * 24) * 0.09; sy = 0.94; sx = 1.06; }
+      else if (pose === 'idle' && !walking) { sy = 1 + Math.sin(t * 2.4) * 0.02; by = Math.abs(Math.sin(t * 1.2)) * 0.06; }
+      else if (pose === 'dance_idle') { sy = 1 + Math.sin(t * 6.5) * 0.025; by = Math.abs(Math.sin(t * 3.25)) * 0.14; rz = Math.sin(t * 3.25) * 0.04; }
+      else if (pose === 'dance_jump') { by = 0.75 + Math.sin(Math.min(1, poseT / 0.35) * Math.PI) * 0.5; sy = 1.06; }
+      else if (pose === 'dance_attack') { if (S.dice?.step === 3) sx = -1; by = 0.12; sy = 1.04; }
+      else if (pose === 'dance_dodge') { if (S.dice?.step === 0) sx = -1; sy = 0.96; }
+      else if (pose === 'dance_laugh') { sy = 1 + Math.sin(t * 16) * 0.04; by = Math.abs(Math.sin(t * 8)) * 0.16; }
       place(B, bx, TARIMA_H + by, ARENA.bossZ);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);

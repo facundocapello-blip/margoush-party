@@ -82,8 +82,8 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(bgKey), fog: false }));
     back.position.set(0, BH * 0.33, PINKY_ARENA.bossZ - 9);
 
-    // Respaldo por cuadros de pinky_actions_sheet si aún no están las poses del Grupo D
-    const fallbackTex = {};
+    // Respaldo por cuadros de pinky_actions_sheet + tira de 6 cuadros agitando el trapo rojo (pinky_walk_sheet)
+    const fallbackTex = {}, walkTex = {};
     if (assets.has('pinky_actions_sheet')) {
       const m = assets.meta('pinky_actions_sheet');
       const cols = m.cols || 4;
@@ -93,12 +93,28 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         fallbackTex[i] = { map: tx, w: m.w / cols, h: m.h };
       }
     }
+    const walkCols = assets.has('pinky_walk_sheet') ? (assets.meta('pinky_walk_sheet').cols || 6) : 0;
+    if (walkCols) {
+      const wm = assets.meta('pinky_walk_sheet');
+      for (let i = 0; i < walkCols; i++) {
+        const tx = keep(assets.texture('pinky_walk_sheet').clone());
+        tx.needsUpdate = true; tx.repeat.set(1 / walkCols, 1); tx.offset.set(i / walkCols, 0);
+        walkTex['arena_pinky_walk' + i] = { map: tx, w: wm.w / walkCols, h: wm.h, hk: 1 };
+      }
+    }
 
     const shG = keep(new T.PlaneGeometry(1, 1)); shG.rotateX(-Math.PI / 2);
     const shM = keep(new T.MeshBasicMaterial({ map: radial([[0, 'rgba(0,0,0,.65)'], [1, 'rgba(0,0,0,0)']]), transparent: true, depthWrite: false }));
     const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
     const setTex = (m, key, fbPose = null) => {
       if (m.userData.key === key) return;
+      if (walkTex[key]) {
+        const wt = walkTex[key];
+        m.material.map = wt.map; m.material.needsUpdate = true; m.userData.key = key;
+        const h = m.userData.h * wt.hk;
+        m.userData.w = h * wt.w / wt.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+        return;
+      }
       if (assets.has(key)) {
         const meta = assets.meta(key);
         m.material.map = assets.texture(key); m.material.needsUpdate = true; m.userData.key = key;
@@ -379,15 +395,28 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       cam.lookAt(0, CAM.lookY + e * 1.5, PINKY_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
-      // Pinky
-      bossKey = 'arena_pinky_' + S.pose;
+      // Pinky (camina y agita el trapo rojo en 6 cuadros reales durante `wave` + animaciones de revelación/cobro/golpe)
+      const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;
+      B.userData.prevX = S.bossX;
+      const wavingWalk = S.pose === 'wave' && walkCols > 0 && !assets.has('arena_pinky_wave');
+      let sx = 1, sy = 1, by = 0, rz = 0;
+      if (wavingWalk) {
+        B.userData.stepT = (B.userData.stepT || 0) + dt * 11;
+        bossKey = 'arena_pinky_walk' + (Math.floor(B.userData.stepT) % walkCols);
+        sx = Math.abs(bvx) > 0.2 ? (bvx < 0 ? -1 : 1) : (B.userData.lastDir || 1);
+        B.userData.lastDir = sx;
+        by = Math.abs(Math.sin(B.userData.stepT * Math.PI)) * 0.16;
+        rz = -sx * 0.05;
+      } else {
+        bossKey = 'arena_pinky_' + S.pose;
+        if (S.pose === 'wave') { rz = Math.sin(t * 10) * 0.09; by = Math.abs(Math.sin(t * 5)) * 0.12; }
+        else if (S.pose === 'reveal') { by = Math.abs(Math.sin(t * 8)) * 0.22; sy = 1 + Math.sin(t * 16) * 0.05; rz = Math.sin(t * 8) * 0.05; }
+        else if (S.pose === 'charge') { by = Math.abs(Math.sin(t * 4)) * 0.09; sy = 1 + Math.sin(t * 8) * 0.03; rz = Math.sin(t * 4) * 0.04; }
+        else if (S.pose === 'hurt') { rz = 0.16; sy = 0.92; by = 0.18; }
+      }
       setTex(B, bossKey, S.pose);
-      let by = 0, rz = 0;
-      if (S.pose === 'wave') { rz = Math.sin(t * 10) * 0.08; by = Math.abs(Math.sin(t * 5)) * 0.1; }
-      else if (S.pose === 'reveal') { by = Math.abs(Math.sin(t * 7)) * 0.15; }
-      else if (S.pose === 'charge') { by = Math.sin(t * 3) * 0.05; }
       place(B, S.bossX, by, PINKY_ARENA.bossZ);
-      B.scale.set(B.userData.w, B.userData.hh, 1); B.rotation.z = rz;
+      B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);
       B.material.color.setRGB(1, bossFlash > 0 ? 0.55 : 1, bossFlash > 0 ? 0.55 : 1);
 
