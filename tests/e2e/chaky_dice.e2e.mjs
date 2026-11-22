@@ -13,18 +13,27 @@ try {
   await page.waitForFunction(() => window.__game.arena.state.shots.some(s => s.type === 'curve' && s.z > -10), null, { timeout: 30000 });
   await shot(page, 'chaky-f1-curva');
   check((await G(page, () => window.__game.arena.state.phase)) === 1, 'fase 1: barriles');
-  // fase 2: «Chaky dice»
+  // fase 2: clase de baile — Chaky muestra los pasos, después tu turno
   await G(page, () => window.__game.arena.logic._setHp(21));
-  await page.waitForFunction(() => window.__game.arena.state.dice?.stage === 'window', null, { timeout: 20000 });
-  const sign = await G(page, () => { const e = document.querySelector('.chaky-sign'); const r = e.getBoundingClientRect(); return { vis: !e.classList.contains('hidden'), txt: e.textContent, top: r.top, bottom: r.bottom, left: r.left, right: r.right }; });
-  check(sign.vis && sign.txt.length > 1, 'fase 2: el cartel se ve: ' + sign.txt);
-  check(sign.top >= 0 && sign.left >= 0 && sign.right <= 430, 'el cartel entra en la pantalla ' + JSON.stringify(sign));
+  await page.waitForFunction(() => document.querySelector('.phase-card')?.classList.contains('on'), null, { timeout: 8000 });
+  check((await G(page, () => document.querySelector('.phase-card').textContent)).includes('BAILE'), 'cartel de fase 2: clase de baile');
   await shot(page, 'chaky-f2-cartel');
+  await page.waitForFunction(() => window.__game.arena.logic.state.dice?.stage === 'demo' && window.__game.arena.logic.state.dice.beat >= 0, null, { timeout: 20000 });
+  check(await G(page, () => !document.querySelector('.chaky-sign').classList.contains('hidden')), 'Chaky muestra el paso en el cartel');
+  await shot(page, 'chaky-f2-demo');
+  await page.waitForFunction(() => window.__game.arena.logic.state.dice?.stage === 'turn', null, { timeout: 20000 });
+  check((await G(page, () => document.querySelector('.chaky-sign').textContent)).includes('TU TURNO'), '¡TU TURNO! con la fila de pasos');
+  check(await G(page, () => !!document.querySelector('#touch .act.want')), 'la primera ronda marca el botón');
+  await shot(page, 'chaky-f2-turno');
   const hp0 = await G(page, () => window.__game.arena.logic.state.hp);
-  const cmd = await G(page, () => window.__game.arena.state.dice.cmd);
-  if (cmd !== 'still') await G(page, (c) => window.__game.arena.logic.act(c), cmd);
-  await page.waitForFunction(() => window.__game.arena.state.dice?.stage === 'result', null, { timeout: 5000 });
-  check(await G(page, () => window.__game.arena.state.dice.last === 'ok'), 'acertar el cartel cuenta');
+  const keys = { jump: 'Space', attack: 'KeyJ', dodge: 'KeyK' };
+  for (let k = 0; k < 6; k++) {
+    const d = await G(page, () => { const d = window.__game.arena.logic.state.dice; return d && { stage: d.stage, m: d.seq[d.idx] }; });
+    if (!d || d.stage !== 'turn') break;
+    await page.keyboard.press(keys[d.m]); await page.waitForTimeout(450);
+  }
+  await page.waitForFunction(() => window.__game.arena.logic.state.dice?.stage === 'result', null, { timeout: 5000 });
+  check(await G(page, () => window.__game.arena.logic.state.dice.last === 'ok'), 'repetir los pasos cuenta');
   check((await G(page, () => window.__game.arena.logic.state.hp)) < hp0, 'y lo lastima');
   await shot(page, 'chaky-f2-acierto');
   // fase 3: enojado (manotazo)
