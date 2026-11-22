@@ -5,13 +5,13 @@
 //  1. BARRILES — tira series de 3 con trayectorias que se leen por la pose: rodante (recto: se devuelve),
 //     en curva (sale por otro carril y se mete en el tuyo: correrse) y saltarín (pica: saltarlo).
 //     El último de cada serie es dorado. Después de la serie descansa (recuperación): la ventana para devolver.
-//  2. «CLASE DE BAILE» — Chaky, profesor de baile: muestra 2 a 4 pasos al ritmo (salto / piña / giro) y el
-//     héroe los repite en el mismo orden. Cada ronda bien lo lastima; todas bien curan un corazón, 2 mal sacan uno.
+//  2. «CLASE DE BAILE» — estilo Pump It Up: flechas que suben por 5 carriles al compás; Chaky hace cada paso y
+//     hay que tocar el carril cuando la flecha llega arriba. Ronda ganada (75 %) lo lastima; 4 ganadas curan, 2 perdidas sacan un corazón.
 //  3. ENOJADO — ráfagas, cajones, el manotazo (la mano cae donde estabas, se traba: ventana) y el barril
 //     gigante, que no se devuelve: hay que esquivarlo de costado.
 //
 // Estados del jefe (state.mode): attack, recover, transition, dice, vulnerable, ko. La presentación es de arena.js.
-// Eventos: throw, hurt, dodge, returned, bossHit, handHit, slam, phase, rage, ko, voice, danceDemo, danceTurn,
+// Eventos: throw, hurt, dodge, returned, bossHit, handHit, slam, phase, rage, ko, voice, danceBeat,
 // danceStep, diceResult, heal. `voice` lleva el evento de voz (voice.js elige la frase).
 // PUNTAJE: solo `handHit`, `returned` y `diceResult` (ok) puntúan; `bossHit` es solo barra y feedback.
 // Coordenadas: x a lo ancho (±xMax), z hacia el fondo negativo.
@@ -34,14 +34,15 @@ export const ARENA = {
     patterns: [['roll', 'curve', 'gold'], ['bounce', 'roll', 'gold'], ['curve', 'bounce', 'gold']],
     curveShift: 2.6, bounceH: 1.8, bounceHops: 4
   },
-  // Clase de baile: pasos por ronda, compás (s), pausa antes de tu turno, tiempo para cada paso
-  dice: { rounds: [2, 3, 3, 4], beat: 0.62, lead: 0.5, gap: 0.45, stepWindow: 1.5, result: 0.9, dmg: 2.25, healAt: 4, hurtAt: 2, start: 3.0 },
+  // Clase de baile (Pump It Up): flechas por ronda, compás, cuánto tarda en subir una flecha, ventanas de acierto
+  dice: { rounds: [4, 6, 6, 8], beat: 0.6, travel: 1.8, perfect: 0.1, good: 0.24, pass: 0.75, result: 1.0, dmg: 2.25, healAt: 4, hurtAt: 2, start: 3.0 },
   phase3: { throwEvery: [0.9, 1.4], goldEvery: 3, slamEvery: 1, slamWarn: 0.8, stuck: 1.8, salvo: 0.4, salvoGap: 0.45, crateEvery: 3, crateTime: 0.8, giantEvery: 5, giantSpeed: 4.4, giantR: 1.9 },
   transition: 1.6,
   points: { returned: 300, returnedWhite: 120, hand: 50, dodge: 100, dice: 150 }
 };
 
-export const DANCE_MOVES = ['jump', 'attack', 'dodge']; // salto, piña al aire, giro
+export const DANCE_LANES = 5; // ↙ ↖ ● ↗ ↘ (como Pump It Up)
+export const DANCE_MOVES = ['jump', 'attack', 'dodge']; // (compatibilidad)
 
 // Tiempos internos (s)
 const WINDUP = 0.6;        // pose de tirar antes de soltar
@@ -226,64 +227,66 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     }
   }
 
-  // ---------- «Clase de baile» (fase 2; internamente sigue llamándose `dice`) ----------
-  // Cada ronda: Chaky muestra los pasos al ritmo (demo) y después el héroe los repite en el mismo orden (turn).
-  function makeSeq(n) {
-    const seq = [];
+  // ---------- «Clase de baile» estilo Pump It Up (fase 2; internamente sigue llamándose `dice`) ----------
+  // 5 carriles (↙ ↖ ● ↗ ↘). Las flechas suben al compás y hay que tocar su carril cuando llegan a la línea
+  // de arriba; Chaky hace el mismo paso en ese momento. Cada ronda (4, 6, 6 y 8 flechas) se gana con el 75 %.
+  function makeNotes(n) {
+    const notes = []; let prev = -1;
     for (let i = 0; i < n; i++) {
-      let k = Math.floor(rand() * DANCE_MOVES.length) % DANCE_MOVES.length;
-      if (i >= 2 && DANCE_MOVES[k] === seq[i - 1] && seq[i - 1] === seq[i - 2]) k = (k + 1) % DANCE_MOVES.length; // nunca 3 iguales
-      seq.push(DANCE_MOVES[k]);
+      let lane = Math.floor(rand() * DANCE_LANES) % DANCE_LANES;
+      if (lane === prev) lane = (lane + 1 + i) % DANCE_LANES;
+      notes.push({ lane, time: D.travel + i * D.beat, judged: null });
+      prev = lane;
     }
-    return seq;
+    return notes;
   }
   function startDice() {
-    state.dice = { round: 0, total: D.rounds.length, seq: makeSeq(D.rounds[0]), stage: 'demo', t: 0, beat: -1, idx: 0, ok: 0, bad: 0, last: null, res: [] };
+    state.dice = { round: 0, total: D.rounds.length, notes: makeNotes(D.rounds[0]), stage: 'play', t: 0, hits: 0, combo: 0, beat: -1, ok: 0, bad: 0, last: null, res: [], step: null };
     state.mode = 'dice';
   }
-  function endRound(ok, evs) {
-    const d = state.dice;
+  function endRound(evs) {
+    const d = state.dice, ok = d.hits >= Math.ceil(d.notes.length * D.pass);
     d.stage = 'result'; d.t = 0; d.last = ok ? 'ok' : 'bad'; d.res[d.round] = d.last;
     if (ok) d.ok++; else d.bad++;
-    evs.push({ type: 'diceResult', ok, round: d.round }, { type: 'voice', event: ok ? 'good' : 'bad' });
+    evs.push({ type: 'diceResult', ok, round: d.round, hits: d.hits, of: d.notes.length }, { type: 'voice', event: ok ? 'good' : 'bad' });
     if (ok) damage(D.dmg, 'dice', evs);
+  }
+  function judge(d, note, grade, evs) {
+    note.judged = grade;
+    if (grade === 'miss') d.combo = 0; else { d.hits++; d.combo++; }
+    evs.push({ type: 'danceStep', ok: grade !== 'miss', grade, lane: note.lane, combo: d.combo });
   }
   function updateDice(dt, hero, evs) {
     const d = state.dice;
     d.t += dt;
-    if (d.stage === 'demo') {
-      const b = Math.floor((d.t - D.lead) / D.beat);
-      if (b >= 0 && b < d.seq.length && b !== d.beat) {
-        d.beat = b;
-        if (b === 0) evs.push({ type: 'voice', event: 'count' });
-        evs.push({ type: 'danceDemo', move: d.seq[b], i: b, n: d.seq.length, round: d.round });
+    if (d.stage === 'play') {
+      if (d.beat < 0 && d.t > 0.05) { d.beat = 0; evs.push({ type: 'voice', event: 'count' }); }
+      for (const n of d.notes) {
+        if (!n.beatDone && d.t >= n.time) { n.beatDone = true; d.step = n.lane; d.stepT = d.t; evs.push({ type: 'danceBeat', lane: n.lane }); }
+        if (!n.judged && d.t > n.time + D.good) judge(d, n, 'miss', evs);
       }
-      if (d.t >= D.lead + d.seq.length * D.beat + D.gap) {
-        d.stage = 'turn'; d.t = 0; d.idx = 0;
-        evs.push({ type: 'danceTurn', seq: d.seq.slice(), round: d.round });
-      }
-    } else if (d.stage === 'turn') {
-      if (d.t >= D.stepWindow) endRound(false, evs); // se quedó quieto
+      if (d.notes.every(n => n.judged && n.beatDone)) endRound(evs);
     } else if (d.stage === 'result' && d.t >= D.result) {
       d.round++;
-      if (d.round < d.total) { Object.assign(d, { seq: makeSeq(D.rounds[d.round]), stage: 'demo', t: 0, beat: -1, idx: 0 }); return; }
+      if (d.round < d.total) { Object.assign(d, { notes: makeNotes(D.rounds[d.round]), stage: 'play', t: 0, hits: 0, combo: 0, beat: -1, step: null }); return; }
       if (d.ok >= D.healAt) evs.push({ type: 'heal' });
       if (d.bad >= D.hurtAt) evs.push({ type: 'hurt', by: 'dice' });
       state.dice = null;
       toTransition(3, evs);
     }
   }
-  // El héroe hizo un paso (salto / golpe / esquive)
-  function act(kind) {
+  // El jugador tocó un carril
+  function tap(lane) {
     const evs = [];
     const d = state.dice;
-    if (!d || state.phase !== 2 || d.stage !== 'turn') return evs;
-    if (kind !== d.seq[d.idx]) { evs.push({ type: 'danceStep', ok: false, i: d.idx, move: kind }); endRound(false, evs); return evs; }
-    evs.push({ type: 'danceStep', ok: true, i: d.idx, move: kind });
-    d.idx++; d.t = 0;
-    if (d.idx >= d.seq.length) endRound(true, evs);
-    return evs;
+    if (!d || state.phase !== 2 || d.stage !== 'play') return evs;
+    let best = null;
+    for (const n of d.notes) if (!n.judged && n.lane === lane && Math.abs(n.time - d.t) <= D.good && (!best || Math.abs(n.time - d.t) < Math.abs(best.time - d.t))) best = n;
+    if (!best) { evs.push({ type: 'danceStep', ok: false, grade: 'empty', lane, combo: d.combo }); return evs; }
+    judge(d, best, Math.abs(best.time - d.t) <= D.perfect ? 'perfect' : 'good', evs);
+    return evs; // el cierre de la ronda lo hace update (así Chaky marca también el último paso)
   }
+  function act() { return []; } // los botones de pelea no cuentan en el baile
 
   function update(dt, hero) {
     const evs = [];
@@ -319,8 +322,10 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     if (state.phase === 3 && state.mode !== 'transition') state.mode = state.hand.state === 'stuck' ? 'vulnerable' : 'attack';
     // pose
     if (state.phase === 2 && state.mode === 'dice') {
-      const d = state.dice, inBeat = d.stage === 'demo' && d.beat >= 0 && (d.t - A.dice.lead - d.beat * A.dice.beat) < A.dice.beat * 0.8;
-      state.pose = inBeat ? 'dance_' + d.seq[d.beat] : d.stage === 'result' && d.last === 'bad' ? 'dance_laugh' : 'dance_idle';
+      // Chaky hace el paso de la flecha que llega: abajo = giro, arriba = piña, centro = salto
+      const d = state.dice, inStep = d.stage === 'play' && d.step !== null && d.t - d.stepT < A.dice.beat * 0.75;
+      const STEP = ['dance_dodge', 'dance_attack', 'dance_jump', 'dance_attack', 'dance_dodge'];
+      state.pose = inStep ? STEP[d.step] : d.stage === 'result' && d.last === 'bad' ? 'dance_laugh' : 'dance_idle';
     }
     else if (poseT > 0) state.pose = poseName;
     else if (state.hand.state === 'warn' || state.hand.state === 'down') state.pose = 'slam';
@@ -372,5 +377,5 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     return evs;
   }
 
-  return { get state() { return state; }, update, punch, power, act, _setHp };
+  return { get state() { return state; }, update, punch, power, act, tap, _setHp };
 }

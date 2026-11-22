@@ -228,6 +228,8 @@ export function createAudio(assets) {
     paper: () => hiss(0.15, 0.2, 3200, 1.2),
     coin: () => { tone('square', 300, 150, 0.18, 0.15); },
     // monedita/medialuna juntada: «tling» corto y agudo
+    tick: () => tone('square', 1500, 1500, 0.03, 0.05),
+    perfect: () => { tone('triangle', 880, 1320, 0.09, 0.16); tone('sine', 1760, 1760, 0.08, 0.06, 0.04); },
     coinPick: () => { tone('square', 1320, 1320, 0.05, 0.06); tone('square', 1760, 1760, 0.12, 0.06, 0.05); },
     scooter: () => { tone('square', 600, 900, 0.5, 0.06); hiss(0.4, 0.12, 2500, 1); },
     flap: () => [0, 0.07, 0.14, 0.21, 0.28].forEach((d) => hiss(0.06, 0.25, 1400, 1.5, d)),

@@ -680,3 +680,25 @@ body.portrait #arena-ui .chaky-sign .txt { font-size: 22px; }
 #arena-ui .chaky-sign .ico em.done { background: #4fd16b; color: #fff; }
 #arena-ui .chaky-sign.demo { animation: sign-beat .3s ease-out; }
 @keyframes sign-beat { 0% { transform: translate(-50%, -100%) scale(1.25) rotate(4deg); } 100% { transform: translate(-50%, -100%) rotate(-3deg) scale(1); } }
+/* Clase de baile estilo Pump It Up: 5 carriles abajo, las flechas suben hasta la línea de arriba */
+body.piu-on #touch { display: none; }
+#arena-ui .piu { position: absolute; left: 0; right: 0; bottom: 0; height: 44%; pointer-events: auto; touch-action: none; }
+#arena-ui .piu.hidden { display: none; }
+#arena-ui .piu .lanes { position: absolute; inset: 0 6px 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+#arena-ui .piu .lane { position: relative; overflow: hidden; border-radius: 16px 16px 10px 10px; background: linear-gradient(#0a0618cc, #0a061866); border: 2px solid #ffffff22; }
+#arena-ui .piu .lane.press { animation: lane-press .18s ease-out; }
+@keyframes lane-press { 0% { background: #ffffff55; } 100% { background: linear-gradient(#0a0618cc, #0a061866); } }
+#arena-ui .piu .rec, #arena-ui .piu .note { position: absolute; left: 50%; top: 0; width: 64px; height: 64px; margin-left: -32px; display: grid; place-items: center; border-radius: 16px; font: 700 40px/1 Fredoka, sans-serif; }
+#arena-ui .piu .rec { top: 8px; color: #ffffff99; border: 3px solid #ffffff88; background: #ffffff14; }
+#arena-ui .piu .rec.beat { animation: rec-beat .3s ease-out; }
+@keyframes rec-beat { 0% { transform: scale(1.25); border-color: #fff; color: #fff; } 100% { transform: scale(1); } }
+#arena-ui .piu .note { color: #fff; box-shadow: 0 4px 0 #0006, inset 0 2px 0 #ffffff66; text-shadow: 0 2px 0 #0005; will-change: transform; }
+#arena-ui .piu .note.l0, #arena-ui .piu .note.l4 { background: #2f8cff; }
+#arena-ui .piu .note.l1, #arena-ui .piu .note.l3 { background: #ff3d5a; }
+#arena-ui .piu .note.l2 { background: #ffc531; color: #5a3a00; }
+#arena-ui .piu .note.missed { opacity: .3; filter: grayscale(1); }
+#arena-ui .piu-judge { position: absolute; left: 50%; top: 88px; transform: translateX(-50%) scale(.6); opacity: 0; font: 700 30px Fredoka, sans-serif; color: #fff; text-shadow: 0 3px 0 #0009; white-space: nowrap; pointer-events: none; }
+#arena-ui .piu-judge.on { animation: judge-in .5s ease-out forwards; }
+#arena-ui .piu-judge.perfect { color: #ffe066; } #arena-ui .piu-judge.good { color: #8affc1; } #arena-ui .piu-judge.bad { color: #ff6b6b; } #arena-ui .piu-judge.ok { color: #6dff8a; }
+@keyframes judge-in { 0% { transform: translateX(-50%) scale(1.3); opacity: 1; } 70% { opacity: 1; } 100% { transform: translateX(-50%) scale(1); opacity: 0; } }
+body.portrait #arena-ui .piu .rec, body.portrait #arena-ui .piu .note { width: 58px; height: 58px; margin-left: -29px; font-size: 34px; }

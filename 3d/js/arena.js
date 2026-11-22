@@ -21,6 +21,8 @@ const END_DELAY = 1.2;     // s entre el ko (o caer) y salir de la arena
 const ENTRANCE = 1.5;      // s de entrada: la cámara baja desde arriba, BIG CHAKY ruge y recién ahí empieza a tirar
 const HERO_H = 2.4, BOSS_H = 14, BARREL_H = 1.15, CRATE_H = 1.3, GIANT_H = 2.7;
 // Cartel de «Chaky dice»: texto e ícono de cada orden
+// Pump It Up: los 5 carriles y las teclas de compu (Z Q S E C, como en la máquina)
+const PIU_LANES = ['↙', '↖', '●', '↗', '↘'], PIU_KEYS = { KeyZ: 0, KeyQ: 1, KeyS: 2, KeyE: 3, KeyC: 4 };
 export const DANCE_SIGN = { jump: ['⤴', '¡SALTO!'], attack: ['👊', '¡PIÑA!'], dodge: ['🌀', '¡GIRO!'] };
 // Poses de baile de Chaky: si todavía no están las imágenes, usa una parecida
 const DANCE_FALLBACK = { dance_idle: 'idle', dance_jump: 'throw', dance_attack: 'slam', dance_dodge: 'hurt', dance_laugh: 'idle' };
@@ -174,7 +176,8 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
 
     // Carteles propios: solo el fogonazo y los textos que flotan
     const ui = document.createElement('div'); ui.id = 'arena-ui';
-    ui.innerHTML = '<div class="arena-flash"></div><div class="chaky-sign hidden"><b class="ico"></b><span class="txt"></span><i class="timer"><i></i></i></div>' +
+    ui.innerHTML = '<div class="piu hidden"><div class="lanes">' + PIU_LANES.map((l, i) => '<div class="lane l' + i + '" data-lane="' + i + '"><b class="rec">' + l + '</b></div>').join('') + '</div><div class="piu-judge"></div></div>' +
+      '<div class="arena-flash"></div><div class="chaky-sign hidden"><b class="ico"></b><span class="txt"></span><i class="timer"><i></i></i></div>' +
       '<div class="phase-card hidden"><small></small><b></b><span></span><em hidden></em></div><div class="dice-dots hidden"></div><div class="dice-verdict hidden"></div>';
     document.body.append(ui); document.body.classList.add('arena-on');
     const flashE = ui.querySelector('.arena-flash');
@@ -184,11 +187,12 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     const timerE = signE.querySelector('.timer i');
     const PHASE_CARDS = {
       1: ['FASE 1', '¡BARRILES!', 'Devolvele los dorados 👊'],
-      2: ['FASE 2', '¡CLASE DE BAILE!', '«Si querés a Margot, vas a tener que seguirme el ritmo»', 'Mirá los pasos y repetilos'],
+      2: ['FASE 2', '¡CLASE DE BAILE!', '«Si querés a Margot, vas a tener que seguirme el ritmo»', 'Tocá cada flecha cuando llega arriba'],
       3: ['FASE 3', '¡ENOJADO!', 'Pegale a la mano trabada 👊']
     };
     let cardTimer = 0, verdictTimer = 0;
     function phaseCard(n, secs = 2.2) {
+      if (speech && speech.t < speech.life) speech.t = speech.life; // el cartel de fase no se tapa con frases
       const [a, b, c, d2] = PHASE_CARDS[n];
       fillText(cardE.querySelector('small'), a); fillText(cardE.querySelector('b'), b); fillText(cardE.querySelector('span'), c);
       const em = cardE.querySelector('em'); if (d2) { fillText(em, d2); em.hidden = false; } else em.hidden = true;
@@ -213,15 +217,53 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       clearTimeout(verdictTimer); verdictTimer = setTimeout(() => verdictE.classList.add('hidden'), 650);
     }
     // Cartel de la clase: el paso que muestra Chaky, o «¡TU TURNO!» con la fila de pasos (los hechos con ✔)
+    // ---------- Clase de baile (Pump It Up) ----------
+    const piuE = ui.querySelector('.piu'), lanesE = piuE.querySelector('.lanes'), judgeE = piuE.querySelector('.piu-judge');
+    const laneEls = [...piuE.querySelectorAll('.lane')], noteEls = new Map();
+    let piuOn = false, judgeTimer = 0, piuRound = -1;
+    function piuTap(lane) {
+      if (!piuOn) return;
+      laneEls[lane].classList.remove('press'); void laneEls[lane].offsetWidth; laneEls[lane].classList.add('press');
+      handle(logic.tap(lane));
+    }
+    for (const el of laneEls) el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); piuTap(+el.dataset.lane); });
+    const onKey = (ev) => { if (piuOn && ev.code in PIU_KEYS && !ev.repeat) { ev.preventDefault(); piuTap(PIU_KEYS[ev.code]); } };
+    addEventListener('keydown', onKey);
+    function piuPulse(lane) { const r = laneEls[lane].querySelector('.rec'); r.classList.remove('beat'); void r.offsetWidth; r.classList.add('beat'); }
+    function piuText(txt, cls) {
+      fillText(judgeE, txt); judgeE.className = 'piu-judge ' + cls; void judgeE.offsetWidth; judgeE.classList.add('on');
+      clearTimeout(judgeTimer); judgeTimer = setTimeout(() => judgeE.classList.remove('on'), 500);
+    }
+    function piuJudge(e) {
+      if (e.grade === 'empty') return; // tocar donde no hay flecha no castiga
+      if (e.grade === 'miss') { piuText('¡FALLÓ!', 'bad'); return; }
+      piuText(tr(e.grade === 'perfect' ? '¡PERFECTO!' : '¡BIEN!') + (e.combo > 1 ? ' ×' + e.combo : ''), e.grade);
+      sfx(e.grade === 'perfect' ? 'perfect' : 'pickup');
+      if (y <= 0) { vy = CHASE.jump * 0.45; } // el héroe baila: saltito en cada paso
+    }
+    function piuDraw() {
+      const d = logic.state.dice, show = logic.state.mode === 'dice' && !!d;
+      if (show !== piuOn) {
+        piuOn = show; piuE.classList.toggle('hidden', !show); document.body.classList.toggle('piu-on', show);
+        if (!show) { for (const el of noteEls.values()) el.remove(); noteEls.clear(); piuRound = -1; }
+      }
+      if (!show) return;
+      if (d.round !== piuRound) { for (const el of noteEls.values()) el.remove(); noteEls.clear(); piuRound = d.round; renderDots(); }
+      const H = lanesE.clientHeight, recY = 8, speed = (H - recY) / ARENA.dice.travel;
+      d.notes.forEach((n, i) => {
+        let el = noteEls.get(i);
+        if (n.judged && n.judged !== 'miss') { if (el) { el.remove(); noteEls.delete(i); } return; }
+        const top = recY + (n.time - d.t) * speed;
+        if (top > H + 40 || top < -70) { if (el && top < -70) { el.remove(); noteEls.delete(i); } return; }
+        if (!el) { el = document.createElement('b'); el.className = 'note l' + n.lane; el.textContent = PIU_LANES[n.lane]; laneEls[n.lane].append(el); noteEls.set(i, el); }
+        el.style.transform = 'translateY(' + top + 'px)';
+        el.classList.toggle('missed', n.judged === 'miss');
+      });
+    }
     function showSign(cmd, cls = '') {
       signE.className = 'chaky-sign ' + cls;
       if (cmd) { signIco.textContent = DANCE_SIGN[cmd][0]; fillText(signTxt, DANCE_SIGN[cmd][1]); }
       else { signIco.textContent = '?'; signTxt.textContent = ''; }
-    }
-    function showTurn(d, cls = 'on turn') {
-      signE.className = 'chaky-sign ' + cls;
-      signIco.innerHTML = d.seq.map((m, i) => '<em class="' + (i < d.idx ? 'done' : i === d.idx ? 'now' : '') + '">' + (i < d.idx ? '✔' : DANCE_SIGN[m][0]) + '</em>').join('');
-      fillText(signTxt, '¡TU TURNO!');
     }
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
     const barName = bar?.querySelector('span');
@@ -302,30 +344,13 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             }
             break;
           case 'voice': speak(e.event); break;
-          case 'danceDemo':
-            // Chaky muestra el paso al compás: cartel con el paso, golpe de bombo y ¡uno, dos, tres…!
-            showSign(e.move, 'on demo'); renderDots(); wantButton(null);
-            sfx(e.i === e.n - 1 ? 'hitHeavy' : 'hit'); shake(0.08, 0.12);
-            break;
-          case 'danceTurn': {
-            const d = logic.state.dice;
-            showTurn(d); sfx('whoosh');
-            if (e.round === 0) wantButton(e.seq[0]); // la primera ronda te marca el botón
-            break;
-          }
-          case 'danceStep': {
-            const d = logic.state.dice;
-            if (e.ok) { sfx('pickup'); pop(x, HERO_H + 0.6, z, DANCE_SIGN[e.move][0], '#ffd36e', 34, 0.7); if (d && d.stage === 'turn') { showTurn(d); if (d.round === 0) wantButton(d.seq[d.idx]); } }
-            break;
-          }
-          case 'diceResult': {
-            const d = logic.state.dice;
-            if (d && d.stage === 'result') { signIco.innerHTML = d.seq.map(m => '<em>' + DANCE_SIGN[m][0] + '</em>').join(''); fillText(signTxt, e.ok ? '¡BIEN!' : '¡NO!'); }
-            signE.className = 'chaky-sign on ' + (e.ok ? 'ok' : 'bad'); wantButton(null); verdict(e.ok); renderDots();
+          case 'danceBeat': sfx('tick'); piuPulse(e.lane); break;
+          case 'danceStep': piuJudge(e); break;
+          case 'diceResult':
+            verdict(e.ok); renderDots(); piuText((e.hits + '/' + e.of), e.ok ? 'ok' : 'bad');
             if (e.ok) { addPts(ARENA.points.dice, x, 3, z - 1); charge(POWER.hit); sfx('hitHeavy'); shake(0.2, 0.2); }
-            else { sfx('boo'); }
+            else sfx('boo');
             break;
-          }
           case 'heal':
             hero.hp = Math.min(hero.hpMax || hero.hp + 1, hero.hp + 1);
             pop(x, HERO_H + 0.8, z, '+❤', '#ff6b8a', 34, 1.4); sfx('pickup');
@@ -551,6 +576,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       for (const [id, e] of live) if (!seen.has(id)) { drop(e); live.delete(id); }
 
       // Cartel de «Chaky dice»: sobre las manos de BIG CHAKY
+      piuDraw();
       { const d = logic.state.dice; timerE.style.width = d && d.stage === 'turn' ? Math.max(0, 100 * (1 - d.t / ARENA.dice.stepWindow)) + '%' : '0%'; }
       if (!signE.classList.contains('hidden')) {
         const sp = scratch.set(B.position.x, B.position.y + B.userData.hh * 0.93, B.position.z).project(cam);
@@ -578,7 +604,8 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       if (disposed) return;
       disposed = true;
       clearTimeout(flashTimer);
-      clearTimeout(cardTimer); clearTimeout(verdictTimer); wantButton(null);
+      clearTimeout(cardTimer); clearTimeout(verdictTimer); clearTimeout(judgeTimer); wantButton(null);
+      removeEventListener('keydown', onKey); document.body.classList.remove('piu-on');
       ui.remove(); document.body.classList.remove('arena-on');
       bar?.classList.add('hidden');
       for (const o of own) o.dispose?.();

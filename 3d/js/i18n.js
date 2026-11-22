@@ -286,6 +286,7 @@ export const DICHOS = {
   '¡CHAKY DICE!': 'CHAKY DIT !', 'Hacé lo que dice el cartel': 'Fais ce que dit le panneau',
   '¡ENOJADO!': 'FURIEUX !', 'Pegale a la mano trabada 👊': 'Frappe la main coincée 👊',
   '¡BIEN!': 'BRAVO !', '¡NO!': 'NON !',
+  '¡PERFECTO!': 'PARFAIT !', '¡FALLÓ!': 'RATÉ !', 'Tocá cada flecha cuando llega arriba': 'Touche chaque flèche quand elle arrive en haut',
   '¡SALTO!': 'SAUT !', '¡GIRO!': 'TOURNE !', '¡TU TURNO!': 'À TOI !',
   '¡CLASE DE BAILE!': 'COURS DE DANSE !', '«Si querés a Margot, vas a tener que seguirme el ritmo»': '« Si tu veux Margot, tu vas devoir suivre mon rythme »',
   'Mirá los pasos y repetilos': 'Regarde les pas et répète-les',

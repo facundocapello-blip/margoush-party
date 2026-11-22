@@ -18,22 +18,23 @@ try {
   await page.waitForFunction(() => document.querySelector('.phase-card')?.classList.contains('on'), null, { timeout: 8000 });
   check((await G(page, () => document.querySelector('.phase-card').textContent)).includes('BAILE'), 'cartel de fase 2: clase de baile');
   await shot(page, 'chaky-f2-cartel');
-  await page.waitForFunction(() => window.__game.arena.logic.state.dice?.stage === 'demo' && window.__game.arena.logic.state.dice.beat >= 0, null, { timeout: 20000 });
-  check(await G(page, () => !document.querySelector('.chaky-sign').classList.contains('hidden')), 'Chaky muestra el paso en el cartel');
-  await shot(page, 'chaky-f2-demo');
-  await page.waitForFunction(() => window.__game.arena.logic.state.dice?.stage === 'turn', null, { timeout: 20000 });
-  check((await G(page, () => document.querySelector('.chaky-sign').textContent)).includes('TU TURNO'), '¡TU TURNO! con la fila de pasos');
-  check(await G(page, () => !!document.querySelector('#touch .act.want')), 'la primera ronda marca el botón');
-  await shot(page, 'chaky-f2-turno');
+  await page.waitForFunction(() => window.__game.arena.logic.state.mode === 'dice', null, { timeout: 20000 });
+  await page.waitForTimeout(400);
+  check(await G(page, () => !document.querySelector('.piu').classList.contains('hidden') && getComputedStyle(document.getElementById('touch')).display === 'none'), 'aparecen los 5 carriles y se van los botones de pelea');
+  // jugar la ronda tocando cada carril cuando la flecha llega (teclas Z Q S E C)
+  const KEYS = ['KeyZ', 'KeyQ', 'KeyS', 'KeyE', 'KeyC'];
   const hp0 = await G(page, () => window.__game.arena.logic.state.hp);
-  const keys = { jump: 'Space', attack: 'KeyJ', dodge: 'KeyK' };
-  for (let k = 0; k < 6; k++) {
-    const d = await G(page, () => { const d = window.__game.arena.logic.state.dice; return d && { stage: d.stage, m: d.seq[d.idx] }; });
-    if (!d || d.stage !== 'turn') break;
-    await page.keyboard.press(keys[d.m]); await page.waitForTimeout(450);
+  let shotDone = false;
+  for (let k = 0; k < 400; k++) {
+    const st = await G(page, () => { const d = window.__game.arena.logic.state.dice; if (!d || d.stage !== 'play') return null; const n = d.notes.find(n => !n.judged); return n && { dt: n.time - d.t, lane: n.lane }; });
+    if (!st) break;
+    if (!shotDone && st.dt < 0.9) { await shot(page, 'chaky-f2-flechas'); shotDone = true; }
+    if (st.dt < 0.06) await page.keyboard.press(KEYS[st.lane]);
+    else await page.waitForTimeout(15);
   }
-  await page.waitForFunction(() => window.__game.arena.logic.state.dice?.stage === 'result', null, { timeout: 5000 });
-  check(await G(page, () => window.__game.arena.logic.state.dice.last === 'ok'), 'repetir los pasos cuenta');
+  await page.waitForFunction(() => window.__game.arena.logic.state.dice?.stage === 'result', null, { timeout: 8000 });
+  const res = await G(page, () => { const d = window.__game.arena.logic.state.dice; return d.hits + '/' + d.notes.length; });
+  check(await G(page, () => window.__game.arena.logic.state.dice.last === 'ok'), 'siguiendo las flechas se gana la ronda ' + res);
   check((await G(page, () => window.__game.arena.logic.state.hp)) < hp0, 'y lo lastima');
   await shot(page, 'chaky-f2-acierto');
   // fase 3: enojado (manotazo)

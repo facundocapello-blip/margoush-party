@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ARENA, DANCE_MOVES, createArenaLogic } from '../3d/js/arena_logic.js';
+import { ARENA, DANCE_LANES, createArenaLogic } from '../3d/js/arena_logic.js';
 
 const FPS = 1 / 60;
 const mk = () => createArenaLogic({ rand: () => 0.5 });
@@ -100,57 +100,59 @@ test('punching a gold barrel in the window sends it back and hurts the boss', ()
   assert.ok(evs.some(e => e.type === 'voice' && e.event === 'attack'));
 });
 
-// Lleva a la clase de baile y juega las rondas: answer(seq, idx) → paso que hace el héroe (o null = nada)
-function playDance(l, answer) {
+// Lleva a la clase de baile y juega: hit(note, t) → carril que toca cuando la flecha está cerca (o null)
+function playDance(l, hit) {
   const hero = { x: 0, z: -1.5, y: 0, moving: false, dodging: false, inv: 99 };
   l._setHp(ARENA.diceAt);
   const evs = [];
   runUntil(l, hero, () => l.state.mode === 'dice', 6, evs);
-  for (let i = 0; i < 90 * 60 && l.state.phase === 2; i++) {
+  for (let i = 0; i < 120 * 60 && l.state.phase === 2; i++) {
     const d = l.state.dice;
-    if (d && d.stage === 'turn' && d.t > 0.2) { const a = answer(d.seq, d.idx); if (a) evs.push(...l.act(a)); }
+    if (d && d.stage === 'play') for (const n of d.notes) if (!n.judged && Math.abs(n.time - d.t) < 0.02) { const lane = hit(n); if (lane !== null) evs.push(...l.tap(lane)); }
     evs.push(...l.update(FPS, hero));
   }
   return evs;
 }
 
-test('dance class: Chaky shows each step on the beat, then it is your turn', () => {
+test('dance class: arrows rise on the beat in 5 lanes, rounds of 4, 6, 6 and 8', () => {
   const l = mk();
-  const evs = playDance(l, (seq, i) => seq[i]);
-  const demos = ofType(evs, 'danceDemo'), turns = ofType(evs, 'danceTurn');
-  assert.equal(turns.length, ARENA.dice.rounds.length);
-  assert.equal(demos.length, ARENA.dice.rounds.reduce((a, b) => a + b, 0));
-  turns.forEach((tn, r) => assert.equal(tn.seq.length, ARENA.dice.rounds[r]));
+  const evs = playDance(l, (n) => n.lane);
+  assert.equal(ofType(evs, 'diceResult').length, ARENA.dice.rounds.length);
+  assert.equal(ofType(evs, 'danceBeat').length, ARENA.dice.rounds.reduce((a, b) => a + b, 0));
+  assert.ok(ofType(evs, 'danceBeat').every(b => b.lane >= 0 && b.lane < DANCE_LANES));
   assert.ok(evs.some(e => e.type === 'voice' && e.event === 'count'));
 });
 
-test('dance class: repeating every step hurts him and a perfect class heals you', () => {
+test('dance class: hitting every arrow on time is perfect, hurts him and heals you', () => {
   const l = mk();
-  const evs = playDance(l, (seq, i) => seq[i]);
-  const res = ofType(evs, 'diceResult');
-  assert.equal(res.length, ARENA.dice.rounds.length);
-  assert.ok(res.every(r => r.ok));
+  const evs = playDance(l, (n) => n.lane);
+  const steps = ofType(evs, 'danceStep');
+  assert.ok(steps.length && steps.every(s => s.grade === 'perfect'));
+  assert.ok(ofType(evs, 'diceResult').every(r => r.ok));
   assert.equal(ofType(evs, 'heal').length, 1);
-  assert.ok(!evs.some(e => e.type === 'hurt'));
   assert.equal(l.state.phase, 3);
   assert.equal(l.state.hp, Math.max(ARENA.rageAt, ARENA.diceAt - ARENA.dice.rounds.length * ARENA.dice.dmg));
 });
 
-test('dance class: a wrong step ends the round; two bad rounds cost a heart', () => {
+test('dance class: wrong lane or no tap is a miss; losing two rounds costs a heart', () => {
   const l = mk();
-  const evs = playDance(l, (seq, i) => DANCE_MOVES.find(m => m !== seq[i]));
-  const res = ofType(evs, 'diceResult');
-  assert.ok(res.every(r => !r.ok));
-  assert.ok(ofType(evs, 'danceStep').every(s => !s.ok));
+  const evs = playDance(l, (n) => (n.lane + 1) % DANCE_LANES);
+  assert.ok(ofType(evs, 'diceResult').every(r => !r.ok));
   assert.equal(l.state.hp, ARENA.diceAt);
   assert.equal(evs.filter(e => e.type === 'hurt' && e.by === 'dice').length, 1);
+  const l2 = mk();
+  const evs2 = playDance(l2, () => null);
+  assert.ok(ofType(evs2, 'danceStep').every(s => s.grade === 'miss'));
 });
 
-test('dance class: standing still runs out the time', () => {
-  const l = mk();
-  const evs = playDance(l, () => null);
-  assert.ok(ofType(evs, 'diceResult').every(r => !r.ok));
-  assert.equal(l.state.phase, 3);
+test('dance class: a tap slightly off the beat counts as good, not perfect', () => {
+  const l = mk(), hero = { x: 0, z: -1.5, y: 0, inv: 99 };
+  l._setHp(ARENA.diceAt);
+  runUntil(l, hero, () => l.state.mode === 'dice', 6);
+  const n = l.state.dice.notes[0];
+  runUntil(l, hero, () => l.state.dice.t >= n.time + (ARENA.dice.perfect + ARENA.dice.good) / 2, 6);
+  const s = ofType(l.tap(n.lane), 'danceStep')[0];
+  assert.equal(s.grade, 'good');
 });
 
 test('phase 3 throws a giant barrel that cannot be returned and only dodging saves you', () => {
@@ -355,7 +357,7 @@ test('two gold returns open the dance class (phase 2) after a short transition',
   assert.equal(l.state.mode, 'transition');
   assert.ok(evs.some(e => e.type === 'phase' && e.to === 2));
   assert.ok(evs.some(e => e.type === 'voice' && e.event === 'dice'));
-  evs.push(...run(l, ARENA.dice.start + ARENA.dice.lead + 0.1, hero));
+  evs.push(...run(l, ARENA.dice.start + ARENA.dice.travel + 0.1, hero));
   assert.equal(l.state.mode, 'dice');
-  assert.ok(ofType(evs, 'danceDemo').length >= 1);
+  assert.ok(ofType(evs, 'danceBeat').length >= 1);
 });
