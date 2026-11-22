@@ -73,3 +73,20 @@ test('un toque al borde del área del joystick no mueve al héroe hasta arrastra
   assert.equal(input.moveX, 0);
   assert.equal(input.moveZ, 0);
 });
+
+test('probar un jefe conserva la partida guardada de la campaña', () => {
+  const saved = JSON.stringify({ id: 'francia', heroId: 'marine', score: 1800 });
+  const storage = new Map([['checkpoint', saved]]);
+  const context = {
+    game: {}, PROBAR: 'chaky', CP_KEY: 'checkpoint',
+    localStorage: {
+      setItem: (k, v) => storage.set(k, v), getItem: k => storage.get(k), removeItem: k => storage.delete(k)
+    }
+  };
+  const src = main.slice(main.indexOf('function saveCheckpoint'), main.indexOf('game.storedCheckpoint ='));
+  const api = runInNewContext(src + '\n({saveCheckpoint, clearCheckpoint, storedCheckpoint})', context);
+  api.clearCheckpoint();
+  api.saveCheckpoint('galpon');
+  assert.equal(api.storedCheckpoint(), null);
+  assert.equal(storage.get('checkpoint'), saved);
+});

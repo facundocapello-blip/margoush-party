@@ -30,7 +30,10 @@ const DANCE_FALLBACK = { dance_idle: 'idle', dance_jump: 'throw', dance_attack: 
 const TARIMA_H = 0.6, TARIMA_FRONT = ARENA.bossZ + 2.4, TARIMA_BACK = ARENA.bossZ - 5;
 const CAM = { y: 6, back: 11, lookY: 6, fov: 66, fovPortrait: 70 };
 // Mantiene a Chaky entero por encima de los carriles del baile.
-const DANCE_CAM = { y: 7.5, z: 12, lookY: 2.2 };
+const DANCE_CAM = { y: 6, z: 14, lookY: 4.5 };
+const DANCE_MARK = { x: -2.65, z: -5 };
+const clamp01 = n => Math.max(0, Math.min(1, n));
+const mix = (a, b, k) => a + (b - a) * k;
 // Manotazo: la pose `slam` recortada por arriba de la mano (filas 0..545 de 768) y la mano sola (recorte 80,530 215×238;
 // de ese recorte solo queda la piel: el pantalón y las zapatillas que asoman se borran por color)
 const SLAM_CUT = 545 / 768, HAND_CROP = { x: 80, y: 530, w: 215, h: 238 }, HAND_W = 3.2, HAND_FALL = 7;
@@ -188,28 +191,28 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
 
     // Carteles propios: solo el fogonazo y los textos que flotan
     const ui = document.createElement('div'); ui.id = 'arena-ui';
-    ui.innerHTML = '<div class="piu hidden"><div class="lanes">' + PIU_LANES.map((l, i) => '<div class="lane l' + i + '" data-lane="' + i + '"><b class="rec">' + l + '</b></div>').join('') + '</div><div class="piu-judge"></div></div>' +
+    ui.innerHTML = '<div class="piu hidden"><div class="rhythm-status"><div class="dice-dots hidden"></div><div class="dance-caption"></div><div class="piu-judge"></div></div><div class="lanes">' + PIU_LANES.map((l, i) => '<div class="lane l' + i + '" data-lane="' + i + '"><b class="rec">' + l + '</b></div>').join('') + '</div></div>' +
       '<div class="arena-flash"></div><div class="chaky-sign hidden"><b class="ico"></b><span class="txt"></span><i class="timer"><i></i></i></div>' +
-      '<div class="phase-card hidden"><small></small><b></b><span></span><em hidden></em></div><div class="dice-dots hidden"></div><div class="dice-verdict hidden"></div>';
+      '<div class="phase-card hidden"><small></small><b></b><span></span><em hidden></em></div>';
     document.body.append(ui); document.body.classList.add('arena-on');
     const flashE = ui.querySelector('.arena-flash');
     const signE = ui.querySelector('.chaky-sign'), signIco = signE.querySelector('.ico'), signTxt = signE.querySelector('.txt');
     // Cambio de fase bien evidente: cartel grande en el centro (número, nombre y qué hay que hacer)
-    const cardE = ui.querySelector('.phase-card'), dotsE = ui.querySelector('.dice-dots'), verdictE = ui.querySelector('.dice-verdict');
+    const cardE = ui.querySelector('.phase-card'), dotsE = ui.querySelector('.dice-dots');
     const timerE = signE.querySelector('.timer i');
     const PHASE_CARDS = {
       1: ['FASE 1', '¡BARRILES!', 'Devolvele los dorados 👊'],
       2: ['FASE 2', '¡CLASE DE BAILE!', '«Si querés a Margot, vas a tener que seguirme el ritmo»', 'Tocá cada flecha cuando llega arriba'],
       3: ['FASE 3', '¡ENOJADO!', 'Pegale a la mano trabada 👊']
     };
-    let cardTimer = 0, verdictTimer = 0;
+    let cardLeft = 0;
     function phaseCard(n, secs = 2.2) {
       if (speech && speech.t < speech.life) speech.t = speech.life; // el cartel de fase no se tapa con frases
       const [a, b, c, d2] = PHASE_CARDS[n];
       fillText(cardE.querySelector('small'), a); fillText(cardE.querySelector('b'), b); fillText(cardE.querySelector('span'), c);
       const em = cardE.querySelector('em'); if (d2) { fillText(em, d2); em.hidden = false; } else em.hidden = true;
       cardE.className = 'phase-card p' + n; void cardE.offsetWidth; cardE.classList.add('on');
-      clearTimeout(cardTimer); cardTimer = setTimeout(() => cardE.classList.add('hidden'), secs * 1000);
+      cardLeft = secs;
     }
     // El botón que hay que tocar late; con ¡QUIETO! se apagan todos
     const touchE = document.getElementById('touch');
@@ -223,16 +226,11 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       dotsE.classList.remove('hidden');
       dotsE.innerHTML = Array.from({ length: d.total }, (_, i) => '<i class="' + (d.res[i] || (i === d.round ? 'now' : '')) + '"></i>').join('');
     }
-    function verdict(ok) {
-      fillText(verdictE, ok ? '¡BIEN!' : '¡NO!');
-      verdictE.className = 'dice-verdict ' + (ok ? 'ok' : 'bad'); void verdictE.offsetWidth; verdictE.classList.add('on');
-      clearTimeout(verdictTimer); verdictTimer = setTimeout(() => verdictE.classList.add('hidden'), 650);
-    }
-    // Cartel de la clase: el paso que muestra Chaky, o «¡TU TURNO!» con la fila de pasos (los hechos con ✔)
     // ---------- Clase de baile (Pump It Up) ----------
     const piuE = ui.querySelector('.piu'), lanesE = piuE.querySelector('.lanes'), judgeE = piuE.querySelector('.piu-judge');
     const laneEls = [...piuE.querySelectorAll('.lane')], noteEls = new Map();
-    let piuOn = false, judgeTimer = 0, piuRound = -1;
+    const captionE = piuE.querySelector('.dance-caption');
+    let piuOn = false, judgeLeft = 0, captionLeft = 0, piuRound = -1;
     let laneHeight = 0, viewportHeight = 0, viewportWidth = 0;
     function piuTap(lane) {
       if (!piuOn || game.state !== 'arena') return;
@@ -249,13 +247,14 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     function piuPulse(lane) { const r = laneEls[lane].querySelector('.rec'); r.classList.remove('beat'); void r.offsetWidth; r.classList.add('beat'); }
     function piuText(txt, cls) {
       fillText(judgeE, txt); judgeE.className = 'piu-judge ' + cls; void judgeE.offsetWidth; judgeE.classList.add('on');
-      clearTimeout(judgeTimer); judgeTimer = setTimeout(() => judgeE.classList.remove('on'), 500);
+      judgeLeft = 0.5;
     }
     function piuJudge(e) {
       if (e.grade === 'empty') return; // tocar donde no hay flecha no castiga
       if (e.grade === 'miss') { piuText('¡FALLÓ!', 'bad'); return; }
       piuText(tr(e.grade === 'perfect' ? '¡PERFECTO!' : '¡BIEN!') + (e.combo > 1 ? ' ×' + e.combo : ''), e.grade);
       sfx(e.grade === 'perfect' ? 'perfect' : 'pickup');
+      danceStep = (e.lane - 2) / 2;
       if (y <= 0) vy = CHASE.jump * 0.45; // el héroe baila: saltito en cada paso
     }
     function piuDraw() {
@@ -312,6 +311,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     let dashT = 0, dashCd = 0, dashX = 0, dashZ = 0, inv = 0, hurtT = 0, holdT = 0, powT = 0;
     let swing = null, swingT = 0, swingHit = false, combo = 0, comboWindow = 0, buffer = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_chaky_idle';
+    let danceBlend = 0, danceStep = 0;
     let prevPose = 'idle', poseT = 0, stepT = 0;
     game.state = 'arena';
 
@@ -326,9 +326,19 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
 
     // Voz + globo de BIG CHAKY (voice.js decide si habla: prioridad, sin repetir, esperas)
     let speech = null;
+    const barHome = bar?.parentElement;
+    function danceLayout(on) {
+      document.body.classList.toggle('chaky-dance', on);
+      if (bar) (on ? document.querySelector('.hud-center') : barHome)?.append(bar);
+    }
     function speak(event) {
       const text = voice.say('chaky', event);
       if (!text || !cardE.classList.contains('hidden')) return; // con el cartel de fase en pantalla solo se escucha
+      if (logic.state.phase === 2) {
+        fillText(captionE, text);
+        captionLeft = 1.9;
+        return;
+      }
       // un solo globo de Chaky a la vez: el nuevo reemplaza al anterior (antes se pisaban)
       if (speech && speech.t < speech.life) speech.t = Math.max(speech.t, speech.life - 0.12);
       const p = bossChest(); speech = pop(p.x, p.y, p.z, text, '#ffffff', 28, 1.9);
@@ -360,6 +370,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             setBarName(); showSign(null, 'hidden'); phaseCard(e.to, e.to === 2 ? ARENA.dice.start : ARENA.transition + 0.6);
             if (e.to === 2) {
               input.reset();
+              danceLayout(true);
               flash('#ffd36e', 0.35); shake(0.3, 0.4); sfx('roar');
               ui.classList.add('dice-mode'); renderDots();
               try { audio.music('byd', { fade: 0.3 }); } catch (_) {} // otra música: cambió el juego
@@ -369,7 +380,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
           case 'danceBeat': sfx('tick'); piuPulse(e.lane); break;
           case 'danceStep': piuJudge(e); break;
           case 'diceResult':
-            verdict(e.ok); renderDots(); piuText((e.hits + '/' + e.of), e.ok ? 'ok' : 'bad');
+            renderDots(); piuText((e.hits + '/' + e.of), e.ok ? 'ok' : 'bad');
             if (e.ok) { addPts(ARENA.points.dice, x, 3, z - 1); charge(POWER.hit); sfx('hitHeavy'); shake(0.2, 0.2); }
             else sfx('boo');
             break;
@@ -378,6 +389,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             pop(x, HERO_H + 0.8, z, '+❤', '#ff6b8a', 34, 1.4); sfx('pickup');
             break;
           case 'rage':
+            danceLayout(false);
             input.reset();
             setBar(); setBarName(); showSign(null, 'hidden'); flash('#ff7a2e', 0.4); shake(0.5, 0.8); sfx('roar');
             wantButton(null); ui.classList.remove('dice-mode'); dotsE.classList.add('hidden');
@@ -432,6 +444,9 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       if (ended) return;
       if (input.consume('pause')) { pause(); return; }
       t += dt; phaseT += dt;
+      if (cardLeft > 0 && (logic.state.phase !== 2 || phase === 'fight') && (cardLeft -= dt) <= 0) cardE.classList.add('hidden');
+      if (judgeLeft > 0 && (judgeLeft -= dt) <= 0) judgeE.classList.remove('on');
+      if (captionLeft > 0 && (captionLeft -= dt) <= 0) captionE.textContent = '';
       if (freezeT > 0) { freezeT -= dt; draw(dt); updateHud(dt); return; } // pausa corta al pegarle a la mano
       inv = Math.max(0, inv - dt); dashCd = Math.max(0, dashCd - dt); comboWindow = Math.max(0, comboWindow - dt);
       buffer = Math.max(0, buffer - dt);
@@ -475,6 +490,10 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       } else {
         dashT = 0; swing = null; holdT = 0; buffer = 0;
         if (dancing) {
+          const dx = DANCE_MARK.x - x, dz = DANCE_MARK.z - z, distance = Math.hypot(dx, dz);
+          const step = Math.min(1, MOVE * dt / (distance || 1));
+          moving = distance > 0.04;
+          x += dx * step; z += dz * step;
           for (const action of ['jump', 'attack', 'dodge', 'power']) input.consume(action);
         }
       }
@@ -482,7 +501,15 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
 
       // La lógica de BIG CHAKY (se congela si el héroe cayó)
-      if (phase === 'entrance' && phaseT >= ENTRANCE) { phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.35, 0.45); phaseCard(1, 2.0); setTimeout(() => { if (!disposed) speak('intro'); }, 2100); }
+      if (phase === 'entrance' && phaseT >= ENTRANCE) {
+        phase = 'fight'; phaseT = 0;
+        if (logic.state.phase === 1) {
+          sfx('roar'); shake(0.35, 0.45); phaseCard(1, 2);
+          setTimeout(() => {
+            if (!disposed && logic.state.phase === 1 && game.state === 'arena') speak('intro');
+          }, 2100);
+        }
+      }
       if (phase === 'fight') handle(logic.update(dt, { x, z, y, moving: moving || dashT > 0, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
       if (phase === 'fight' && hero.hp <= 0) { phase = 'down'; phaseT = 0; }
       else if (phase === 'ko') logic.update(dt, { x, z, y, dodging: false, inv: true });
@@ -500,13 +527,15 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       const sh = shakeA * Math.min(1, shakeT * 4);
       // Entrada: la cámara baja desde arriba y atrás hasta su lugar
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
-      if (S.phase === 2) {
-        cam.position.set(0, DANCE_CAM.y, DANCE_CAM.z);
-        cam.lookAt(0, DANCE_CAM.lookY, ARENA.bossZ);
-      } else {
-        cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.7 : 0.4) + (Math.random() - 0.5) * sh, CAM.y + e * 7 + (Math.random() - 0.5) * sh, z + CAM.back + e * 9);
-        cam.lookAt(0, CAM.lookY + e * 2, ARENA.bossZ);
-      }
+      danceBlend = clamp01(danceBlend + (S.phase === 2 ? 1 : -1) * dt / 0.85);
+      const blend = danceBlend * danceBlend * (3 - 2 * danceBlend);
+      const followX = x * (innerWidth < innerHeight * 0.9 ? 0.7 : 0.4);
+      cam.position.set(
+        mix(followX + (Math.random() - 0.5) * sh, 0, blend),
+        mix(CAM.y + e * 7 + (Math.random() - 0.5) * sh, DANCE_CAM.y, blend),
+        mix(z + CAM.back + e * 9, DANCE_CAM.z + (innerHeight < 400 ? 4 : 0), blend)
+      );
+      cam.lookAt(0, mix(CAM.lookY + e * 2, DANCE_CAM.lookY, blend), ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
       // BIG CHAKY: la pose de la lógica, salvo en el manotazo (una sola mano a la vista):
@@ -549,7 +578,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       else if (pose === 'dance_attack') { if (S.dice?.step === 3) sx = -1; by = 0.12; sy = 1.04; }
       else if (pose === 'dance_dodge') { if (S.dice?.step === 0) sx = -1; sy = 0.96; }
       else if (pose === 'dance_laugh') { sy = 1 + Math.sin(t * 16) * 0.04; by = Math.abs(Math.sin(t * 8)) * 0.16; }
-      place(B, bx, TARIMA_H + by, ARENA.bossZ);
+      place(B, bx + blend * 1.2, TARIMA_H + by, ARENA.bossZ);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);
       B.material.color.setRGB(1, bossFlash > 0 ? 0.55 : 1, bossFlash > 0 ? 0.55 : 1);
@@ -573,8 +602,14 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
         }
       } else if (heroPose === 'idle') { stepT = 0; bob = Math.sin(t * 2.4) * 0.015; }
       setTex(P, key);
-      P.scale.x = P.userData.w * hsx;
-      P.visible = !(inv > 0 && hurtT <= 0 && Math.floor(t * 14) % 2 === 0);
+      const danceSize = 1 + blend * 0.25;
+      P.scale.set(P.userData.w * hsx * danceSize, P.userData.hh * danceSize, 1);
+      if (S.phase === 2 && !moving) {
+        const beat = Math.sin((S.dice?.t ?? phaseT) * Math.PI / ARENA.dice.beat);
+        bob += Math.abs(beat) * 0.11;
+        lean += beat * 0.06 + danceStep * y * 0.18;
+      }
+      P.visible = S.phase === 2 || !(inv > 0 && hurtT <= 0 && Math.floor(t * 14) % 2 === 0);
       place(P, x, y + bob, z);
       P.rotation.z = dashT > 0 && !hasDodge ? -dashX * 0.25 : lean;
       P.userData.sh.visible = true; P.userData.sh.scale.set(1.6 * (1 - Math.min(0.5, y * 0.2)), 1, 0.8);
@@ -654,7 +689,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
 
     // Alto en pantalla (px, de arriba hacia abajo) de BIG CHAKY y del héroe: para las pruebas de tamaño
     function screenBoxes() {
-      const py = (m, k) => (1 - scratch.set(m.position.x, m.position.y + m.userData.hh * k, m.position.z).project(cam).y) / 2 * innerHeight;
+      const py = (m, k) => (1 - scratch.set(m.position.x, m.position.y + m.scale.y * k, m.position.z).project(cam).y) / 2 * innerHeight;
       return { boss: { top: py(B, 1), face: py(B, 0.85), feet: py(B, 0) }, hero: { top: py(P, 1), feet: py(P, 0) } };
     }
 
@@ -663,7 +698,8 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       if (disposed) return;
       disposed = true;
       clearTimeout(flashTimer);
-      clearTimeout(cardTimer); clearTimeout(verdictTimer); clearTimeout(judgeTimer); wantButton(null);
+      if (document.body.classList.contains('chaky-dance')) danceLayout(false);
+      wantButton(null);
       removeEventListener('keydown', onKey); document.body.classList.remove('piu-on');
       ui.remove(); document.body.classList.remove('arena-on');
       bar?.classList.add('hidden');

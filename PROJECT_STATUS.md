@@ -260,3 +260,13 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - El baile encuadra a Chaky por encima de los carriles. Las poses se cargan antes de la arena y tienen respaldo si falta alguna. Los controles de pelea quedan suspendidos durante el baile.
 - Pruebas locales: `npm test` (85/85), `python3 tests/check_sprites.py 3d/assets` y simulación asistida de los cuatro actos, con las 24 flechas, rescate, foto, victoria y regreso al menú. Se repitió con una textura de baile ausente. Queda por probar el render de los tramos en Safari físico.
 - Rollback: revertir el merge de esta corrección con `git revert -m 1 <commit>`. La base anterior del código de la campaña fue `fb1c880`.
+
+## 2026-11-22 · Big Chaky, encuadre y controles del baile
+
+Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?probar=chaky` para barriles y `3d/?probar=chaky-cartel` para baile. Las pruebas por enlace dejan intacto el checkpoint de campaña.
+
+- El combate sigue activo si la ventana pierde foco con la página visible. Pausa manual, página oculta y salida de página siguen deteniendo la partida.
+- Al cambiar de fase, Douge o Marine caminan a su marca, la cámara acompaña y los aciertos animan al héroe. Se conserva la música, los sprites y el tiempo de las notas.
+- Durante el baile, la vida de ambos queda en la cabecera y la pista ocupa una franja inferior. Aciertos, faltas, rondas y subtítulos tienen espacio en la pista. Los cinco carriles completos reciben el toque.
+- QA local: 86 pruebas automatizadas y verificación de sprites. En simulación con cámara Three.js y renderizador sustituido, ambas orientaciones llegaron al rescate con combates asistidos. El caso de Chaky comprobó arrastre, pérdida de foco, pausa manual, ocultación, regreso, 24 aciertos y separación vertical de los personajes respecto del HUD y de la pista en 320×568, 430×710, 430×932, 667×320 y 932×430.
+- Safari físico y comprobación visual de esta revisión en iPhone pendientes. El rediseño visual abarca Big Chaky.

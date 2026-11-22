@@ -13,6 +13,8 @@ try {
   await page.waitForFunction(() => window.__game.arena.state.shots.some(s => s.type === 'curve' && s.z > -10), null, { timeout: 30000 });
   await shot(page, 'chaky-f1-curva');
   check((await G(page, () => window.__game.arena.state.phase)) === 1, 'fase 1: barriles');
+  await G(page, () => window.dispatchEvent(new Event('blur')));
+  check(await G(page, () => window.__game.state === 'arena'), 'perder foco con la página visible permite seguir jugando');
   // fase 2: clase de baile — Chaky muestra los pasos, después tu turno
   await G(page, () => window.__game.arena.logic._setHp(21));
   await page.waitForFunction(() => document.querySelector('.phase-card')?.classList.contains('on'), null, { timeout: 8000 });
@@ -21,6 +23,18 @@ try {
   await page.waitForFunction(() => window.__game.arena.logic.state.mode === 'dice', null, { timeout: 20000 });
   await page.waitForTimeout(400);
   check(await G(page, () => !document.querySelector('.piu').classList.contains('hidden') && getComputedStyle(document.getElementById('touch')).display === 'none'), 'aparecen los 5 carriles y se van los botones de pelea');
+  for (const viewport of [{ width: 430, height: 710 }, { width: 667, height: 320 }]) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const fits = await G(page, () => {
+      const { boss, hero } = window.__game.arena.state.screen;
+      const hud = document.querySelector('#hud').getBoundingClientRect();
+      const deck = document.querySelector('.piu').getBoundingClientRect();
+      const lane = document.querySelector('.lane').getBoundingClientRect();
+      return hud.bottom < boss.top && hero.feet < deck.top && lane.width >= 44 && lane.height >= 44;
+    });
+    check(fits, 'HUD, personajes y pista con espacio propio en ' + viewport.width + '×' + viewport.height);
+  }
   // jugar la ronda tocando cada carril cuando la flecha llega (teclas Z Q S E C)
   const KEYS = ['KeyZ', 'KeyQ', 'KeyS', 'KeyE', 'KeyC'];
   const hp0 = await G(page, () => window.__game.arena.logic.state.hp);
@@ -38,8 +52,7 @@ try {
   check((await G(page, () => window.__game.arena.logic.state.hp)) < hp0, 'y lo lastima');
   await shot(page, 'chaky-f2-acierto');
   // fase 3: enojado (manotazo)
-  await G(page, () => window.__game.arena.logic._setHp(11));
-  await page.waitForFunction(() => window.__game.arena.state.phase === 3 && window.__game.arena.state.mode !== 'transition', null, { timeout: 10000 });
+  await page.waitForFunction(() => window.__game.arena.state.phase === 3 && window.__game.arena.state.mode !== 'transition', null, { timeout: 60000 });
   check(await G(page, () => document.querySelector('.chaky-sign').classList.contains('hidden')), 'fase 3: el cartel se va');
   check((await G(page, () => document.querySelector('#boss-bar span').textContent)).includes('3/3'), 'la barra muestra la fase');
   await page.waitForFunction(() => window.__game.arena.state.hand.state !== 'none', null, { timeout: 30000 });

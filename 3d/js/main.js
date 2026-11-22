@@ -264,10 +264,12 @@ const CHECKPOINTS = {
   boss:    { label: 'JEFE 1 · BIG CHAKY', short: 'BIG CHAKY' }
 };
 function saveCheckpoint(id) {
+  if (PROBAR) return;
   game.checkpoint = { id, heroId: game.heroId, score: game.score.total, time: Math.round(game.time) };
   try { localStorage.setItem(CP_KEY, JSON.stringify(game.checkpoint)); } catch (_) {}
 }
 function storedCheckpoint() {
+  if (PROBAR) return null;
   try {
     const c = JSON.parse(localStorage.getItem(CP_KEY) || 'null');
     return c && CHECKPOINTS[c.id] && HERO_CFG[c.heroId] ? c : null;
@@ -275,6 +277,7 @@ function storedCheckpoint() {
 }
 function clearCheckpoint() {
   game.checkpoint = null;
+  if (PROBAR) return;
   try { localStorage.removeItem(CP_KEY); } catch (_) {}
 }
 game.storedCheckpoint = storedCheckpoint;
@@ -867,8 +870,6 @@ function quickTest(heroId, id) {
     const wait = () => { if (game.arena.active) game.arena.logic._setHp(q.bossHp); else if (performance.now() - t0 < 8000) setTimeout(wait, 100); };
     wait();
   }
-  clearCheckpoint();
-  setTimeout(clearCheckpoint, 1500);
 }
 
 function finish(won) {
@@ -1043,7 +1044,8 @@ async function boot() {
   addEventListener('resize', resize);
   addEventListener('orientationchange', () => setTimeout(resize, 200));
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
-  addEventListener('blur', pause);
+  addEventListener('pagehide', pause);
+  addEventListener('blur', () => { if (!TOUCH) input?.reset(); });
   assets = await loadAssets('assets/manifest.json', (f) => { $('#load-fill').style.width = Math.round(f * 100) + '%'; });
   registerSkins(assets);
   world = buildStreet(scene, assets);
