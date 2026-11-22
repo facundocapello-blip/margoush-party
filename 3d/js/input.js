@@ -10,7 +10,7 @@ const ACTIONS = ['attack', 'jump', 'dodge', 'power', 'pause'];
 export function createInput(dom) {
   const held = new Set();
   const queued = new Set();
-  const stick = { id: null, x: 0, z: 0 };
+  const stick = { id: null, x: 0, z: 0, originX: 0, originY: 0 };
 
   const press = (a) => { if (!held.has(a)) queued.add(a); held.add(a); };
   const release = (a) => held.delete(a);
@@ -32,9 +32,8 @@ export function createInput(dom) {
   // Joystick flotante: aparece donde apoyás el pulgar en la mitad izquierda (no hay que apuntarle a un círculo)
   const joy = dom.joystick, knob = dom.knob, zone = dom.zone;
   const moveStick = (cx, cy) => {
-    const r = joy.getBoundingClientRect();
-    const rad = r.width * 0.38;
-    let dx = cx - (r.left + r.width / 2), dy = cy - (r.top + r.height / 2);
+    const rad = joy.getBoundingClientRect().width * 0.38;
+    let dx = cx - stick.originX, dy = cy - stick.originY;
     const len = Math.hypot(dx, dy);
     if (len > rad) { dx *= rad / len; dy *= rad / len; }
     const dead = 0.15;
@@ -62,6 +61,9 @@ export function createInput(dom) {
       joy.style.left = x + 'px'; joy.style.top = y + 'px'; joy.style.bottom = 'auto';
       joy.classList.add('floating');
     }
+    const rect = joy.getBoundingClientRect();
+    stick.originX = center ? e.clientX : rect.left + rect.width / 2;
+    stick.originY = center ? e.clientY : rect.top + rect.height / 2;
     moveStick(e.clientX, e.clientY);
     e.preventDefault();
   };

@@ -34,8 +34,7 @@ const freshWaves = () => Object.fromEntries(WAVES.map(w => [w.id, 'idle']));
 const $ = (s) => document.querySelector(s);
 const canvas = $('#game');
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.outputEncoding = THREE.sRGBEncoding;
+let renderer;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
 const PITCH = THREE.MathUtils.degToRad(30);
@@ -205,7 +204,11 @@ function updateHud(dt = 0) {
 }
 
 function clearRun() {
+  clearCurtain();
   game.levelExit = false;
+  game.pausedFrom = null;
+  game.wantPhoto = false;
+  game.photo = null;
   game.chase?.dispose();
   game.chaseDone = false;
   game.bossStarted = false;
@@ -409,6 +412,7 @@ function startRun(heroId, withIntro = false, { keepCheckpoint = false, street = 
   game.stats = { maxMult: 1 };
   game.props.reset();
   game.time = 0;
+  last = 0;
   input.reset();
   showScreen(null);
   $('#hud').classList.remove('hidden');
@@ -438,8 +442,17 @@ function endIntro() {
     spawnCepi();
     return;
   }
+  const { actor } = game.hero;
+  actor.position.set(LEVELS[0].start, 0, 0.5);
+  actor.setFacing(1);
+  actor.setPose('idle');
+  actor.update(0);
+  fx.clear();
+  clearBanners();
+  updateCamera(0, true);
   saveCheckpoint('calle');
   game.state = 'playing';
+  game.banner('ACTO 1 · BUENOS AIRES', TOUCH ? 'Deslizá el joystick a la derecha para avanzar.' : 'Usá la flecha derecha para avanzar.');
   audio.music('ba', { fade: 0.3 });
 }
 // Acto 2: Persecución de Cepi en su BYD (al cruzar a Francia) → ¡Rompé el BYD! → Arena de Cepi
@@ -483,10 +496,36 @@ function bydFailed() {
 // Tapa la pantalla con tres franjas en diagonal, espera `wait` (carga diferida de sprites de jefe)
 // si existe, ejecuta `mid` con la pantalla tapada y destapa.
 let curtainBusy = false;
+let curtainGeneration = 0;
+let curtainRevealTimer;
+let pausedTransitions = [];
+
+function clearCurtain() {
+  curtainGeneration++;
+  pausedTransitions = [];
+  clearTimeout(curtainRevealTimer);
+  curtainBusy = false;
+  $('#curtain')?.classList.remove('close', 'open');
+}
+
+function continueTransition(ready, next) {
+  const generation = curtainGeneration;
+  Promise.resolve(ready).then(() => {
+    if (generation !== curtainGeneration) return;
+    if (document.hidden) pause();
+    if (game.state === 'paused') pausedTransitions.push(next);
+    else return next();
+  }).catch(error => {
+    if (generation !== curtainGeneration) return;
+    console.error(error);
+    showLoadError('No se pudieron cargar los recursos del juego.');
+  });
+}
+
 function curtain(mid, { label = '', hold = 0, wait = null } = {}) {
   const c = $('#curtain');
   if (curtainBusy || !c) {
-    Promise.resolve(wait).then(() => mid());
+    continueTransition(wait, mid);
     return;
   }
   curtainBusy = true;
@@ -494,11 +533,11 @@ function curtain(mid, { label = '', hold = 0, wait = null } = {}) {
   c.classList.remove('open'); void c.offsetWidth; c.classList.add('close');
   audio.sfx('whoosh');
   const cover = 420 + (label ? 450 : 0) + hold * 1000;
-  const delay = new Promise((r) => setTimeout(r, cover));
-  Promise.all([delay, Promise.resolve(wait).catch(() => {})]).then(() => {
+  const delay = new Promise((resolve) => setTimeout(resolve, cover));
+  continueTransition(Promise.all([delay, wait]), () => {
     try { mid(); } finally {
       c.classList.remove('close'); void c.offsetWidth; c.classList.add('open');
-      setTimeout(() => { c.classList.remove('open'); curtainBusy = false; }, 560);
+      curtainRevealTimer = setTimeout(() => { c.classList.remove('open'); curtainBusy = false; }, 560);
     }
   });
 }
@@ -534,11 +573,13 @@ function updateZones() {
     if (st === 'idle' && x > w.trigger) {
       game.waves[w.id] = 'active';
       game.enemies.spawnWave(w.id);
+      if (w.id === 'piquete') game.banner(w.title, w.text);
       break;
     }
     if (st === 'active' && game.enemies.alive() === 0) {
       game.waves[w.id] = 'cleared';
       if (w.gate != null) openGate(w.gate);
+      if (w.id === 'piquete') game.banner('¡PASO LIBRE!', 'Seguí hacia el aeropuerto.');
       // Margot (carita del HUD) se pone contenta
       game.margot.cheer();
       if (w.endsLevel) {
@@ -645,9 +686,15 @@ function healBeforeBoss(instant = false) {
 function spawnBoss({ instant = false } = {}) {
   input.reset();
   healBeforeBoss(instant);
-  const wait = assets.ensure(['arena_chaky_', 'arena_barril', 'arena_cajon', 'arena_fondo', 'arena_aeropuerto_']);
+  const chakyArt = Object.keys(assets.manifest).filter(name => name.startsWith('arena_chaky_'));
+  const danceArt = chakyArt.filter(name => name.startsWith('arena_chaky_dance_'));
+  const battleArt = chakyArt.filter(name => !name.startsWith('arena_chaky_dance_'));
+  const wait = Promise.all([
+    assets.ensure([...battleArt, 'arena_barril', 'arena_cajon', 'arena_fondo']),
+    Promise.allSettled([...danceArt, 'arena_aeropuerto_'].map(name => assets.ensure(name)))
+  ]);
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
-  if (instant) { wait.then(() => game.arena.start()); return; }
+  if (instant) { game.state = 'curtain'; continueTransition(wait, () => game.arena.start()); return; }
   if (game.checkpoint?.id !== 'chaky') saveCheckpoint('chaky');
   game.state = 'curtain';
   curtain(() => game.arena.start(), { label: CHECKPOINTS.chaky.label, wait });
@@ -662,7 +709,7 @@ function spawnCepi({ instant = false, hp = null } = {}) {
     game.arenaCepi.start();
     if (hp != null) { game.arenaCepi.logic._setHp(hp); game.arenaCepi.syncBar?.(); }
   };
-  if (instant) { game.state = 'curtain'; wait.then(go); return; }
+  if (instant) { game.state = 'curtain'; continueTransition(wait, go); return; }
   if (game.checkpoint?.id !== 'cepi') saveCheckpoint('cepi');
   game.state = 'curtain';
   curtain(go, { label: CHECKPOINTS.cepi.label, wait });
@@ -677,7 +724,7 @@ function spawnLale({ instant = false, hp = null } = {}) {
     game.arenaLale.start();
     if (hp != null) { game.arenaLale.logic._setHp(hp); game.arenaLale.syncBar?.(); }
   };
-  if (instant) { game.state = 'curtain'; wait.then(go); return; }
+  if (instant) { game.state = 'curtain'; continueTransition(wait, go); return; }
   if (game.checkpoint?.id !== 'lale') saveCheckpoint('lale');
   game.state = 'curtain';
   curtain(go, { label: CHECKPOINTS.lale.label, wait });
@@ -693,7 +740,7 @@ function spawnPinky({ instant = false, hp = null } = {}) {
     game.arenaPinky.start();
     if (hp != null) { game.arenaPinky.logic._setHp(hp); game.arenaPinky.syncBar?.(); }
   };
-  if (instant) { game.state = 'curtain'; wait.then(go); return; }
+  if (instant) { game.state = 'curtain'; continueTransition(wait, go); return; }
   if (game.checkpoint?.id !== 'pinky') saveCheckpoint('pinky');
   game.state = 'curtain';
   curtain(go, { label: CHECKPOINTS.pinky.label, wait });
@@ -748,8 +795,7 @@ game.onBossDown = () => {
   // El rescate es una escena: el héroe corre a la jaula, alza a Margot, llega la banda aplaudiendo y foto familiar
   game.story.startRescue(game.hero, HERO_CFG[game.heroId].name);
   game.ctx.audio?.sfx('fanfare');
-  // después de la fanfarria, la canción de cuna de Margot
-  setTimeout(() => { if (game.state === 'rescue' || game.state === 'result') audio.music('rescate', { fade: 0 }); }, 2200);
+
 };
 
 // Atajo para pruebas y para saltar a una parte del recorrido
@@ -843,9 +889,8 @@ function finish(won) {
 game.finish = finish;
 
 // ---------- pausa ----------
-const PAUSABLE = new Set(['playing', 'chase', 'bonus', 'arena', 'arena-cepi', 'arena-lale', 'arena-pinky']);
+const PAUSABLE = new Set(['playing', 'intro', 'transition', 'curtain', 'chase', 'bonus', 'arena', 'arena-cepi', 'arena-lale', 'arena-pinky', 'rescue']);
 function pause() {
-  if (game.state === 'intro') endIntro();
   if (!PAUSABLE.has(game.state)) return;
   game.pausedFrom = game.state;
   game.state = 'paused';
@@ -864,20 +909,16 @@ function pauseConfirm(text, action) {
   if (text) $('#pause-confirm-text').textContent = tr(text);
 }
 function resume() {
-  if (game.state !== 'paused') return;
+  if (game.state !== 'paused' || document.hidden) return;
   input.reset();
   showScreen(null);
-  const back = {
-    chase: game.chase.active,
-    bonus: game.bonus.active,
-    arena: game.arena.active,
-    'arena-cepi': game.arenaCepi.active,
-    'arena-lale': game.arenaLale.active,
-    'arena-pinky': game.arenaPinky.active
-  };
-  game.state = back[game.pausedFrom] ? game.pausedFrom : 'playing';
+  game.state = game.pausedFrom;
+  game.pausedFrom = null;
   audio.resumeMusic();
   last = 0;
+  const transitions = pausedTransitions;
+  pausedTransitions = [];
+  for (const complete of transitions) complete();
 }
 game.pause = pause;
 game.resume = resume;
@@ -898,6 +939,11 @@ function frameStep(now) {
   const realDt = Math.min(0.1, last ? (now - last) / 1000 : 0);
   const dt = Math.min(0.05, realDt) * game.timeScale;
   last = now;
+  if (document.hidden || (PAUSABLE.has(game.state) && input.consume('pause'))) pause();
+  if (!PAUSABLE.has(game.state)) {
+    requestAnimationFrame(frame);
+    return;
+  }
   const scenes = [
     ['chase', game.chase],
     ['bonus', game.bonus],
@@ -908,7 +954,7 @@ function frameStep(now) {
   ];
   for (const [st, mod] of scenes) {
     if (!mod) continue;
-    if (mod.active && game.state !== st && game.state !== 'paused') mod.dispose();
+    if (mod.active && game.state !== st) mod.dispose();
     if (mod.active) {
       if (game.state === st) mod.update(dt);
       if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
@@ -917,8 +963,7 @@ function frameStep(now) {
   }
   if (game.state === 'playing') {
     const t0 = performance.now();
-    if (input.consume('pause')) pause();
-    else if (!fx.frozen(dt)) {
+    if (!fx.frozen(dt)) {
       game.time += dt;
       game.hero.update(dt);
       game.enemies.update(dt);
@@ -941,7 +986,9 @@ function frameStep(now) {
   } else if (game.state === 'transition') {
     updateTransition(dt);
   } else if (game.state === 'rescue') {
+    const before = game.rescueT;
     game.rescueT += dt;
+    if (before < 2.2 && game.rescueT >= 2.2) audio.music('rescate', { fade: 0 });
     const step = game.story.updateRescue(dt, game.rescueT);
     if (step === 'photo') game.wantPhoto = true;
     if (step === 'done') finish(true);
@@ -986,6 +1033,12 @@ function updateOffscreen() {
 }
 
 async function boot() {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  canvas.addEventListener('webglcontextlost', event => {
+    event.preventDefault();
+    showLoadError('Se interrumpieron los gráficos 3D. Recargá para volver a jugar.');
+  });
   resize();
   addEventListener('resize', resize);
   addEventListener('orientationchange', () => setTimeout(resize, 200));
@@ -1000,7 +1053,17 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.arenaCepi?.dispose(); game.arenaLale?.dispose(); game.arenaPinky?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); paintPodium(); audio.music('menu'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => {
+    input.reset();
+    clearRun();
+    clearBanners();
+    game.state = 'menu';
+    paintContinue();
+    paintPodium();
+    audio.music('menu');
+    for (const id of ['#hud', '#touch', '#boss-bar']) $(id).classList.add('hidden');
+    showScreen('screen-menu');
+  };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -1067,7 +1130,9 @@ async function boot() {
   });
   for (const el of [canvas, $('#stick-zone')]) el.addEventListener('pointerdown', () => { if (game.state === 'intro') endIntro(); });
   game.story.cine.ui.skipButton.addEventListener('click', (e) => { e.stopPropagation(); if (game.state === 'intro') endIntro(); });
-  addEventListener('keydown', () => { if (game.state === 'intro') endIntro(); });
+  addEventListener('keydown', event => {
+    if (game.state === 'intro' && !['Escape', 'KeyP'].includes(event.code)) endIntro();
+  });
   game.heroScreen = () => { const v = game.hero.actor.position.clone(); v.y += 1; v.project(camera); return { x: (v.x + 1) / 2, y: (1 - v.y) / 2 }; };
   // Atajos de pruebas: directo a la calle de Buenos Aires, o desde la persecución
   game.quickStart = (heroId) => startRun(heroId, false, { street: true });
@@ -1151,7 +1216,26 @@ async function boot() {
   requestAnimationFrame(frame);
 }
 
-boot().catch((e) => {
-  console.error(e);
-  $('#screen-loading').innerHTML = '<h2>No se pudo cargar el juego</h2><p>Revisá la conexión y recargá la página.</p>';
+function showLoadError(message) {
+  game.state = 'error';
+  clearCurtain();
+  input?.reset();
+  audio?.pauseMusic();
+  game.story?.endIntro();
+  for (const id of ['#hud', '#touch', '#boss-bar', '#level-card']) $(id).classList.add('hidden');
+  showScreen('screen-loading');
+  const title = document.createElement('h2');
+  title.textContent = tr('No pudimos iniciar el juego');
+  const detail = document.createElement('p');
+  detail.textContent = tr(message);
+  const retry = document.createElement('button');
+  retry.className = 'big-btn';
+  retry.textContent = tr('Reintentar');
+  retry.addEventListener('click', () => location.reload());
+  $('#screen-loading').replaceChildren(title, detail, retry);
+}
+
+boot().catch((error) => {
+  console.error(error);
+  showLoadError(renderer ? 'No se pudieron cargar los recursos del juego.' : 'El navegador no pudo activar los gráficos 3D.');
 });

@@ -251,3 +251,12 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - **Pendiente:** prueba real en Safari físico de iPhone, `tests/check_sprites.py` (sin `numpy` en VM), y generación de las 18 poses individuales restantes del kit (Grupos C/D/E/F) cuando se libere la cuota.
 - **Rollback:** volver `main` a `925ded8`.
 
+
+## 2026-11-22 · Continuidad de la campaña 3D y clase de baile de Big Chaky
+
+- Base de esta corrección: `fb1c880` (campaña de cuatro actos en `main`). Se integró la corrección de ciclo de vida de `fix/3d-lifecycle-review` sobre esa versión. GitHub Pages `/3d/` es la referencia para probar la campaña.
+- Marine y Douge vuelven a la primera calle después de la intro, tanto si termina sola como si se saltea. Se agregó una indicación de avance y un aviso de cómo abrir el piquete. El joystick flotante queda neutro al apoyar el dedo.
+- La pausa conserva intro, transición, persecución, BYD, arenas y rescate. Cambiar de tramo queda suspendido hasta reanudar y se cancela al volver al menú o reiniciar. Un fallo de WebGL muestra un botón para reintentar.
+- El baile encuadra a Chaky por encima de los carriles. Las poses se cargan antes de la arena y tienen respaldo si falta alguna. Los controles de pelea quedan suspendidos durante el baile.
+- Pruebas locales: `npm test` (85/85), `python3 tests/check_sprites.py 3d/assets` y simulación asistida de los cuatro actos, con las 24 flechas, rescate, foto, victoria y regreso al menú. Se repitió con una textura de baile ausente. Queda por probar el render de los tramos en Safari físico.
+- Rollback: revertir el merge de esta corrección con `git revert -m 1 <commit>`. La base anterior del código de la campaña fue `fb1c880`.

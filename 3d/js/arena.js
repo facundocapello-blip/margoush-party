@@ -29,6 +29,8 @@ const DANCE_FALLBACK = { dance_idle: 'idle', dance_jump: 'throw', dance_attack: 
 // BIG CHAKY parado sobre la tarima, enorme: la cámara va lejos y alta para que mida ≥ 2,5 veces al héroe en pantalla
 const TARIMA_H = 0.6, TARIMA_FRONT = ARENA.bossZ + 2.4, TARIMA_BACK = ARENA.bossZ - 5;
 const CAM = { y: 6, back: 11, lookY: 6, fov: 66, fovPortrait: 70 };
+// Mantiene a Chaky entero por encima de los carriles del baile.
+const DANCE_CAM = { y: 7.5, z: 12, lookY: 2.2 };
 // Manotazo: la pose `slam` recortada por arriba de la mano (filas 0..545 de 768) y la mano sola (recorte 80,530 215×238;
 // de ese recorte solo queda la piel: el pantalón y las zapatillas que asoman se borran por color)
 const SLAM_CUT = 545 / 768, HAND_CROP = { x: 80, y: 530, w: 215, h: 238 }, HAND_W = 3.2, HAND_FALL = 7;
@@ -231,13 +233,18 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     const piuE = ui.querySelector('.piu'), lanesE = piuE.querySelector('.lanes'), judgeE = piuE.querySelector('.piu-judge');
     const laneEls = [...piuE.querySelectorAll('.lane')], noteEls = new Map();
     let piuOn = false, judgeTimer = 0, piuRound = -1;
+    let laneHeight = 0, viewportHeight = 0, viewportWidth = 0;
     function piuTap(lane) {
-      if (!piuOn) return;
+      if (!piuOn || game.state !== 'arena') return;
       laneEls[lane].classList.remove('press'); void laneEls[lane].offsetWidth; laneEls[lane].classList.add('press');
       handle(logic.tap(lane));
     }
     for (const el of laneEls) el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); piuTap(+el.dataset.lane); });
-    const onKey = (ev) => { if (piuOn && ev.code in PIU_KEYS && !ev.repeat) { ev.preventDefault(); piuTap(PIU_KEYS[ev.code]); } };
+    const onKey = (ev) => {
+      if (!piuOn || game.state !== 'arena' || !(ev.code in PIU_KEYS)) return;
+      ev.preventDefault();
+      if (!ev.repeat) piuTap(PIU_KEYS[ev.code]);
+    };
     addEventListener('keydown', onKey);
     function piuPulse(lane) { const r = laneEls[lane].querySelector('.rec'); r.classList.remove('beat'); void r.offsetWidth; r.classList.add('beat'); }
     function piuText(txt, cls) {
@@ -249,17 +256,21 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       if (e.grade === 'miss') { piuText('¡FALLÓ!', 'bad'); return; }
       piuText(tr(e.grade === 'perfect' ? '¡PERFECTO!' : '¡BIEN!') + (e.combo > 1 ? ' ×' + e.combo : ''), e.grade);
       sfx(e.grade === 'perfect' ? 'perfect' : 'pickup');
-      if (y <= 0) { vy = CHASE.jump * 0.45; } // el héroe baila: saltito en cada paso
+      if (y <= 0) vy = CHASE.jump * 0.45; // el héroe baila: saltito en cada paso
     }
     function piuDraw() {
       const d = logic.state.dice, show = logic.state.mode === 'dice' && !!d;
       if (show !== piuOn) {
         piuOn = show; piuE.classList.toggle('hidden', !show); document.body.classList.toggle('piu-on', show);
-        if (!show) { for (const el of noteEls.values()) el.remove(); noteEls.clear(); piuRound = -1; }
+        if (!show) { for (const el of noteEls.values()) el.remove(); noteEls.clear(); piuRound = -1; laneHeight = 0; }
       }
       if (!show) return;
       if (d.round !== piuRound) { for (const el of noteEls.values()) el.remove(); noteEls.clear(); piuRound = d.round; renderDots(); }
-      const H = lanesE.clientHeight, recY = 8, speed = (H - recY) / ARENA.dice.travel;
+      if (!laneHeight || innerHeight !== viewportHeight || innerWidth !== viewportWidth) {
+        viewportHeight = innerHeight; viewportWidth = innerWidth;
+        laneHeight = lanesE.clientHeight;
+      }
+      const H = laneHeight, recY = 8, speed = (H - recY) / ARENA.dice.travel;
       d.notes.forEach((n, i) => {
         let el = noteEls.get(i);
         if (n.judged && n.judged !== 'miss') { if (el) { el.remove(); noteEls.delete(i); } return; }
@@ -348,6 +359,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
           case 'phase':
             setBarName(); showSign(null, 'hidden'); phaseCard(e.to, e.to === 2 ? ARENA.dice.start : ARENA.transition + 0.6);
             if (e.to === 2) {
+              input.reset();
               flash('#ffd36e', 0.35); shake(0.3, 0.4); sfx('roar');
               ui.classList.add('dice-mode'); renderDots();
               try { audio.music('byd', { fade: 0.3 }); } catch (_) {} // otra música: cambió el juego
@@ -366,6 +378,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             pop(x, HERO_H + 0.8, z, '+❤', '#ff6b8a', 34, 1.4); sfx('pickup');
             break;
           case 'rage':
+            input.reset();
             setBar(); setBarName(); showSign(null, 'hidden'); flash('#ff7a2e', 0.4); shake(0.5, 0.8); sfx('roar');
             wantButton(null); ui.classList.remove('dice-mode'); dotsE.classList.add('hidden');
             try { audio.music('boss', { fade: 0.3 }); } catch (_) {}
@@ -425,7 +438,8 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       if (hurtT > 0) hurtT -= dt;
       if (powT > 0) powT -= dt;
       moving = false;
-      if (phase === 'fight') {
+      const dancing = logic.state.phase === 2;
+      if (phase === 'fight' && !dancing) {
         // Controles
         if (input.consume('jump')) { if (y <= 0) { vy = CHASE.jump; sfx('jump'); } handle(logic.act('jump')); }
         if (input.consume('dodge') && dashCd <= 0 && dashT <= 0) {
@@ -458,7 +472,12 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
           }
           if (swing && swingT >= swing.dur) { swing = null; comboWindow = COMBO_WINDOW; if (buffer > 0) startSwing(); }
         }
-      } else { dashT = 0; swing = null; holdT = 0; }
+      } else {
+        dashT = 0; swing = null; holdT = 0; buffer = 0;
+        if (dancing) {
+          for (const action of ['jump', 'attack', 'dodge', 'power']) input.consume(action);
+        }
+      }
       hero.holdT = holdT;
       vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
 
@@ -481,8 +500,13 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       const sh = shakeA * Math.min(1, shakeT * 4);
       // Entrada: la cámara baja desde arriba y atrás hasta su lugar
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
-      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.7 : 0.4) + (Math.random() - 0.5) * sh, CAM.y + e * 7 + (Math.random() - 0.5) * sh, z + CAM.back + e * 9);
-      cam.lookAt(0, CAM.lookY + e * 2, ARENA.bossZ);
+      if (S.phase === 2) {
+        cam.position.set(0, DANCE_CAM.y, DANCE_CAM.z);
+        cam.lookAt(0, DANCE_CAM.lookY, ARENA.bossZ);
+      } else {
+        cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.7 : 0.4) + (Math.random() - 0.5) * sh, CAM.y + e * 7 + (Math.random() - 0.5) * sh, z + CAM.back + e * 9);
+        cam.lookAt(0, CAM.lookY + e * 2, ARENA.bossZ);
+      }
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
       // BIG CHAKY: la pose de la lógica, salvo en el manotazo (una sola mano a la vista):
@@ -509,7 +533,10 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
         rz = -Math.sign(bvx) * 0.04;
       } else {
         bossKey = 'arena_chaky_' + pose;
-        if (!assets.has(bossKey) && DANCE_FALLBACK[pose]) bossKey = 'arena_chaky_' + DANCE_FALLBACK[pose];
+        if (!CUSTOM[bossKey] && !assets.has(bossKey)) {
+          const fallback = 'arena_chaky_' + DANCE_FALLBACK[pose];
+          bossKey = assets.has(fallback) ? fallback : 'arena_chaky_idle';
+        }
       }
       setTex(B, bossKey);
       if (pose === 'throw') { const k = Math.min(1, poseT / 0.55); by = Math.abs(Math.sin(k * Math.PI)) * 0.48; sy = 1 + Math.sin(k * Math.PI) * 0.07; rz = Math.sin(poseT * 10) * 0.07; }

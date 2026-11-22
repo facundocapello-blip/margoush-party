@@ -126,7 +126,7 @@ export function createCine(ctx) {
       { at: 8.8, run: () => { chaky.setPose('strike'); say(cepi, '🔌 ¡Un cargador para mi BYD!', '#ffe08a', 19, 3.0); ctx.audio?.sfx('coin'); } },
       { at: 9.8, run: () => { phase = 'grab'; ui.sub(''); chaky.setPose('arms'); } },
       { at: 11.4, run: () => { ui.sub('MARGOT', cry); } },
-      { at: 13.6, run: () => { ui.sub(''); ui.caption('¡CEPI SE LLEVÓ A MARGOT!', 'Se escapa en su BYD. ¡Seguilo!'); ctx.audio?.sfx('engine'); } }
+      { at: 13.6, run: () => { ui.sub(''); ui.caption('¡CEPI SE LLEVÓ A MARGOT!', '¡Salí a buscarla!'); ctx.audio?.sfx('engine'); } }
     ];
     let grabbed = false;
     const frame = (t, dt) => {

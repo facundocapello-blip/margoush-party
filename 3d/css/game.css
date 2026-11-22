@@ -10,11 +10,12 @@
   --safe-r: env(safe-area-inset-right, 0px);
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: #fff; font-family: Nunito, Arial, sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: #fff; font-family: Nunito, Arial, sans-serif; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
 #app { position: fixed; inset: 0; }
 #game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .hidden { display: none !important; }
-button { font: inherit; cursor: pointer; touch-action: none; }
+button { font: inherit; cursor: pointer; touch-action: manipulation; }
+#game, .act { touch-action: none; }
 
 /* HUD */
 #hud { position: absolute; top: calc(8px + var(--safe-t)); left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r)); display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 5; }
@@ -207,6 +208,9 @@ body.has-screen #labels, body.has-screen #combo, body.has-screen #hud, body.has-
 #level-card em { font-style: normal; font-size: 16px; font-weight: 800; color: #ffffff; opacity: 0.9; }
 @keyframes level-in { from { transform: translate(-50%, -50%) scale(0.6); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 body.has-screen #level-card { display: none; }
+.screen { justify-content: safe center; touch-action: pan-y; overscroll-behavior: contain; }
+.screen > * { flex-shrink: 0; }
+#screen-pause { z-index: 45; }
 /* Cruce de la frontera: el cartel queda arriba (no tapa al héroe) y pasa una franja azul-blanco-rojo */
 #level-card.travel { top: 24%; }
 #border-wipe { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; display: flex; opacity: 0; }

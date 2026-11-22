@@ -123,6 +123,7 @@ export class SpriteActor {
 
   dispose() {
     this.scene.remove(this.root);
+    this.mesh.geometry.dispose();
     this.material.dispose();
     for (const p of Object.values(this.poses)) p.tex.dispose();
   }
