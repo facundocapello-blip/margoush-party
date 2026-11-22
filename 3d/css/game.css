@@ -643,7 +643,7 @@ body.chasing #touch, body.chasing #hud-power { display: none !important; }
 body.portrait #arena-ui .chaky-sign { min-width: 120px; }
 body.portrait #arena-ui .chaky-sign .txt { font-size: 22px; }
 /* Cambio de fase en la arena: cartel grande al centro */
-#arena-ui .phase-card { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%) scale(.6); opacity: 0; text-align: center; padding: 14px 26px 16px; border-radius: 18px; background: rgba(20, 10, 30, .82); border: 4px solid #ffd36e; box-shadow: 0 10px 30px #000a; font-family: Fredoka, sans-serif; color: #fff; z-index: 5; pointer-events: none; min-width: 240px; }
+#arena-ui .phase-card { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%) scale(.6); opacity: 0; text-align: center; padding: 14px 26px 16px; border-radius: 18px; background: rgba(20, 10, 30, .82); border: 4px solid #ffd36e; box-shadow: 0 10px 30px #000a; font-family: Fredoka, sans-serif; color: #fff; z-index: 5; pointer-events: none; min-width: min(86vw, 320px); }
 #arena-ui .phase-card.on { animation: card-in .35s cubic-bezier(.2, 1.6, .4, 1) forwards; }
 #arena-ui .phase-card.hidden { display: none; }
 #arena-ui .phase-card small { display: block; font-size: 15px; letter-spacing: 3px; color: #ffd36e; font-weight: 700; }
@@ -672,3 +672,11 @@ body.portrait #arena-ui .chaky-sign .txt { font-size: 22px; }
 #touch .act.want { animation: want-btn .45s ease-in-out infinite alternate; box-shadow: 0 0 0 5px #ffd36e, 0 0 28px 8px #ffd36ecc !important; z-index: 3; }
 @keyframes want-btn { to { transform: scale(1.18); } }
 #touch.want-still .act { opacity: .35; filter: grayscale(1); }
+#arena-ui .phase-card em { display: block; margin-top: 8px; font-style: normal; font-size: 17px; font-weight: 700; color: #fff; background: #ffffff1f; border-radius: 10px; padding: 4px 10px; }
+#arena-ui .phase-card em[hidden] { display: none; }
+/* Clase de baile: fila de pasos en el cartel («¡TU TURNO!») */
+#arena-ui .chaky-sign .ico em { display: inline-block; font-style: normal; font-size: 30px; width: 42px; height: 42px; line-height: 42px; margin: 0 2px; border-radius: 10px; background: #0001; }
+#arena-ui .chaky-sign .ico em.now { background: #ffd36e; animation: dot-now .45s ease-in-out infinite alternate; }
+#arena-ui .chaky-sign .ico em.done { background: #4fd16b; color: #fff; }
+#arena-ui .chaky-sign.demo { animation: sign-beat .3s ease-out; }
+@keyframes sign-beat { 0% { transform: translate(-50%, -100%) scale(1.25) rotate(4deg); } 100% { transform: translate(-50%, -100%) rotate(-3deg) scale(1); } }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ARENA, createArenaLogic } from '../3d/js/arena_logic.js';
+import { ARENA, DANCE_MOVES, createArenaLogic } from '../3d/js/arena_logic.js';
 
 const FPS = 1 / 60;
 const mk = () => createArenaLogic({ rand: () => 0.5 });
@@ -100,72 +100,57 @@ test('punching a gold barrel in the window sends it back and hurts the boss', ()
   assert.ok(evs.some(e => e.type === 'voice' && e.event === 'attack'));
 });
 
-test('two gold returns open «Chaky dice» (phase 2) after a short transition', () => {
-  const l = mk(), hero = safeHero(), evs = [];
-  for (let i = 0; i < 2; i++) evs.push(...giveReturn(l, hero));
-  assert.equal(l.state.phase, 2);
-  assert.equal(l.state.mode, 'transition');
-  assert.equal(l.state.shots.length, 0);
-  assert.ok(evs.some(e => e.type === 'phase' && e.to === 2));
-  assert.ok(evs.some(e => e.type === 'voice' && e.event === 'dice'));
-  evs.push(...run(l, ARENA.dice.start + ARENA.dice.prep + 0.1, hero));
-  assert.equal(l.state.mode, 'dice');
-  const d = ofType(evs, 'dice')[0];
-  assert.ok(d && d.cmd, 'the sign shows a command');
-  assert.equal(l.state.dice.round, 0);
-});
-
-// Lleva al minijuego y juega las 6 rondas: answer(cmd) → acción del héroe (o null = esperar quieto)
-function playDice(l, answer, rand) {
+// Lleva a la clase de baile y juega las rondas: answer(seq, idx) → paso que hace el héroe (o null = nada)
+function playDance(l, answer) {
   const hero = { x: 0, z: -1.5, y: 0, moving: false, dodging: false, inv: 99 };
-  l._setHp(ARENA.diceAt); // entra en la fase 2
+  l._setHp(ARENA.diceAt);
   const evs = [];
-  runUntil(l, hero, () => l.state.mode === 'dice', 5, evs);
-  for (let i = 0; i < 60 * 60 && l.state.phase === 2; i++) {
+  runUntil(l, hero, () => l.state.mode === 'dice', 6, evs);
+  for (let i = 0; i < 90 * 60 && l.state.phase === 2; i++) {
     const d = l.state.dice;
-    if (d && d.stage === 'window' && d.t > 0.2 && d.t < 0.25) {
-      const a = answer(d.cmd, d);
-      if (a === 'move') hero.moving = true;
-      else if (a) evs.push(...l.act(a));
-    }
+    if (d && d.stage === 'turn' && d.t > 0.2) { const a = answer(d.seq, d.idx); if (a) evs.push(...l.act(a)); }
     evs.push(...l.update(FPS, hero));
-    hero.moving = false;
   }
   return evs;
 }
 
-test('«Chaky dice»: doing what the sign says hurts him, 5 right heal you', () => {
+test('dance class: Chaky shows each step on the beat, then it is your turn', () => {
   const l = mk();
-  const evs = playDice(l, (cmd) => cmd === 'still' ? null : cmd);
+  const evs = playDance(l, (seq, i) => seq[i]);
+  const demos = ofType(evs, 'danceDemo'), turns = ofType(evs, 'danceTurn');
+  assert.equal(turns.length, ARENA.dice.rounds.length);
+  assert.equal(demos.length, ARENA.dice.rounds.reduce((a, b) => a + b, 0));
+  turns.forEach((tn, r) => assert.equal(tn.seq.length, ARENA.dice.rounds[r]));
+  assert.ok(evs.some(e => e.type === 'voice' && e.event === 'count'));
+});
+
+test('dance class: repeating every step hurts him and a perfect class heals you', () => {
+  const l = mk();
+  const evs = playDance(l, (seq, i) => seq[i]);
   const res = ofType(evs, 'diceResult');
-  assert.equal(res.length, ARENA.dice.rounds);
-  assert.ok(res.every(r => r.ok), 'all right');
+  assert.equal(res.length, ARENA.dice.rounds.length);
+  assert.ok(res.every(r => r.ok));
   assert.equal(ofType(evs, 'heal').length, 1);
   assert.ok(!evs.some(e => e.type === 'hurt'));
   assert.equal(l.state.phase, 3);
-  assert.ok(evs.some(e => e.type === 'rage'));
-  assert.equal(l.state.hp, Math.max(ARENA.rageAt, ARENA.diceAt - ARENA.dice.rounds * ARENA.dice.dmg));
-  assert.ok(ofType(evs, 'dice').some(d => d.cmd === 'still'), 'at least one «quieto»');
+  assert.equal(l.state.hp, Math.max(ARENA.rageAt, ARENA.diceAt - ARENA.dice.rounds.length * ARENA.dice.dmg));
 });
 
-test('«Chaky dice»: wrong answers do not hurt him and 3 wrong cost a heart', () => {
+test('dance class: a wrong step ends the round; two bad rounds cost a heart', () => {
   const l = mk();
-  const evs = playDice(l, (cmd) => cmd === 'still' ? 'move' : (cmd === 'jump' ? 'attack' : 'jump'));
+  const evs = playDance(l, (seq, i) => DANCE_MOVES.find(m => m !== seq[i]));
   const res = ofType(evs, 'diceResult');
-  assert.ok(res.every(r => !r.ok), 'all wrong');
+  assert.ok(res.every(r => !r.ok));
+  assert.ok(ofType(evs, 'danceStep').every(s => !s.ok));
   assert.equal(l.state.hp, ARENA.diceAt);
   assert.equal(evs.filter(e => e.type === 'hurt' && e.by === 'dice').length, 1);
-  assert.equal(ofType(evs, 'heal').length, 0);
 });
 
-test('«Chaky dice»: from round 3 he sometimes shouts something else, never before', () => {
-  let i = 0; const seq = [0.1, 0.6, 0.3, 0.9, 0.2, 0.7, 0.05, 0.45];
-  const l = createArenaLogic({ rand: () => seq[i++ % seq.length] });
-  const evs = playDice(l, (cmd) => cmd === 'still' ? null : cmd);
-  const signs = ofType(evs, 'dice');
-  assert.ok(signs.slice(0, ARENA.dice.trickFrom).every(s => s.shout === s.cmd));
-  assert.ok(signs.some(s => s.shout !== s.cmd), 'some trick');
-  assert.ok(ofType(evs, 'diceResult').every(r => r.ok), 'following the sign is always right');
+test('dance class: standing still runs out the time', () => {
+  const l = mk();
+  const evs = playDance(l, () => null);
+  assert.ok(ofType(evs, 'diceResult').every(r => !r.ok));
+  assert.equal(l.state.phase, 3);
 });
 
 test('phase 3 throws a giant barrel that cannot be returned and only dodging saves you', () => {
@@ -361,4 +346,16 @@ test('the stuck hand cannot be mashed: hits are locked out for 0.2 s', () => {
   assert.ok(hits >= 2, `hits ${hits}`);
   assert.ok(hits <= Math.ceil(ARENA.phase3.stuck / 0.2), `hits ${hits}`);
   assert.ok(HALF - l.state.hp <= Math.ceil(ARENA.phase3.stuck / 0.2) * ARENA.handDmg * 0.1 + 1e-9);
+});
+
+test('two gold returns open the dance class (phase 2) after a short transition', () => {
+  const l = mk(), hero = safeHero(), evs = [];
+  for (let i = 0; i < 2; i++) evs.push(...giveReturn(l, hero));
+  assert.equal(l.state.phase, 2);
+  assert.equal(l.state.mode, 'transition');
+  assert.ok(evs.some(e => e.type === 'phase' && e.to === 2));
+  assert.ok(evs.some(e => e.type === 'voice' && e.event === 'dice'));
+  evs.push(...run(l, ARENA.dice.start + ARENA.dice.lead + 0.1, hero));
+  assert.equal(l.state.mode, 'dice');
+  assert.ok(ofType(evs, 'danceDemo').length >= 1);
 });

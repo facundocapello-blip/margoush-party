@@ -5,21 +5,20 @@
 //  1. BARRILES — tira series de 3 con trayectorias que se leen por la pose: rodante (recto: se devuelve),
 //     en curva (sale por otro carril y se mete en el tuyo: correrse) y saltarín (pica: saltarlo).
 //     El último de cada serie es dorado. Después de la serie descansa (recuperación): la ventana para devolver.
-//  2. «CHAKY DICE» — sube un cartel (¡SALTÁ! / ¡PIÑA! / ¡ESQUIVÁ! / ¡QUIETO!) y hay que hacer lo que dice
-//     el cartel, no lo que grita (desde la 3.ª ronda a veces grita otra cosa). Cada acierto lo lastima;
-//     con 5 aciertos recuperás un corazón, con 3 errores perdés uno.
+//  2. «CLASE DE BAILE» — Chaky, profesor de baile: muestra 2 a 4 pasos al ritmo (salto / piña / giro) y el
+//     héroe los repite en el mismo orden. Cada ronda bien lo lastima; todas bien curan un corazón, 2 mal sacan uno.
 //  3. ENOJADO — ráfagas, cajones, el manotazo (la mano cae donde estabas, se traba: ventana) y el barril
 //     gigante, que no se devuelve: hay que esquivarlo de costado.
 //
 // Estados del jefe (state.mode): attack, recover, transition, dice, vulnerable, ko. La presentación es de arena.js.
-// Eventos: throw, hurt, dodge, returned, bossHit, handHit, slam, phase, rage, ko, voice, dice, diceResult, heal.
-// `voice` lleva el evento de voz (voice.js elige la frase); `dice` trae el cartel y lo que grita.
+// Eventos: throw, hurt, dodge, returned, bossHit, handHit, slam, phase, rage, ko, voice, danceDemo, danceTurn,
+// danceStep, diceResult, heal. `voice` lleva el evento de voz (voice.js elige la frase).
 // PUNTAJE: solo `handHit`, `returned` y `diceResult` (ok) puntúan; `bossHit` es solo barra y feedback.
 // Coordenadas: x a lo ancho (±xMax), z hacia el fondo negativo.
 
 export const ARENA = {
   hp: 30,
-  diceAt: 21,          // con esta vida empieza «Chaky dice»
+  diceAt: 21,          // con esta vida empieza la clase de baile
   rageAt: 12,          // fase 3 (si un golpe lo baja de una hasta acá, se saltea el minijuego)
   xMax: 4.2, zNear: 0, zFar: -7, bossZ: -16, bossSway: 3,
   returnWindow: 0.6,   // s antes de que el barril llegue al héroe en los que el golpe lo devuelve
@@ -35,13 +34,14 @@ export const ARENA = {
     patterns: [['roll', 'curve', 'gold'], ['bounce', 'roll', 'gold'], ['curve', 'bounce', 'gold']],
     curveShift: 2.6, bounceH: 1.8, bounceHops: 4
   },
-  dice: { rounds: 6, prep: 0.9, window: [1.7, 1.15], result: 0.75, dmg: 1.5, trickFrom: 2, trickChance: 0.5, healAt: 5, hurtAt: 3, start: 2.6 },
+  // Clase de baile: pasos por ronda, compás (s), pausa antes de tu turno, tiempo para cada paso
+  dice: { rounds: [2, 3, 3, 4], beat: 0.62, lead: 0.5, gap: 0.45, stepWindow: 1.5, result: 0.9, dmg: 2.25, healAt: 4, hurtAt: 2, start: 3.0 },
   phase3: { throwEvery: [0.9, 1.4], goldEvery: 3, slamEvery: 1, slamWarn: 0.8, stuck: 1.8, salvo: 0.4, salvoGap: 0.45, crateEvery: 3, crateTime: 0.8, giantEvery: 5, giantSpeed: 4.4, giantR: 1.9 },
   transition: 1.6,
   points: { returned: 300, returnedWhite: 120, hand: 50, dodge: 100, dice: 150 }
 };
 
-export const DICE_CMDS = ['jump', 'attack', 'dodge', 'still'];
+export const DANCE_MOVES = ['jump', 'attack', 'dodge']; // salto, piña al aire, giro
 
 // Tiempos internos (s)
 const WINDUP = 0.6;        // pose de tirar antes de soltar
@@ -226,25 +226,24 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     }
   }
 
-  // ---------- «Chaky dice» ----------
-  function startDice() {
-    // 6 órdenes sin repetir dos seguidas, con al menos un ¡QUIETO!
+  // ---------- «Clase de baile» (fase 2; internamente sigue llamándose `dice`) ----------
+  // Cada ronda: Chaky muestra los pasos al ritmo (demo) y después el héroe los repite en el mismo orden (turn).
+  function makeSeq(n) {
     const seq = [];
-    for (let i = 0; i < D.rounds; i++) {
-      let k = Math.floor(rand() * DICE_CMDS.length) % DICE_CMDS.length;
-      if (DICE_CMDS[k] === seq[i - 1]) k = (k + 1 + i) % DICE_CMDS.length; // nunca dos iguales seguidas
-      if (DICE_CMDS[k] === seq[i - 1]) k = (k + 1) % DICE_CMDS.length;
-      const c = DICE_CMDS[k];
-      seq.push(c);
+    for (let i = 0; i < n; i++) {
+      let k = Math.floor(rand() * DANCE_MOVES.length) % DANCE_MOVES.length;
+      if (i >= 2 && DANCE_MOVES[k] === seq[i - 1] && seq[i - 1] === seq[i - 2]) k = (k + 1) % DANCE_MOVES.length; // nunca 3 iguales
+      seq.push(DANCE_MOVES[k]);
     }
-    if (!seq.includes('still')) seq[2] = 'still'; // sus vecinas no son «quieto»: no quedan dos iguales seguidas
-    state.dice = { round: 0, total: D.rounds, seq, cmd: null, shout: null, stage: 'prep', t: 0, win: 0, ok: 0, bad: 0, last: null };
+    return seq;
+  }
+  function startDice() {
+    state.dice = { round: 0, total: D.rounds.length, seq: makeSeq(D.rounds[0]), stage: 'demo', t: 0, beat: -1, idx: 0, ok: 0, bad: 0, last: null, res: [] };
     state.mode = 'dice';
   }
-  function windowFor(round) { const [a, b] = D.window; return a + (b - a) * round / Math.max(1, D.rounds - 1); }
   function endRound(ok, evs) {
     const d = state.dice;
-    d.stage = 'result'; d.t = 0; d.last = ok ? 'ok' : 'bad';
+    d.stage = 'result'; d.t = 0; d.last = ok ? 'ok' : 'bad'; d.res[d.round] = d.last;
     if (ok) d.ok++; else d.bad++;
     evs.push({ type: 'diceResult', ok, round: d.round }, { type: 'voice', event: ok ? 'good' : 'bad' });
     if (ok) damage(D.dmg, 'dice', evs);
@@ -252,33 +251,37 @@ export function createArenaLogic({ rand = Math.random } = {}) {
   function updateDice(dt, hero, evs) {
     const d = state.dice;
     d.t += dt;
-    if (d.stage === 'prep' && d.t >= D.prep) {
-      d.stage = 'window'; d.t = 0; d.win = windowFor(d.round);
-      d.cmd = d.seq[d.round];
-      d.shout = d.cmd;
-      if (d.round >= D.trickFrom && rand() < D.trickChance) {
-        const others = DICE_CMDS.filter(c => c !== d.cmd);
-        d.shout = others[Math.floor(rand() * others.length)];
+    if (d.stage === 'demo') {
+      const b = Math.floor((d.t - D.lead) / D.beat);
+      if (b >= 0 && b < d.seq.length && b !== d.beat) {
+        d.beat = b;
+        if (b === 0) evs.push({ type: 'voice', event: 'count' });
+        evs.push({ type: 'danceDemo', move: d.seq[b], i: b, n: d.seq.length, round: d.round });
       }
-      evs.push({ type: 'dice', round: d.round, cmd: d.cmd, shout: d.shout, win: d.win });
-    } else if (d.stage === 'window') {
-      if (d.cmd === 'still' && hero.moving) endRound(false, evs);
-      else if (d.t >= d.win) endRound(d.cmd === 'still', evs);
+      if (d.t >= D.lead + d.seq.length * D.beat + D.gap) {
+        d.stage = 'turn'; d.t = 0; d.idx = 0;
+        evs.push({ type: 'danceTurn', seq: d.seq.slice(), round: d.round });
+      }
+    } else if (d.stage === 'turn') {
+      if (d.t >= D.stepWindow) endRound(false, evs); // se quedó quieto
     } else if (d.stage === 'result' && d.t >= D.result) {
       d.round++;
-      if (d.round < d.total) { d.stage = 'prep'; d.t = 0; d.cmd = d.shout = null; return; }
+      if (d.round < d.total) { Object.assign(d, { seq: makeSeq(D.rounds[d.round]), stage: 'demo', t: 0, beat: -1, idx: 0 }); return; }
       if (d.ok >= D.healAt) evs.push({ type: 'heal' });
       if (d.bad >= D.hurtAt) evs.push({ type: 'hurt', by: 'dice' });
       state.dice = null;
       toTransition(3, evs);
     }
   }
-  // El héroe hizo algo (salto / golpe / esquive) mientras está el cartel
+  // El héroe hizo un paso (salto / golpe / esquive)
   function act(kind) {
     const evs = [];
     const d = state.dice;
-    if (!d || state.phase !== 2 || d.stage !== 'window') return evs;
-    endRound(kind === d.cmd, evs);
+    if (!d || state.phase !== 2 || d.stage !== 'turn') return evs;
+    if (kind !== d.seq[d.idx]) { evs.push({ type: 'danceStep', ok: false, i: d.idx, move: kind }); endRound(false, evs); return evs; }
+    evs.push({ type: 'danceStep', ok: true, i: d.idx, move: kind });
+    d.idx++; d.t = 0;
+    if (d.idx >= d.seq.length) endRound(true, evs);
     return evs;
   }
 
@@ -315,7 +318,10 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     if (state.phase === 'ko') return evs.filter(e => e.type !== 'hurt');
     if (state.phase === 3 && state.mode !== 'transition') state.mode = state.hand.state === 'stuck' ? 'vulnerable' : 'attack';
     // pose
-    if (state.phase === 2 && state.mode === 'dice') state.pose = 'throw'; // con el cartel arriba todo el minijuego
+    if (state.phase === 2 && state.mode === 'dice') {
+      const d = state.dice, inBeat = d.stage === 'demo' && d.beat >= 0 && (d.t - A.dice.lead - d.beat * A.dice.beat) < A.dice.beat * 0.8;
+      state.pose = inBeat ? 'dance_' + d.seq[d.beat] : d.stage === 'result' && d.last === 'bad' ? 'dance_laugh' : 'dance_idle';
+    }
     else if (poseT > 0) state.pose = poseName;
     else if (state.hand.state === 'warn' || state.hand.state === 'down') state.pose = 'slam';
     else if (state.mode === 'transition' || state.mode === 'recover') state.pose = 'idle';

@@ -19,8 +19,8 @@ export const PROFILES = {
   pinky: { lang: 'es-AR', pitch: 1.0, rate: 1.38 }   // trapito, a mil por hora
 };
 
-export const PRIO = { ko: 3, phase: 3, intro: 3, dice: 3, hurt: 2, special: 2, stuck: 2, returned: 2, attack: 1, taunt: 1, good: 1, bad: 1 };
-export const COOLDOWN = { taunt: 6, attack: 2.5, hurt: 1.2, returned: 1.5, good: 0.5, bad: 0.5 }; // s
+export const PRIO = { ko: 3, phase: 3, intro: 3, dice: 3, hurt: 2, special: 2, stuck: 2, returned: 2, attack: 1, taunt: 1, good: 1, bad: 1, count: 2 };
+export const COOLDOWN = { taunt: 6, attack: 2.5, hurt: 1.2, returned: 1.5, good: 0.5, bad: 0.5, count: 0.5 }; // s
 
 export const CATALOG = {
   chaky: {
@@ -29,9 +29,10 @@ export const CATALOG = {
     returned: ['¡Me devolviste el barril, atrevido!', '¡Ey, ese era mío!'],
     hurt: ['¡Auch, mi panza!', '¡Ese me dolió en el alma!'],
     taunt: ['¡Muy lento, campeón!', '¡Barril 1, vos 0!'],
-    dice: ['¡Chaky dice… hacé lo que dice el cartel!'],
-    good: ['¡Uh, le pegaste!', '¡Bien, eh!'],
-    bad: ['¡Jua! ¡Caíste!', '¡Leé el cartel, campeón!'],
+    dice: ['¡Si querés a Margot, vas a tener que seguirme el ritmo!'],
+    count: ['¡Y uno, y dos…!', '¡Mirá y aprendé!', '¡Atenti a la cadera!'],
+    good: ['¡Esa cadera!', '¡Con onda, eh!', '¡Mirá vos, sabe bailar!'],
+    bad: ['¡Te falta calle, campeón!', '¡Eso no es bailar!', '¡Dos pies izquierdos!'],
     phase: ['¡Ahora sí me enojé!'],
     special: ['¡Barril gigante!'],
     stuck: ['¡Soltá, soltá, soltá!'],

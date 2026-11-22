@@ -286,6 +286,13 @@ export const DICHOS = {
   '¡CHAKY DICE!': 'CHAKY DIT !', 'Hacé lo que dice el cartel': 'Fais ce que dit le panneau',
   '¡ENOJADO!': 'FURIEUX !', 'Pegale a la mano trabada 👊': 'Frappe la main coincée 👊',
   '¡BIEN!': 'BRAVO !', '¡NO!': 'NON !',
+  '¡SALTO!': 'SAUT !', '¡GIRO!': 'TOURNE !', '¡TU TURNO!': 'À TOI !',
+  '¡CLASE DE BAILE!': 'COURS DE DANSE !', '«Si querés a Margot, vas a tener que seguirme el ritmo»': '« Si tu veux Margot, tu vas devoir suivre mon rythme »',
+  'Mirá los pasos y repetilos': 'Regarde les pas et répète-les',
+  '¡Si querés a Margot, vas a tener que seguirme el ritmo!': 'Si tu veux Margot, tu vas devoir suivre mon rythme !',
+  '¡Y uno, y dos…!': 'Et un, et deux… !', '¡Mirá y aprendé!': 'Regarde et apprends !', '¡Atenti a la cadera!': 'Attention aux hanches !',
+  '¡Esa cadera!': 'Ces hanches !', '¡Con onda, eh!': 'Avec style, hein !', '¡Mirá vos, sabe bailar!': 'Tiens, il sait danser !',
+  '¡Te falta calle, campeón!': 'Il te manque de la pratique, champion !', '¡Eso no es bailar!': "Ça, ce n'est pas danser !", '¡Dos pies izquierdos!': 'Deux pieds gauches !',
   // Margot y BIG CHAKY cuando cruzan al fondo
   '¡Papááá!': 'Papaaa !',
   '¡Jua, jua, jua!': 'Mouahaha !',

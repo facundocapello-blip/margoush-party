@@ -21,7 +21,9 @@ const END_DELAY = 1.2;     // s entre el ko (o caer) y salir de la arena
 const ENTRANCE = 1.5;      // s de entrada: la cámara baja desde arriba, BIG CHAKY ruge y recién ahí empieza a tirar
 const HERO_H = 2.4, BOSS_H = 14, BARREL_H = 1.15, CRATE_H = 1.3, GIANT_H = 2.7;
 // Cartel de «Chaky dice»: texto e ícono de cada orden
-export const DICE_SIGN = { jump: ['⤴', '¡SALTÁ!'], attack: ['👊', '¡PIÑA!'], dodge: ['💨', '¡ESQUIVÁ!'], still: ['✋', '¡QUIETO!'] };
+export const DANCE_SIGN = { jump: ['⤴', '¡SALTO!'], attack: ['👊', '¡PIÑA!'], dodge: ['🌀', '¡GIRO!'] };
+// Poses de baile de Chaky: si todavía no están las imágenes, usa una parecida
+const DANCE_FALLBACK = { dance_idle: 'idle', dance_jump: 'throw', dance_attack: 'slam', dance_dodge: 'hurt', dance_laugh: 'idle' };
 // BIG CHAKY parado sobre la tarima, enorme: la cámara va lejos y alta para que mida ≥ 2,5 veces al héroe en pantalla
 const TARIMA_H = 0.6, TARIMA_FRONT = ARENA.bossZ + 2.4, TARIMA_BACK = ARENA.bossZ - 5;
 const CAM = { y: 6, back: 11, lookY: 6, fov: 66, fovPortrait: 70 };
@@ -173,7 +175,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     // Carteles propios: solo el fogonazo y los textos que flotan
     const ui = document.createElement('div'); ui.id = 'arena-ui';
     ui.innerHTML = '<div class="arena-flash"></div><div class="chaky-sign hidden"><b class="ico"></b><span class="txt"></span><i class="timer"><i></i></i></div>' +
-      '<div class="phase-card hidden"><small></small><b></b><span></span></div><div class="dice-dots hidden"></div><div class="dice-verdict hidden"></div>';
+      '<div class="phase-card hidden"><small></small><b></b><span></span><em hidden></em></div><div class="dice-dots hidden"></div><div class="dice-verdict hidden"></div>';
     document.body.append(ui); document.body.classList.add('arena-on');
     const flashE = ui.querySelector('.arena-flash');
     const signE = ui.querySelector('.chaky-sign'), signIco = signE.querySelector('.ico'), signTxt = signE.querySelector('.txt');
@@ -182,13 +184,14 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     const timerE = signE.querySelector('.timer i');
     const PHASE_CARDS = {
       1: ['FASE 1', '¡BARRILES!', 'Devolvele los dorados 👊'],
-      2: ['FASE 2', '¡CHAKY DICE!', 'Hacé lo que dice el cartel'],
+      2: ['FASE 2', '¡CLASE DE BAILE!', '«Si querés a Margot, vas a tener que seguirme el ritmo»', 'Mirá los pasos y repetilos'],
       3: ['FASE 3', '¡ENOJADO!', 'Pegale a la mano trabada 👊']
     };
     let cardTimer = 0, verdictTimer = 0;
     function phaseCard(n, secs = 2.2) {
-      const [a, b, c] = PHASE_CARDS[n];
+      const [a, b, c, d2] = PHASE_CARDS[n];
       fillText(cardE.querySelector('small'), a); fillText(cardE.querySelector('b'), b); fillText(cardE.querySelector('span'), c);
+      const em = cardE.querySelector('em'); if (d2) { fillText(em, d2); em.hidden = false; } else em.hidden = true;
       cardE.className = 'phase-card p' + n; void cardE.offsetWidth; cardE.classList.add('on');
       clearTimeout(cardTimer); cardTimer = setTimeout(() => cardE.classList.add('hidden'), secs * 1000);
     }
@@ -202,17 +205,23 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       const d = logic.state.dice;
       if (!d) { dotsE.classList.add('hidden'); return; }
       dotsE.classList.remove('hidden');
-      dotsE.innerHTML = Array.from({ length: d.total }, (_, i) => '<i class="' + (d.res?.[i] || (i === d.round ? 'now' : '')) + '"></i>').join('');
+      dotsE.innerHTML = Array.from({ length: d.total }, (_, i) => '<i class="' + (d.res[i] || (i === d.round ? 'now' : '')) + '"></i>').join('');
     }
     function verdict(ok) {
       fillText(verdictE, ok ? '¡BIEN!' : '¡NO!');
       verdictE.className = 'dice-verdict ' + (ok ? 'ok' : 'bad'); void verdictE.offsetWidth; verdictE.classList.add('on');
       clearTimeout(verdictTimer); verdictTimer = setTimeout(() => verdictE.classList.add('hidden'), 650);
     }
+    // Cartel de la clase: el paso que muestra Chaky, o «¡TU TURNO!» con la fila de pasos (los hechos con ✔)
     function showSign(cmd, cls = '') {
       signE.className = 'chaky-sign ' + cls;
-      if (cmd) { signIco.textContent = DICE_SIGN[cmd][0]; fillText(signTxt, DICE_SIGN[cmd][1]); }
+      if (cmd) { signIco.textContent = DANCE_SIGN[cmd][0]; fillText(signTxt, DANCE_SIGN[cmd][1]); }
       else { signIco.textContent = '?'; signTxt.textContent = ''; }
+    }
+    function showTurn(d, cls = 'on turn') {
+      signE.className = 'chaky-sign ' + cls;
+      signIco.innerHTML = d.seq.map((m, i) => '<em class="' + (i < d.idx ? 'done' : i === d.idx ? 'now' : '') + '">' + (i < d.idx ? '✔' : DANCE_SIGN[m][0]) + '</em>').join('');
+      fillText(signTxt, '¡TU TURNO!');
     }
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
     const barName = bar?.querySelector('span');
@@ -293,19 +302,26 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
             }
             break;
           case 'voice': speak(e.event); break;
-          case 'dice': {
-            showSign(e.cmd, 'on'); wantButton(e.cmd); renderDots();
-            // grita (a veces otra cosa): globo desde la boca y la voz
-            const p = bossChest(), shout = DICE_SIGN[e.shout][1];
-            if (speech && speech.t < speech.life) speech.t = Math.max(speech.t, speech.life - 0.12);
-            speech = pop(p.x + 2.2, p.y + 3.2, p.z, shout, '#ffffff', 30, Math.max(0.9, e.win));
-            try { audio.bossLine?.(shout, PROFILES.chaky, 0.8); } catch (_) {}
-            sfx('whoosh');
+          case 'danceDemo':
+            // Chaky muestra el paso al compás: cartel con el paso, golpe de bombo y ¡uno, dos, tres…!
+            showSign(e.move, 'on demo'); renderDots(); wantButton(null);
+            sfx(e.i === e.n - 1 ? 'hitHeavy' : 'hit'); shake(0.08, 0.12);
+            break;
+          case 'danceTurn': {
+            const d = logic.state.dice;
+            showTurn(d); sfx('whoosh');
+            if (e.round === 0) wantButton(e.seq[0]); // la primera ronda te marca el botón
+            break;
+          }
+          case 'danceStep': {
+            const d = logic.state.dice;
+            if (e.ok) { sfx('pickup'); pop(x, HERO_H + 0.6, z, DANCE_SIGN[e.move][0], '#ffd36e', 34, 0.7); if (d && d.stage === 'turn') { showTurn(d); if (d.round === 0) wantButton(d.seq[d.idx]); } }
             break;
           }
           case 'diceResult': {
-            const d = logic.state.dice; if (d) { d.res = d.res || []; d.res[e.round] = e.ok ? 'ok' : 'bad'; }
-            showSign(d?.cmd || null, e.ok ? 'on ok' : 'on bad'); wantButton(null); verdict(e.ok); renderDots();
+            const d = logic.state.dice;
+            if (d && d.stage === 'result') { signIco.innerHTML = d.seq.map(m => '<em>' + DANCE_SIGN[m][0] + '</em>').join(''); fillText(signTxt, e.ok ? '¡BIEN!' : '¡NO!'); }
+            signE.className = 'chaky-sign on ' + (e.ok ? 'ok' : 'bad'); wantButton(null); verdict(e.ok); renderDots();
             if (e.ok) { addPts(ARENA.points.dice, x, 3, z - 1); charge(POWER.hit); sfx('hitHeavy'); shake(0.2, 0.2); }
             else { sfx('boo'); }
             break;
@@ -446,7 +462,9 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       }
       if (pose !== prevPose) { prevPose = pose; poseT = 0; }
       poseT += dt;
-      bossKey = 'arena_chaky_' + pose; setTex(B, bossKey);
+      bossKey = 'arena_chaky_' + pose;
+      if (!assets.has(bossKey) && DANCE_FALLBACK[pose]) bossKey = 'arena_chaky_' + DANCE_FALLBACK[pose];
+      setTex(B, bossKey);
       let bx = S.bossX, by = 0, rz = 0, sx = 1, sy = 1;
       if (pose === 'throw') { const k = Math.min(1, poseT / 0.6); by = Math.abs(Math.sin(k * Math.PI * 2)) * 0.35; rz = Math.sin(poseT * 9) * 0.06; }
       else if (pose === 'slamtop') { by = -0.25; if (H.state === 'stuck') { bx += (Math.random() - 0.5) * 0.18; by += Math.random() * 0.05; } } // forcejea con la mano trabada
@@ -533,7 +551,7 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       for (const [id, e] of live) if (!seen.has(id)) { drop(e); live.delete(id); }
 
       // Cartel de «Chaky dice»: sobre las manos de BIG CHAKY
-      { const d = logic.state.dice; timerE.style.width = d && d.stage === 'window' ? Math.max(0, 100 * (1 - d.t / d.win)) + '%' : '0%'; }
+      { const d = logic.state.dice; timerE.style.width = d && d.stage === 'turn' ? Math.max(0, 100 * (1 - d.t / ARENA.dice.stepWindow)) + '%' : '0%'; }
       if (!signE.classList.contains('hidden')) {
         const sp = scratch.set(B.position.x, B.position.y + B.userData.hh * 0.93, B.position.z).project(cam);
         signE.style.left = ((sp.x + 1) / 2 * innerWidth) + 'px'; signE.style.top = ((1 - sp.y) / 2 * innerHeight) + 'px';
