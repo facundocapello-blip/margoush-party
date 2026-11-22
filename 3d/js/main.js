@@ -15,6 +15,8 @@ import { createPowers } from './powers.js';
 import { createCameos } from './cameos.js';
 import { createArena } from './arena.js';
 import { createCepiArena } from './arena_cepi.js';
+import { createLaleArena } from './arena_lale.js';
+import { createPinkyArena } from './arena_pinky.js';
 import { createChase } from './chase.js';
 import { createBonus } from './bonus.js';
 import { createStory } from './story.js';
@@ -217,7 +219,13 @@ function clearRun() {
   game.traps?.reset();
   game.arena?.dispose();
   game.arenaCepi?.dispose();
+  game.arenaLale?.dispose();
+  game.arenaPinky?.dispose();
   game.bonus?.dispose();
+  game.bossStarted = false;
+  game.chakyDone = false;
+  game.cepiDone = false;
+  game.laleDone = false;
   game.story?.endIntro();
   game.story?.resetCage();
   fx.clear();
@@ -235,14 +243,22 @@ function setLevel(n) {
 }
 
 // ---------- checkpoints ----------
-// Al morir no se vuelve a Buenos Aires: se reintenta desde el último tramo al que se llegó
-// (el BYD de Cepi, Nivel 2 o BIG CHAKY). Queda guardado en el celu para «CONTINUAR» desde el menú.
+// Campaña de 4 actos: checkpoint automático al entrar a cada Acto y a cada Jefe.
+// Queda guardado en el celu para «CONTINUAR» desde el menú o reintentar en 1 toque.
 const CP_KEY = 'margoush3d_checkpoint';
 const CHECKPOINTS = {
-  francia: { label: 'NIVEL 2 · FRANCIA', short: 'Francia' },
-  byd: { label: '¡ROMPÉ EL BYD!', short: 'el BYD de Cepi' },
-  calle: { label: 'NIVEL 1 · BUENOS AIRES', short: 'la calle porteña' },
-  boss: { label: 'BIG CHAKY', short: 'BIG CHAKY' }
+  calle:   { label: 'ACTO 1 · BUENOS AIRES', short: 'Acto 1 · Buenos Aires' },
+  chaky:   { label: 'JEFE 1 · BIG CHAKY', short: 'BIG CHAKY' },
+  acto2:   { label: 'ACTO 2 · ¡SEGUÍ AL BYD!', short: 'Acto 2 · Persecución BYD' },
+  byd:     { label: 'ACTO 2 · ¡ROMPÉ EL BYD!', short: 'el BYD de Cepi' },
+  cepi:    { label: 'JEFE 2 · CEPI «EL NIÑO»', short: 'Cepi (Pádel)' },
+  acto3:   { label: 'ACTO 3 · FRANCIA (LE BLÉ)', short: 'Acto 3 · Francia' },
+  lale:    { label: 'JEFE 3 · LALE «MANTECOSO»', short: 'Lale (Le Blé)' },
+  acto4:   { label: 'ACTO 4 · CAMINO AL GALPÓN', short: 'Acto 4 · Galpón' },
+  pinky:   { label: 'JEFE FINAL · PINKY', short: 'Pinky (Final)' },
+  // compatibilidad con checkpoints previos guardados en localStorage
+  francia: { label: 'ACTO 3 · FRANCIA (LE BLÉ)', short: 'Francia' },
+  boss:    { label: 'JEFE 1 · BIG CHAKY', short: 'BIG CHAKY' }
 };
 function saveCheckpoint(id) {
   game.checkpoint = { id, heroId: game.heroId, score: game.score.total, time: Math.round(game.time) };
@@ -297,48 +313,87 @@ async function paintPodium() {
 }
 game.paintPodium = paintPodium;
 
-// Arranca una partida directamente en un checkpoint, con la vida llena y el puntaje que había ahí
+function clearWavesBefore(firstIdx) {
+  WAVES.forEach((w, i) => {
+    if (i >= firstIdx) return;
+    game.waves[w.id] = 'cleared';
+    if (w.gate != null) { const g = world.gates[w.gate]; g.open = true; g.t = 0; }
+  });
+}
+
+// Arranca una partida directamente en un checkpoint, con vida llena y el puntaje que había ahí
 function resumeAt(cp) {
   if (!cp || !CHECKPOINTS[cp.id]) return startRun(game.heroId, false);
-  startRun(cp.heroId, false, { keepCheckpoint: true });
+  startRun(cp.heroId, false, { keepCheckpoint: true, street: true });
   game.checkpoint = cp;
   game.score.restore(cp.score);
   game.time = cp.time || 0;
-  // El mini nivel del BYD es al principio del Nivel 1 (después de la persecución)
-  if (cp.id === 'byd') {
+  const id = cp.id;
+  if (id === 'calle') {
+    game.state = 'curtain';
+    curtain(() => { game.state = 'playing'; input.reset(); audio.music('ba', { fade: 0 }); }, { label: CHECKPOINTS.calle.label });
+    return;
+  }
+  if (id === 'chaky' || id === 'boss') {
+    clearWavesBefore(WAVES.findIndex(w => w.level === 2));
+    game.hero.actor.position.set(LEVELS[0].maxX - 4, 0, 0);
+    updateCamera(0, true);
+    spawnBoss();
+    return;
+  }
+  if (id === 'acto2') {
+    game.chakyDone = true;
+    startChaseRun();
+    return;
+  }
+  if (id === 'byd') {
+    game.chakyDone = true;
     game.state = 'curtain';
     audio.music('byd', { fade: 0 });
     curtain(() => startBydLevel(), { label: CHECKPOINTS.byd.label });
     return;
   }
-  // La calle de Buenos Aires (después de romper el BYD): no se repiten la persecución ni el BYD
-  if (cp.id === 'calle') {
-    game.chaseDone = true;
-    game.state = 'curtain';
-    curtain(() => { game.state = 'playing'; input.reset(); audio.music('ba', { fade: 0 }); }, { label: CHECKPOINTS.calle.label });
+  if (id === 'cepi') {
+    game.chakyDone = true;
+    spawnCepi();
     return;
   }
-  const first = { francia: WAVES.findIndex(w => w.level === 2), boss: WAVES.length }[cp.id];
-  WAVES.forEach((w, i) => {
-    if (i >= first) return;
-    game.waves[w.id] = 'cleared';
-    if (w.gate != null) { const g = world.gates[w.gate]; g.open = true; g.t = 0; }
-  });
   world.border?.raise?.();
   setLevel(2);
-  // Pinky ya se cruzó en Buenos Aires; en Francia vuelve a aparecer solo si se arranca desde el nivel 2
-  game.cameos.pinky.shown = { 1: true, 2: cp.id !== 'francia' };
+  game.chakyDone = true;
+  game.cepiDone = true;
+  game.cameos.pinky.shown = { 1: true, 2: id !== 'acto3' && id !== 'francia' };
   game.cameos.onLevelStart();
   const p = game.hero.actor.position;
-  if (cp.id === 'francia') p.set(LEVELS[1].start, 0, 0);
-  else p.set(GALPON_X + 8, 0, 0);
-  updateCamera(0, true);
-  if (cp.id === 'boss') {
-    spawnBoss();
-  } else {
+  if (id === 'acto3' || id === 'francia') {
+    clearWavesBefore(WAVES.findIndex(w => w.level === 2));
+    p.set(LEVELS[1].start, 0, 0);
+    updateCamera(0, true);
     game.state = 'curtain';
-    curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0 }); }, { label: CHECKPOINTS.francia.label });
+    curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0 }); }, { label: CHECKPOINTS.acto3.label });
+    return;
   }
+  if (id === 'lale') {
+    clearWavesBefore(WAVES.findIndex(w => w.id === 'boulevard'));
+    p.set(206, 0, 0);
+    updateCamera(0, true);
+    spawnLale();
+    return;
+  }
+  game.laleDone = true;
+  if (id === 'acto4') {
+    clearWavesBefore(WAVES.findIndex(w => w.id === 'boulevard-2'));
+    p.set(228, 0, 0);
+    updateCamera(0, true);
+    game.state = 'curtain';
+    curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0 }); }, { label: CHECKPOINTS.acto4.label });
+    return;
+  }
+  // pinky (jefe final)
+  clearWavesBefore(WAVES.length);
+  p.set(GALPON_X + 8, 0, 0);
+  updateCamera(0, true);
+  spawnPinky();
 }
 game.resumeAt = resumeAt;
 
@@ -364,29 +419,36 @@ function startRun(heroId, withIntro = false, { keepCheckpoint = false, street = 
   resize();
   clearBanners();
   $('#boss-bar').classList.add('hidden');
-  // En la intro no suena el tema del héroe (solo los efectos del secuestro); arranca al empezar a jugar
-  audio.music(withIntro ? 'intro' : (keepCheckpoint || street) ? 'ba' : null, { fade: 0 });
-  // El Nivel 1 arranca con Cepi llevándose a Margot y la persecución (sin intro, directo a la persecución)
+  // Acto 1: Intro → Calle porteña (Buenos Aires) → BIG CHAKY en Ezeiza
+  audio.music(withIntro ? 'intro' : 'ba', { fade: 0 });
   if (withIntro) { game.state = 'intro'; game.story.startIntro(game.hero, heroId, 'intro'); }
-  else if (!keepCheckpoint && !street) startChaseRun();
-  else game.state = 'playing';
+  else {
+    game.state = 'playing';
+    if (!keepCheckpoint && !street) saveCheckpoint('calle');
+  }
   updateRotateHint();
 }
 
-// Termina (o se saltea) una escena animada: después de la intro viene la persecución;
-// después de la del BYD, la calle de Buenos Aires
+// Termina (o se saltea) una escena animada: tras la intro arranca el Acto 1 (calle porteña);
+// tras romper el BYD en el Acto 2 arranca la Arena de Cepi.
 function endIntro() {
   const kind = game.story.endIntro();
   input.reset();
-  if (kind === 'byd') bydPlay();
-  else startChaseRun();
+  if (kind === 'byd') {
+    spawnCepi();
+    return;
+  }
+  saveCheckpoint('calle');
+  game.state = 'playing';
+  audio.music('ba', { fade: 0.3 });
 }
-// La persecución de Cepi (se llevó a Margot en su BYD): primer tramo del Nivel 1
+// Acto 2: Persecución de Cepi en su BYD (al cruzar a Francia) → ¡Rompé el BYD! → Arena de Cepi
 function startChaseRun() {
   game.chaseDone = true;
+  if (game.checkpoint?.id !== 'acto2') saveCheckpoint('acto2');
   game.state = 'curtain';
   audio.music('chase', { fade: 0.3 });
-  curtain(() => game.chase.start(), { label: '¡SEGUÍ AL BYD!' });
+  curtain(() => game.chase.start(), { label: CHECKPOINTS.acto2.label });
 }
 // Mini nivel: romper el BYD antes de que Cepi lo cargue (bonus.js)
 function startBydLevel() {
@@ -397,29 +459,16 @@ function startBydLevel() {
   game.bonus.start();
 }
 game.startBydLevel = startBydLevel;
-// Lo rompiste: escena «BIG CHAKY se la lleva a Francia» y después la calle de Buenos Aires
+// Lo rompiste en el Acto 2: Cepi queda caliente → entra a su Arena de Pádel
 function bydDone() {
   const h = game.hero;
   Object.assign(h, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.2 });
   input.reset();
-  audio.music('intro', { fade: 0.3 });
-  game.state = 'intro';
-  game.story.startIntro(h, game.heroId, 'byd');
-}
-function bydPlay() {
-  game.state = 'playing';
-  const h = game.hero;
-  // Rompiste el BYD: Margot te da fuerzas (vida llena) y la calle queda guardada para reintentar desde acá
-  const healed = h.hpMax - h.hp;
-  h.hp = h.hpMax;
-  if (healed > 0) fx.popup?.(h.actor.position.clone().setY(2.6), '❤️ +' + healed, '#ff9bb0', { size: 26, life: 1.2, rise: 0.6 });
-  saveCheckpoint('calle');
-  h.actor.position.set(LEVELS[0].start, 0, 0.5);
-  h.actor.setFacing(1); h.actor.setPose('idle');
-  h.inv = 1.2;
-  updateCamera(0, true);
-  input.reset();
-  audio.music('ba', { fade: 0.4 });
+  if (PROBAR === 'byd' || PROBAR === 'persecucion') {
+    spawnCepi();
+    return;
+  }
+  spawnCepi();
 }
 // Se cargó: Cepi se escapa, perdés un corazón y se vuelve a intentar (sin corazones, se terminó)
 function bydFailed() {
@@ -431,23 +480,27 @@ function bydFailed() {
 }
 
 // ---------- cortina entre tramos ----------
-// Tapa la pantalla con tres franjas en diagonal, hace el cambio (mid) con la pantalla tapada y destapa.
-// La usan todos los cambios de tramo para que se sientan iguales. label: nombre corto del tramo que empieza.
+// Tapa la pantalla con tres franjas en diagonal, espera `wait` (carga diferida de sprites de jefe)
+// si existe, ejecuta `mid` con la pantalla tapada y destapa.
 let curtainBusy = false;
-function curtain(mid, { label = '', hold = 0 } = {}) {
+function curtain(mid, { label = '', hold = 0, wait = null } = {}) {
   const c = $('#curtain');
-  if (curtainBusy || !c) { mid(); return; }
+  if (curtainBusy || !c) {
+    Promise.resolve(wait).then(() => mid());
+    return;
+  }
   curtainBusy = true;
   c.querySelector('b').textContent = tr(label);
   c.classList.remove('open'); void c.offsetWidth; c.classList.add('close');
   audio.sfx('whoosh');
   const cover = 420 + (label ? 450 : 0) + hold * 1000;
-  setTimeout(() => {
+  const delay = new Promise((r) => setTimeout(r, cover));
+  Promise.all([delay, Promise.resolve(wait).catch(() => {})]).then(() => {
     try { mid(); } finally {
       c.classList.remove('close'); void c.offsetWidth; c.classList.add('open');
       setTimeout(() => { c.classList.remove('open'); curtainBusy = false; }, 560);
     }
-  }, cover);
+  });
 }
 game.curtain = curtain;
 Object.defineProperty(game, 'curtainBusy', { get: () => curtainBusy });
@@ -494,19 +547,30 @@ function updateZones() {
       }
     }
   }
-  if (game.levelExit && game.level < LEVELS.length) {
-    const end = LEVELS[game.level - 1].maxX - 2.5;
-    if (x >= end) { game.levelExit = false; startTransition(); return; }
+  if (game.levelExit && game.level === 1) {
+    const end = LEVELS[0].maxX - 2.5;
+    if (x >= end) {
+      game.levelExit = false;
+      if (!game.chakyDone) { spawnBoss(); return; }
+      startTransition();
+      return;
+    }
   }
+  // Acto 3: al despejar las 2 oleadas de Francia (francia y francia-2) y cruzar el portón hacia Le Blé → Arena de Lale
+  if (game.level === 2 && !game.laleDone && game.waves['francia-2'] === 'cleared' && x >= 206) {
+    spawnLale();
+    return;
+  }
+  // Acto 4: al despejar el último tramo y entrar al Galpón → Arena Final de Pinky (+ Margot)
   const last = WAVES[WAVES.length - 1];
-  if (!game.bossStarted && game.level === 2 && game.waves[last.id] === 'cleared' && x > world.galponX + 6) spawnBoss();
+  if (!game.bossStarted && game.level === 2 && game.laleDone && game.waves[last.id] === 'cleared' && x > world.galponX + 6) {
+    spawnPinky();
+  }
 }
 
-// ---------- cambio de nivel ----------
-// Sin cortes: se levanta la barrera de la frontera, el héroe cruza caminando bajo el arco
-// «Bienvenue en France» (pasa una franja azul-blanco-rojo) y el Nivel 2 arranca donde llegó.
+// ---------- cambio de nivel (Acto 1 → Acto 2: cruce a Francia) ----------
 const TRANSITION_MAX_S = 6;
-const TRANSITION_WAIT_S = 0.45; // lo que tarda la barrera en subir antes de que arranque a caminar
+const TRANSITION_WAIT_S = 0.45;
 function startTransition() {
   game.state = 'transition';
   game.transT = 0;
@@ -517,23 +581,21 @@ function startTransition() {
   world.border?.raise();
   game.hero.actor.setFacing(1);
   Object.assign(game.hero, { state: 'free', lift: 0, vy: 0, knock: 0, knockZ: 0 });
-  const done = LEVELS[game.level - 1], next = LEVELS[game.level];
-  $('#level-done').textContent = tr(`NIVEL ${done.id} COMPLETO`);
+  const done = LEVELS[0], next = LEVELS[1];
+  $('#level-done').textContent = tr('ACTO 1 · BUENOS AIRES');
   $('#level-name').textContent = tr(done.name);
   $('#level-pts').textContent = tr(game.score.total.toLocaleString('es-AR') + ' puntos');
-  $('#level-next').textContent = (next.id === 2 ? '✈ ' : '→ ') + tr(`NIVEL ${next.id}: ${next.name}`);
+  $('#level-next').textContent = '✈ ' + tr(`NIVEL ${next.id}: ${next.name}`);
   $('#level-card').classList.remove('hidden');
   $('#level-card').classList.add('travel');
   audio.sfx('clear');
   audio.sfx('bell');
 }
 
-// Cada cuadro de la transición: el héroe camina solo hasta el arranque del Nivel 2
 function updateTransition(dt) {
   game.transT += dt;
-  const h = game.hero, a = h.actor, p = a.position, next = LEVELS[game.level];
+  const h = game.hero, a = h.actor, p = a.position, next = LEVELS[1];
   const walking = game.transT > TRANSITION_WAIT_S && p.x < next.start;
-  // Si el héroe tiene caminata, cruza la frontera caminando tranquilo; si no, corriendo como antes
   const strolls = !!a.poses.walk;
   const speed = walking ? (strolls ? WALK.auto : Math.max(h.speed, 7.2)) : 0;
   if (walking) {
@@ -542,46 +604,132 @@ function updateTransition(dt) {
   }
   a.setPose(walking ? (strolls ? 'walk' : 'run') : 'idle');
   a.update(dt, speed);
-  // Al cruzar la frontera (o si tarda demasiado) la cortina tapa y Francia arranca ya lista, sin esperas
   if (!game.transCrossed && (p.x >= BORDER_X + 0.5 || game.transT > TRANSITION_MAX_S)) {
     game.transCrossed = true;
     audio.sfx('secret');
-    curtain(() => { if (game.state === 'transition') { endTransition(); audio.music('francia', { fade: 0.4 }); } }, { label: 'NIVEL 2 · FRANCIA' });
+    curtain(() => { if (game.state === 'transition') endTransition(); }, { label: CHECKPOINTS.acto2.label });
   }
 }
 
 function endTransition() {
-  setLevel(game.level + 1);
-  const L = LEVELS[game.level - 1];
+  setLevel(2);
+  const L = LEVELS[1];
   const h = game.hero;
   game.enemies.clear(); game.butter.clear(); game.psycho.stop(); game.powers.clear();
   game.cameos.onLevelStart();
   game.margot.clear();
-  game.traps.reset(); // nada de Buenos Aires (un colectivo en camino) pasa a Francia
-  h.actor.position.set(Math.max(L.start, Math.min(h.actor.position.x, L.start + 1)), 0, h.actor.position.z);
+  game.traps.reset();
+  h.actor.position.set(L.start, 0, 0);
   h.actor.setFacing(1);
   h.actor.setPose('idle');
-  h.hp = Math.min(h.hpMax, h.hp + 2);
+  h.hp = Math.min(h.hpMax, Math.max(3, h.hp + 2));
   h.inv = 0;
   $('#level-card').classList.add('hidden');
   $('#level-card').classList.remove('travel');
-  game.state = 'playing';
   input.reset();
-  saveCheckpoint('francia');
+  // Acto 2 abre directo con la Persecución del BYD → ¡Rompé el BYD! → Arena de Cepi
+  game.chaseDone = true;
+  saveCheckpoint('acto2');
+  audio.music('chase', { fade: 0.3 });
+  game.chase.start();
 }
 game.startTransition = startTransition;
 
-// La arena de BIG CHAKY: con la cortina en el juego; instant (atajo de pruebas) entra directo
+// Curación familiar antes de cada jefe: +2 corazones (mínimo 3)
+function healBeforeBoss(instant = false) {
+  if (!game.hero || instant) return;
+  game.hero.hp = Math.min(game.hero.hpMax, Math.max(3, game.hero.hp + 2));
+}
+
+// ---------- Jefes de los 4 Actos (con carga diferida por arena) ----------
 function spawnBoss({ instant = false } = {}) {
+  input.reset();
+  healBeforeBoss(instant);
+  const wait = assets.ensure(['arena_chaky_', 'arena_barril', 'arena_cajon', 'arena_fondo', 'arena_aeropuerto_']);
+  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  if (instant) { wait.then(() => game.arena.start()); return; }
+  if (game.checkpoint?.id !== 'chaky') saveCheckpoint('chaky');
+  game.state = 'curtain';
+  curtain(() => game.arena.start(), { label: CHECKPOINTS.chaky.label, wait });
+}
+
+function spawnCepi({ instant = false, hp = null } = {}) {
+  input.reset();
+  healBeforeBoss(instant);
+  const wait = assets.ensure(['arena_cepi_']);
+  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  const go = () => {
+    game.arenaCepi.start();
+    if (hp != null) game.arenaCepi.logic._setHp(hp);
+  };
+  if (instant) { wait.then(go); return; }
+  if (game.checkpoint?.id !== 'cepi') saveCheckpoint('cepi');
+  game.state = 'curtain';
+  curtain(go, { label: CHECKPOINTS.cepi.label, wait });
+}
+
+function spawnLale({ instant = false, hp = null } = {}) {
+  input.reset();
+  healBeforeBoss(instant);
+  const wait = assets.ensure(['arena_lale_']);
+  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  const go = () => {
+    game.arenaLale.start();
+    if (hp != null) game.arenaLale.logic._setHp(hp);
+  };
+  if (instant) { wait.then(go); return; }
+  if (game.checkpoint?.id !== 'lale') saveCheckpoint('lale');
+  game.state = 'curtain';
+  curtain(go, { label: CHECKPOINTS.lale.label, wait });
+}
+
+function spawnPinky({ instant = false, hp = null } = {}) {
   game.bossStarted = true;
   input.reset();
-  // Antes de BIG CHAKY: +2 corazones, como al cruzar a Francia (no se llega a la pelea final con uno solo)
-  if (game.hero && !instant) game.hero.hp = Math.min(game.hero.hpMax, game.hero.hp + 2);
+  healBeforeBoss(instant);
+  const wait = assets.ensure(['arena_pinky_', 'arena_margot_']);
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
-  if (instant) { game.arena.start(); return; }
-  if (game.checkpoint?.id !== 'boss') saveCheckpoint('boss');
+  const go = () => {
+    game.arenaPinky.start();
+    if (hp != null) game.arenaPinky.logic._setHp(hp);
+  };
+  if (instant) { wait.then(go); return; }
+  if (game.checkpoint?.id !== 'pinky') saveCheckpoint('pinky');
   game.state = 'curtain';
-  curtain(() => game.arena.start(), { label: 'BIG CHAKY' });
+  curtain(go, { label: CHECKPOINTS.pinky.label, wait });
+}
+
+function enterAct3Street() {
+  game.cepiDone = true;
+  world.border?.raise?.();
+  setLevel(2);
+  clearWavesBefore(WAVES.findIndex(w => w.level === 2));
+  const h = game.hero;
+  Object.assign(h, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.0 });
+  h.hp = Math.min(h.hpMax, Math.max(3, h.hp + 2));
+  h.actor.position.set(LEVELS[1].start, 0, 0);
+  h.actor.setFacing(1); h.actor.setPose('idle');
+  updateCamera(0, true);
+  saveCheckpoint('acto3');
+  game.state = 'curtain';
+  curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 }); }, { label: CHECKPOINTS.acto3.label });
+}
+
+function enterAct4Street() {
+  game.laleDone = true;
+  world.border?.raise?.();
+  setLevel(2);
+  // Saltamos la vieja oleada street de Cepi (`boulevard`) porque Cepi ya tuvo su propia Arena en el Acto 2
+  clearWavesBefore(WAVES.findIndex(w => w.id === 'boulevard-2'));
+  const h = game.hero;
+  Object.assign(h, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.0 });
+  h.hp = Math.min(h.hpMax, Math.max(3, h.hp + 2));
+  h.actor.position.set(228, 0, 0);
+  h.actor.setFacing(1); h.actor.setPose('idle');
+  updateCamera(0, true);
+  saveCheckpoint('acto4');
+  game.state = 'curtain';
+  curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 }); }, { label: CHECKPOINTS.acto4.label });
 }
 
 game.onBossDown = () => {
@@ -620,7 +768,6 @@ game.setStage = (id) => {
   const p = game.hero.actor.position;
   game.state = 'playing';
   Object.assign(game.hero, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free' });
-  // Todo lo anterior queda despejado (y sus portones abiertos)
   const stop = WAVES.findIndex(w => w.id === (st.wave || st.upTo));
   const target = WAVES[stop];
   WAVES.forEach((w, i) => {
@@ -637,21 +784,20 @@ game.setStage = (id) => {
 game.onHeroDown = () => finish(false);
 
 // ---------- Links de prueba: ?probar=<tramo> ----------
-// Después de elegir héroe entra directo a ese tramo (sin intro ni tramos anteriores) y no toca el
-// «continuar» del juego normal. Ej.: .../3d/?probar=chaky  ·  ?probar=cepi  ·  ?probar=cepi-duelo  ·  ?probar=cepi-carton
-function startCepiArena(hp = null) {
-  input.reset();
-  game.ctx.audio?.music('boss', { fade: 0 });
-  game.arenaCepi.start();
-  if (hp != null) game.arenaCepi.logic._setHp(hp);
-}
+// Ej.: ?probar=chaky · ?probar=cepi · ?probar=lale · ?probar=pinky (y sub-fases)
 const QUICK_TESTS = {
   chaky: { stage: 'galpon' },
   'chaky-cartel': { stage: 'galpon', bossHp: 21 },
   'chaky-enojado': { stage: 'galpon', bossHp: 11 },
-  cepi: { run: () => startCepiArena() },
-  'cepi-duelo': { run: () => startCepiArena(20) },
-  'cepi-carton': { run: () => startCepiArena(10) },
+  cepi: { run: () => spawnCepi({ instant: true }) },
+  'cepi-duelo': { run: () => spawnCepi({ instant: true, hp: 20 }) },
+  'cepi-carton': { run: () => spawnCepi({ instant: true, hp: 10 }) },
+  lale: { run: () => spawnLale({ instant: true }) },
+  'lale-patin': { run: () => spawnLale({ instant: true, hp: 20 }) },
+  'lale-horno': { run: () => spawnLale({ instant: true, hp: 10 }) },
+  pinky: { run: () => spawnPinky({ instant: true }) },
+  'pinky-tarifa': { run: () => spawnPinky({ instant: true, hp: 20 }) },
+  'pinky-margot': { run: () => spawnPinky({ instant: true, hp: 10 }) },
   persecucion: { run: () => startChaseRun() },
   byd: { run: () => startBydLevel() },
   calle: {},
@@ -670,7 +816,7 @@ function quickTest(heroId, id) {
     wait();
   }
   clearCheckpoint();
-  setTimeout(clearCheckpoint, 1500); // lo que se guarde al entrar (jefe, BYD) no queda como «continuar»
+  setTimeout(clearCheckpoint, 1500);
 }
 
 function finish(won) {
@@ -691,9 +837,10 @@ function finish(won) {
 game.finish = finish;
 
 // ---------- pausa ----------
+const PAUSABLE = new Set(['playing', 'chase', 'bonus', 'arena', 'arena-cepi', 'arena-lale', 'arena-pinky']);
 function pause() {
-  if (game.state === 'intro') endIntro(); // en la intro, la pausa también la saltea
-  if (game.state !== 'playing' && game.state !== 'chase' && game.state !== 'arena' && game.state !== 'arena-cepi' && game.state !== 'bonus') return;
+  if (game.state === 'intro') endIntro();
+  if (!PAUSABLE.has(game.state)) return;
   game.pausedFrom = game.state;
   game.state = 'paused';
   input.reset();
@@ -703,7 +850,6 @@ function pause() {
   pauseConfirm(null);
   showScreen('screen-pause');
 }
-// Confirmación dentro de la pausa (reintentar y salir no se hacen de un solo toque)
 let confirmAction = null;
 function pauseConfirm(text, action) {
   confirmAction = action || null;
@@ -715,7 +861,14 @@ function resume() {
   if (game.state !== 'paused') return;
   input.reset();
   showScreen(null);
-  const back = { chase: game.chase.active, arena: game.arena.active, 'arena-cepi': game.arenaCepi.active, bonus: game.bonus.active };
+  const back = {
+    chase: game.chase.active,
+    bonus: game.bonus.active,
+    arena: game.arena.active,
+    'arena-cepi': game.arenaCepi.active,
+    'arena-lale': game.arenaLale.active,
+    'arena-pinky': game.arenaPinky.active
+  };
   game.state = back[game.pausedFrom] ? game.pausedFrom : 'playing';
   audio.resumeMusic();
   last = 0;
@@ -724,8 +877,6 @@ game.pause = pause;
 game.resume = resume;
 
 let last = 0;
-// Red de seguridad: si un cuadro tira un error, el juego NO se congela (se anota y sigue);
-// si pasa en la intro, se la saltea y arranca la persecución.
 let frameErrors = 0;
 function frame(now) {
   try { frameStep(now); } catch (e) {
@@ -741,33 +892,22 @@ function frameStep(now) {
   const realDt = Math.min(0.1, last ? (now - last) / 1000 : 0);
   const dt = Math.min(0.05, realDt) * game.timeScale;
   last = now;
-  // Persecución de Cepi: tiene su propia escena (sigue dibujándose en pausa)
-  if (game.chase.active && game.state !== 'chase' && game.state !== 'paused') game.chase.dispose();
-  if (game.chase.active) {
-    if (game.state === 'chase') game.chase.update(dt);
-    if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
-    if (game.chase.active) { game.chase.render(); requestAnimationFrame(frame); return; }
-  }
-  // BONUS «¡ROMPÉ EL BYD!»: escena propia (sigue dibujándose en pausa)
-  if (game.bonus.active && game.state !== 'bonus' && game.state !== 'paused') game.bonus.dispose();
-  if (game.bonus.active) {
-    if (game.state === 'bonus') game.bonus.update(dt);
-    if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
-    if (game.bonus.active) { game.bonus.render(); requestAnimationFrame(frame); return; }
-  }
-  // Arena de BIG CHAKY: también tiene su propia escena (sigue dibujándose en pausa)
-  if (game.arena.active && game.state !== 'arena' && game.state !== 'paused') game.arena.dispose();
-  if (game.arena.active) {
-    if (game.state === 'arena') game.arena.update(dt);
-    if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
-    if (game.arena.active) { game.arena.render(); requestAnimationFrame(frame); return; }
-  }
-  // Arena de Cepi (Nivel 2 — cancha de pádel): escena propia
-  if (game.arenaCepi.active && game.state !== 'arena-cepi' && game.state !== 'paused') game.arenaCepi.dispose();
-  if (game.arenaCepi.active) {
-    if (game.state === 'arena-cepi') game.arenaCepi.update(dt);
-    if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
-    if (game.arenaCepi.active) { game.arenaCepi.render(); requestAnimationFrame(frame); return; }
+  const scenes = [
+    ['chase', game.chase],
+    ['bonus', game.bonus],
+    ['arena', game.arena],
+    ['arena-cepi', game.arenaCepi],
+    ['arena-lale', game.arenaLale],
+    ['arena-pinky', game.arenaPinky]
+  ];
+  for (const [st, mod] of scenes) {
+    if (!mod) continue;
+    if (mod.active && game.state !== st && game.state !== 'paused') mod.dispose();
+    if (mod.active) {
+      if (game.state === st) mod.update(dt);
+      if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
+      if (mod.active) { mod.render(); requestAnimationFrame(frame); return; }
+    }
   }
   if (game.state === 'playing') {
     const t0 = performance.now();
@@ -854,7 +994,7 @@ async function boot() {
   const ctx = { scene, assets, world, input, fx, camera, game, audio };
   const ranking = createRanking({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
   game.ranking = ranking;
-  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.arenaCepi?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); paintPodium(); audio.music('menu'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
+  const goMenu = () => { game.chase?.dispose(); game.arena?.dispose(); game.arenaCepi?.dispose(); game.arenaLale?.dispose(); game.arenaPinky?.dispose(); game.bonus?.dispose(); game.cameos?.onLevelStart(); game.margot?.clear(); game.state = 'menu'; paintContinue(); paintPodium(); audio.music('menu'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden'); $('#boss-bar').classList.add('hidden'); showScreen('screen-menu'); };
   ui = createUi({ ranking, assets, showScreen, audio, onPlayAgain: () => startRun(game.heroId, false), onMenu: goMenu });
   game.goMenu = goMenu;
   game.ctx = ctx;
@@ -871,14 +1011,43 @@ async function boot() {
   game.pickups = game.props.pickups;
   game.crates = game.props.crates;
   game.story = createStory(ctx);
+  // Jefe 1 (Acto 1): BIG CHAKY → al ganar cruza a Francia (Acto 2: Persecución BYD)
   game.arena = createArena({
     game, input, audio, assets, renderer, banner: game.banner, updateHud, pause, POWER,
-    onWin() { game.state = 'playing'; last = 0; game.onBossDown(); },
+    onWin() {
+      game.chakyDone = true;
+      game.state = 'playing'; last = 0;
+      if (PROBAR && PROBAR.startsWith('chaky')) { game.onBossDown(); return; }
+      startTransition();
+    },
     onDown() { game.state = 'playing'; finish(false); }
   });
+  // Jefe 2 (Acto 2): Cepi «el Niño» → al ganar arranca Acto 3 (calle corta de Francia hasta Le Blé)
   game.arenaCepi = createCepiArena({
     game, input, audio, assets, renderer, updateHud, pause, POWER,
-    onWin() { game.state = 'playing'; last = 0; finish(true); },
+    onWin() {
+      game.cepiDone = true;
+      game.state = 'playing'; last = 0;
+      if (PROBAR && PROBAR.startsWith('cepi')) { finish(true); return; }
+      enterAct3Street();
+    },
+    onDown() { game.state = 'playing'; finish(false); }
+  });
+  // Jefe 3 (Acto 3): Lale «Mantecoso» → al ganar arranca Acto 4 (tramo final al Galpón)
+  game.arenaLale = createLaleArena({
+    game, input, audio, assets, renderer, updateHud, pause, POWER,
+    onWin() {
+      game.laleDone = true;
+      game.state = 'playing'; last = 0;
+      if (PROBAR && PROBAR.startsWith('lale')) { finish(true); return; }
+      enterAct4Street();
+    },
+    onDown() { game.state = 'playing'; finish(false); }
+  });
+  // Jefe Final (Acto 4): Pinky «el Trapito» + Remate con Margot → Rescate y Foto Familiar
+  game.arenaPinky = createPinkyArena({
+    game, input, audio, assets, renderer, updateHud, pause, POWER,
+    onWin() { game.state = 'playing'; last = 0; game.onBossDown(); },
     onDown() { game.state = 'playing'; finish(false); }
   });
   game.bonus = createBonus({ game, input, audio, assets, renderer, updateHud, pause, POWER, SWINGS,

@@ -93,9 +93,10 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     tarima.position.set(0, TARIMA_H / 2, (TARIMA_FRONT + TARIMA_BACK) / 2);
     const tarimaFront = mk(new T.PlaneGeometry(12, TARIMA_H), new T.MeshLambertMaterial({ color: L('#2a1810') }));
     tarimaFront.position.set(0, TARIMA_H / 2, TARIMA_FRONT + 0.01);
-    // Fondo pintado del galpón detrás de todo (sin niebla: es una pintura)
-    const fondo = assets.meta('arena_fondo'), BW = 84, BH = BW * fondo.h / fondo.w, BZ = ARENA.bossZ - 6;
-    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture('arena_fondo'), fog: false }));
+    // Fondo pintado de Ezeiza (Grupo F) o del galpón detrás de todo (sin niebla: es una pintura)
+    const fondoKey = assets.has('arena_aeropuerto_fondo') ? 'arena_aeropuerto_fondo' : 'arena_fondo';
+    const fondo = assets.meta(fondoKey), BW = 84, BH = BW * fondo.h / fondo.w, BZ = ARENA.bossZ - 6;
+    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(fondoKey), fog: false }));
     back.position.set(0, BH / 2 - BH * 0.3, BZ);
 
     // Sprites (planos parados que miran a la cámara) con sombra redonda

@@ -35,8 +35,11 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
   function showResult(result, heroId, retry = null) {
     resultEl.replaceChildren();
     const cepiSheet = assets.has?.('cepi_sheet');
+    const winKey = 'arena_' + (heroId === 'marine' ? 'marine' : 'douge') + '_victory';
     const host = result.won
-      ? null
+      ? (assets.exists?.(winKey)
+        ? el('div', { class: 'host victory' }, [el('img', { src: assets.url(winKey), alt: 'Victoria' })])
+        : null)
       : el('div', { id: 'cepi', class: 'host cepi' + (cepiSheet ? '' : ' no-sheet') }, [
         cepiSheet
           ? el('div', { class: 'cepi-sprite', role: 'img', 'aria-label': 'Cepi, enojado', style: `background-image:url("${assets.url('cepi_sheet')}")` })
@@ -89,20 +92,21 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
     toRank.addEventListener('click', () => showRanking('screen-result'));
     menu.addEventListener('click', onMenu);
 
-    // Foto familiar del rescate (si ganaste): se puede guardar o compartir
+    // Foto familiar del rescate (si ganaste): usa la foto del rescate o el arte de Grupo E (`arena_familia_festejo`)
     let photoRow = null;
-    if (result.won && result.photo) {
+    const winPhoto = result.photo || (result.won && assets.exists?.('arena_familia_festejo') ? assets.url('arena_familia_festejo') : null);
+    if (result.won && winPhoto) {
       const shareBtn = el('button', { id: 'btn-photo', class: 'ghost-btn', text: '📸 Guardar la foto' });
       shareBtn.addEventListener('click', async () => {
         try {
-          const blob = await (await fetch(result.photo)).blob();
+          const blob = await (await fetch(winPhoto)).blob();
           const file = new File([blob], 'margoush-foto-familiar.jpg', { type: 'image/jpeg' });
           if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: 'MARGOUSH: ¡Margot está a salvo!' }); return; }
         } catch (_) {}
-        const a = el('a', { href: result.photo, download: 'margoush-foto-familiar.jpg' });
+        const a = el('a', { href: winPhoto, download: 'margoush-foto-familiar.jpg' });
         document.body.append(a); a.click(); a.remove();
       });
-      photoRow = el('div', { class: 'photo-row' }, [el('img', { id: 'result-photo', src: result.photo, alt: 'Foto familiar del rescate' }), shareBtn]);
+      photoRow = el('div', { class: 'photo-row' }, [el('img', { id: 'result-photo', src: winPhoto, alt: 'Foto familiar del rescate' }), shareBtn]);
     }
 
     const card = el('div', { class: 'result-card' }, [

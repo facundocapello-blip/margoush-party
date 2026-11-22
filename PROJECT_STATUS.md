@@ -205,4 +205,20 @@ Registro inicial: 2026-10-15. No constituye nueva prueba funcional.
 - Rollback: volver `main` a `d5fffe7`.
 - Pendientes del kit: Grupo E restante (4 imágenes), Grupo F (`7_fondo_aeropuerto_chaky`), Grupo C (`C_lale_jefe`, 7) y Grupo D (`D_pinky_final`, 7), además de integrar el orden de 4 niveles cuando estén listos los jefes.
 
+## Actualización 2026-11-22 (3) · Campaña de 4 Actos + Carga inteligente + Lale y Pinky + ES/FR
+- **Carga inteligente por arena** (`3d/js/assets.js`): al arrancar precarga solo el núcleo (calle, héroes, enemigos, persecución y bonus); las texturas de jefes (`arena_chaky_*`, `arena_cepi_*`, `arena_lale_*`, `arena_pinky_*`, `arena_barril/cajon/fondo`, `arena_margot_*`) se cargan bajo demanda durante la cortina con `assets.ensure(...)` para acelerar el arranque y reducir memoria GPU en Safari iPhone.
+- **Arena de Lale «Mantecoso» (Acto 3 — Obrador de Le Blé)**: `3d/js/arena_lale_logic.js` + `3d/js/arena_lale.js` + `tests/arena_lale.test.mjs`. 3 fases (barras de manteca + charcos resbalosos + bolsas de harina para enharinarlo; patinada rápida; «Subí el horno»). Slots listos para `arena_lale_*` (respaldo automático con `lale_actions_sheet` + `le_ble`). Pruebas directas: `?probar=lale`, `?probar=lale-patin`, `?probar=lale-horno`.
+- **Arena Final de Pinky «el Trapito» + Margot Heroica (Acto 4 — Estacionamiento)**: `3d/js/arena_pinky_logic.js` + `3d/js/arena_pinky.js` + `tests/arena_pinky.test.mjs`. Intro revelación + 3 fases (autos entrando marcha atrás a 3 cajones amarillos con aviso previo; 2 autos en simultáneo siempre dejando ≥ 1 cajón libre; remate con botón **👶 ¡GRITO DE MARGOT!**). Slots listos para `arena_pinky_*` + `arena_margot_hero` (respaldo con `pinky_actions_sheet`, `galpon`, `margot_sheet` y auto 3D rojo). Pruebas directas: `?probar=pinky`, `?probar=pinky-tarifa`, `?probar=pinky-margot`.
+- **Campaña de 4 Actos unificada** (`3d/js/main.js`):
+  - Acto 1: Intro → Calle porteña → **BIG CHAKY** (con slot automático para `arena_aeropuerto_fondo` en `arena.js`).
+  - Acto 2: Cruce a Francia → Persecución BYD → ¡Rompé el BYD! → **Cepi «el Niño»** (pádel).
+  - Acto 3: Calle corta de Francia (2 oleadas hasta *Le Blé*) → **Lale «Mantecoso»**.
+  - Acto 4: Tramo final al Galpón → **Pinky «el Trapito»** + Margot → Rescate familiar.
+  - Checkpoints automáticos por Acto y por Jefe (`calle`, `chaky`, `acto2`, `byd`, `cepi`, `acto3`, `lale`, `acto4`, `pinky`), curación `+2` corazones (mínimo 3) antes de cada jefe, reintento en 1 toque conservando puntaje.
+- **ES/FR y slots de victoria (Grupo E)**: traducciones agregadas en `3d/js/i18n.js` para los 4 actos y las 3 arenas nuevas; `3d/js/ui.js` soporta automáticamente `arena_douge_victory`, `arena_marine_victory` y `arena_familia_festejo` cuando se agreguen al manifiesto.
+- Chupete Rush (`index.html`) y `preview-v*/` sin cambios. Ranking sigue local (Supabase pendiente para cierre final).
+- Verificación ejecutada: `node --check`, `node tools/stamp_versions.mjs`, **78/78 pruebas unitarias en verde** (`arena_lale` 3, `arena_pinky` 4, `arena_cepi` 5, `arena`, `versions`, `bonus`, `chase`, `margot`, `music`, `poses`, `ranking`, `score`, `voice`) + 3/3 chequeos JS de `tests/assets.test.mjs`. Pendiente: prueba en Safari físico de iPhone, `tests/check_sprites.py` (sin `numpy` en VM), y Etapa 5 (generar/enchufar arte final de Grupos C, D, E restante, F aeropuerto y opcional `cepi_ko` cuando se libere cuota).
+- Rollback: volver `main` a `89ae059`.
+
+
 

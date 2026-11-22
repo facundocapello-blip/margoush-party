@@ -1,0 +1,495 @@
+// «La arena final de Pinky»: galpón convertido en estacionamiento (Acto 4 — Grupo D + Margot heroica).
+// Usa automáticamente `arena_pinky_{wave,charge,reveal,hurt,ko,car,fondo}` y `arena_margot_hero` si
+// existen en manifest.json; mientras llegan las imágenes del Grupo D/E hace respaldo limpio con
+// `pinky_actions_sheet`, `galpon`, `margot_sheet` y autos 3D rojos entrando marcha atrás.
+import { PINKY_ARENA, createPinkyArenaLogic } from './arena_pinky_logic.js';
+import { createVoice } from './voice.js';
+import { SWINGS } from './hero.js';
+import { CHASE } from './chase.js';
+import { fillText, tr } from './i18n.js';
+
+const MOVE = 6.4;
+const DASH_SPEED = 11.5;
+const COMBO_WINDOW = 0.45;
+const HURT_POSE = 0.5;
+const INV = 1.3;
+const END_DELAY = 1.5;
+const ENTRANCE = 1.3;
+const HERO_H = 2.4, BOSS_H = 5.4;
+const CAM = { y: 5.6, back: 10.4, lookY: 2.8, fov: 64, fovPortrait: 70 };
+
+const FALLBACK_FRAME = { reveal: 0, wave: 1, charge: 0, hurt: 2, ko: 3 };
+
+export function createPinkyArena({ game, input, audio, assets, renderer, updateHud, pause, POWER, onWin, onDown }) {
+  let cur = null;
+
+  function start() {
+    if (cur) return;
+    const T = THREE, hero = game.hero, isM = game.heroId === 'marine';
+    const heroPre = 'arena_' + (isM ? 'marine' : 'douge') + '_back_';
+    const logic = createPinkyArenaLogic();
+    const voice = createVoice({ speak: (text, prof, o) => { try { audio.bossLine?.(text, prof, o.dur); } catch (_) {} } });
+    const L = (h) => new T.Color(h).convertSRGBToLinear();
+    const own = [], keep = (o) => (own.push(o), o);
+    const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 250);
+    scene.background = L('#1a1d26');
+    scene.fog = new T.Fog(L('#1a1d26'), 26, 76);
+    scene.add(new T.HemisphereLight(0xdce8ff, 0x262933, 0.95));
+    const fluor = new T.DirectionalLight(0xeef5ff, 0.85); fluor.position.set(0, 14, 4); scene.add(fluor);
+    const mk = (geo, mat) => { const m = new T.Mesh(keep(geo), keep(mat)); scene.add(m); return m; };
+    const canvasTex = (w, h, draw, rx = 1, ry = 1) => {
+      const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+      const t = keep(new T.CanvasTexture(c)); t.encoding = T.sRGBEncoding; t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = 8; return t;
+    };
+    const radial = (stops) => canvasTex(64, 64, (g) => {
+      const r = g.createRadialGradient(32, 32, 1, 32, 32, 32);
+      for (const [k, c] of stops) r.addColorStop(k, c);
+      g.fillStyle = r; g.fillRect(0, 0, 64, 64);
+    });
+
+    // Piso de hormigón de estacionamiento con 3 cajones amarillos
+    const concTex = canvasTex(256, 256, (g, w, h) => {
+      g.fillStyle = '#3b3f49'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 1200; i++) {
+        g.fillStyle = i % 2 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.07)';
+        g.fillRect((i * 89) % w, (i * 53) % h, 4, 4);
+      }
+    }, 3, 7);
+    const outer = mk(new T.PlaneGeometry(60, 44), new T.MeshLambertMaterial({ color: L('#23262e') }));
+    outer.rotation.x = -Math.PI / 2; outer.position.set(0, -0.02, -6);
+    const floor = mk(new T.PlaneGeometry(PINKY_ARENA.xMax * 2 + 1.2, 24), new T.MeshLambertMaterial({ map: concTex }));
+    floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -7);
+
+    // Líneas amarillas de los 3 cajones
+    const yelM = keep(new T.MeshBasicMaterial({ color: L('#f6c945') }));
+    for (const lx of [-4.35, -1.45, 1.45, 4.35]) {
+      const l = new T.Mesh(keep(new T.PlaneGeometry(0.14, 15)), yelM);
+      l.rotation.x = -Math.PI / 2; l.position.set(lx, 0.015, -4); scene.add(l);
+    }
+
+    // Franjas rojas de aviso por cajón (cuando entra un auto marcha atrás)
+    const warnPlanes = PINKY_ARENA.lanes.map((lx) => {
+      const m = new T.Mesh(keep(new T.PlaneGeometry(2.65, 14)), keep(new T.MeshBasicMaterial({ color: L('#ff3b52'), transparent: true, opacity: 0.35, depthWrite: false })));
+      m.rotation.x = -Math.PI / 2; m.position.set(lx, 0.022, -4); m.visible = false;
+      scene.add(m);
+      return m;
+    });
+
+    // Fondo pintado del estacionamiento (respaldo: galpon)
+    const bgKey = assets.has('arena_pinky_fondo') ? 'arena_pinky_fondo' : 'galpon';
+    const bgMeta = assets.meta(bgKey);
+    const BH = 34, BW = Math.max(46, BH * bgMeta.w / bgMeta.h);
+    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(bgKey), fog: false }));
+    back.position.set(0, BH * 0.33, PINKY_ARENA.bossZ - 9);
+
+    // Respaldo por cuadros de pinky_actions_sheet si aún no están las poses del Grupo D
+    const fallbackTex = {};
+    if (assets.has('pinky_actions_sheet')) {
+      const m = assets.meta('pinky_actions_sheet');
+      const cols = m.cols || 4;
+      for (let i = 0; i < cols; i++) {
+        const tx = keep(assets.texture('pinky_actions_sheet').clone());
+        tx.needsUpdate = true; tx.repeat.set(1 / cols, 1); tx.offset.set(i / cols, 0);
+        fallbackTex[i] = { map: tx, w: m.w / cols, h: m.h };
+      }
+    }
+
+    const shG = keep(new T.PlaneGeometry(1, 1)); shG.rotateX(-Math.PI / 2);
+    const shM = keep(new T.MeshBasicMaterial({ map: radial([[0, 'rgba(0,0,0,.65)'], [1, 'rgba(0,0,0,0)']]), transparent: true, depthWrite: false }));
+    const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
+    const setTex = (m, key, fbPose = null) => {
+      if (m.userData.key === key) return;
+      if (assets.has(key)) {
+        const meta = assets.meta(key);
+        m.material.map = assets.texture(key); m.material.needsUpdate = true; m.userData.key = key;
+        const h = m.userData.h * (meta.hk || 1);
+        m.userData.w = h * meta.w / meta.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+        return;
+      }
+      const fb = fallbackTex[FALLBACK_FRAME[fbPose] ?? 0];
+      if (!fb) return;
+      m.material.map = fb.map; m.material.needsUpdate = true; m.userData.key = key;
+      const h = m.userData.h * (fbPose === 'ko' ? 0.72 : 1);
+      m.userData.w = h * fb.w / fb.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+    };
+    function sprite(key, h, shadow = 1, fbPose = null) {
+      const m = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ alphaTest: 0.45, side: T.DoubleSide })));
+      m.userData.h = h; setTex(m, key, fbPose); scene.add(m);
+      if (shadow) { const s = new T.Mesh(shG, shM); s.scale.set(h * 0.75 * shadow, 1, h * 0.35 * shadow); s.renderOrder = 1; scene.add(s); m.userData.sh = s; }
+      return m;
+    }
+    function place(m, px, py, pz) {
+      m.position.set(px, py, pz);
+      m.rotation.y = Math.atan2(cam.position.x - px, cam.position.z - pz) * 0.55;
+      const s = m.userData.sh; if (s) { s.position.set(px, 0.03, pz); s.visible = m.visible; }
+    }
+
+    const B = sprite('arena_pinky_reveal', BOSS_H, 0.9, 'reveal');
+    const P = sprite(heroPre + 'idle', HERO_H, 0.9);
+
+    // Margot heroica (para el remate supersónico de Fase 3)
+    let margotMap = null, margotW = 1, margotH = 1;
+    if (assets.has('arena_margot_hero')) {
+      const mm = assets.meta('arena_margot_hero');
+      margotMap = assets.texture('arena_margot_hero'); margotW = mm.w; margotH = mm.h;
+    } else if (assets.has('margot_sheet')) {
+      const mm = assets.meta('margot_sheet');
+      const tx = keep(assets.texture('margot_sheet').clone());
+      tx.needsUpdate = true; tx.repeat.set(0.5, 0.5); tx.offset.set(0.5, 0.5);
+      margotMap = tx; margotW = mm.w / 2; margotH = mm.h / 2;
+    }
+    const margotMesh = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: margotMap, alphaTest: 0.4, side: T.DoubleSide })));
+    const mh = 2.6; margotMesh.scale.set(mh * margotW / margotH, mh, 1); margotMesh.visible = false; scene.add(margotMesh);
+    const waveRing = new T.Mesh(keep(new T.RingGeometry(0.6, 1.0, 32)), keep(new T.MeshBasicMaterial({ color: L('#ff99cc'), transparent: true, opacity: 0.8, side: T.DoubleSide, depthWrite: false })));
+    waveRing.rotation.x = -Math.PI / 2; waveRing.visible = false; scene.add(waveRing);
+
+    // Autos compactos rojos entrando marcha atrás (usa sprite arena_pinky_car si existe, o modelo 3D)
+    const carBodyG = keep(new T.BoxGeometry(2.1, 1.05, 3.4));
+    const carTopG = keep(new T.BoxGeometry(1.7, 0.72, 1.8));
+    const carRedM = keep(new T.MeshStandardMaterial({ color: L('#d92b3a'), roughness: 0.3 }));
+    const carGlassM = keep(new T.MeshStandardMaterial({ color: L('#22324a'), roughness: 0.2 }));
+    const revLightG = keep(new T.BoxGeometry(0.36, 0.22, 0.08));
+    const revLightM = keep(new T.MeshBasicMaterial({ color: 0xffffff }));
+    const tailLightM = keep(new T.MeshBasicMaterial({ color: L('#ff2233') }));
+    const liveCars = new Map();
+
+    function makeCar() {
+      if (assets.has('arena_pinky_car')) {
+        const sp = sprite('arena_pinky_car', 2.4, 1.1);
+        return { root: sp, isSprite: true };
+      }
+      const g = new T.Group();
+      const body = new T.Mesh(carBodyG, carRedM); body.position.y = 0.7; g.add(body);
+      const top = new T.Mesh(carTopG, carGlassM); top.position.set(0, 1.48, -0.2); g.add(top);
+      // Luces traseras + luces blancas de reversa mirando hacia el jugador (+Z)
+      for (const sd of [-0.68, 0.68]) {
+        const tl = new T.Mesh(revLightG, tailLightM); tl.position.set(sd, 0.82, 1.72); g.add(tl);
+        const rl = new T.Mesh(revLightG, revLightM); rl.position.set(sd * 0.55, 0.55, 1.72); g.add(rl);
+      }
+      scene.add(g);
+      return { root: g, isSprite: false };
+    }
+
+    // Capa de UI + botón de Remate de Margot en Fase 3
+    document.querySelector('#arena-ui')?.remove();
+    const ui = document.createElement('div'); ui.id = 'arena-ui';
+    ui.innerHTML =
+      '<div class="arena-flash"></div>' +
+      '<div class="phase-card"><i></i><b></b><span></span></div>' +
+      '<button type="button" class="margot-btn hidden">👶 ¡GRITO DE MARGOT!</button>';
+    document.body.append(ui);
+    document.body.classList.add('arena-on');
+    const flashE = ui.querySelector('.arena-flash');
+    const cardE = ui.querySelector('.phase-card');
+    const margotBtn = ui.querySelector('.margot-btn');
+    margotBtn.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      handle(logic.triggerMargot());
+    });
+
+    const CARDS = {
+      1: ['FASE 1 · 🚗', '¡DALE, DALE, QUE ENTRA!', 'Esquivá los autos y pegale cuando cobra'],
+      2: ['FASE 2 · 🌙', '¡TARIFA NOCTURNA!', 'Entran de a dos: buscá el cajón libre'],
+      3: ['FASE 3 · 👶', '¡REMATE CON MARGOT!', '¡Tocá a Margot para su grito supersónico!']
+    };
+    let cardTimer = 0;
+    function phaseCard(p, ms = 2.0) {
+      const c = CARDS[p]; if (!c) return;
+      fillText(cardE.querySelector('i'), c[0]);
+      fillText(cardE.querySelector('b'), c[1]);
+      fillText(cardE.querySelector('span'), c[2]);
+      cardE.classList.remove('on'); void cardE.offsetWidth; cardE.classList.add('on');
+      clearTimeout(cardTimer); cardTimer = setTimeout(() => cardE.classList.remove('on'), ms * 1000);
+    }
+
+    const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
+    const barName = bar?.querySelector('span');
+    const setBarName = () => { if (barName) barName.textContent = tr('PINKY «EL TRAPITO»') + ' · ' + (logic.state.phase === 'ko' ? 3 : logic.state.phase) + '/3'; };
+    if (bar) { setBarName(); bar.classList.remove('hidden'); }
+    const setBar = () => { if (fill) fill.style.width = (100 * logic.state.hp / logic.state.hpMax).toFixed(1) + '%'; };
+    setBar();
+
+    const pops = [], scratch = new T.Vector3();
+    const pop = (px, py, pz, txt, col = '#ffd36e', size = 22, life = 1.1) => {
+      const e = document.createElement('div'); e.className = 'pop'; fillText(e, txt); e.style.color = col; e.style.fontSize = size + 'px';
+      if (txt.length > 18) { e.style.whiteSpace = 'normal'; e.style.width = 'min(86vw, 340px)'; e.style.textAlign = 'center'; }
+      const q = { e, v: new T.Vector3(px, py, pz), t: 0, life, w: e.offsetWidth };
+      ui.append(e); pops.push(q); return q;
+    };
+    const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
+    let flashTimer = 0;
+    const flash = (col, op = 0.42) => {
+      flashE.style.background = col; flashE.style.opacity = String(op);
+      clearTimeout(flashTimer); flashTimer = setTimeout(() => { flashE.style.opacity = '0'; }, 120);
+    };
+
+    let x = 0, z = -1.2, y = 0, vy = 0, t = 0;
+    let phase = 'entrance', phaseT = 0, closing = false, disposed = false;
+    let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
+    let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
+    let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_pinky_reveal';
+    let lastSpeech = null;
+    const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
+    const addPts = (n, px, py, pz) => { const g = game.score.add(n, game.combo.hit()); pop(px, py, pz, '+' + g, '#ffd36e', 24); };
+    const charge = (n) => { hero.power = Math.min(1, hero.power + n); };
+    const speak = (ev) => {
+      const text = voice.say('pinky', ev);
+      if (!text) return;
+      if (lastSpeech) { lastSpeech.e.remove(); const i = pops.indexOf(lastSpeech); if (i >= 0) pops.splice(i, 1); }
+      lastSpeech = pop(logic.state.bossX, BOSS_H + 0.6, PINKY_ARENA.bossZ, text, '#ffe066', 17, 2.4);
+    };
+
+    function handle(evs) {
+      for (const e of evs) {
+        switch (e.type) {
+          case 'carWarn': sfx('tick'); break;
+          case 'carGo': sfx('honk'); break;
+          case 'charging':
+            pop(0, BOSS_H + 0.2, PINKY_ARENA.bossZ, '¡ESTÁ COBRANDO! ¡PEGALE!', '#9bf7c4', 20, 1.4);
+            break;
+          case 'guarded':
+            sfx('tick');
+            pop(e.x, 3.0, PINKY_ARENA.bossZ, '¡ESPERÁ QUE COBRE!', '#ffe066', 19, 1.0);
+            break;
+          case 'meleeHit':
+            addPts(PINKY_ARENA.points.melee, e.x, 2.8, PINKY_ARENA.bossZ); charge(POWER.hit);
+            sfx('hit'); shake(0.28, 0.18);
+            break;
+          case 'dodge':
+            addPts(PINKY_ARENA.points.dodge, x, 2.8, z); charge(POWER.dodge * 1.4); sfx('pickup');
+            pop(x, 3.4, z, '¡JUSTO!', '#9bf7c4', 20);
+            break;
+          case 'margotReady':
+            sfx('pickup');
+            pop(x, 3.6, z, '👶 ¡MARGOT ESTÁ LISTA!', '#ff99cc', 24, 1.4);
+            break;
+          case 'margotCry':
+            addPts(PINKY_ARENA.points.margot, 0, 3.5, -5);
+            sfx('power'); flash('#ff99cc', 0.48); shake(0.55, 0.45);
+            pop(0, 4.2, -5, '👶 ¡BUAAAAAÁ! 💥', '#ff99cc', 30, 1.5);
+            break;
+          case 'bossHit': bossFlash = 0.22; setBar(); sfx('hit'); shake(0.28, 0.2); break;
+          case 'hurt':
+            hero.hp = Math.max(0, hero.hp - 1); hurtT = HURT_POSE; inv = INV;
+            if (e.penalty) { game.score.addPenalty(e.penalty); pop(x, 2.6, z, '-$' + e.penalty, '#ff8080', 22); }
+            game.combo.reset(); sfx('hurt'); flash('#ff3b52', 0.45); shake(0.38, 0.3);
+            break;
+          case 'phase': setBarName(); phaseCard(e.phase, 2.1); shake(0.35, 0.32); sfx('roar'); break;
+          case 'voice': speak(e.event); break;
+          case 'ko':
+            phase = 'ko'; phaseT = 0; setBar(); setBarName();
+            sfx('fanfare'); flash('#fff', 0.6); shake(0.55, 0.5);
+            pop(logic.state.bossX, BOSS_H * 0.7, PINKY_ARENA.bossZ, '¡K.O.!', '#ffe066', 36, 1.6);
+            break;
+        }
+      }
+    }
+
+    function startSwing() {
+      const i = comboWindow > 0 ? (comboStep + 1) % SWINGS.length : 0;
+      comboStep = i; swing = SWINGS[i]; swingT = 0; swingHit = false; comboWindow = 0; buffer = 0;
+      sfx('swing');
+    }
+
+    function usePower() {
+      hero.power = 0; powT = 0.55; holdT = 0;
+      sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.4, 0.3);
+      pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);
+      handle(logic.power());
+    }
+
+    function close(won) {
+      if (closing) return;
+      closing = true;
+      dispose();
+      (won ? onWin : onDown)();
+    }
+
+    function update(dt) {
+      if (disposed || closing) return;
+      if (input.consume('pause')) { pause(); return; }
+      t += dt;
+      if (freezeT > 0) { freezeT -= dt; draw(0); return; }
+      phaseT += dt;
+      if (hurtT > 0) hurtT = Math.max(0, hurtT - dt);
+      if (inv > 0) inv = Math.max(0, inv - dt);
+      if (powT > 0) powT = Math.max(0, powT - dt);
+      if (dashCd > 0) dashCd = Math.max(0, dashCd - dt);
+      if (comboWindow > 0) comboWindow = Math.max(0, comboWindow - dt);
+
+      const alive = phase === 'fight' && hurtT <= 0;
+      if (alive) {
+        if (input.consume('jump') && y <= 0) { vy = CHASE.jump; sfx('jump'); }
+        if (input.consume('dodge') && dashCd <= 0 && dashT <= 0) {
+          const dx = Math.abs(input.moveX) > 0.15 ? input.moveX : (x > 0 ? -1 : 1);
+          const dz = input.moveZ;
+          const len = Math.hypot(dx, dz) || 1;
+          dashX = dx / len; dashZ = dz / len; dashT = 0.24; dashCd = 0.52;
+          sfx('dodge');
+        }
+        if (input.consume('attack')) { if (swing) buffer = 0.18; else startSwing(); }
+        if (buffer > 0) buffer = Math.max(0, buffer - dt);
+        if (input.attackHeld && hero.power >= 1) { holdT += dt; if (holdT >= 0.45) usePower(); } else holdT = 0;
+        if (input.consume('power') && hero.power >= 1) usePower();
+
+        let vx, vz;
+        if (dashT > 0) { dashT -= dt; vx = dashX * DASH_SPEED; vz = dashZ * DASH_SPEED; }
+        else {
+          const mx = input.moveX, mz = input.moveZ, len = Math.max(1, Math.hypot(mx, mz));
+          const slow = swing ? 0.35 : 1;
+          vx = mx / len * MOVE * slow; vz = mz / len * MOVE * slow;
+          moving = Math.hypot(mx, mz) > 0.15;
+        }
+        x = Math.max(-PINKY_ARENA.xMax + 0.45, Math.min(PINKY_ARENA.xMax - 0.45, x + vx * dt));
+        z = Math.max(PINKY_ARENA.zFar, Math.min(PINKY_ARENA.zNear, z + vz * dt));
+
+        if (swing) {
+          swingT += dt;
+          if (!swingHit && swingT >= swing.hitAt) {
+            swingHit = true;
+            handle(logic.punch({ x, z, reach: swing.reach, dmg: swing.dmg }));
+          }
+          if (swing && swingT >= swing.dur) { swing = null; comboWindow = COMBO_WINDOW; if (buffer > 0) startSwing(); }
+        }
+      } else { dashT = 0; swing = null; holdT = 0; }
+      hero.holdT = holdT;
+      vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
+
+      if (phase === 'entrance' && phaseT >= ENTRANCE) {
+        phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.26, 0.3);
+        speak('intro');
+        setTimeout(() => { if (!disposed) phaseCard(1, 2.0); }, 1800);
+      }
+      if (phase === 'fight') handle(logic.update(dt, { x, z, y, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
+      if (phase === 'fight' && hero.hp <= 0) { phase = 'down'; phaseT = 0; }
+      else if (phase === 'ko') logic.update(dt, { x, z, y, dodging: false, inv: true });
+
+      if (phase === 'ko' && phaseT >= END_DELAY) return close(true);
+      if (phase === 'down' && phaseT >= END_DELAY) return close(false);
+      draw(dt);
+      updateHud(dt);
+    }
+
+    function draw(dt) {
+      const S = logic.state;
+      shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
+      const sh = shakeA * Math.min(1, shakeT * 4);
+      const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
+      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + (Math.random() - 0.5) * sh, CAM.y + e * 5 + (Math.random() - 0.5) * sh, z + CAM.back + e * 7);
+      cam.lookAt(0, CAM.lookY + e * 1.5, PINKY_ARENA.bossZ);
+      cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
+
+      // Pinky
+      bossKey = 'arena_pinky_' + S.pose;
+      setTex(B, bossKey, S.pose);
+      let by = 0, rz = 0;
+      if (S.pose === 'wave') { rz = Math.sin(t * 10) * 0.08; by = Math.abs(Math.sin(t * 5)) * 0.1; }
+      else if (S.pose === 'reveal') { by = Math.abs(Math.sin(t * 7)) * 0.15; }
+      else if (S.pose === 'charge') { by = Math.sin(t * 3) * 0.05; }
+      place(B, S.bossX, by, PINKY_ARENA.bossZ);
+      B.scale.set(B.userData.w, B.userData.hh, 1); B.rotation.z = rz;
+      bossFlash = Math.max(0, bossFlash - dt);
+      B.material.color.setRGB(1, bossFlash > 0 ? 0.55 : 1, bossFlash > 0 ? 0.55 : 1);
+
+      // Botón + animación de Margot heroica en Fase 3
+      margotBtn.classList.toggle('hidden', !S.margotReady || phase !== 'fight');
+      if (S.margotT > 0) {
+        margotMesh.visible = true;
+        margotMesh.position.set(0, 0.2 + Math.sin(t * 16) * 0.15, -5.5);
+        waveRing.visible = true;
+        const p = 1 - S.margotT / 2.0;
+        waveRing.position.set(0, 0.12, -5.5);
+        waveRing.scale.setScalar(1 + p * 12);
+        waveRing.material.opacity = Math.max(0, 0.85 * (1 - p));
+      } else {
+        margotMesh.visible = false;
+        waveRing.visible = false;
+      }
+
+      // Avisos en los 3 cajones + autos entrando marcha atrás
+      const warned = new Set();
+      const carIds = new Set();
+      for (const c of S.cars) {
+        carIds.add(c.id);
+        if (c.stage === 'warn') warned.add(c.lane);
+        let obj = liveCars.get(c.id);
+        if (!obj) { obj = makeCar(); liveCars.set(c.id, obj); }
+        obj.root.visible = c.stage === 'drive';
+        if (obj.isSprite) place(obj.root, c.x, 0, c.z);
+        else obj.root.position.set(c.x, 0, c.z);
+      }
+      for (let l = 0; l < warnPlanes.length; l++) {
+        warnPlanes[l].visible = warned.has(l);
+        if (warned.has(l)) warnPlanes[l].material.opacity = 0.22 + Math.abs(Math.sin(t * 20)) * 0.28;
+      }
+      for (const [id, obj] of liveCars) {
+        if (carIds.has(id)) continue;
+        scene.remove(obj.root);
+        if (obj.root.userData?.sh) scene.remove(obj.root.userData.sh);
+        liveCars.delete(id);
+      }
+
+      // Héroe de espaldas
+      const hasDodge = assets.has(heroPre + 'dodge');
+      heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : dashT > 0 && hasDodge ? 'dodge' : moving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
+      let bob = 0, lean = 0, key = heroPre + heroPose, hsx = 1;
+      if (heroPose === 'dodge') { bob = 0.18; hsx = dashX < 0 ? -1 : 1; }
+      else if (heroPose === 'run') {
+        if (y > 0.15) key = heroPre + 'jump';
+        else {
+          stepT += dt * 2 * Math.PI * 2.6;
+          key = heroPre + 'run' + (Math.floor(stepT / (Math.PI / 2)) % 4);
+          bob = Math.abs(Math.sin(stepT * 2)) * 0.05;
+          lean = -input.moveX * 0.07;
+        }
+      } else if (heroPose === 'idle') { stepT = 0; bob = Math.sin(t * 2.4) * 0.015; }
+      setTex(P, key);
+      P.scale.x = P.userData.w * hsx;
+      P.visible = !(inv > 0 && hurtT <= 0 && Math.floor(t * 14) % 2 === 0);
+      place(P, x, y + bob, z);
+      P.rotation.z = dashT > 0 && !hasDodge ? -dashX * 0.25 : lean;
+
+      // Textos flotantes
+      for (let i = pops.length - 1; i >= 0; i--) {
+        const q = pops[i]; q.t += dt;
+        if (q.t >= q.life) { q.e.remove(); pops.splice(i, 1); if (q === lastSpeech) lastSpeech = null; continue; }
+        scratch.copy(q.v); scratch.y += q.t * 0.7; scratch.project(cam);
+        const px = Math.max(80, Math.min(innerWidth - 80, (scratch.x * 0.5 + 0.5) * innerWidth));
+        const py = Math.max(60, Math.min(innerHeight - 60, (-scratch.y * 0.5 + 0.5) * innerHeight));
+        q.e.style.left = px + 'px'; q.e.style.top = py + 'px';
+        q.e.style.opacity = String(Math.min(1, (q.life - q.t) * 3));
+      }
+    }
+
+    function dispose() {
+      if (disposed) return;
+      disposed = true;
+      clearTimeout(cardTimer); clearTimeout(flashTimer);
+      ui.remove();
+      document.body.classList.remove('arena-on');
+      if (bar) bar.classList.add('hidden');
+      for (const o of own) o.dispose?.();
+      cur = null;
+    }
+
+    cur = {
+      logic, update,
+      render: () => renderer.render(scene, cam),
+      dispose,
+      get state() { return logic.state; },
+      get heroPose() { return heroPose; },
+      get bossKey() { return bossKey; }
+    };
+    game.state = 'arena-pinky';
+  }
+
+  return {
+    start,
+    update: (dt) => cur?.update(dt),
+    render: () => cur?.render(),
+    dispose: () => cur?.dispose(),
+    get active() { return !!cur; },
+    get logic() { return cur?.logic || null; },
+    get state() { return cur?.state || null; }
+  };
+}
