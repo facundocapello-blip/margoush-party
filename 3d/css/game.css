@@ -28,14 +28,14 @@ button { font: inherit; cursor: pointer; touch-action: manipulation; }
 #hud-score { padding: 3px 12px 4px; border-radius: 14px; background: rgba(16, 10, 30, 0.5); font-variant-numeric: tabular-nums; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 30px; color: #fff; text-shadow: 0 3px 0 #000a, 0 0 14px #ffd36e88; line-height: 1; }
 #hud-mult { font-weight: 900; color: var(--gold); font-size: 14px; min-height: 18px; }
 .hud-right { display: flex; gap: 6px; pointer-events: auto; }
-/* Parado: el puntaje va en su cápsula debajo de ♪ y pausa (no pegado a los botones) */
-body.portrait .hud-center { position: absolute; right: 0; top: 50px; align-items: flex-end; }
-body.portrait #hud-score { font-size: 24px; }
+/* Parado: el puntaje va en su cápsula oscura debajo de ♪ y pausa (alto contraste sobre cualquier fondo) */
+body.portrait .hud-center { position: absolute; right: 0; top: 52px; align-items: flex-end; }
+body.portrait #hud-score { font-size: 22px; background: rgba(16, 10, 30, 0.84); border: 1.5px solid rgba(255, 211, 110, 0.42); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45); }
 .icon-btn { width: 44px; height: 44px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.35); background: rgba(16, 10, 30, 0.7); color: #fff; font-size: 17px; }
 
-#boss-bar { position: absolute; bottom: calc(22px + var(--safe-b)); left: 50%; transform: translateX(-50%); width: min(380px, 40vw); text-align: center; font-family: Fredoka, sans-serif; font-weight: 700; color: #ff9b8f; z-index: 5; pointer-events: none; text-shadow: 0 2px 0 #000; }
-#boss-bar .track { height: 10px; border-radius: 6px; background: #000a; border: 2px solid #fff4; overflow: hidden; margin-top: 2px; }
-#boss-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff4d5e, #ff9b6b); transition: width 0.15s; }
+#boss-bar { position: absolute; bottom: calc(22px + var(--safe-b)); left: 50%; transform: translateX(-50%); width: min(380px, 44vw); padding: 5px 12px 7px; border-radius: 14px; background: rgba(16, 10, 30, 0.88); border: 1.5px solid rgba(255, 211, 110, 0.45); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); text-align: center; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.5px; color: #ffe08a; z-index: 5; pointer-events: none; text-shadow: 0 2px 0 #000; }
+#boss-bar .track { height: 9px; border-radius: 6px; background: #2c1d3e; border: 1.5px solid rgba(255, 255, 255, 0.25); overflow: hidden; margin-top: 4px; }
+#boss-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff4d5e, #ff9b6b, #ffd36e); transition: width 0.15s; }
 
 /* Carteles: aviso chico arriba al centro, debajo del puntaje (nunca tapa a los personajes ni los botones) */
 #banner { position: absolute; left: 50%; top: calc(92px + var(--safe-t)); transform: translateX(-50%); max-width: min(460px, 56vw); background: var(--panel); border: 2px solid var(--gold); border-radius: 14px; padding: 6px 14px; text-align: center; z-index: 6; pointer-events: none; font-size: 13px; line-height: 1.3; box-shadow: 0 6px 18px #0007; animation: banner-in 0.18s ease-out; }
@@ -403,9 +403,9 @@ body.arena-on:not(.portrait) #boss-bar { top: calc(70px + var(--safe-t)); bottom
 #bonus-ui { position: fixed; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
 #bonus-ui .bonus-flash { position: absolute; inset: 0; opacity: 0; transition: opacity 0.2s; }
 #bonus-ui .pop { z-index: 1; }
-#bonus-ui .bonus-clock { position: absolute; top: calc(10px + var(--safe-t)); left: 50%; transform: translateX(-50%); text-align: center; font-family: Fredoka, sans-serif; color: #fff; text-shadow: 0 3px 0 #000, 0 0 12px #000a; line-height: 1; }
-#bonus-ui .bonus-clock small { display: block; font-size: 13px; letter-spacing: 3px; color: var(--gold); }
-#bonus-ui .bonus-clock b { font-size: 46px; }
+#bonus-ui .bonus-clock { position: absolute; top: calc(10px + var(--safe-t)); left: 50%; transform: translateX(-50%); padding: 6px 16px 8px; border-radius: 16px; background: rgba(16, 10, 30, 0.85); border: 1.5px solid rgba(255, 211, 110, 0.45); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); text-align: center; font-family: Fredoka, sans-serif; color: #fff; text-shadow: 0 3px 0 #000, 0 0 12px #000a; line-height: 1; }
+#bonus-ui .bonus-clock small { display: block; font-size: 12px; letter-spacing: 2.5px; color: var(--gold); margin-bottom: 2px; }
+#bonus-ui .bonus-clock b { font-size: 40px; }
 #bonus-ui .bonus-clock.hurry b { color: #ff6b6b; animation: bonus-hurry 0.5s infinite alternate; }
 @keyframes bonus-hurry { from { transform: scale(1); } to { transform: scale(1.15); } }
 body.bonus-on #hud-score, body.bonus-on #hud-mult { visibility: hidden; }
@@ -472,15 +472,15 @@ body.cine-on #hud, body.cine-on #touch, body.cine-on #boss-bar { opacity: 0; poi
 [data-v="a"] { background: #140b24; }
 .pa-bg { position: absolute; inset: 0; background: url(../assets/chase_ba_fondo.webp) 50% 0 / cover no-repeat; }
 .pa-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 11, 36, 0.25) 0%, rgba(20, 11, 36, 0) 26%, rgba(20, 11, 36, 0.35) 46%, #140b24 70%); }
-.pa-chaky { position: absolute; left: 50%; bottom: 30%; height: min(60vh, 128vw); aspect-ratio: 503 / 731; transform: translateX(-50%); background: url(../assets/boss_idle.webp) center bottom / contain no-repeat; filter: brightness(0.38) saturate(0.7) hue-rotate(-10deg); opacity: 0.92; }
-.pa-family { position: absolute; left: 50%; bottom: calc(31% + var(--safe-b)); transform: translateX(-50%); display: flex; align-items: flex-end; height: min(31vh, 64vw); animation: pa-rise 0.7s 0.15s cubic-bezier(.2, 1.2, .4, 1) both; }
+.pa-chaky { position: absolute; left: 50%; bottom: 32%; height: min(60vh, 128vw); aspect-ratio: 503 / 731; transform: translateX(-50%); background: url(../assets/boss_idle.webp) center bottom / contain no-repeat; filter: brightness(0.46) saturate(0.75) hue-rotate(-10deg); opacity: 0.94; }
+.pa-family { position: absolute; left: 50%; bottom: calc(30% + var(--safe-b)); transform: translateX(-50%); display: flex; align-items: flex-end; height: min(30vh, 62vw); animation: pa-rise 0.7s 0.15s cubic-bezier(.2, 1.2, .4, 1) both; }
 .pa-family i { display: block; height: 100%; background: center bottom / contain no-repeat; filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.55)); }
 .pa-family .pa-douge { aspect-ratio: 194 / 420; background-image: url(../assets/douge_idle.webp); }
 .pa-family .pa-marine { aspect-ratio: 168 / 420; background-image: url(../assets/marine_idle.webp); }
 .pa-family .pa-margot { height: 50%; aspect-ratio: 1; margin: 0 -3%; background: url(../assets/margot_sheet.webp) 100% 0 / 200% 200% no-repeat; }
 @keyframes pa-rise { from { transform: translate(-50%, 30px); opacity: 0; } to { transform: translateX(-50%); opacity: 1; } }
 .pa-top { position: absolute; z-index: 3; top: calc(14px + var(--safe-t)); left: 50%; transform: translateX(-50%); }
-.pa-title { position: absolute; z-index: 2; left: 0; right: 0; top: calc(76px + 3vh + var(--safe-t)); display: flex; flex-direction: column; align-items: center; }
+.pa-title { position: absolute; z-index: 2; left: 0; right: 0; top: calc(23vh + var(--safe-t)); display: flex; flex-direction: column; align-items: center; }
 .pa-logo { margin: 0; font: 400 clamp(58px, min(17vw, 13vh), 132px) / 0.9 'Lilita One', Fredoka, sans-serif; letter-spacing: 0.01em; color: #fff4d6; transform: rotate(-4deg);
   text-shadow: 0 3px 0 #ffa142, 0 6px 0 #e2457a, 0 10px 0 #5a1840, 0 20px 26px rgba(0, 0, 0, 0.45); animation: logo-drop 0.8s cubic-bezier(.2, 1.4, .4, 1) both; }
 .pa-tag { margin: 6px 0 0; padding: 5px 16px; border-radius: 999px; background: #e2457a; color: #fff; font: 700 clamp(16px, 4.4vw, 22px) Fredoka, sans-serif; transform: rotate(-4deg); box-shadow: 0 4px 0 #5a1840; }

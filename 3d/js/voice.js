@@ -28,7 +28,7 @@ export const CATALOG = {
     attack: ['¡Tomá, barrilito!', '¡Ahí va otro!', '¡Atajá esta!'],
     returned: ['¡Me devolviste el barril, atrevido!', '¡Ey, ese era mío!'],
     hurt: ['¡Auch, mi panza!', '¡Ese me dolió en el alma!'],
-    taunt: ['¡Muy lento, campeón!', '¡Barril 1, vos 0!'],
+    taunt: ['¡Muy lento, campeón!', '¡Perdiste el compás!'],
     dice: ['¡Si querés a Margot, vas a tener que seguirme el ritmo!'],
     count: ['¡Y uno, y dos…!', '¡Mirá y aprendé!', '¡Atenti a la cadera!'],
     good: ['¡Esa cadera!', '¡Con onda, eh!', '¡Mirá vos, sabe bailar!'],

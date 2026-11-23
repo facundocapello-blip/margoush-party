@@ -90,12 +90,18 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const chargeRing = new T.Mesh(keep(new T.RingGeometry(1.5, 2.05, 28)), keep(new T.MeshBasicMaterial({ color: L('#6dff8a'), transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false })));
     chargeRing.rotation.x = -Math.PI / 2; chargeRing.visible = false; scene.add(chargeRing);
 
-    // Fondo pintado del estacionamiento (BW=84 para cubrir horizontal sin franjas negras)
+    // Fondo pintado del estacionamiento (recortamos la parte superior industrial del galpón para eliminar el sillón gigante fuera de escala)
     const bgKey = assets.has('arena_pinky_fondo') ? 'arena_pinky_fondo' : 'galpon';
-    const bgMeta = assets.meta(bgKey);
-    const BW = 84, BH = Math.max(40, BW * bgMeta.h / bgMeta.w);
-    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(bgKey), fog: false }));
-    back.position.set(0, BH * 0.34, PINKY_ARENA.bossZ - 9);
+    let backMap = assets.texture(bgKey);
+    if (bgKey === 'galpon') {
+      backMap = keep(backMap.clone());
+      backMap.needsUpdate = true;
+      backMap.repeat.set(1, 0.54);
+      backMap.offset.set(0, 0.46);
+    }
+    const BW = 84, BH = 34;
+    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: backMap, fog: false }));
+    back.position.set(0, BH * 0.44, PINKY_ARENA.bossZ - 9);
 
     // Respaldo por cuadros de pinky_actions_sheet + tira de 6 cuadros agitando el trapo rojo (pinky_walk_sheet)
     const fallbackTex = {}, walkTex = {};
@@ -268,7 +274,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_pinky_reveal';
-    let lastSpeech = null, lastBarHp = -1, lastBarPhase = null;
+    let lastSpeech = null, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
     const addPts = (n, px, py, pz) => {
       const before = game.score.total;
@@ -319,6 +325,12 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             if (e.penalty) { game.score.addPenalty(e.penalty); pop(x, 2.6, z, '-$' + e.penalty, '#ff8080', 22); }
             game.score.takeDamage(); game.combo?.reset?.();
             sfx('hurt'); flash('#ff3b52', 0.45); shake(0.38, 0.3);
+            if (hero.hp <= 0 && !extraLifeUsed && phase === 'fight') {
+              extraLifeUsed = true;
+              hero.hp = Math.max(2, Math.ceil((hero.hpMax || 5) * 0.6));
+              pop(x, 3.4, z, '⭐ ¡VIDA EXTRA!', '#ffd36e', 26, 1.3);
+              sfx('pickup');
+            }
             break;
           case 'phase': setBarName(); phaseCard(e.phase, 2.1); shake(0.35, 0.32); sfx('roar'); break;
           case 'voice': speak(e.event); break;

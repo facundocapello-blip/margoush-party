@@ -288,3 +288,18 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - Bug del buzo naranja: cada acierto ponía la pose `hurt` → `arena_chaky_hurt` (sprite naranja del galpón). Ahora el escenario usa solo `arena_chaky_dance_*`; el KO es la pose de baile cayendo de costado. `spawnBoss` ya no carga los sprites naranjas.
 - Verificado: `npm test` (73/73), e2e `chaky_dice` y `arena` en Chromium con GPU por software (capturas vertical 430×932 y horizontal 844×390). No equivale a Safari físico.
 - Pendiente: probar la intro y la legibilidad del texto en iPhone 15 Pro Max (vertical y horizontal).
+
+## 2026-11-22 · Auditoría integral (Diseño Gráfico, Jugador Casual y Guion Móvil)
+- Diseño gráfico y UI:
+  - Portada (`cover.js` / `game.css`): reencuadrado `.pa-title` sobre el pecho de Big Chaky para que su cara y mirada queden descubiertas arriba del logo `MARGOUSH`.
+  - Barras de jefe y puntaje (`#boss-bar`, `.hud-center`, `.bonus-clock` en `game.css`): cápsulas oscuras con borde dorado de alto contraste en Cepi, Lale (`Le Blé`), Pinky (`Galpón`) y Bonus BYD, aplicando el criterio visual de Big Chaky.
+  - Intro en Le Concept (`cine.js`): corregida la celda inicial de Margot a `awake` (`cell: 1`, en cochecito) en lugar de `happy` (`cell: 3`, mantita en el piso sin cochecito) y ajustada la altura de cámara en vertical.
+  - Continuidad visual del Acto 2 en Francia (`chase.js`, `bonus.js`): la persecución del BYD y `¡Rompé el BYD!` (que ocurren tras aterrizar en Francia) usan ahora `chase_paris_fondo` (Torre Eiffel) y `street_bg` (fachadas francesas), y el cable del cargador ya no cruza la cara de Cepi.
+  - Fondo de la Arena de Pinky (`arena_pinky.js`): recorte superior industrial de `galpon.webp` (ventanal nocturno y lámpara colgante) para eliminar el sillón gigante fuera de escala en el estacionamiento.
+- Jugabilidad casual:
+  - Agregada 1 segunda oportunidad (`⭐ ¡VIDA EXTRA!`) por combate en las arenas de Cepi, Lale y Pinky al caer por daño en pelea, evitando reiniciar las 3 fases desde cero en el primer error.
+  - Alias `?probar=chaky-baile` y `?probar=lale-furia` agregados a `QUICK_TESTS`.
+- Guion y localización ES/FR:
+  - Eliminada la burla residual de barriles (`¡Barril 1, vos 0!`) de Big Chaky en `voice.js` (reemplazada por `¡Perdiste el compás!`).
+  - Conectado el cartel de cierre de la intro en `cine.js` con la corrida hacia el aeropuerto (`¡Alcanzá a BIG CHAKY rumbo al aeropuerto!`) y completadas sus traducciones en `i18n.js`.
+- Verificado: `npm test` (73/73) y capturas comparativas antes/después en Chromium móvil (`430×932`). Pendiente validación en Safari físico de iPhone.

@@ -52,17 +52,17 @@ export function createCine(ctx) {
     a.position.set(x, 0, z); a.setFacing(facing); a.setPose(pose); a.update(0, 0);
     return a;
   };
-  const strollerPoses = { sleep: { tex: 'margot_sheet', cell: 0 }, cry: { tex: 'margot_sheet', cell: 2 }, happy: { tex: 'margot_sheet', cell: 3 } };
+  const strollerPoses = { sleep: { tex: 'margot_sheet', cell: 0 }, awake: { tex: 'margot_sheet', cell: 1 }, cry: { tex: 'margot_sheet', cell: 2 }, happy: { tex: 'margot_sheet', cell: 3 } };
   const chakyPoses = () => ({ ...sheetPoses(assets, 'chaky', 'chaky_run'), arms: { tex: 'kidnap_sheet', cell: 0 }, push: { tex: 'kidnap_sheet', cell: 2 }, scared: { tex: 'kidnap_sheet', cell: 3 } });
   const say = (a, text, color = '#fff', size = 19, y = 3.3) => fx.popup(a.position.clone().setY(y), text, color, { size, life: 1.1, rise: 0.15 });
 
-  // Cámara: a de (pos, mira) → b, con suavizado. En celu parado se aleja para que entre todo.
+  // Cámara: a de (pos, mira) → b, con suavizado. En celu parado se aleja en Z sin subir de más para no mostrar el corte del edificio.
   function cam(a, b, k) {
-    const e = ease(k), far = game.portrait ? 1.55 : 1;
+    const e = ease(k), far = game.portrait ? 1.55 : 1, farY = game.portrait ? 1.12 : 1;
     const L = (i, arr1, arr2) => arr1[i] + (arr2[i] - arr1[i]) * e;
     const lx = L(0, a.l, b.l), ly = L(1, a.l, b.l), lz = L(2, a.l, b.l);
     const px = L(0, a.p, b.p), py = L(1, a.p, b.p), pz = L(2, a.p, b.p);
-    camera.position.set(lx + (px - lx) * far, ly + (py - ly) * far, lz + (pz - lz) * far);
+    camera.position.set(lx + (px - lx) * far, ly + (py - ly) * farY, lz + (pz - lz) * far);
     camera.lookAt(lx, ly, lz);
   }
   // Mover un actor hacia x con pose de caminar/correr; devuelve true al llegar
@@ -102,7 +102,7 @@ export function createCine(ctx) {
     const partnerPoses = sheetPoses(assets, other, other + '_idle');
     if (assets.has?.(other + '_idle')) partnerPoses.idle = { tex: other + '_idle' };
     const partner = actor(partnerPoses, 2.15, X + 0.9, 0.2, -1);
-    const stroller = actor(strollerPoses, 1.7, X - 0.5, 1.1, 1, 'happy');
+    const stroller = actor(strollerPoses, 1.7, X - 0.5, 1.1, 1, 'awake');
     const chaky = actor(chakyPoses(), 2.5, X + 14, -0.4, -1, 'walk');
     const crew = [['pinky', 1.2, -1.4], ['lale', 2.2, 1.2], ['cepi', 3.1, 0.1]].map(([id, dx, z]) =>
       ({ id, dx, a: actor(sheetPoses(assets, id, 'courier_' + id), 2.25, X + 14 + dx, z, -1, 'walk') }));
@@ -126,7 +126,7 @@ export function createCine(ctx) {
       { at: 8.8, run: () => { chaky.setPose('strike'); say(cepi, '🔌 ¡Un cargador para mi BYD!', '#ffe08a', 19, 3.0); ctx.audio?.sfx('coin'); } },
       { at: 9.8, run: () => { phase = 'grab'; ui.sub(''); chaky.setPose('arms'); } },
       { at: 11.4, run: () => { ui.sub('MARGOT', cry); } },
-      { at: 13.6, run: () => { ui.sub(''); ui.caption('¡CEPI SE LLEVÓ A MARGOT!', '¡Salí a buscarla!'); ctx.audio?.sfx('engine'); } }
+      { at: 13.6, run: () => { ui.sub(''); ui.caption('¡CEPI SE LLEVÓ A MARGOT!', '¡Alcanzá a BIG CHAKY rumbo al aeropuerto!'); ctx.audio?.sfx('engine'); } }
     ];
     let grabbed = false;
     const frame = (t, dt) => {

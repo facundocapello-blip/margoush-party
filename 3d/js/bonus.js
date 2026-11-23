@@ -101,10 +101,11 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       g.fillStyle = gr; g.fillRect(0, 0, w, h);
     }), fog: false }));
     sky.position.set(0, 10, -20);
-    if (assets.has('calle_buenos_aires')) {
-      const m = assets.meta('calle_buenos_aires'), H = 9.3, W = H * m.w / m.h;
+    const bgStreet = assets.has('street_bg') ? 'street_bg' : (assets.has('calle_buenos_aires') ? 'calle_buenos_aires' : null);
+    if (bgStreet) {
+      const m = assets.meta(bgStreet), H = 9.3, W = H * m.w / m.h;
       for (const dx of [-W, 0, W]) {
-        const f = mk(new T.PlaneGeometry(W, H), new T.MeshBasicMaterial({ map: assets.texture('calle_buenos_aires') }));
+        const f = mk(new T.PlaneGeometry(W, H), new T.MeshBasicMaterial({ map: assets.texture(bgStreet) }));
         f.position.set(dx, H / 2, -9);
       }
     }
@@ -138,7 +139,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     const screen = mk(new T.PlaneGeometry(0.36, 0.42), new T.MeshBasicMaterial({ color: L('#2fd36b') }));
     screen.position.set(chargerX, 1.45, CAR_Z + 0.43);
     const cable = mk(new T.CylinderGeometry(0.045, 0.045, 1, 6), new T.MeshLambertMaterial({ color: L('#1d1d22') }));
-    const cableFrom = new T.Vector3(chargerX - 0.2, 1.1, CAR_Z + 0.25), cableTo = new T.Vector3(carW / 2 - 0.15, 1.35, CAR_Z + 0.2);
+    const cableFrom = new T.Vector3(chargerX - 0.2, 0.72, CAR_Z - 0.1), cableTo = new T.Vector3(carW / 2 - 0.15, 0.88, CAR_Z - 0.1);
     function cableAt(to) {
       const d = new T.Vector3().subVectors(to, cableFrom);
       cable.scale.set(1, d.length(), 1);

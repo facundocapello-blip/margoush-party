@@ -237,7 +237,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_lale_idle';
-    let lastSpeech = null, lastBarHp = -1, lastBarPhase = null;
+    let lastSpeech = null, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
     const addPts = (n, px, py, pz) => {
       const before = game.score.total;
@@ -296,6 +296,12 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
             hero.hp = Math.max(0, hero.hp - 1); hurtT = HURT_POSE; inv = INV;
             game.score.takeDamage(); game.combo?.reset?.();
             sfx('hurt'); flash('#ff3b52', 0.45); shake(0.35, 0.28);
+            if (hero.hp <= 0 && !extraLifeUsed && phase === 'fight') {
+              extraLifeUsed = true;
+              hero.hp = Math.max(2, Math.ceil((hero.hpMax || 5) * 0.6));
+              pop(x, 3.4, z, '⭐ ¡VIDA EXTRA!', '#ffd36e', 26, 1.3);
+              sfx('pickup');
+            }
             break;
           case 'phase': setBarName(); phaseCard(e.phase, 2.1); shake(0.32, 0.3); sfx('roar'); break;
           case 'voice': speak(e.event); break;

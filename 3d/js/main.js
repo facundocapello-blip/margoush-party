@@ -839,6 +839,7 @@ game.onHeroDown = () => finish(false);
 // Ej.: ?probar=chaky · ?probar=cepi · ?probar=lale · ?probar=pinky (y sub-fases)
 const QUICK_TESTS = {
   chaky: { stage: 'galpon' },
+  'chaky-baile': { stage: 'galpon' },
   'chaky-cartel': { stage: 'galpon', bossHp: 21 },
   'chaky-enojado': { stage: 'galpon', bossHp: 11 },
   cepi: { run: () => spawnCepi({ instant: true }) },
@@ -847,6 +848,7 @@ const QUICK_TESTS = {
   lale: { run: () => spawnLale({ instant: true }) },
   'lale-patin': { run: () => spawnLale({ instant: true, hp: 20 }) },
   'lale-horno': { run: () => spawnLale({ instant: true, hp: 10 }) },
+  'lale-furia': { run: () => spawnLale({ instant: true, hp: 10 }) },
   pinky: { run: () => spawnPinky({ instant: true }) },
   'pinky-tarifa': { run: () => spawnPinky({ instant: true, hp: 20 }) },
   'pinky-margot': { run: () => spawnPinky({ instant: true, hp: 10 }) },
