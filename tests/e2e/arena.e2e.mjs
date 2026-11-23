@@ -11,6 +11,8 @@ for (const [hero, vp, mobile] of [['douge', { width: 960, height: 540 }, false],
     await G(page, () => window.__game.setStage('galpon'));
     await page.waitForFunction(() => window.__game.state === 'arena', null, { timeout: 5000 });
     check(true, `${hero}: el galpón abre directo el escenario de baile de BIG CHAKY`);
+    check(await G(page, () => window.__game.arena.state.scene === 'intro'), `${hero}: arranca con la intro de BIG CHAKY y Margot`);
+    await G(page, () => window.__game.arena.logic.skipIntro());
 
     const st = await G(page, () => window.__game.arena.state);
     check(!!st.screen && st.hero.facing === 'front' && st.lives === 3, `${hero}: ambos de frente en escenario y 3 vidas extra`);
@@ -18,8 +20,8 @@ for (const [hero, vp, mobile] of [['douge', { width: 960, height: 540 }, false],
 
     const before = await G(page, () => window.__game.score.total);
     await G(page, () => window.__game.arena.logic._setHp(0));
-    await page.waitForFunction(() => window.__game.state === 'rescue', null, { timeout: 20000 });
-    check(await G(page, () => window.__game.score.total) - before >= 2000, `${hero}: ganar da 2000 y sigue el rescate`);
+    await page.waitForFunction(() => !window.__game.arena.active && window.__game.chakyDone, null, { timeout: 35000 });
+    check(await G(page, () => window.__game.score.total) - before >= 2000, `${hero}: ganar da 2000 y pasa al siguiente acto`);
     check(!(await G(page, () => window.__game.arena.active)), `${hero}: la arena se liberó`);
 
     // Perder: vida 0 en la arena → resultado sin ganar
@@ -27,7 +29,7 @@ for (const [hero, vp, mobile] of [['douge', { width: 960, height: 540 }, false],
     await G(page, () => window.__game.setStage('galpon'));
     await page.waitForFunction(() => window.__game.state === 'arena', null, { timeout: 5000 });
     await G(page, () => { window.__game.hero.hp = 0; });
-    await page.waitForFunction(() => window.__game.state === 'result', null, { timeout: 20000 });
+    await page.waitForFunction(() => window.__game.state === 'result', null, { timeout: 35000 });
     check(await G(page, () => window.__game.lastResult.won === false && !window.__game.arena.active), `${hero}: si caés sin vidas, termina el juego y la arena se libera`);
     check(errors.length === 0, `${hero}: sin errores de consola ` + JSON.stringify(errors));
   } finally {

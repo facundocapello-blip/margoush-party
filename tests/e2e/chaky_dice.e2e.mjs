@@ -8,6 +8,14 @@ try {
   await startRun(page, 'douge');
   await G(page, () => window.__game.setStage('galpon'));
   await page.waitForFunction(() => window.__game.state === 'arena', null, { timeout: 5000 });
+  check((await G(page, () => window.__game.arena.state.scene)) === 'intro', 'arranca con la intro de BIG CHAKY y Margot');
+  check(await G(page, () => !!document.querySelector('.chaky-intro') && window.__game.arena.state.margot !== null), 'Margot aparece fuera de la jaula junto a Chaky');
+  await page.tap('.chaky-intro'); // tocar la intro la saltea y muestra directo «¡La prueba de Baile!»
+  await page.waitForFunction(() => document.querySelector('.chaky-intro.on2'), null, { timeout: 4000 });
+  check(/prueba de Baile/i.test(await G(page, () => document.querySelector('.chaky-intro .l2').textContent)), 'Chaky anuncia «¡La prueba de Baile!»');
+  await page.waitForFunction(() => window.__game.arena.state.scene === 'fight', null, { timeout: 45000 });
+  check(await G(page, () => /arena_chaky_dance_/.test(window.__game.arena.state.bossTex)), 'Chaky baila con su traje violeta');
+  check(await G(page, () => { const s = window.__game.arena.state; return s.bossX - s.hero.x >= 5.4; }), 'héroe y Chaky bien separados en el escenario');
   check((await G(page, () => window.__game.arena.state.phase)) === 1, 'arranca directo en la ronda 1 del baile');
   check((await G(page, () => window.__game.arena.state.lives)) === 3, 'arranca con 3 vidas extra (⭐⭐⭐)');
   await G(page, () => window.dispatchEvent(new Event('blur')));
@@ -31,7 +39,8 @@ try {
   const KEYS = ['KeyZ', 'KeyQ', 'KeyS', 'KeyE', 'KeyC'];
   const hp0 = await G(page, () => window.__game.arena.logic.state.hp);
   let shotDone = false;
-  for (let k = 0; k < 400; k++) {
+  await page.setViewportSize({ width: 430, height: 932 });
+  for (let k = 0; k < 1600; k++) {
     const st = await G(page, () => {
       const d = window.__game.arena.logic.state.dice;
       if (!d || d.stage !== 'play') return null;
@@ -43,7 +52,7 @@ try {
     if (st.dt < 0.06) await page.keyboard.press(KEYS[st.lane]);
     else await page.waitForTimeout(15);
   }
-  await page.waitForFunction(() => window.__game.arena.logic.state.dice?.stage === 'result', null, { timeout: 8000 });
+  await page.waitForFunction(() => window.__game.arena.logic.state.dice?.stage === 'result', null, { timeout: 25000 });
   const res = await G(page, () => { const d = window.__game.arena.logic.state.dice; return d.hits + '/' + d.notes.length; });
   check(await G(page, () => window.__game.arena.logic.state.dice.last === 'ok'), 'siguiendo las flechas que bajan se gana la ronda ' + res);
   check((await G(page, () => window.__game.arena.logic.state.hp)) < hp0, 'y cada paso acertado lastima a Big Chaky');

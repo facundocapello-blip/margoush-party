@@ -690,7 +690,7 @@ function spawnBoss({ instant = false } = {}) {
   input.reset();
   healBeforeBoss(instant);
   const wait = Promise.all([
-    assets.ensure(['arena_chaky_dance_', 'arena_chaky_idle', 'arena_chaky_hurt', 'arena_chaky_ko', 'arena_fondo']),
+    assets.ensure(['arena_chaky_dance_', 'arena_fondo', 'margot_sheet']), // solo el traje violeta de baile (sin sprites naranjas)
     Promise.allSettled(['arena_aeropuerto_fondo', 'douge_dance_sheet', 'marine_dance_sheet'].map(name => assets.ensure(name)))
   ]);
   game.ctx.audio?.music('byd', { fade: instant ? 0 : 0.3 });

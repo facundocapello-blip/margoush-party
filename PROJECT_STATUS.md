@@ -281,3 +281,10 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (73/73 en verde, incluyendo `tests/check_sprites.py` y presupuesto de `3d/assets/` < 9,2 MB) y simulación completa de las 24 notas hasta el KO. Pendiente: validación táctil y visual en Safari físico de iPhone y revisión de interfaz en Cepi, Lale y Pinky.
 - **Rollback**: volver `main` y `feat-3d` al commit `1f4b524`.
 
+
+## 2026-11-22 · Big Chaky: intro con Margot, más separación y traje violeta fijo
+- Intro del jefe antes del baile (~3,7 s, se saltea tocando): primer plano de BIG CHAKY con Margot fuera de la jaula (en su cochecito, `margot_sheet`), subtítulo «Te daré a Margoth, sólo si puedes vencerme en...» y luego «¡La prueba de Baile!» (ES/FR); la cámara se abre al escenario y arranca la Ronda 1. Margot queda al fondo, en el centro, mirando el duelo (feliz en el KO).
+- Separación: héroe en x = −3,0 y Chaky en x = +3,0 (antes ±2,05), vaivén reducido; centro libre para Margot.
+- Bug del buzo naranja: cada acierto ponía la pose `hurt` → `arena_chaky_hurt` (sprite naranja del galpón). Ahora el escenario usa solo `arena_chaky_dance_*`; el KO es la pose de baile cayendo de costado. `spawnBoss` ya no carga los sprites naranjas.
+- Verificado: `npm test` (73/73), e2e `chaky_dice` y `arena` en Chromium con GPU por software (capturas vertical 430×932 y horizontal 844×390). No equivale a Safari físico.
+- Pendiente: probar la intro y la legibilidad del texto en iPhone 15 Pro Max (vertical y horizontal).

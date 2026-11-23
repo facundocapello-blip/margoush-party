@@ -12,7 +12,10 @@ import { fillText, tr } from './i18n.js';
 const HURT_POSE = 0.45;
 const INV = 0.8;
 const END_DELAY = 1.15;
-const ENTRANCE = 0.65;
+// Intro del jefe: BIG CHAKY con Margot (fuera de la jaula) anuncia «¡La prueba de Baile!»
+const INTRO = { line2: 1.9, reveal: 3.0, end: 3.7 };
+const INTRO_LINES = ['Te daré a Margoth, sólo si puedes vencerme en...', '¡La prueba de Baile!'];
+const CHAKY_VOICE = { lang: 'es-AR', pitch: 0.35, rate: 0.82 };
 const STAGE_Z = ARENA.bossZ;
 const TARIMA_H = 0.6, TARIMA_FRONT = STAGE_Z + 2.5, TARIMA_BACK = STAGE_Z - 3.5;
 const HERO_H = 4.6, BOSS_H = 5.4;
@@ -25,7 +28,8 @@ const PIU_KEYS = {
   ArrowLeft: 0, ArrowUp: 1, Space: 2, ArrowRight: 3, ArrowDown: 4
 };
 export const DANCE_SIGN = { jump: ['⤴', '¡SALTO!'], attack: ['👊', '¡PIÑA!'], dodge: ['🌀', '¡GIRO!'] };
-const DANCE_FALLBACK = { dance_idle: 'idle', dance_jump: 'throw', dance_attack: 'slam', dance_dodge: 'hurt', dance_laugh: 'idle' };
+// En el escenario BIG CHAKY usa SOLO su traje violeta de lentejuelas (nunca los sprites naranjas del galpón)
+const BOSS_POSE_TEX = { ko: 'dance_dodge', hurt: 'dance_dodge', idle: 'dance_idle' };
 const TILE_COLORS = ['#38bdf8', '#e879f9', '#facc15', '#34d399', '#fb7185', '#a78bfa'];
 
 export function createArena({ game, input, audio, assets, renderer, updateHud, pause, POWER, onWin, onDown }) {
@@ -172,10 +176,42 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       if (s) { s.position.set(px, TARIMA_H + 0.025, pz); s.visible = m.visible; }
     }
 
-    const initialBossKey = assets.has('arena_chaky_dance_idle') ? 'arena_chaky_dance_idle' : 'arena_chaky_idle';
+    const initialBossKey = 'arena_chaky_dance_idle';
+    const bossTexFor = (pose) => {
+      const k = 'arena_chaky_' + (BOSS_POSE_TEX[pose] || pose);
+      return assets.has(k) ? k : initialBossKey;
+    };
     const initialHeroKey = CUSTOM.hero_dance_point ? 'hero_dance_point' : (heroId + '_idle');
     const B = sprite(initialBossKey, BOSS_H, 0.95);
     const P = sprite(initialHeroKey, HERO_H, 0.85);
+
+    // Margot FUERA de la jaula: en su cochecito junto a Chaky durante la intro y mirando el duelo desde el fondo
+    let M = null, margotCell = -1;
+    const MARGOT_H = 2.3;
+    if (assets.has('margot_sheet')) {
+      const mm = assets.meta('margot_sheet');
+      const tx = keep(assets.texture('margot_sheet').clone());
+      tx.needsUpdate = true;
+      tx.repeat.set(1 / (mm.cols || 2), 1 / (mm.rows || 2));
+      M = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: tx, alphaTest: 0.42, side: T.DoubleSide })));
+      M.userData.cols = mm.cols || 2;
+      M.userData.rows = mm.rows || 2;
+      scene.add(M);
+      const s = new T.Mesh(shG, shM);
+      s.scale.set(MARGOT_H * 0.7, 1, MARGOT_H * 0.3);
+      s.renderOrder = 1;
+      scene.add(s);
+      M.userData.sh = s;
+    }
+    // Celdas de margot_sheet: 1 = despierta con chupete, 2 = llorando, 3 = feliz con los brazos arriba
+    const setMargot = (cell) => {
+      if (!M || margotCell === cell) return;
+      margotCell = cell;
+      const c = M.userData.cols, r = M.userData.rows;
+      M.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
+    };
+    setMargot(2);
+    let mX = 0, mZ = STAGE_Z + 0.5, mH = MARGOT_H;
 
     // Interfaz del Duelo de Baile (5 carriles con botones receptores ABAJO y flechas que BAJAN)
     const ui = document.createElement('div');
@@ -194,14 +230,17 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       '</div>' +
       '<div class="arena-flash"></div>' +
       '<div class="chaky-sign hidden"><b class="ico"></b><span class="txt"></span><i class="timer"><i></i></i></div>' +
-      '<div class="phase-card hidden"><small></small><b></b><span></span><em hidden></em></div>';
+      '<div class="phase-card hidden"><small></small><b></b><span></span><em hidden></em></div>' +
+      '<div class="chaky-intro"><small>BIG CHAKY</small><p class="l1"></p><b class="l2"></b><i class="skip"></i></div>';
     document.body.append(ui);
-    document.body.classList.add('arena-on', 'chaky-dance', 'piu-on');
+    document.body.classList.add('arena-on', 'chaky-dance', 'piu-on', 'chaky-intro-on');
 
     const flashE = ui.querySelector('.arena-flash');
     const cardE = ui.querySelector('.phase-card'), dotsE = ui.querySelector('.dice-dots');
     const piuE = ui.querySelector('.piu'), lanesE = piuE.querySelector('.lanes'), judgeE = piuE.querySelector('.piu-judge');
     const captionE = piuE.querySelector('.dance-caption');
+    const introE = ui.querySelector('.chaky-intro');
+    fillText(introE.querySelector('.skip'), 'Tocá para empezar');
     const laneEls = [...piuE.querySelectorAll('.lane')], noteEls = new Map();
 
     // Estrellas de 3 vidas extra (⭐⭐⭐) en el HUD junto al nombre del héroe
@@ -273,7 +312,35 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
     let laneHeight = 0, viewportHeight = 0, viewportWidth = 0;
     let heroStepLane = -1, heroStepTimer = 0;
 
+    // Intro: primera frase, «¡La prueba de Baile!» y luego se revela el escenario completo
+    let introStep = 0;
+    function introLine(n, voiceOn = true) {
+      if (introStep >= n) return;
+      introStep = n;
+      const text = INTRO_LINES[n - 1];
+      if (n === 1) {
+        fillText(introE.querySelector('.l1'), text);
+        introE.classList.add('on1');
+      } else {
+        fillText(introE.querySelector('.l2'), text);
+        introE.classList.add('on2');
+        flash('#e879f9', 0.32);
+        shake(0.16, 0.25);
+        sfx('perfect');
+        for (const tile of discoTiles) tile.mat.opacity = 0.95;
+      }
+      if (voiceOn) { try { audio.bossLine?.(text, CHAKY_VOICE, n === 1 ? 1.8 : 1.2); } catch (_) {} }
+    }
+    function skipIntro() {
+      if (phase !== 'intro' || phaseT >= INTRO.reveal) return;
+      introLine(1, false);
+      introLine(2, false);
+      phaseT = INTRO.reveal;
+    }
+    ui.addEventListener('pointerdown', () => { if (phase === 'intro') skipIntro(); });
+
     function piuTap(lane) {
+      if (phase === 'intro') { skipIntro(); return; }
       if (game.state !== 'arena' || logic.state.phase === 'ko') return;
       laneEls[lane].classList.remove('press');
       void laneEls[lane].offsetWidth;
@@ -286,6 +353,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); piuTap(+el.dataset.lane); });
     }
     const onKey = (ev) => {
+      if (game.state === 'arena' && phase === 'intro' && !ev.repeat && ev.code !== 'Escape' && ev.code !== 'KeyP') { skipIntro(); return; }
       if (game.state !== 'arena' || !(ev.code in PIU_KEYS)) return;
       ev.preventDefault();
       if (!ev.repeat) piuTap(PIU_KEYS[ev.code]);
@@ -332,7 +400,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
 
     // Estado del escenario y los bailarines
     let x = logic.state.heroX, z = STAGE_Z + 0.25, y = 0, vy = 0, t = 0;
-    let phase = 'entrance', phaseT = 0, ended = false, closing = false;
+    let phase = 'intro', phaseT = 0, ended = false, closing = false;
     let hurtT = 0, inv = 0, shakeT = 0, shakeA = 0, bossFlash = 0;
     let heroPose = 'dance_idle', bossKey = initialBossKey, prevPose = 'dance_idle', poseT = 0, danceStep = 0;
     game.state = 'arena';
@@ -494,6 +562,10 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
             game.score.addKill('boss');
             pop(logic.state.bossX, TARIMA_H + B.userData.hh * 0.5, STAGE_Z, '+' + (game.score.total - before), '#ffd36e', 34, 1.5);
             bar?.classList.add('hidden');
+            introE.remove();
+            document.body.classList.remove('chaky-intro-on');
+            for (const el of noteEls.values()) el.remove();
+            noteEls.clear();
             phase = 'ko';
             phaseT = 0;
             break;
@@ -534,16 +606,26 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       y = Math.max(0, y + vy * dt);
       if (y <= 0) vy = Math.max(0, vy);
 
-      if (phase === 'entrance' && phaseT >= ENTRANCE) {
+      if (phase === 'intro') {
+        if (phaseT >= 0.05) introLine(1);
+        if (phaseT >= INTRO.line2) introLine(2);
+        if (phaseT >= INTRO.reveal) introE.classList.add('out');
+      }
+      if (phase === 'intro' && phaseT >= INTRO.end) {
         phase = 'fight';
         phaseT = 0;
+        introE.remove();
+        document.body.classList.remove('chaky-intro-on');
+        setMargot(1);
         phaseCard(logic.state.phase, 1.15);
         speak('dice');
       }
       if (phase === 'fight') {
         handle(logic.update(dt, { x, z, y, moving: false, dodging: false, inv: inv > 0 }));
       }
-      if (phase === 'fight' && hero.hp <= 0) {
+      if ((phase === 'fight' || phase === 'intro') && hero.hp <= 0) {
+        introE.remove();
+        document.body.classList.remove('chaky-intro-on');
         phase = 'down';
         phaseT = 0;
       } else if (phase === 'ko') {
@@ -563,17 +645,19 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       shakeT = Math.max(0, shakeT - dt);
       if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
-      const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0;
-      const e = k * k * (3 - 2 * k);
+      // Intro: primer plano de BIG CHAKY con Margot; luego la cámara se abre al escenario completo
+      const rv = phase === 'intro' ? Math.max(0, Math.min(1, (phaseT - INTRO.reveal) / (INTRO.end - INTRO.reveal))) : 1;
+      const e = 1 - rv * rv * (3 - 2 * rv);
+      const focusX = (S.bossX - 0.9) * e;
 
-      // Cámara frontal enfocando a los dos bailarines lado a lado sobre el escenario
-      const extraZ = innerHeight < 420 ? 1.8 : 0;
+      // Cámara frontal enfocando a los dos bailarines bien separados sobre el escenario
+      const extraZ = innerHeight < 420 ? 0.8 : 0;
       cam.position.set(
-        (Math.random() - 0.5) * sh,
-        STAGE_CAM.y + e * 2.2 + (Math.random() - 0.5) * sh,
-        STAGE_CAM.z + extraZ + e * 3.5
+        focusX + (Math.random() - 0.5) * sh,
+        STAGE_CAM.y - e * 0.9 + (Math.random() - 0.5) * sh,
+        STAGE_CAM.z + extraZ - e * 6.5
       );
-      cam.lookAt(0, STAGE_CAM.lookY + e * 0.6, STAGE_Z);
+      cam.lookAt(focusX, STAGE_CAM.lookY + e * 0.7, STAGE_Z);
       cam.aspect = innerWidth / innerHeight;
       cam.fov = cam.aspect < 0.9 ? STAGE_CAM.fovPortrait : STAGE_CAM.fov;
       cam.updateProjectionMatrix();
@@ -592,14 +676,12 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       }
 
       // 1. BIG CHAKY (a la derecha del escenario, DE FRENTE mirando a cámara)
-      let pose = S.pose;
+      let pose = phase === 'intro'
+        ? (phaseT < INTRO.line2 ? 'dance_laugh' : phaseT < INTRO.reveal ? 'dance_jump' : 'dance_idle')
+        : phase === 'down' ? 'dance_laugh' : S.pose;
       if (pose !== prevPose) { prevPose = pose; poseT = 0; }
       poseT += dt;
-      bossKey = 'arena_chaky_' + pose;
-      if (!CUSTOM[bossKey] && !assets.has(bossKey)) {
-        const fallback = 'arena_chaky_' + (DANCE_FALLBACK[pose] || 'idle');
-        bossKey = assets.has(fallback) ? fallback : 'arena_chaky_idle';
-      }
+      bossKey = bossTexFor(pose);
       setTex(B, bossKey);
       let bx = S.bossX, by = beatBounce * 0.16, rz = beatSway * 0.04, sx = 1, sy = 1 + Math.sin(beatPhase * 2) * 0.025;
       if (pose === 'dance_jump') {
@@ -615,10 +697,12 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       } else if (pose === 'dance_laugh') {
         sy = 1 + Math.sin(t * 16) * 0.04;
         by = Math.abs(Math.sin(t * 8)) * 0.18;
-      } else if (pose === 'hurt') {
-        rz = Math.sin(poseT * 24) * 0.08;
-        sy = 0.95;
-        sx = 1.05;
+      } else if (pose === 'ko') {
+        // KO con el traje de baile: se tambalea y cae de costado (sin volver al buzo naranja)
+        const f = Math.min(1, poseT / 0.55);
+        rz = -f * 1.15 + Math.sin(poseT * 20) * 0.06 * (1 - f);
+        by = 0;
+        sy = 1 - f * 0.08;
       }
       place(B, bx, TARIMA_H + by, STAGE_Z);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1);
@@ -672,7 +756,25 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       place(P, x, TARIMA_H + y + hBob, z);
       P.rotation.z = hLean + danceStep * y * 0.12;
 
-      piuDraw();
+      // 3. MARGOT: junto a Chaky en la intro; después rueda al fondo del escenario a mirar el duelo
+      if (M) {
+        const inIntroShot = phase === 'intro' && phaseT < INTRO.reveal;
+        const tx = inIntroShot ? S.bossX - 1.95 : 0;
+        const tz = inIntroShot ? STAGE_Z + 0.6 : STAGE_Z - 2.1;
+        const th = inIntroShot ? MARGOT_H : MARGOT_H * 0.82;
+        const kk = Math.min(1, dt * 5);
+        if (dt === 0 || phase === 'intro' && phaseT < 0.05) { mX = tx; mZ = tz; mH = th; }
+        else { mX += (tx - mX) * kk; mZ += (tz - mZ) * kk; mH += (th - mH) * kk; }
+        if (S.phase === 'ko') setMargot(3);
+        else if (phase === 'down' || (phase === 'intro' && phaseT < INTRO.reveal)) setMargot(2);
+        else if (phase !== 'intro') setMargot(1);
+        const mb = margotCell === 3 ? Math.abs(Math.sin(t * 7)) * 0.3 : beatBounce * 0.06;
+        M.scale.set(mH, mH, 1);
+        place(M, mX, TARIMA_H + mb, mZ);
+        M.rotation.z = margotCell === 2 ? Math.sin(t * 9) * 0.03 : 0;
+      }
+
+      if (phase !== 'intro' && S.phase !== 'ko') piuDraw();
 
       // Textos flotantes de puntaje y vida
       for (let i = pops.length - 1; i >= 0; i--) {
@@ -703,7 +805,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       disposed = true;
       clearTimeout(flashTimer);
       removeEventListener('keydown', onKey);
-      document.body.classList.remove('arena-on', 'chaky-dance', 'piu-on');
+      document.body.classList.remove('arena-on', 'chaky-dance', 'piu-on', 'chaky-intro-on');
       if (bar && barHome) barHome.append(bar);
       bar?.classList.add('hidden');
       livesEl?.remove();
@@ -718,6 +820,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       power: () => { const evs = logic.power(); handle(evs); return evs; },
       act: (k) => { const evs = logic.act(k); handle(evs); return evs; },
       tap: (lane) => { const evs = logic.tap(lane); handle(evs); return evs; },
+      skipIntro: () => skipIntro(),
       useLife: () => logic.useLife(),
       _setHp: (hp) => { const evs = logic._setHp(hp); handle(evs); return evs; }
     };
@@ -740,6 +843,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
           lives: S.lives,
           power: hero.power,
           scene: phase,
+          margot: M ? { x: mX, z: mZ, cell: margotCell } : null,
           screen: screenBoxes()
         };
       }

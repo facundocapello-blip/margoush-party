@@ -9,7 +9,8 @@ export const ARENA = {
   diceAt: 21,          // umbral de vida para Ronda 2 (compatibilidad con ?probar=chaky-cartel)
   rageAt: 11,          // umbral de vida para Ronda 3 (compatibilidad con ?probar=chaky-enojado)
   lives: 3,            // 3 vidas extra (⭐⭐⭐) para continuar en la misma ronda si perdés los corazones
-  xMax: 4.2, zNear: 0, zFar: -7, bossZ: -12.8, bossSway: 0.45,
+  xMax: 4.2, zNear: 0, zFar: -7, bossZ: -12.8, bossSway: 0.22,
+  stageX: 3.0,         // separación: héroe en -stageX y BIG CHAKY en +stageX (centro libre para Margot)
   stepDmg: 1.15,       // cada flecha acertada le baja vida a Chaky en tiempo real
   powerDmg: 4,
   hitR: 1.05,
@@ -47,8 +48,8 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     hpMax: A.hp,
     lives: A.lives,
     livesMax: A.lives,
-    bossX: 2.05,
-    heroX: -2.05,
+    bossX: 3.0,
+    heroX: -3.0,
     pose: 'dance_idle',
     heroPose: 'dance_idle',
     shots: [],
@@ -120,8 +121,9 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     evs.push({ type: 'bossHit', dmg, by });
     if (state.hp <= 0 && allowKo) {
       triggerKo(evs);
-    } else {
-      poseName = 'hurt';
+    } else if (by !== 'dice') {
+      // Sacudón con una pose de baile (traje violeta): nunca vuelve a los sprites naranjas viejos
+      poseName = 'dance_dodge';
       poseT = 0.24;
     }
   }
@@ -166,8 +168,8 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     if (state.phase === 'ko') return evs;
     t += dt;
     if (poseT > 0) poseT -= dt;
-    state.bossX = 2.05 + Math.sin(t * 2.2) * A.bossSway;
-    state.heroX = -2.05 - Math.sin(t * 2.2) * (A.bossSway * 0.5);
+    state.bossX = A.stageX + Math.sin(t * 2.2) * A.bossSway;
+    state.heroX = -A.stageX - Math.sin(t * 2.2) * (A.bossSway * 0.5);
 
     const d = state.dice;
     if (d) {
@@ -208,8 +210,8 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     if (d) {
       const inStep = d.stage === 'play' && d.step !== null && (d.t - d.stepT) < d.beatDur * 0.8;
       const inHeroStep = d.stage === 'play' && d.heroStep !== null && (d.t - d.heroStepT) < d.beatDur * 0.85;
-      state.pose = poseT > 0 && poseName === 'hurt'
-        ? 'hurt'
+      state.pose = poseT > 0 && poseName
+        ? poseName
         : inStep
           ? STEP_POSE[d.step]
           : (d.stage === 'result' && d.last === 'bad' ? 'dance_laugh' : 'dance_idle');

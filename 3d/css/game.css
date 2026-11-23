@@ -767,6 +767,35 @@ body.chaky-dance.has-screen #arena-ui { visibility: hidden; }
   body.chaky-dance { --deck-height: clamp(78px, 22%, 104px); }
   #arena-ui .piu { grid-template-rows: 22px 1fr; }
 }
+/* Intro de BIG CHAKY con Margot: «Te daré a Margoth…» + «¡La prueba de Baile!» (tocá para saltar) */
+body.chaky-intro-on #arena-ui .piu { opacity: .25; transition: opacity .4s; }
+#arena-ui .chaky-intro {
+  position: absolute; inset: 0; z-index: 7; pointer-events: auto; touch-action: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: calc(64px + var(--safe-t)) 14px 0; text-align: center; transition: opacity .45s;
+  background: linear-gradient(180deg, rgba(10, 4, 24, .78) 0%, rgba(10, 4, 24, .35) 34%, rgba(10, 4, 24, 0) 52%);
+}
+#arena-ui .chaky-intro.out { opacity: 0; pointer-events: none; }
+#arena-ui .chaky-intro small { font: 700 12px/1 Fredoka, sans-serif; letter-spacing: 4px; color: #e879f9; opacity: 0; transition: opacity .3s; }
+#arena-ui .chaky-intro .l1 {
+  margin: 8px 0 0; max-width: min(92vw, 520px); padding: 10px 16px; border-radius: 16px;
+  background: rgba(30, 14, 56, .92); border: 2px solid #c084fc; box-shadow: 0 8px 24px #0009;
+  color: #fff; font: 700 clamp(17px, 4.8vw, 24px)/1.2 Fredoka, sans-serif; opacity: 0; transform: translateY(-8px); transition: opacity .3s, transform .3s;
+}
+#arena-ui .chaky-intro .l2 {
+  display: block; margin-top: 12px; color: #ffd36e; font: 700 clamp(32px, 10vw, 54px)/1.05 Fredoka, sans-serif;
+  text-shadow: 0 4px 0 #a21caf, 0 0 22px #f472b6, 0 0 4px #000; opacity: 0; transform: scale(.4) rotate(-6deg);
+}
+#arena-ui .chaky-intro.on1 small, #arena-ui .chaky-intro.on1 .l1 { opacity: 1; transform: none; }
+#arena-ui .chaky-intro.on2 .l2 { animation: intro-pop .5s cubic-bezier(.2, 1.7, .4, 1) forwards, intro-glow .5s .5s ease-in-out infinite alternate; }
+@keyframes intro-pop { to { opacity: 1; transform: scale(1) rotate(-3deg); } }
+@keyframes intro-glow { from { transform: scale(1) rotate(-3deg); } to { transform: scale(1.06) rotate(-3deg); } }
+#arena-ui .chaky-intro .skip { position: absolute; bottom: calc(14px + var(--safe-b)); left: 0; right: 0; font: 700 12px Nunito, sans-serif; font-style: normal; color: #ffffffb0; }
+@media (orientation: landscape) and (max-height: 500px) {
+  #arena-ui .chaky-intro { padding-top: calc(48px + var(--safe-t)); }
+  #arena-ui .chaky-intro .l1 { padding: 6px 12px; font-size: 17px; }
+  #arena-ui .chaky-intro .l2 { margin-top: 6px; font-size: 34px; }
+}
 /* Arena de Cepi — Duelo de la flechita (Fase 2) */
 body.cepi-duel-on #touch { display: none; }
 #arena-ui .cepi-duel { position: absolute; left: 0; right: 0; bottom: 0; top: 0; pointer-events: none; z-index: 4; }

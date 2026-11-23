@@ -56,12 +56,20 @@ test('starts directly in the dance stage in round 1 with full life and 3 extra l
   assert.equal(l.state.dice.notes.length, ARENA.dice.rounds[0]);
 });
 
-test('both characters stand side-by-side on stage facing front', () => {
+test('both characters stand clearly separated side-by-side on stage facing front and Chaky stays in dance poses', () => {
   const l = mk();
-  assert.ok(l.state.heroX < 0, 'hero on the left side of the stage');
-  assert.ok(l.state.bossX > 0, 'Big Chaky on the right side of the stage');
+  assert.ok(l.state.heroX <= -2.7, 'hero on the left side of the stage');
+  assert.ok(l.state.bossX >= 2.7, 'Big Chaky on the right side of the stage');
+  assert.ok(l.state.bossX - l.state.heroX >= 5.5, 'wide separation between hero and Big Chaky');
   assert.equal(l.state.pose, 'dance_idle');
   assert.equal(l.state.heroPose, 'dance_idle');
+  // Al recibir daño durante el baile, Chaky nunca vuelve a la pose 'hurt' del buzo naranja
+  const n = l.state.dice.notes[0];
+  runUntil(l, safeHero(), () => Math.abs(l.state.dice.t - n.time) <= 0.02, 10);
+  l.tap(n.lane);
+  l.update(1 / 60);
+  assert.notEqual(l.state.pose, 'hurt');
+  assert.ok(l.state.pose.startsWith('dance_'));
 });
 
 test('3 agile dance rounds of 6, 8 and 10 arrows (24 total) knock out Big Chaky when hit on time', () => {
