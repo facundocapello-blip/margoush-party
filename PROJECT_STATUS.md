@@ -321,3 +321,10 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
   - `node tools/stamp_versions.mjs` y `npm test`: **85/85 pruebas automatizadas en verde** (incluyendo `arena_cepi`, `arena_lale`, `arena_pinky`, `arena`, `assets`, `check_sprites.py`, `campaign-continuity`, `versions`, etc.). Peso total de `3d/assets/`: **10,29 MB** (< 10,5 MB, con carga diferida por arena).
   - Pendiente: validación manual en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `411ebf4`.
+
+## 2026-11-23 (2) · Sin piquete y secuaces separados de los 4 Jefes
+- **Chau Piquete (`3d/js/level.js`, `3d/js/main.js`)**: eliminado el portón `piquete` (`x = 118`) y su oleada; la avenida de Buenos Aires fluye de corrido hasta la entrada del aeropuerto.
+- **Jefes 100 % exclusivos (`3d/js/level.js`)**: sacados `pinky`, `lale`, `cepi` y `cepiJefe` de las oleadas de la calle. Ahora en las calles pelean los 5 secuaces (`secuaz`, `patovica`, `bombo`, `mozo`, `delivery`) distribuidos en Actos 1, 3 y 4; `mozo` recibió paso natural (`gait`) en `3d/js/enemies.js`.
+- **Limpieza de sprites de secuaces (`3d/assets/face_*_sheet.webp`)**: eliminados los halos blancos y sombras grises pegadas a los pies. **Pendiente de arte**: regenerar los 5 secuaces en estilo Pixar cabezón 3D igual a Douge/Marine cuando se libere la cuota del generador de imágenes (~3h).
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (86/86 en verde, incluyendo nuevo test de invariante sin piquete y sin jefes en calle). Pendiente: prueba manual en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `4d21e2e`.

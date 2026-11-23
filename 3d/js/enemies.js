@@ -16,7 +16,7 @@ export const KINDS = {
   secuaz: { tex: 'face_secuaz_sheet', hp: 3, scale: 1, speed: 3.2, windup: 0.55, ai: 'melee', points: 'minion', gait: { cadence: 1.5, bob: 0.12, sway: 0.07 } },
   patovica: { tex: 'face_patovica_sheet', hp: 7, scale: 1.3, speed: 2.2, windup: 0.8, ai: 'melee', shove: 14, points: 'patovica', gait: { cadence: 1.1, bob: 0.06, sway: 0.05 } },
   bombo: { tex: 'face_bombo_sheet', hp: 4, scale: 1.05, speed: 2.8, ai: 'bombo', ranged: true, points: 'bombo', gait: { cadence: 2.0, bob: 0.22 } },
-  mozo: { tex: 'face_mozo_sheet', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', ranged: true, points: 'mozo', gait: { cadence: 0, bob: 0 } },
+  mozo: { tex: 'face_mozo_sheet', hp: 3, scale: 1, speed: 3.0, ai: 'mozo', ranged: true, points: 'mozo', gait: { cadence: 1.6, bob: 0.11, sway: 0.06 } },
   lale: { tex: 'courier_lale', hp: 4, scale: 1, speed: 3.0, ai: 'lale', ranged: true, points: 'lale', name: 'LALE «MANTECOSO»', gait: { cadence: 1.5, bob: 0.1, sway: 0.05 } },
   // Los malos de la banda son amigos de Facu: Lale (manteca), Cepi (pelotazos de pádel) y Pinky (trapito)
   cepi: { tex: 'courier_cepi', hp: 4, scale: 1.05, speed: 3.0, ai: 'cepi', ranged: true, points: 'cepi', name: 'CEPI «EL NIÑO»', gait: { cadence: 1.5, bob: 0.1, sway: 0.06 } },

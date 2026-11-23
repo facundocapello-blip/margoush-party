@@ -13,38 +13,31 @@ export const LEVELS = [
   { id: 2, name: 'FRANCIA', minX: 152, maxX: STREET_MAX_X, start: 156 }
 ];
 
-// Portones: cajones (se derrumban) y el piquete (cubiertas con fuego)
+// Portones: cajones rompibles al despejar cada zona (sin piquete)
 export const GATES = [
   { x: 64, kind: 'crates' },
-  { x: 118, kind: 'piquete' },
   { x: 204, kind: 'crates' },
   { x: 256, kind: 'crates' }
 ];
 
 // Oleadas en orden. gate = índice del portón que abren al despejarse.
-// La banda son tres amigos de Facu: Pinky el trapito (te cobra el estacionamiento), Lale (manteca) y Cepi (pelotazos de pádel).
-// Pocos por tanda (18 en total) y nunca dos iguales a la vez.
+// Chaky, Cepi, Lale y Pinky son únicamente JEFES de sus arenas; en la calle pelean sus secuaces.
 export const WAVES = [
-  { id: 'vereda', level: 1, trigger: 22, gate: null, title: 'LA VEREDA', text: '¡Llegó la banda de BIG CHAKY!',
-    spawns: [{ dx: 9, dz: -0.8, kind: 'pinky' }] },
-  { id: 'vereda-2', level: 1, trigger: 50, gate: 0, title: 'MANTECA EN LA VEREDA', text: 'Lale y Pinky te cortan el paso.',
-    spawns: [{ dx: 9, dz: 1.2, kind: 'lale' }, { dx: 8, dz: -1, kind: 'pinky' }] },
-  { id: 'avenida', level: 1, trigger: 72, gate: null, title: 'LA AVENIDA', text: 'Cuidado con el colectivo: no frena.',
-    spawns: [{ dx: 9, dz: -1.5, kind: 'cepi' }, { dx: -8, dz: 1.5, kind: 'pinky' }] },
-  { id: 'piquete', level: 1, trigger: 106, gate: 1, title: '¡PIQUETE!', text: 'Sacá a la banda para que levanten el corte.',
-    spawns: [{ dx: 7, dz: -2, kind: 'lale' }, { dx: 8, dz: 2, kind: 'cepi' }, { dx: 5, dz: 0, kind: 'pinky' }] },
-  { id: 'le-concept', level: 1, trigger: 126, gate: null, endsLevel: true, title: '¡ÚLTIMA PARADA: EL AEROPUERTO!', text: 'La banda no te deja subir al avión.',
-    spawns: [{ dx: 8, dz: 0, kind: 'pinky' }, { dx: 9, dz: 2.2, kind: 'cepi' }] },
+  { id: 'vereda', level: 1, trigger: 22, gate: null, title: 'LA VEREDA', text: '¡Llegaron los secuaces de BIG CHAKY!',
+    spawns: [{ dx: 9, dz: -0.9, kind: 'secuaz' }, { dx: 11, dz: 1.1, kind: 'secuaz' }] },
+  { id: 'vereda-2', level: 1, trigger: 50, gate: 0, title: 'SEGURIDAD VIP', text: 'Un patovica y su secuaz cortan la vereda.',
+    spawns: [{ dx: 9, dz: 1.1, kind: 'patovica' }, { dx: 8, dz: -1.1, kind: 'secuaz' }] },
+  { id: 'avenida', level: 1, trigger: 76, gate: null, title: 'LA AVENIDA', text: 'Cuidado con el colectivo: no frena.',
+    spawns: [{ dx: 9, dz: -1.4, kind: 'bombo' }, { dx: -8, dz: 1.4, kind: 'secuaz' }] },
+  { id: 'le-concept', level: 1, trigger: 122, gate: null, endsLevel: true, title: '¡ÚLTIMA PARADA: EL AEROPUERTO!', text: 'Los secuaces no te dejan subir al avión.',
+    spawns: [{ dx: 8, dz: -0.6, kind: 'patovica' }, { dx: 10, dz: 1.6, kind: 'bombo' }] },
 
-  { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE', text: '¡La banda te siguió hasta Francia!',
-    spawns: [{ dx: 8, dz: 0, kind: 'pinky' }, { dx: 9, dz: -1.2, kind: 'lale' }] },
-  { id: 'francia-2', level: 2, trigger: 186, gate: 2, title: 'PELOTAZOS', text: 'Cepi y Lale tiran desde lejos: acercate rápido.',
-    spawns: [{ dx: 10, dz: 1.5, kind: 'cepi' }, { dx: 9, dz: -2, kind: 'lale' }] },
-  // Mini-jefe a mitad del nivel 2: Cepi «el Niño», el hermano de Facu, viene re caliente (y con el BYD roto)
-  { id: 'boulevard', level: 2, trigger: 212, gate: null, title: 'LE BOULEVARD', text: '¡Ojo! Viene el hermano de Facu…',
-    spawns: [{ dx: 10, dz: 0, kind: 'cepiJefe' }] },
-  { id: 'boulevard-2', level: 2, trigger: 238, gate: 3, title: 'ÚLTIMO TRAMO', text: 'Atrás de esta barrera está el galpón.',
-    spawns: [{ dx: 8, dz: -1.5, kind: 'pinky' }, { dx: 10, dz: 1.8, kind: 'lale' }, { dx: 11, dz: 0, kind: 'cepi' }] }
+  { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE', text: '¡Secuaces en las calles de París!',
+    spawns: [{ dx: 8, dz: 0.4, kind: 'mozo' }, { dx: 10, dz: -1.3, kind: 'secuaz' }] },
+  { id: 'francia-2', level: 2, trigger: 186, gate: 1, title: 'CAMINO A LE BLÉ', text: 'Mozos y deliverys cuidan la panadería.',
+    spawns: [{ dx: 10, dz: 1.4, kind: 'mozo' }, { dx: 9, dz: -1.6, kind: 'delivery' }] },
+  { id: 'boulevard-2', level: 2, trigger: 238, gate: 2, title: 'ÚLTIMO TRAMO', text: 'Atrás de esta barrera está el galpón.',
+    spawns: [{ dx: 8, dz: -1.4, kind: 'patovica' }, { dx: 10, dz: 1.6, kind: 'delivery' }, { dx: 11, dz: 0, kind: 'bombo' }] }
 ];
 
 // Trampas. zone: tramo donde actúan las que aparecen solas.

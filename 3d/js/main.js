@@ -576,13 +576,11 @@ function updateZones() {
     if (st === 'idle' && x > w.trigger) {
       game.waves[w.id] = 'active';
       game.enemies.spawnWave(w.id);
-      if (w.id === 'piquete') game.banner(w.title, w.text);
       break;
     }
     if (st === 'active' && game.enemies.alive() === 0) {
       game.waves[w.id] = 'cleared';
       if (w.gate != null) openGate(w.gate);
-      if (w.id === 'piquete') game.banner('¡PASO LIBRE!', 'Seguí hacia el aeropuerto.');
       // Margot (carita del HUD) se pone contenta
       game.margot.cheer();
       if (w.endsLevel) {
@@ -802,12 +800,11 @@ game.onBossDown = () => {
 const STAGES = {
   vereda: { wave: 'vereda', at: 24 },
   avenida: { wave: 'avenida', at: 74 },
-  piquete: { wave: 'piquete', at: 108 },
-  'le-concept': { wave: 'le-concept', at: 128 },
+  'le-concept': { wave: 'le-concept', at: 120 },
   francia: { wave: 'francia', at: 164 },
   'francia-quiet': { upTo: 'francia', at: 170 },
-  boulevard: { wave: 'boulevard', at: 214 },
-  'boulevard-quiet': { upTo: 'boulevard', at: SECRET_X - 6 },
+  boulevard: { wave: 'boulevard-2', at: 234 },
+  'boulevard-quiet': { upTo: 'francia-2', at: SECRET_X - 6 },
   galpon: { upTo: WAVES[WAVES.length - 1].id, at: GALPON_X + 8, boss: true }
 };
 const ALIASES = { plaza: 'avenida', 'plaza-quiet': 'boulevard-quiet' };

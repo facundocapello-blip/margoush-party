@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
 import { createInput } from '../3d/js/input.js';
-import { LEVELS, LE_CONCEPT_X } from '../3d/js/level.js';
+import { LEVELS, LE_CONCEPT_X, GATES, WAVES } from '../3d/js/level.js';
 
 const main = readFileSync(new URL('../3d/js/main.js', import.meta.url), 'utf8');
 
@@ -89,4 +89,15 @@ test('probar un jefe conserva la partida guardada de la campaña', () => {
   api.saveCheckpoint('galpon');
   assert.equal(api.storedCheckpoint(), null);
   assert.equal(storage.get('checkpoint'), saved);
+});
+
+test('no hay piquete y los 4 jefes (Chaky, Cepi, Lale, Pinky) no aparecen como secuaces en la calle', () => {
+  assert.equal(GATES.some(g => g.kind === 'piquete'), false);
+  assert.equal(WAVES.some(w => w.id === 'piquete'), false);
+  const bossKinds = new Set(['chaky', 'cepi', 'cepiJefe', 'lale', 'pinky']);
+  for (const w of WAVES) {
+    for (const s of w.spawns) {
+      assert.equal(bossKinds.has(s.kind), false, `oleada ${w.id} no debe spawnear al jefe ${s.kind}`);
+    }
+  }
 });
