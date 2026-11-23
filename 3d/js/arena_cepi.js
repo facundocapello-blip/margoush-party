@@ -265,6 +265,20 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     };
     addEventListener('keydown', onKey);
 
+    const sparkG = keep(new T.BoxGeometry(0.18, 0.18, 0.18));
+    const sparks = [];
+    function burst(px, py, pz, hex, count = 8) {
+      const m = keep(new T.MeshBasicMaterial({ color: L(hex) }));
+      for (let i = 0; i < count; i++) {
+        const p = new T.Mesh(sparkG, m);
+        p.position.set(px, py, pz);
+        const ang = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+        const spd = 2.8 + Math.random() * 4.2;
+        scene.add(p);
+        sparks.push({ p, vx: Math.cos(ang) * spd, vy: 2.5 + Math.random() * 3.5, vz: Math.sin(ang) * spd, t: 0, life: 0.42 + Math.random() * 0.2 });
+      }
+    }
+
     function handle(evs) {
       for (const e of evs) {
         switch (e.type) {
@@ -278,20 +292,24 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             addPts(e.gold ? CEPI_ARENA.points.returned : CEPI_ARENA.points.normalReturn, e.x, 2.4, e.z);
             charge(e.gold ? 0.24 : 0.1);
             sfx(e.gold ? 'perfect' : 'hit'); shake(e.gold ? 0.3 : 0.16, e.gold ? 0.22 : 0.12);
-            if (e.gold) freezeT = 0.06;
+            if (e.gold) { freezeT = 0.075; burst(e.x, 1.6, e.z, '#ffe066', 12); }
+            else burst(e.x, 1.4, e.z, '#c8ff3d', 6);
             pop(e.x, 2.8, e.z, e.gold ? '¡PUNTO DE ORO!' : '¡DEVUELTA!', e.gold ? '#ffe066' : '#9fe4ff', e.gold ? 24 : 20);
             break;
           case 'meleeHit':
             addPts(CEPI_ARENA.points.melee, e.x, 2.6, CEPI_ARENA.bossZ); charge(POWER.hit);
-            sfx('hit'); shake(0.25, 0.16);
+            sfx('hit'); shake(0.26, 0.18); freezeT = 0.045;
+            burst(e.x, 2.2, CEPI_ARENA.bossZ + 0.4, '#ffe066', 9);
             break;
           case 'block':
             sfx('tick'); shake(0.14, 0.12);
+            burst(e.x, 2.1, CEPI_ARENA.bossZ + 0.4, '#9fe4ff', 5);
             pop(e.x, BOSS_H * 0.7, CEPI_ARENA.bossZ, '¡BLOQUEO!', '#9fe4ff', 22);
             break;
           case 'cardboard':
             addPts(CEPI_ARENA.points.cardboard, e.x, 2.6, CEPI_ARENA.bossZ);
-            sfx('hit'); shake(0.2, 0.15);
+            sfx('hit'); shake(0.22, 0.15); freezeT = 0.04;
+            burst(e.x, 2.0, CEPI_ARENA.bossZ + 0.3, '#d9a46c', 10);
             pop(e.x, 3.2, CEPI_ARENA.bossZ, '¡CARTÓN!', '#f5c28b', 24);
             break;
           case 'decoysCleared':
@@ -580,6 +598,16 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
         if (activeIds.has(id)) continue;
         scene.remove(obj.m); scene.remove(obj.sh); scene.remove(obj.ring); if (obj.halo) scene.remove(obj.halo);
         liveBalls.delete(id);
+      }
+
+      // Partículas de impacto (chispas/cartón)
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const q = sparks[i]; q.t += dt;
+        if (q.t >= q.life) { scene.remove(q.p); sparks.splice(i, 1); continue; }
+        q.vy -= 14 * dt;
+        q.p.position.x += q.vx * dt; q.p.position.y = Math.max(0.08, q.p.position.y + q.vy * dt); q.p.position.z += q.vz * dt;
+        q.p.rotation.x += dt * 10; q.p.rotation.y += dt * 8;
+        q.p.scale.setScalar(Math.max(0.01, 1 - q.t / q.life));
       }
 
       // Textos flotantes proyectados a pantalla

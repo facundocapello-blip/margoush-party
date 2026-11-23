@@ -334,3 +334,16 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - **Carga inicial más liviana en Safari iPhone (`3d/js/assets.js`, `3d/js/main.js`)**: se sumaron a la carga diferida por cortina `chase_*`, `arena_{douge,marine}_back_*` y las hojas `cepi/lale/pinky_{walk,actions}_sheet`, asegurando su precarga bajo demanda en `startChaseRun`, `startBydLevel`, `updateTransition`, `spawnCepi`, `spawnLale` y `spawnPinky` (el arranque inicial solo precarga el núcleo de portada y Acto 1).
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74 + 12/12 pruebas de arenas = **86/86 en verde**, incluyendo `tests/check_sprites.py` y presupuesto < 9,6 MB). Pendiente: prueba en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `faba63c`.
+
+## 2026-11-23 (4) · Pulido visual, encuadre de fondos y game feel en las arenas (Punto 3)
+- **Encuadre UV de los fondos nuevos (`3d/js/arena_lale.js`, `3d/js/arena_pinky.js`)**:
+  - `arena_lale_fondo`: recorte UV superior (`repeat 0.72`, `offset 0.28`) para alinear los 3 hornos encendidos y estantes de panadería con el piso 3D de baldosas en vertical y horizontal.
+  - `arena_pinky_fondo`: recorte UV superior (`repeat 0.68`, `offset 0.32`) para alinear la cabina de cobro, columnas y fluorescentes con los 3 cajones 3D sin duplicar líneas de piso.
+- **Auto 3D mejorado en la arena de Pinky (`3d/js/arena_pinky.js`)**: luneta con reflejo, patente `PK 912`, espejos laterales, luces traseras rojas y de reversa blancas con halos luminosos y sombra de contacto.
+- **Game feel (partículas temáticas + hitstop `freezeT`)**:
+  - **Cepi (`3d/js/arena_cepi.js`)**: chispas doradas/limón/cartón y hitstop en golpes, cartones y Punto de Oro.
+  - **Lale (`3d/js/arena_lale.js`)**: partículas de harina blanca y gotas de manteca dorada + hitstop en bolsa, enharinado, golpes y KO.
+  - **Pinky (`3d/js/arena_pinky.js`)**: lluvia de billetes verdes volando al pegarle mientras cobra, chispas rosadas en el Grito de Margot y hitstop en golpes, remate y KO.
+- **Corrección detectada por E2E**: restaurado `3d/assets/chase_ba_fondo.webp` (usado por el CSS de la portada en `3d/css/game.css`; sigue diferido para Three.js).
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas + **18/18 verificaciones E2E en Chromium móvil** (`tests/e2e/boss_arenas.e2e.py`, 0 errores JS, 0 HTTP 404, 0 `frameErrors`) e inspección visual de capturas en vertical y horizontal. Pendiente: validación en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `cf5cebb`.

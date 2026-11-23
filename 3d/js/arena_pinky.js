@@ -90,10 +90,15 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const chargeRing = new T.Mesh(keep(new T.RingGeometry(1.5, 2.05, 28)), keep(new T.MeshBasicMaterial({ color: L('#6dff8a'), transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false })));
     chargeRing.rotation.x = -Math.PI / 2; chargeRing.visible = false; scene.add(chargeRing);
 
-    // Fondo pintado del estacionamiento (recortamos la parte superior industrial del galpón para eliminar el sillón gigante fuera de escala)
+    // Fondo pintado del estacionamiento (recorte UV superior para alinear cabina, columnas y fluorescentes sin duplicar piso)
     const bgKey = assets.has('arena_pinky_fondo') ? 'arena_pinky_fondo' : 'galpon';
     let backMap = assets.texture(bgKey);
-    if (bgKey === 'galpon') {
+    if (bgKey === 'arena_pinky_fondo') {
+      backMap = keep(backMap.clone());
+      backMap.needsUpdate = true;
+      backMap.repeat.set(1, 0.68);
+      backMap.offset.set(0, 0.32);
+    } else if (bgKey === 'galpon') {
       backMap = keep(backMap.clone());
       backMap.needsUpdate = true;
       backMap.repeat.set(1, 0.54);
@@ -180,18 +185,37 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const waveRing = new T.Mesh(keep(new T.RingGeometry(0.6, 1.0, 32)), keep(new T.MeshBasicMaterial({ color: L('#ff99cc'), transparent: true, opacity: 0.8, side: T.DoubleSide, depthWrite: false })));
     waveRing.rotation.x = -Math.PI / 2; waveRing.visible = false; scene.add(waveRing);
 
-    // Autos compactos rojos entrando marcha atrás (ruedas, paragolpes y luces blancas de reversa que parpadean en warn)
-    const carBodyG = keep(new T.BoxGeometry(2.1, 0.98, 3.3));
-    const carTopG = keep(new T.BoxGeometry(1.68, 0.68, 1.75));
-    const bumperG = keep(new T.BoxGeometry(2.16, 0.24, 0.22));
-    const wheelG = keep(new T.CylinderGeometry(0.34, 0.34, 0.24, 12)); wheelG.rotateZ(Math.PI / 2);
-    const carRedM = keep(new T.MeshStandardMaterial({ color: L('#d92b3a'), roughness: 0.3 }));
-    const carGlassM = keep(new T.MeshStandardMaterial({ color: L('#22324a'), roughness: 0.2 }));
-    const bumperM = keep(new T.MeshStandardMaterial({ color: L('#2c303a'), roughness: 0.6 }));
+    // Autos compactos rojos entrando marcha atrás (estilo Pixar: patente, luneta con reflejo, espejos, luces con halo y sombra)
+    const carBodyG = keep(new T.BoxGeometry(2.14, 0.96, 3.35));
+    const carTopG = keep(new T.BoxGeometry(1.72, 0.66, 1.85));
+    const bumperG = keep(new T.BoxGeometry(2.22, 0.28, 0.26));
+    const windowG = keep(new T.PlaneGeometry(1.42, 0.46));
+    const plateG = keep(new T.PlaneGeometry(0.68, 0.22));
+    const mirrorG = keep(new T.BoxGeometry(0.24, 0.14, 0.14));
+    const wheelG = keep(new T.CylinderGeometry(0.36, 0.36, 0.26, 14)); wheelG.rotateZ(Math.PI / 2);
+    const carRedM = keep(new T.MeshStandardMaterial({ color: L('#e0283b'), roughness: 0.25, metalness: 0.12 }));
+    const carRoofM = keep(new T.MeshStandardMaterial({ color: L('#c41e30'), roughness: 0.28, metalness: 0.1 }));
+    const carGlassM = keep(new T.MeshBasicMaterial({ map: canvasTex(128, 64, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, w, h);
+      gr.addColorStop(0, '#3a557a'); gr.addColorStop(1, '#1a273d');
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(255,255,255,.26)';
+      g.beginPath(); g.moveTo(16, 0); g.lineTo(44, 0); g.lineTo(24, h); g.lineTo(4, h); g.closePath(); g.fill();
+    }) }));
+    const plateM = keep(new T.MeshBasicMaterial({ map: canvasTex(128, 48, (g, w, h) => {
+      g.fillStyle = '#f6f7fa'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#1b4ba8'; g.fillRect(0, 0, w, 10);
+      g.strokeStyle = '#222'; g.lineWidth = 4; g.strokeRect(2, 2, w - 4, h - 4);
+      g.fillStyle = '#16181e'; g.font = '900 24px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('PK 912', w / 2, h * 0.62);
+    }) }));
+    const bumperM = keep(new T.MeshStandardMaterial({ color: L('#252830'), roughness: 0.55 }));
     const wheelM = keep(new T.MeshLambertMaterial({ color: L('#14161a') }));
-    const revLightG = keep(new T.BoxGeometry(0.36, 0.22, 0.08));
+    const revLightG = keep(new T.BoxGeometry(0.38, 0.22, 0.09));
     const revLightM = keep(new T.MeshBasicMaterial({ color: 0xffffff }));
-    const tailLightM = keep(new T.MeshBasicMaterial({ color: L('#ff2233') }));
+    const tailLightM = keep(new T.MeshBasicMaterial({ color: L('#ff2438') }));
+    const redGlowTex = radial([[0, 'rgba(255,50,70,.85)'], [1, 'rgba(255,50,70,0)']]);
+    const whiteGlowTex = radial([[0, 'rgba(255,255,240,.92)'], [1, 'rgba(255,255,240,0)']]);
     const liveCars = new Map();
 
     function makeCar() {
@@ -200,17 +224,27 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         return { root: sp, isSprite: true, revLights: [] };
       }
       const g = new T.Group();
-      const body = new T.Mesh(carBodyG, carRedM); body.position.y = 0.78; g.add(body);
-      const top = new T.Mesh(carTopG, carGlassM); top.position.set(0, 1.52, -0.2); g.add(top);
-      const bumper = new T.Mesh(bumperG, bumperM); bumper.position.set(0, 0.42, 1.66); g.add(bumper);
-      for (const wx of [-1.02, 1.02]) for (const wz of [-1.0, 1.0]) {
-        const w = new T.Mesh(wheelG, wheelM); w.position.set(wx, 0.34, wz); g.add(w);
+      const sh = new T.Mesh(shG, shM); sh.scale.set(2.9, 1, 4.1); sh.position.y = 0.03; sh.renderOrder = 1; g.add(sh);
+      const body = new T.Mesh(carBodyG, carRedM); body.position.y = 0.8; g.add(body);
+      const top = new T.Mesh(carTopG, carRoofM); top.position.set(0, 1.54, -0.15); g.add(top);
+      const win = new T.Mesh(windowG, carGlassM); win.position.set(0, 1.52, 0.79); g.add(win);
+      const plate = new T.Mesh(plateG, plateM); plate.position.set(0, 0.72, 1.69); g.add(plate);
+      const bumper = new T.Mesh(bumperG, bumperM); bumper.position.set(0, 0.42, 1.68); g.add(bumper);
+      for (const sd of [-1, 1]) {
+        const mir = new T.Mesh(mirrorG, carRedM); mir.position.set(sd * 1.12, 1.24, -0.45); g.add(mir);
+      }
+      for (const wx of [-1.04, 1.04]) for (const wz of [-1.02, 1.02]) {
+        const w = new T.Mesh(wheelG, wheelM); w.position.set(wx, 0.36, wz); g.add(w);
       }
       const revLights = [];
-      for (const sd of [-0.68, 0.68]) {
-        const tl = new T.Mesh(revLightG, tailLightM); tl.position.set(sd, 0.88, 1.67); g.add(tl);
-        const rl = new T.Mesh(revLightG, revLightM); rl.position.set(sd * 0.55, 0.64, 1.67); g.add(rl);
-        revLights.push(rl);
+      for (const sd of [-0.74, 0.74]) {
+        const tl = new T.Mesh(revLightG, tailLightM); tl.position.set(sd, 0.94, 1.69); g.add(tl);
+        const tg = new T.Sprite(keep(new T.SpriteMaterial({ map: redGlowTex, blending: T.AdditiveBlending, transparent: true, depthWrite: false })));
+        tg.position.set(sd, 0.94, 1.78); tg.scale.set(1.1, 0.9, 1); g.add(tg);
+        const rl = new T.Mesh(revLightG, revLightM); rl.position.set(sd * 0.62, 0.66, 1.69); g.add(rl);
+        const rg = new T.Sprite(keep(new T.SpriteMaterial({ map: whiteGlowTex, blending: T.AdditiveBlending, transparent: true, depthWrite: false })));
+        rg.position.set(sd * 0.62, 0.66, 1.8); rg.scale.set(1.15, 0.95, 1); g.add(rg);
+        revLights.push(rl, rg);
       }
       scene.add(g);
       return { root: g, isSprite: false, revLights };
@@ -290,6 +324,21 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       lastSpeech = pop(logic.state.bossX, BOSS_H + 0.6, PINKY_ARENA.bossZ, text, '#ffe066', 17, 2.4);
     };
 
+    const billG = keep(new T.BoxGeometry(0.32, 0.04, 0.18));
+    const sparks = [];
+    function burst(px, py, pz, hex, count = 8, isBill = false) {
+      const m = keep(new T.MeshBasicMaterial({ color: L(hex) }));
+      for (let i = 0; i < count; i++) {
+        const p = new T.Mesh(billG, m);
+        p.position.set(px, py, pz);
+        if (!isBill) p.scale.set(0.65, 3.5, 1.1);
+        const ang = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+        const spd = 2.6 + Math.random() * 4.2;
+        scene.add(p);
+        sparks.push({ p, vx: Math.cos(ang) * spd, vy: (isBill ? 3.2 : 2.6) + Math.random() * 3.2, vz: Math.sin(ang) * spd, t: 0, life: isBill ? 0.85 : 0.48, bill: isBill });
+      }
+    }
+
     function handle(evs) {
       for (const e of evs) {
         switch (e.type) {
@@ -304,7 +353,8 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             break;
           case 'meleeHit':
             addPts(PINKY_ARENA.points.melee, e.x, 2.8, PINKY_ARENA.bossZ); charge(POWER.hit);
-            sfx('hit'); shake(0.28, 0.18);
+            sfx('hit'); shake(0.28, 0.18); freezeT = 0.05;
+            burst(e.x, 2.3, PINKY_ARENA.bossZ + 0.4, '#6de37b', 10, true);
             break;
           case 'dodge':
             addPts(PINKY_ARENA.points.dodge, x, 2.8, z); charge(POWER.dodge * 1.4); sfx('pickup');
@@ -316,7 +366,9 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             break;
           case 'margotCry':
             addPts(PINKY_ARENA.points.margot, 0, 3.5, -5);
-            sfx('power'); flash('#ff99cc', 0.48); shake(0.55, 0.45);
+            sfx('power'); flash('#ff99cc', 0.48); shake(0.55, 0.45); freezeT = 0.09;
+            burst(0, 2.4, -5.5, '#ff99cc', 16, false);
+            burst(logic.state.bossX, 2.6, PINKY_ARENA.bossZ + 0.4, '#6de37b', 12, true);
             pop(0, 4.2, -5, '👶 ¡BUAAAAAÁ! 💥', '#ff99cc', 30, 1.5);
             break;
           case 'bossHit': bossFlash = 0.22; setBar(); sfx('hit'); shake(0.28, 0.2); break;
@@ -335,9 +387,10 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
           case 'phase': setBarName(); phaseCard(e.phase, 2.1); shake(0.35, 0.32); sfx('roar'); break;
           case 'voice': speak(e.event); break;
           case 'ko': {
-            phase = 'ko'; phaseT = 0; setBar(); setBarName();
+            phase = 'ko'; phaseT = 0; setBar(); setBarName(); freezeT = 0.11;
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.6); shake(0.55, 0.5);
+            burst(logic.state.bossX, 2.6, PINKY_ARENA.bossZ + 0.4, '#6de37b', 18, true);
             pop(logic.state.bossX, BOSS_H * 0.7, PINKY_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.6);
             break;
           }
@@ -536,6 +589,19 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       P.visible = !(inv > 0 && hurtT <= 0 && Math.floor(t * 14) % 2 === 0);
       place(P, x, y + bob, z);
       P.rotation.z = dashT > 0 && !hasDodge ? -dashX * 0.25 : lean;
+
+      // Billetes verdes volando y chispas del Grito de Margot
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const q = sparks[i]; q.t += dt;
+        if (q.t >= q.life) { scene.remove(q.p); sparks.splice(i, 1); continue; }
+        q.vy -= (q.bill ? 5.5 : 13) * dt;
+        q.p.position.x += (q.vx + (q.bill ? Math.sin(t * 10 + i) * 1.1 : 0)) * dt;
+        q.p.position.y = Math.max(0.08, q.p.position.y + q.vy * dt);
+        q.p.position.z += q.vz * dt;
+        q.p.rotation.x += dt * (q.bill ? 6 : 10);
+        q.p.rotation.y += dt * (q.bill ? 9 : 8);
+        if (!q.bill) q.p.scale.setScalar(Math.max(0.01, 1 - q.t / q.life));
+      }
 
       // Textos flotantes
       for (let i = pops.length - 1; i >= 0; i--) {
