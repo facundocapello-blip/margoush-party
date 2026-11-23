@@ -147,25 +147,25 @@
  },
  "face_secuaz_sheet": {
   "file": "face_secuaz_sheet.webp",
-  "w": 222,
+  "w": 243,
   "h": 512,
   "frames": 1,
   "cols": 1,
   "rows": 1,
-  "skull": 99.9,
-  "foot": 0.988,
-  "v": "cb35a70b"
+  "v": "68b4fbeb",
+  "skull": 109.4,
+  "foot": 0.988
  },
  "face_patovica_sheet": {
   "file": "face_patovica_sheet.webp",
-  "w": 362,
+  "w": 409,
   "h": 512,
   "frames": 1,
   "cols": 1,
   "rows": 1,
-  "skull": 162.9,
-  "foot": 0.988,
-  "v": "3d9d25a6"
+  "v": "95add3ac",
+  "skull": 184.1,
+  "foot": 0.988
  },
  "face_bombo_sheet": {
   "file": "face_bombo_sheet.webp",
@@ -1131,5 +1131,23 @@
   "cols": 1,
   "rows": 1,
   "v": "fdfc3b37"
+ },
+ "monumento_maradona": {
+  "file": "monumento_maradona.webp",
+  "w": 271,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "5391a89f"
+ },
+ "monumento_zidane": {
+  "file": "monumento_zidane.webp",
+  "w": 220,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "13812d81"
  }
 }

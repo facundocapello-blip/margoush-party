@@ -779,6 +779,20 @@ export function buildStreet(scene, assets) {
     scene.add(b);
   }
 
+  // Monumentos a Maradona en Argentina (Acto 1) y Monumentos a Zidane en Francia (Actos 3–4)
+  for (const mx of [46, 112]) {
+    if (art('monumento_maradona', 4.4, mx, -4.25)) {
+      const pl = sign('★ MARADONA 10 ★', mx, 0.55, '#ffd36e', 2.4);
+      pl.position.z = -3.95;
+    }
+  }
+  for (const zx of [176, 244]) {
+    if (art('monumento_zidane', 4.4, zx, -4.25)) {
+      const pl = sign('★ ZIDANE 10 ★', zx, 0.55, '#ffd36e', 2.2);
+      pl.position.z = -3.95;
+    }
+  }
+
   // Fuente de la plaza
   // la pintada va sobre la vereda (la vieja quedaba detrás de las fachadas)
   const paintedFountain = art('prop_fuente', 2.7, 220, -4.85);

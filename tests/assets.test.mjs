@@ -17,6 +17,7 @@ const NAMES = ['douge_idle','douge_run','douge_attack','marine_idle','marine_run
   'arena_pinky_wave','arena_pinky_charge','arena_pinky_reveal','arena_pinky_hurt','arena_pinky_ko','arena_pinky_fondo',
   'arena_margot_hero','arena_douge_victory','arena_marine_victory','arena_familia_festejo',
   'arena_aeropuerto_fondo','douge_dance_sheet','marine_dance_sheet',
+  'monumento_maradona','monumento_zidane',
   'arena_fondo'];
 
 test('manifest lists every asset and each file exists', () => {
@@ -27,10 +28,10 @@ test('manifest lists every asset and each file exists', () => {
   }
 });
 
-test('assets weigh less than 9.6 MB in total', () => {
-  // 9,6 MB tras limpiar los 13 assets muertos heredados (y con carga diferida por acto/arena)
+test('assets weigh less than 9.9 MB in total', () => {
+  // 9,9 MB con los monumentos a Maradona y Zidane + villanos Pixar (y carga diferida por acto/arena)
   const total = fs.readdirSync(dir).reduce((s, f) => s + fs.statSync(path.join(dir, f)).size, 0);
-  assert.ok(total < 9_600_000, `total ${total}`);
+  assert.ok(total < 9_900_000, `total ${total}`);
 });
 
 test('sheet metadata', () => {

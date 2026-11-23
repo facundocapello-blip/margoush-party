@@ -361,3 +361,13 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
   - Peso total de `3d/assets/`: **9,59 MB** (< 9,6 MB).
 - **Verificación**: `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde** e inspección visual de los 5 recortes WebP. Pendiente: prueba en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `b412968`.
+
+## 2026-11-23 (7) · Monumentos a Maradona (Argentina) y Zidane (Francia) + King Kong y Hans Landa
+- **Monumentos en la calle (`3d/js/world.js`, `3d/assets/monumento_{maradona,zidane}.webp`)**:
+  - **Argentina (Acto 1):** 2 Monumentos a Maradona en bronce dorado con la 10 y la pelota (`x = 46` y `x = 112`) + placa dorada `★ MARADONA 10 ★`.
+  - **Francia (Actos 3–4):** 2 Monumentos a Zidane en bronce dorado con la 10 y la pelota (`x = 176` y `x = 244`) + placa dorada `★ ZIDANE 10 ★`.
+- **Nuevos malos de cine en estilo Pixar cabezón (`3d/assets/face_{patovica,secuaz}_sheet.webp`)**:
+  - **King Kong** reemplaza al viejo patovica (tanque grandote que sacude el piso y embiste).
+  - **Hans Landa** (parodia teatral con sobretodo de cuero, guantes y pipa gigante calabash, sin insignias) reemplaza al viejo secuaz callejero.
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde** (peso total `3d/assets/`: **9,68 MB** < 9,9 MB). Pendiente: prueba en Safari físico de iPhone y decidir si reemplazar los 3 secuaces restantes (`bombo`, `mozo`, `delivery`) por otros 3 malos de cine.
+- **Rollback**: volver `main` al commit `f0934e9`.
