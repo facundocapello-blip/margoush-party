@@ -74,11 +74,11 @@ function porteno(i) {
 
 // Locales icónicos de Buenos Aires (Punto de Oro, Le Blé VIP de Marine, HENRIS) y París (Roland Garros, Granja de Maese LaPadite).
 const LANDMARKS = [
-  { id: 'punto_de_oro', x: 34, w: 10.4 },
-  { id: 'le_ble', x: 86, w: 13.5, vip: true },
-  { id: 'henris', x: 104, w: 7.5 },
-  { id: 'roland_garros', x: 190, w: 13.8 },
-  { id: 'granja_lapadite', x: 230, w: 12.6 }
+  { id: 'punto_de_oro', x: 34, w: 9.2 },
+  { id: 'le_ble', x: 86, w: 11.4, vip: true },
+  { id: 'henris', x: 104, w: 7.4 },
+  { id: 'roland_garros', x: 190, w: 10.2 },
+  { id: 'granja_lapadite', x: 230, w: 10.4 }
 ];
 function landmarkPainter(id) {
   return (c, w, h) => {
@@ -91,44 +91,35 @@ function landmarkPainter(id) {
     if (id === 'granja_lapadite') {
       // Granja rural francesa de Maese LaPadite (Inglourious Basterds): cielo cálido, piedra, tejas, sábanas y tarros de leche
       const sky = c.createLinearGradient(0, 0, 0, h * 0.45);
-      sky.addColorStop(0, '#5a8fd6'); sky.addColorStop(1, '#f4d3a1');
+      sky.addColorStop(0, '#4f79b8'); sky.addColorStop(1, '#f4d3a1');
       c.fillStyle = sky; c.fillRect(0, 0, w, h);
-      // Colina verde de fondo
-      c.fillStyle = '#5c8c46';
-      c.beginPath(); c.ellipse(w * 0.5, h * 0.62, w * 0.7, h * 0.34, 0, 0, Math.PI * 2); c.fill();
-      // Casa rural de piedra cálida
+      c.fillStyle = '#4e7c3e';
+      c.beginPath(); c.ellipse(w * 0.5, h * 0.62, w * 0.72, h * 0.34, 0, 0, Math.PI * 2); c.fill();
       c.fillStyle = '#d9c5a3'; c.fillRect(w * 0.16, h * 0.36, w * 0.68, h * 0.64);
-      // Textura de piedras
-      c.fillStyle = 'rgba(120,95,65,0.22)';
+      c.fillStyle = 'rgba(110,85,55,0.25)';
       for (let py = h * 0.4; py < h; py += 28) for (let px = w * 0.18; px < w * 0.82; px += 52) {
         c.fillRect(px + ((py / 28) % 2 ? 16 : 0), py, 36, 18);
       }
-      // Techo de tejas terracota a dos aguas
       c.fillStyle = '#9c432b';
       c.beginPath(); c.moveTo(w * 0.1, h * 0.4); c.lineTo(w * 0.5, h * 0.14); c.lineTo(w * 0.9, h * 0.4); c.closePath(); c.fill();
       c.strokeStyle = '#6b2a19'; c.lineWidth = 6; c.stroke();
-      // Postigos de madera azul-gris y ventanas cálidas
       for (const wx of [w * 0.24, w * 0.64]) {
         c.fillStyle = '#4e677a'; c.fillRect(wx - 22, h * 0.52, 22, 92); c.fillRect(wx + 88, h * 0.52, 22, 92);
         c.fillStyle = '#ffdf9a'; c.fillRect(wx, h * 0.52, 88, 92);
         c.strokeStyle = '#5a3a22'; c.lineWidth = 6; c.strokeRect(wx, h * 0.52, 88, 92);
       }
-      // Puerta rústica de granja
       c.fillStyle = '#6d4426'; c.fillRect(w * 0.43, h * 0.58, w * 0.14, h * 0.42);
       c.strokeStyle = '#3e2412'; c.lineWidth = 6; c.strokeRect(w * 0.43, h * 0.58, w * 0.14, h * 0.42);
-      // Cuerda con sábanas blancas flameando a la izquierda
       c.strokeStyle = '#4a3a2a'; c.lineWidth = 3;
       c.beginPath(); c.moveTo(w * 0.02, h * 0.62); c.quadraticCurveTo(w * 0.1, h * 0.67, w * 0.18, h * 0.6); c.stroke();
       for (const sx of [w * 0.04, w * 0.1]) {
         c.fillStyle = '#fbfaf5'; c.beginPath(); c.roundRect(sx, h * 0.63, 38, 66, 6); c.fill();
       }
-      // Tarros metálicos de leche junto a la puerta
       for (const mx of [w * 0.37, w * 0.6]) {
         c.fillStyle = '#b9c4cf'; c.fillRect(mx, h * 0.84, 24, 52);
         c.fillStyle = '#8b99a8'; c.fillRect(mx + 4, h * 0.79, 16, 8);
       }
-      // Cartel de madera FERME LAPADITE
-      sign('FERME LAPADITE', h * 0.35, '#4b2e19', '#fff1cf', '900 54px Georgia, "Times New Roman", serif', '#d9a452');
+      sign('FERME LAPADITE', h * 0.42, '#4b2e19', '#fff1cf', '900 54px Georgia, "Times New Roman", serif', '#d9a452');
     } else if (id === 'le_ble') {
       c.fillStyle = '#efe3c8'; c.fillRect(0, 0, w, h);
       c.fillStyle = 'rgba(120,90,50,0.15)'; for (let y = 0; y < h; y += 40) c.fillRect(0, y, w, 3);
@@ -509,16 +500,30 @@ export function buildStreet(scene, assets) {
     return k;
   }
   if (assets.has?.('calle_buenos_aires')) {
-    // Pintura de la guía (tres casitas en una imagen): se repite a lo largo de la calle
+    // Buenos Aires: alterna las casitas coloridas de Caminito (KIOSCO, PIZZERÍA, PARRILLA…) con calle_buenos_aires para que cada cuadra sea distinta
     const t = assets.texture('calle_buenos_aires'), m = assets.meta('calle_buenos_aires');
     const PH = 9.3, PW = PH * m.w / m.h, mat = new THREE.MeshBasicMaterial({ map: t, fog: false });
+    const baMats = [0, 1, 2, 3, 4, 5].map(i => new THREE.MeshBasicMaterial({ map: canvasTex(512, 512, porteno(i)), fog: false }));
+    const BW = 7.4, BH = 8.4;
+    let bi = 0;
     for (const [from, to] of [[-7, lcLeft], [lcRight, BORDER_X]]) {
-      for (let x0 = from; x0 < to - 0.01; x0 += PW) {
-        const w = Math.min(PW, to - x0);
-        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), mat);
-        mesh.position.set(x0 + w / 2, PH / 2, BACK_Z - 0.02);
-        if (w < PW) mesh.scale.x = w / PW;
-        scene.add(mesh);
+      let x0 = from, step = 0;
+      while (x0 < to - 0.01) {
+        if (step++ % 2 === 0) {
+          const w = Math.min(BW, to - x0);
+          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), baMats[bi++ % baMats.length]);
+          mesh.position.set(x0 + w / 2, BH / 2, BACK_Z - 0.02);
+          if (w < BW) mesh.scale.x = w / BW;
+          scene.add(mesh);
+          x0 += w;
+        } else {
+          const w = Math.min(PW, to - x0);
+          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), mat);
+          mesh.position.set(x0 + w / 2, PH / 2, BACK_Z - 0.02);
+          if (w < PW) mesh.scale.x = w / PW;
+          scene.add(mesh);
+          x0 += w;
+        }
       }
     }
   } else {
@@ -536,29 +541,40 @@ export function buildStreet(scene, assets) {
     m.userData.landmark = L.id;
     scene.add(m);
     if (L.vip) {
-      // Cartel dorado luminoso ★ Le Blé ★ + halo + alfombra bordó + guirnalda de focos cálidos
-      const lbSign = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 1.3), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 196, (c, w, h) => {
+      // Cartel dorado luminoso ★ Le Blé ★ centrado a altura visible + halo + alfombra bordó + guirnalda de focos cálidos
+      const lbSign = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.25), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 196, (c, w, h) => {
         c.fillStyle = '#1b4332'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 22); c.fill();
         c.lineWidth = 9; c.strokeStyle = '#ffd36e'; c.stroke();
         c.font = 'italic 700 108px Georgia, "Times New Roman", serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
         c.shadowColor = '#ffd36e'; c.shadowBlur = 28; c.fillStyle = '#fff3cf';
         c.fillText('★ Le Blé ★', w / 2, h / 2 + 4);
       }), transparent: true, fog: false }));
-      lbSign.position.set(L.x, H * 0.72, BACK_Z + 0.75);
+      lbSign.position.set(L.x, 3.85, BACK_Z + 0.75);
       const lbHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd36e, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.65 }));
-      lbHalo.scale.set(10.5, 3.6, 1); lbHalo.position.set(L.x, H * 0.72, BACK_Z + 0.85);
-      const lbCarpet = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.7), new THREE.MeshLambertMaterial({ color: 0x8f1d2c }));
+      lbHalo.scale.set(10.0, 3.3, 1); lbHalo.position.set(L.x, 3.85, BACK_Z + 0.85);
+      const lbCarpet = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.8), new THREE.MeshLambertMaterial({ color: 0x8f1d2c }));
       lbCarpet.rotation.x = -Math.PI / 2; lbCarpet.position.set(L.x, 0.17, BACK_Z + 1.25);
       scene.add(lbSign, lbHalo, lbCarpet);
       const vipBulb = new THREE.SpriteMaterial({ map: glowTex(), color: 0xffe4a0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
       for (let k = 0; k <= 16; k++) {
-        const u = k / 16, bx = L.x - L.w * 0.48 + u * L.w * 0.96, by = H * 0.94 - Math.sin(u * Math.PI) * 0.65;
+        const u = k / 16, bx = L.x - L.w * 0.46 + u * L.w * 0.92, by = 4.95 - Math.sin(u * Math.PI) * 0.55;
         const sp = new THREE.Sprite(vipBulb); sp.scale.set(0.6, 0.6, 1); sp.position.set(bx, by, BACK_Z + 0.72);
         scene.add(sp);
       }
+    } else if (L.id === 'punto_de_oro') {
+      // Cartel luminoso 🎾 PUNTO DE ORO bien visible sobre el club de pádel
+      const poSign = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 1.15), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 196, (c, w, h) => {
+        c.fillStyle = '#0f2038'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 22); c.fill();
+        c.lineWidth = 9; c.strokeStyle = '#5ee08a'; c.stroke();
+        c.font = '900 84px Fredoka, "Arial Rounded MT Bold", Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.shadowColor = '#5ee08a'; c.shadowBlur = 22; c.fillStyle = '#ffd36e';
+        c.fillText('🎾 PUNTO DE ORO', w / 2, h / 2 + 4);
+      }), transparent: true, fog: false }));
+      poSign.position.set(L.x, 3.85, BACK_Z + 0.7);
+      scene.add(poSign);
     }
   }
-  // Cielo porteño detrás de las casitas (más bajas que los edificios de París) y el Obelisco a lo lejos
+  // Cielo porteño detrás de las casitas (atardecer cálido) y el Obelisco a lo lejos
   const baSky = new THREE.Mesh(new THREE.PlaneGeometry(BORDER_X + 30, 18), new THREE.MeshBasicMaterial({ map: canvasTex(64, 256, (c, w, h) => {
     const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#2b3f8f'); g.addColorStop(0.55, '#e0768a'); g.addColorStop(1, '#ffb36b');
     c.fillStyle = g; c.fillRect(0, 0, w, h);
@@ -608,17 +624,67 @@ export function buildStreet(scene, assets) {
   leConcept.position.set(LE_CONCEPT_X, -lcH * 0.165 * 0, BACK_Z + 0.55);
   scene.add(leConcept);
 
-  // Francia: recortes del edificio del toldo rojo y del rosado, alternados (sin el local azul)
+  // Francia: alterna edificios Haussmann de piedra crema/techo pizarra azulada (BOULANGERIE, FROMAGERIE, LIBRAIRIE, CAFÉ DE PARIS) con street_bg para diferenciarlo 100% de Buenos Aires
+  const PARIS_SHOPS = [
+    { name: 'BOULANGERIE', awning: '#264653', stripe: '#f4f1ea', stone: '#e7decb' },
+    { name: 'FROMAGERIE',  awning: '#6d2e46', stripe: '#f4f1ea', stone: '#dfd3bc' },
+    { name: 'LIBRAIRIE',   awning: '#2b4fa8', stripe: '#e8edf5', stone: '#eae2d0' },
+    { name: 'CAFÉ DE PARIS', awning: '#1f5e42', stripe: '#f4f1ea', stone: '#e2d7c2' }
+  ];
+  const haussmannMat = (idx) => {
+    const ps = PARIS_SHOPS[idx % PARIS_SHOPS.length];
+    return new THREE.MeshBasicMaterial({ map: canvasTex(512, 512, (c, w, h) => {
+      c.fillStyle = ps.stone; c.fillRect(0, 0, w, h);
+      // Techo mansarda de pizarra azul-gris arriba
+      c.fillStyle = '#334155'; c.fillRect(0, 0, w, 68);
+      c.fillStyle = '#94a3b8'; c.fillRect(0, 66, w, 10);
+      // Líneas de piedra caliza Haussmann
+      c.fillStyle = 'rgba(110,95,70,0.14)';
+      for (let y = 96; y < h * 0.58; y += 34) c.fillRect(0, y, w, 3);
+      // Ventanas altas con balcones de hierro negro
+      for (const wx of [w * 0.14, w * 0.58]) {
+        c.fillStyle = '#1e293b'; c.fillRect(wx - 4, 98, 132, 168);
+        const wg = c.createLinearGradient(0, 98, 0, 266);
+        wg.addColorStop(0, '#93c5fd'); wg.addColorStop(1, '#3b5998');
+        c.fillStyle = wg; c.fillRect(wx, 102, 124, 160);
+        c.fillStyle = '#0f172a'; c.fillRect(wx - 12, 232, 148, 38);
+      }
+      // Toldo parisino a rayas + vidriera elegante en planta baja
+      const top = h * 0.58;
+      c.fillStyle = '#1e293b'; c.fillRect(14, top, w - 28, h - top);
+      for (let x = 14; x < w - 14; x += 36) {
+        c.fillStyle = ((x - 14) / 36) % 2 ? ps.stripe : ps.awning;
+        c.fillRect(x, top + 6, Math.min(36, w - 14 - x), 42);
+      }
+      c.fillStyle = '#141824'; c.fillRect(30, top + 52, w - 60, 46);
+      c.fillStyle = '#fde68a'; c.font = '900 32px Georgia, serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(ps.name, w / 2, top + 76);
+      const sg = c.createLinearGradient(0, top + 106, 0, h);
+      sg.addColorStop(0, '#fef3c7'); sg.addColorStop(1, '#f59e0b');
+      c.fillStyle = sg; c.fillRect(36, top + 106, w * 0.54, h - top - 116);
+      c.fillStyle = '#3f2e21'; c.fillRect(w * 0.64, top + 106, w * 0.24, h - top - 106);
+    }), fog: false });
+  };
   const frParts = [[0, U_LC[0]], [U_LC[1], 1]].map(([u0, u1]) => ({ mat: new THREE.MeshBasicMaterial({ map: crop(u0, u1), fog: false }), w: (u1 - u0) * bgMeta.w / pxPerM }));
   let fx0 = BORDER_X, part = 0;
   while (fx0 < GALPON_X - 0.5) {
-    const pt = frParts[part++ % 2];
-    const w = Math.min(pt.w, GALPON_X - fx0);
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(pt.w, tileH), pt.mat);
-    m.position.set(fx0 + pt.w / 2, tileH * (0.5 - 0.165), BACK_Z - 0.02);
-    if (w < pt.w) { m.scale.x = w / pt.w; m.position.x = fx0 + w / 2; }
-    scene.add(m);
-    fx0 += w;
+    if (part % 2 === 1) {
+      const BW = 8.4, BH = 9.0, w = Math.min(BW, GALPON_X - fx0);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), haussmannMat(part >> 1));
+      m.position.set(fx0 + w / 2, BH / 2, BACK_Z - 0.02);
+      if (w < BW) m.scale.x = w / BW;
+      scene.add(m);
+      fx0 += w;
+    } else {
+      const pt = frParts[(part >> 1) % 2];
+      const w = Math.min(pt.w, GALPON_X - fx0);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(pt.w, tileH), pt.mat);
+      m.position.set(fx0 + pt.w / 2, tileH * (0.5 - 0.165), BACK_Z - 0.02);
+      if (w < pt.w) { m.scale.x = w / pt.w; m.position.x = fx0 + w / 2; }
+      scene.add(m);
+      fx0 += w;
+    }
+    part++;
   }
   // Galpón del fondo
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(70, 13), new THREE.MeshBasicMaterial({ map: assets.has?.('galpon') ? galponTex(assets) : canvasTex(1024, 256, warehouse, 4, 1), fog: false }));

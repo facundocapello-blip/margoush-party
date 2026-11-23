@@ -382,3 +382,11 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
   - **La Granja de Maese LaPadite (`x = 230`, `w = 12.6 m`):** reemplaza visualmente el viejo bloque violeta liso del Pasaje Secreto con fachada rural francesa pintada (`FERME LAPADITE`: piedra, tejas, sábanas al viento y tarros de leche), con slot automático para `granja_lapadite.webp` cuando se libere la cuota del generador de imágenes.
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde** (peso total `3d/assets/`: **9,79 MB** < 10,0 MB). Pendiente: prueba en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `453db25`.
+
+## 2026-11-23 (9) · Diferenciación visual Buenos Aires vs. Francia y encuadre de carteles
+- **Buenos Aires (`3d/js/world.js`)**: alternancia por cuadra de fachadas coloridas estilo Caminito (`PIZZERÍA`, `PARRILLA`, `KIOSCO`, `FARMACIA`, etc.) con `calle_buenos_aires` sobre asfalto porteño.
+- **Francia (`3d/js/world.js`)**: alternancia de edificios parisinos Haussmann en piedra clara y tejado de pizarra (`BOULANGERIE`, `FROMAGERIE`, `LIBRAIRIE`, `CAFÉ DE PARIS`) con terrazas de café sobre calzada de adoquines.
+- **Encuadre de carteles principales (`3d/js/world.js`)**: ajustados los anchos de `LANDMARKS` (`punto_de_oro` `9.2`, `le_ble` `11.4`, `henris` `7.4`, `roland_garros` `10.2`, `granja_lapadite` `10.4`), bajado el cartel luminoso y halo de `★ Le Blé ★` a `y = 3.85` (luces VIP a `y = 4.95`) y agregado el cartel `🎾 PUNTO DE ORO` a `y = 3.85` para evitar recortes en el borde superior de la cámara.
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**; capturas de recorrido en Chromium (`recorrido_acto1_argentina.png` y `recorrido_actos3y4_francia.png`) verificando contraste entre ambos países y carteles sin recorte. Pendiente: prueba en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `b769a8c`.
+
