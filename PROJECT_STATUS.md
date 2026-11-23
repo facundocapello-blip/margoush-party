@@ -303,3 +303,8 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
   - Eliminada la burla residual de barriles (`¡Barril 1, vos 0!`) de Big Chaky en `voice.js` (reemplazada por `¡Perdiste el compás!`).
   - Conectado el cartel de cierre de la intro en `cine.js` con la corrida hacia el aeropuerto (`¡Alcanzá a BIG CHAKY rumbo al aeropuerto!`) y completadas sus traducciones en `i18n.js`.
 - Verificado: `npm test` (73/73) y capturas comparativas antes/después en Chromium móvil (`430×932`). Pendiente validación en Safari físico de iPhone.
+
+## 2026-11-22 · Nueva portada «Súper Margoth Estrella» (Opción 1)
+- Eliminado Big Chaky de la portada por defecto (`cover.js` / `game.css`).
+- Margoth pasa a ser la protagonista gigante en el centro del póster dentro de una estrella dorada luminosa con destellos (`STAR_EMBLEM` + `STAR_FRONT`), flanqueada por Douge y Marine a los costados, con el cielo de París/Buenos Aires y el avión de fondo y la cinta «¡El rescate de Margoth!» (ES/FR).
+- Verificado en vertical (`430×932`) y horizontal (`844×390`) sin solapamientos y con `npm test` (73/73).

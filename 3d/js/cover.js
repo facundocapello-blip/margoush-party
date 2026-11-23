@@ -29,13 +29,42 @@ const PODIUM = (cls) => `<section id="cover-podium" class="${cls}" aria-label="R
   <p id="podium-empty" class="podium-empty hidden">Todavía nadie en el podio. ¡El primer lugar es tuyo!</p>
 </section>`;
 
+const STAR_EMBLEM = `<svg class="pa-star-svg" viewBox="0 0 240 240" aria-hidden="true">
+  <defs>
+    <radialGradient id="pa-halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff6b8" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#ffd24c" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ff9922" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pa-gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff3a8"/>
+      <stop offset="48%" stop-color="#ffd042"/>
+      <stop offset="100%" stop-color="#f29416"/>
+    </linearGradient>
+  </defs>
+  <circle cx="120" cy="122" r="114" fill="url(#pa-halo)"/>
+  <path d="M120 14 L149 76 L217 85 L167 132 L179 200 L120 167 L61 200 L73 132 L23 85 L91 76 Z"
+    fill="url(#pa-gold)" stroke="#fff8d6" stroke-width="10" stroke-linejoin="round"/>
+  <circle cx="46" cy="102" r="3.5" fill="#fffbe6"/><circle cx="194" cy="102" r="3.5" fill="#fffbe6"/>
+  <path d="M58 52 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z M184 48 l2.5 5.5 5.5 2.5 -5.5 2.5 -2.5 5.5 -2.5 -5.5 -5.5 -2.5 5.5 -2.5z" fill="#fff9d2"/>
+</svg>`;
+const STAR_FRONT = `<svg class="pa-star-front" viewBox="0 0 240 240" aria-hidden="true">
+  <path d="M73 132 L120 156 L167 132 L179 200 L120 167 L61 200 Z" fill="url(#pa-gold)"/>
+  <path d="M167 132 L179 200 L120 167 L61 200 L73 132" fill="none" stroke="#fff8d6" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="84" cy="166" r="3.2" fill="#fffbe6"/><circle cx="156" cy="166" r="3.2" fill="#fffbe6"/>
+</svg>`;
+
 const TEMPLATES = {
   a: `
     <div class="pa-bg" aria-hidden="true"></div>
-    <div class="pa-chaky" aria-hidden="true"></div>
-    <div class="pa-family" aria-hidden="true"><i class="pa-douge"></i><i class="pa-margot"></i><i class="pa-marine"></i></div>
+    <div class="pa-plane-trail" aria-hidden="true">${PLANE}</div>
+    <div class="pa-family" aria-hidden="true">
+      <div class="pa-star-hero">${STAR_EMBLEM}<i class="pa-margot"></i>${STAR_FRONT}</div>
+      <i class="pa-douge"></i>
+      <i class="pa-marine"></i>
+    </div>
     <div class="pa-top">${LANG('pa-lang')}</div>
-    <div class="pa-title"><h1 class="pa-logo">MARGOUSH</h1><p class="pa-tag">¡Rescatá a Margot!</p></div>
+    <div class="pa-title"><h1 class="pa-logo">MARGOUSH</h1><p class="pa-tag">¡El rescate de Margoth!</p></div>
     <div class="pa-actions">
       ${PODIUM('pa-record')}
       ${CONTINUE}

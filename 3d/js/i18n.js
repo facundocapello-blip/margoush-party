@@ -376,6 +376,7 @@ export const DICHOS = {
   '⭐ ¡VIDA EXTRA!': '⭐ VIE BONUS !',
   '¡Perdiste el compás!': 'Tu as perdu le rythme !',
   '¡Alcanzá a BIG CHAKY rumbo al aeropuerto!': "Rattrape BIG CHAKY en route vers l'aéroport !",
+  '¡El rescate de Margoth!': 'Au secours de Margoth !',
   'Te daré a Margoth, sólo si puedes vencerme en...': 'Je te rendrai Margoth, seulement si tu me bats à...',
   '¡La prueba de Baile!': "L'épreuve de danse !",
   'Tocá para empezar': 'Touche pour commencer',
