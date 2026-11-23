@@ -1149,5 +1149,14 @@
   "cols": 1,
   "rows": 1,
   "v": "13812d81"
+ },
+ "roland_garros": {
+  "file": "roland_garros.webp",
+  "w": 1280,
+  "h": 714,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "bfacca4c"
  }
 }

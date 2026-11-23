@@ -371,3 +371,14 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
   - **Hans Landa** (parodia teatral con sobretodo de cuero, guantes y pipa gigante calabash, sin insignias) reemplaza al viejo secuaz callejero.
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde** (peso total `3d/assets/`: **9,68 MB** < 9,9 MB). Pendiente: prueba en Safari físico de iPhone y decidir si reemplazar los 3 secuaces restantes (`bombo`, `mozo`, `delivery`) por otros 3 malos de cine.
 - **Rollback**: volver `main` al commit `f0934e9`.
+
+## 2026-11-23 (8) · Locales protagonistas: Le Blé VIP y Punto de Oro (Buenos Aires) + Roland Garros y Granja de Maese LaPadite (París)
+- **Buenos Aires (`3d/js/world.js`)**:
+  - **Le Blé (`x = 86`, `w = 13.5 m`, VIP):** convertido en el local más elegante y vistoso de Buenos Aires (el restaurante de Marine) con doble ancho, cartel dorado luminoso `★ Le Blé ★` con halo, guirnalda en arco de 17 focos cálidos y alfombra bordó.
+  - **Punto de Oro (`x = 34`, `w = 10.4 m`):** ampliado y despejado de árboles/tachos adelante.
+  - **Monumentos a Maradona (`x = 46`, `x = 112`):** vereda despejada de árboles y contenedores para que luzcan limpios.
+- **París (`3d/js/world.js`, `3d/assets/roland_garros.webp`)**:
+  - **Roland Garros (`x = 190`, `w = 13.8 m`):** fachada pintada en estilo Pixar (`roland_garros.webp`, 113 KB) con arcos crema/verde, flores, farolitos, cartel dorado `ROLAND GARROS` y cancha de polvo de ladrillo al fondo.
+  - **La Granja de Maese LaPadite (`x = 230`, `w = 12.6 m`):** reemplaza visualmente el viejo bloque violeta liso del Pasaje Secreto con fachada rural francesa pintada (`FERME LAPADITE`: piedra, tejas, sábanas al viento y tarros de leche), con slot automático para `granja_lapadite.webp` cuando se libere la cuota del generador de imágenes.
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde** (peso total `3d/assets/`: **9,79 MB** < 10,0 MB). Pendiente: prueba en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `453db25`.

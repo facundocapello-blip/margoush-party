@@ -72,12 +72,13 @@ function porteno(i) {
   };
 }
 
-// Locales famosos de Buenos Aires (Le Blé, Punto de Oro, HENRIS). Mientras no llegue la pintura de la guía,
-// se dibujan por código con su cartel.
+// Locales icónicos de Buenos Aires (Punto de Oro, Le Blé VIP de Marine, HENRIS) y París (Roland Garros, Granja de Maese LaPadite).
 const LANDMARKS = [
-  { id: 'punto_de_oro', x: 34, w: 7.5 },
-  { id: 'le_ble', x: 86, w: 7.5 },
-  { id: 'henris', x: 103, w: 7.5 }
+  { id: 'punto_de_oro', x: 34, w: 10.4 },
+  { id: 'le_ble', x: 86, w: 13.5, vip: true },
+  { id: 'henris', x: 104, w: 7.5 },
+  { id: 'roland_garros', x: 190, w: 13.8 },
+  { id: 'granja_lapadite', x: 230, w: 12.6 }
 ];
 function landmarkPainter(id) {
   return (c, w, h) => {
@@ -87,7 +88,48 @@ function landmarkPainter(id) {
       c.font = font; c.textAlign = 'center'; c.textBaseline = 'middle';
       c.shadowColor = fg; c.shadowBlur = 18; c.fillStyle = fg; c.fillText(text, w / 2, y + 60); c.shadowBlur = 0;
     };
-    if (id === 'le_ble') {
+    if (id === 'granja_lapadite') {
+      // Granja rural francesa de Maese LaPadite (Inglourious Basterds): cielo cálido, piedra, tejas, sábanas y tarros de leche
+      const sky = c.createLinearGradient(0, 0, 0, h * 0.45);
+      sky.addColorStop(0, '#5a8fd6'); sky.addColorStop(1, '#f4d3a1');
+      c.fillStyle = sky; c.fillRect(0, 0, w, h);
+      // Colina verde de fondo
+      c.fillStyle = '#5c8c46';
+      c.beginPath(); c.ellipse(w * 0.5, h * 0.62, w * 0.7, h * 0.34, 0, 0, Math.PI * 2); c.fill();
+      // Casa rural de piedra cálida
+      c.fillStyle = '#d9c5a3'; c.fillRect(w * 0.16, h * 0.36, w * 0.68, h * 0.64);
+      // Textura de piedras
+      c.fillStyle = 'rgba(120,95,65,0.22)';
+      for (let py = h * 0.4; py < h; py += 28) for (let px = w * 0.18; px < w * 0.82; px += 52) {
+        c.fillRect(px + ((py / 28) % 2 ? 16 : 0), py, 36, 18);
+      }
+      // Techo de tejas terracota a dos aguas
+      c.fillStyle = '#9c432b';
+      c.beginPath(); c.moveTo(w * 0.1, h * 0.4); c.lineTo(w * 0.5, h * 0.14); c.lineTo(w * 0.9, h * 0.4); c.closePath(); c.fill();
+      c.strokeStyle = '#6b2a19'; c.lineWidth = 6; c.stroke();
+      // Postigos de madera azul-gris y ventanas cálidas
+      for (const wx of [w * 0.24, w * 0.64]) {
+        c.fillStyle = '#4e677a'; c.fillRect(wx - 22, h * 0.52, 22, 92); c.fillRect(wx + 88, h * 0.52, 22, 92);
+        c.fillStyle = '#ffdf9a'; c.fillRect(wx, h * 0.52, 88, 92);
+        c.strokeStyle = '#5a3a22'; c.lineWidth = 6; c.strokeRect(wx, h * 0.52, 88, 92);
+      }
+      // Puerta rústica de granja
+      c.fillStyle = '#6d4426'; c.fillRect(w * 0.43, h * 0.58, w * 0.14, h * 0.42);
+      c.strokeStyle = '#3e2412'; c.lineWidth = 6; c.strokeRect(w * 0.43, h * 0.58, w * 0.14, h * 0.42);
+      // Cuerda con sábanas blancas flameando a la izquierda
+      c.strokeStyle = '#4a3a2a'; c.lineWidth = 3;
+      c.beginPath(); c.moveTo(w * 0.02, h * 0.62); c.quadraticCurveTo(w * 0.1, h * 0.67, w * 0.18, h * 0.6); c.stroke();
+      for (const sx of [w * 0.04, w * 0.1]) {
+        c.fillStyle = '#fbfaf5'; c.beginPath(); c.roundRect(sx, h * 0.63, 38, 66, 6); c.fill();
+      }
+      // Tarros metálicos de leche junto a la puerta
+      for (const mx of [w * 0.37, w * 0.6]) {
+        c.fillStyle = '#b9c4cf'; c.fillRect(mx, h * 0.84, 24, 52);
+        c.fillStyle = '#8b99a8'; c.fillRect(mx + 4, h * 0.79, 16, 8);
+      }
+      // Cartel de madera FERME LAPADITE
+      sign('FERME LAPADITE', h * 0.35, '#4b2e19', '#fff1cf', '900 54px Georgia, "Times New Roman", serif', '#d9a452');
+    } else if (id === 'le_ble') {
       c.fillStyle = '#efe3c8'; c.fillRect(0, 0, w, h);
       c.fillStyle = 'rgba(120,90,50,0.15)'; for (let y = 0; y < h; y += 40) c.fillRect(0, y, w, 3);
       // toldo a rayas
@@ -483,16 +525,38 @@ export function buildStreet(scene, assets) {
     const kBA = portenoRun(-7, lcLeft);
     portenoRun(lcRight, BORDER_X, kBA);
   }
-  // Locales famosos, un poco adelante de las casitas
+  // Locales famosos, un poco adelante de las casitas (Le Blé lleva iluminación VIP dorada, guirnaldas y alfombra elegante)
   for (const L of LANDMARKS) {
     const painted = assets.has?.(L.id);
     const tex = painted ? assets.texture(L.id) : canvasTex(768, 512, landmarkPainter(L.id));
     const aspect = painted ? assets.meta(L.id).w / assets.meta(L.id).h : 1.5;
     const H = L.w / aspect;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(L.w, H), new THREE.MeshBasicMaterial({ map: tex, fog: false }));
-    m.position.set(L.x, H / 2, BACK_Z + 0.3);
+    m.position.set(L.x, H / 2, BACK_Z + (L.vip ? 0.5 : 0.3));
     m.userData.landmark = L.id;
     scene.add(m);
+    if (L.vip) {
+      // Cartel dorado luminoso ★ Le Blé ★ + halo + alfombra bordó + guirnalda de focos cálidos
+      const lbSign = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 1.3), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 196, (c, w, h) => {
+        c.fillStyle = '#1b4332'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 22); c.fill();
+        c.lineWidth = 9; c.strokeStyle = '#ffd36e'; c.stroke();
+        c.font = 'italic 700 108px Georgia, "Times New Roman", serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.shadowColor = '#ffd36e'; c.shadowBlur = 28; c.fillStyle = '#fff3cf';
+        c.fillText('★ Le Blé ★', w / 2, h / 2 + 4);
+      }), transparent: true, fog: false }));
+      lbSign.position.set(L.x, H * 0.72, BACK_Z + 0.75);
+      const lbHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd36e, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.65 }));
+      lbHalo.scale.set(10.5, 3.6, 1); lbHalo.position.set(L.x, H * 0.72, BACK_Z + 0.85);
+      const lbCarpet = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.7), new THREE.MeshLambertMaterial({ color: 0x8f1d2c }));
+      lbCarpet.rotation.x = -Math.PI / 2; lbCarpet.position.set(L.x, 0.17, BACK_Z + 1.25);
+      scene.add(lbSign, lbHalo, lbCarpet);
+      const vipBulb = new THREE.SpriteMaterial({ map: glowTex(), color: 0xffe4a0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
+      for (let k = 0; k <= 16; k++) {
+        const u = k / 16, bx = L.x - L.w * 0.48 + u * L.w * 0.96, by = H * 0.94 - Math.sin(u * Math.PI) * 0.65;
+        const sp = new THREE.Sprite(vipBulb); sp.scale.set(0.6, 0.6, 1); sp.position.set(bx, by, BACK_Z + 0.72);
+        scene.add(sp);
+      }
+    }
   }
   // Cielo porteño detrás de las casitas (más bajas que los edificios de París) y el Obelisco a lo lejos
   const baSky = new THREE.Mesh(new THREE.PlaneGeometry(BORDER_X + 30, 18), new THREE.MeshBasicMaterial({ map: canvasTex(64, 256, (c, w, h) => {
@@ -680,10 +744,11 @@ export function buildStreet(scene, assets) {
   // Van en las columnas que separan una casita de la otra en la pintura (nunca delante de una vidriera,
   // una puerta o un cartel) y lejos de los locales famosos y de Le Concept.
   const baSpots = streetSpotsBA(assets, { lcLeft, lcRight });
+  const keepClear = (x) => [34, 46, 86, 104, 112].some(cx => Math.abs(x - cx) < 7.2);
   const treeXs = [], binXs = [];
-  for (const x of baSpots) if (x >= 8 && (!treeXs.length || x - treeXs[treeXs.length - 1] >= 16)) treeXs.push(x);
+  for (const x of baSpots) if (x >= 8 && !keepClear(x) && (!treeXs.length || x - treeXs[treeXs.length - 1] >= 16)) treeXs.push(x);
   for (const x of baSpots) {
-    if (binXs.length >= 4 || treeXs.some(t => Math.abs(t - x) < 3) || binXs.some(b => Math.abs(b - x) < 20) || x < 14) continue;
+    if (binXs.length >= 4 || keepClear(x) || treeXs.some(t => Math.abs(t - x) < 3) || binXs.some(b => Math.abs(b - x) < 20) || x < 14) continue;
     binXs.push(x);
   }
   const barkMat = new THREE.MeshLambertMaterial({ color: 0x8a7a63 });
@@ -805,19 +870,8 @@ export function buildStreet(scene, assets) {
   column.position.set(220, 1.4, -6.6);
   if (!paintedFountain) scene.add(basin, water, column);
 
-  // Entrada del pasaje secreto (sellada por cajones en Task 5)
-  const door = new THREE.Group();
-  const dark = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 4.2), new THREE.MeshBasicMaterial({ color: 0x0b0716 }));
-  dark.position.set(0, 2.1, 0);
-  const archMat = new THREE.MeshLambertMaterial({ color: 0x6b4b8a });
-  const left = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.6, 0.4), archMat); left.position.set(-1.8, 2.3, 0.1);
-  const right = left.clone(); right.position.x = 1.8;
-  const lintel = new THREE.Mesh(new THREE.BoxGeometry(4, 0.4, 0.4), archMat); lintel.position.set(0, 4.6, 0.1);
-  door.add(dark, left, right, lintel);
-  door.position.set(SECRET_X, 0, BACK_Z + 0.25);
-  scene.add(door);
-  const pasajeSign = sign('PASSAGE SECRET', SECRET_X, 5.4, '#c084fc', 4.4);
-  pasajeSign.position.z = BACK_Z + 0.5;
+  // En x=230 ahora luce La Granja de Maese LaPadite (sin el viejo bloque violeta liso)
+  const pasajeSign = { visible: false, position: new THREE.Vector3(SECRET_X, 5.4, BACK_Z + 0.5) };
 
   // Barricadas de cajones y tambores (2,4 m): no se saltan; al despejar la zona se derrumban
   const crateTex = canvasTex(128, 128, (c, w, h) => {
