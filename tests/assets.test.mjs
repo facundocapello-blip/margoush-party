@@ -15,6 +15,7 @@ const NAMES = ['douge_idle','douge_run','douge_attack','marine_idle','marine_run
   'arena_marine_back_idle','arena_marine_back_run','arena_marine_back_punch','arena_marine_back_hurt','arena_marine_back_dodge',
   'arena_cepi_idle','arena_cepi_smash','arena_cepi_block','arena_cepi_tired','arena_cepi_stun','arena_cepi_back','arena_cepi_point','arena_cepi_cardboard','arena_cepi_ko','arena_cepi_fondo',
   'arena_lale_idle',
+  'arena_aeropuerto_fondo','douge_dance_sheet','marine_dance_sheet',
   'arena_barril','arena_cajon','arena_fondo'];
 
 test('manifest lists every asset and each file exists', () => {

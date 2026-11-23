@@ -3,7 +3,7 @@
 // los sprites pesados de cada arena de jefe (`arena_chaky_*`, `arena_cepi_*`, `arena_lale_*`,
 // `arena_pinky_*`, `arena_barril`, `arena_cajon`, `arena_fondo`) se cargan bajo demanda en su cortina
 // con `assets.ensure(prefixes)` para acelerar el inicio y ahorrar memoria GPU en Safari iPhone.
-const DEFERRED = ['arena_chaky_', 'arena_cepi_', 'arena_lale_', 'arena_pinky_', 'arena_barril', 'arena_cajon', 'arena_fondo', 'arena_margot_'];
+const DEFERRED = ['arena_chaky_', 'arena_cepi_', 'arena_lale_', 'arena_pinky_', 'arena_barril', 'arena_cajon', 'arena_fondo', 'arena_aeropuerto_fondo', 'arena_margot_', 'douge_dance_sheet', 'marine_dance_sheet'];
 const isDeferred = (name) => DEFERRED.some((p) => name.startsWith(p));
 
 export async function loadAssets(manifestUrl, onProgress = () => {}) {

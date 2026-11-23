@@ -270,3 +270,14 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - Durante el baile, la vida de ambos queda en la cabecera y la pista ocupa una franja inferior. Aciertos, faltas, rondas y subtítulos tienen espacio en la pista. Los cinco carriles completos reciben el toque.
 - QA local: 86 pruebas automatizadas y verificación de sprites. En simulación con cámara Three.js y renderizador sustituido, ambas orientaciones llegaron al rescate con combates asistidos. El caso de Chaky comprobó arrastre, pérdida de foco, pausa manual, ocultación, regreso, 24 aciertos y separación vertical de los personajes respecto del HUD y de la pista en 320×568, 430×710, 430×932, 667×320 y 932×430.
 - Safari físico y comprobación visual de esta revisión en iPhone pendientes. El rediseño visual abarca Big Chaky.
+
+## 2026-11-22 (6) · Rediseño de Big Chaky: Duelo de Baile directo en Escenario (Opción A, ambos de frente)
+- **Eliminación de barriles y manotazo (`3d/js/arena_logic.js`, `3d/js/arena.js`)**: La pelea contra Big Chaky pasa a ser 100 % el duelo de baile en un escenario disco dentro del hangar VIP del aeropuerto, en 3 rondas ágiles y progresivas (`6`, `8` y `10` pasos = 24 notas en ~32 s).
+- **Ambos personajes DE FRENTE en escenario + 3 imágenes nuevas (`3d/assets/`)**:
+  - Generados e integrados `arena_aeropuerto_fondo.webp` (escenario disco en el hangar VIP), `douge_dance_sheet.webp` (4 poses frontales de baile de Douge) y `marine_dance_sheet.webp` (4 poses frontales de baile de Marine), junto a las 5 poses frontales disco de Big Chaky (`arena_chaky_dance_*`).
+  - Héroe a la izquierda (`x = -2.05`) y Big Chaky a la derecha (`x = +2.05`), ambos mirando de frente a cámara sobre una tarima con 12 baldosas LED que laten al compás y cambian de color con cada paso acertado.
+- **Flechas que BAJAN hacia los 5 botones inferiores (`3d/js/arena.js`, `3d/css/game.css`)**: Los 5 botones receptores (`↙`, `↖`, `●`, `↗`, `↘`) se ubican en la base de cada carril con colores diferenciados y las flechas caen de arriba hacia abajo. Cada flecha acertada le baja vida a Big Chaky en tiempo real.
+- **3 Vidas Extra (`⭐⭐⭐`) sin volver a empezar**: Si perdés los corazones durante el baile, gastás 1 estrella (`⭐`), recuperás todos los corazones ahí mismo y seguís bailando desde esa misma ronda sin ir a Game Over ni reiniciar desde la ronda 1. Además, `saveCheckpoint` conserva el checkpoint en memoria durante `?probar=` sin alterar `localStorage`.
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (73/73 en verde, incluyendo `tests/check_sprites.py` y presupuesto de `3d/assets/` < 9,2 MB) y simulación completa de las 24 notas hasta el KO. Pendiente: validación táctil y visual en Safari físico de iPhone y revisión de interfaz en Cepi, Lale y Pinky.
+- **Rollback**: volver `main` y `feat-3d` al commit `1f4b524`.
+

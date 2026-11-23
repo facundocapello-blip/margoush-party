@@ -264,8 +264,8 @@ const CHECKPOINTS = {
   boss:    { label: 'JEFE 1 · BIG CHAKY', short: 'BIG CHAKY' }
 };
 function saveCheckpoint(id) {
+  game.checkpoint = { id, heroId: game.heroId, score: game.score?.total ?? 0, time: Math.round(game.time || 0) };
   if (PROBAR) return;
-  game.checkpoint = { id, heroId: game.heroId, score: game.score.total, time: Math.round(game.time) };
   try { localStorage.setItem(CP_KEY, JSON.stringify(game.checkpoint)); } catch (_) {}
 }
 function storedCheckpoint() {
@@ -689,16 +689,13 @@ function healBeforeBoss(instant = false) {
 function spawnBoss({ instant = false } = {}) {
   input.reset();
   healBeforeBoss(instant);
-  const chakyArt = Object.keys(assets.manifest).filter(name => name.startsWith('arena_chaky_'));
-  const danceArt = chakyArt.filter(name => name.startsWith('arena_chaky_dance_'));
-  const battleArt = chakyArt.filter(name => !name.startsWith('arena_chaky_dance_'));
   const wait = Promise.all([
-    assets.ensure([...battleArt, 'arena_barril', 'arena_cajon', 'arena_fondo']),
-    Promise.allSettled([...danceArt, 'arena_aeropuerto_'].map(name => assets.ensure(name)))
+    assets.ensure(['arena_chaky_dance_', 'arena_chaky_idle', 'arena_chaky_hurt', 'arena_chaky_ko', 'arena_fondo']),
+    Promise.allSettled(['arena_aeropuerto_fondo', 'douge_dance_sheet', 'marine_dance_sheet'].map(name => assets.ensure(name)))
   ]);
-  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  game.ctx.audio?.music('byd', { fade: instant ? 0 : 0.3 });
+  if (!game.checkpoint || game.checkpoint.id !== 'chaky') saveCheckpoint('chaky');
   if (instant) { game.state = 'curtain'; continueTransition(wait, () => game.arena.start()); return; }
-  if (game.checkpoint?.id !== 'chaky') saveCheckpoint('chaky');
   game.state = 'curtain';
   curtain(() => game.arena.start(), { label: CHECKPOINTS.chaky.label, wait });
 }

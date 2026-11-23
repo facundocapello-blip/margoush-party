@@ -1,61 +1,60 @@
-// «La arena de BIG CHAKY»: escena de la pelea final, vista desde atrás del héroe (a pie, de espaldas).
-// BIG CHAKY, enorme al fondo, se pasea tirando barriles (ruedan hacia el héroe) y cajones (caen en arco
-// donde estaba el héroe); en la fase 2 suma el manotazo. Toda la regla vive en arena_logic.js: este
-// módulo dibuja, lee los controles y convierte los eventos de la lógica en vida, puntos y efectos.
-// Puntos: solo `dodge` (+100), `handHit` (+50) y `returned` (+300); `bossHit` es solo barra y feedback.
-// Sin carteles de instrucciones: solo las frases de BIG CHAKY, el grito del poder y los puntos.
-// En la fase 2 («Chaky dice») el cartel que levanta es parte de la pelea, no una instrucción.
-// Voces: voice.js (provisorias con la voz del sistema hasta tener grabaciones).
+// «El escenario de BIG CHAKY»: duelo de baile directo en 3 rondas rápidas (Opción A).
+// Ambos personajes —nuestro héroe a la izquierda y BIG CHAKY a la derecha— aparecen DE FRENTE
+// mirando a cámara sobre un escenario disco iluminado con baldosas LED que laten al ritmo.
+// Las flechas bajan por los 5 carriles hacia los 5 botones inferiores (↙ ↖ ● ↗ ↘).
+// Cada paso acertado lastima a Chaky; además de los corazones, el héroe tiene 3 vidas extra (⭐⭐⭐)
+// para seguir desde la misma ronda si pierde los corazones, sin volver a empezar.
 import { ARENA, createArenaLogic } from './arena_logic.js';
-import { createVoice, PROFILES } from './voice.js';
-import { SWINGS } from './hero.js';
+import { createVoice } from './voice.js';
 import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
 
-const MOVE = 6;            // m/s con el joystick
-const DASH_SPEED = 11;     // m/s durante el esquive
-const COMBO_WINDOW = 0.45; // s para encadenar el siguiente golpe
-const HURT_POSE = 0.5;     // s con la pose de golpeado
-const INV = 1.3;           // s invulnerable después de un golpe
-const END_DELAY = 1.2;     // s entre el ko (o caer) y salir de la arena
-const ENTRANCE = 1.5;      // s de entrada: la cámara baja desde arriba, BIG CHAKY ruge y recién ahí empieza a tirar
-const HERO_H = 2.4, BOSS_H = 14, BARREL_H = 1.15, CRATE_H = 1.3, GIANT_H = 2.7;
-// Cartel de «Chaky dice»: texto e ícono de cada orden
-// Pump It Up: los 5 carriles y las teclas de compu (Z Q S E C, como en la máquina)
-const PIU_LANES = ['↙', '↖', '●', '↗', '↘'], PIU_KEYS = { KeyZ: 0, KeyQ: 1, KeyS: 2, KeyE: 3, KeyC: 4 };
-export const DANCE_SIGN = { jump: ['⤴', '¡SALTO!'], attack: ['👊', '¡PIÑA!'], dodge: ['🌀', '¡GIRO!'] };
-// Poses de baile de Chaky: si todavía no están las imágenes, usa una parecida
-const DANCE_FALLBACK = { dance_idle: 'idle', dance_jump: 'throw', dance_attack: 'slam', dance_dodge: 'hurt', dance_laugh: 'idle' };
-// BIG CHAKY parado sobre la tarima, enorme: la cámara va lejos y alta para que mida ≥ 2,5 veces al héroe en pantalla
-const TARIMA_H = 0.6, TARIMA_FRONT = ARENA.bossZ + 2.4, TARIMA_BACK = ARENA.bossZ - 5;
-const CAM = { y: 6, back: 11, lookY: 6, fov: 66, fovPortrait: 70 };
-// Mantiene a Chaky entero por encima de los carriles del baile.
-const DANCE_CAM = { y: 6, z: 14, lookY: 4.5 };
-const DANCE_MARK = { x: -2.65, z: -5 };
-const clamp01 = n => Math.max(0, Math.min(1, n));
-const mix = (a, b, k) => a + (b - a) * k;
-// Manotazo: la pose `slam` recortada por arriba de la mano (filas 0..545 de 768) y la mano sola (recorte 80,530 215×238;
-// de ese recorte solo queda la piel: el pantalón y las zapatillas que asoman se borran por color)
-const SLAM_CUT = 545 / 768, HAND_CROP = { x: 80, y: 530, w: 215, h: 238 }, HAND_W = 3.2, HAND_FALL = 7;
+const HURT_POSE = 0.45;
+const INV = 0.8;
+const END_DELAY = 1.15;
+const ENTRANCE = 0.65;
+const STAGE_Z = ARENA.bossZ;
+const TARIMA_H = 0.6, TARIMA_FRONT = STAGE_Z + 2.5, TARIMA_BACK = STAGE_Z - 3.5;
+const HERO_H = 4.6, BOSS_H = 5.4;
+const STAGE_CAM = { y: 4.2, z: 7.4, lookY: 3.15, fov: 54, fovPortrait: 62 };
 
-export function createArena({ game, input, audio, assets, renderer, banner, updateHud, pause, POWER, onWin, onDown }) {
+// 5 carriles estilo arcade / Pump It Up (Z Q S E C o flechas en teclado)
+const PIU_LANES = ['↙', '↖', '●', '↗', '↘'];
+const PIU_KEYS = {
+  KeyZ: 0, KeyQ: 1, KeyS: 2, KeyE: 3, KeyC: 4,
+  ArrowLeft: 0, ArrowUp: 1, Space: 2, ArrowRight: 3, ArrowDown: 4
+};
+export const DANCE_SIGN = { jump: ['⤴', '¡SALTO!'], attack: ['👊', '¡PIÑA!'], dodge: ['🌀', '¡GIRO!'] };
+const DANCE_FALLBACK = { dance_idle: 'idle', dance_jump: 'throw', dance_attack: 'slam', dance_dodge: 'hurt', dance_laugh: 'idle' };
+const TILE_COLORS = ['#38bdf8', '#e879f9', '#facc15', '#34d399', '#fb7185', '#a78bfa'];
+
+export function createArena({ game, input, audio, assets, renderer, updateHud, pause, POWER, onWin, onDown }) {
   let cur = null;
 
   function start() {
     if (cur) return;
     const T = THREE, hero = game.hero, isM = game.heroId === 'marine';
-    const heroPre = 'arena_' + (isM ? 'marine' : 'douge') + '_back_';
+    const heroId = isM ? 'marine' : 'douge';
     const logic = createArenaLogic();
     const voice = createVoice({ speak: (text, prof, o) => { try { audio.bossLine?.(text, prof, o.dur); } catch (_) {} } });
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
-    const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 300);
-    // Galpón: penumbra violeta y luz naranja
-    scene.background = L('#2c2350');
-    scene.fog = new T.Fog(L('#2c2350'), 28, 80);
-    scene.add(new T.HemisphereLight(0x9a8ce0, 0x4a3020, 0.9));
-    const sun = new T.DirectionalLight(0xffb070, 0.8); sun.position.set(-6, 12, 6); scene.add(sun);
-    const lamp = new T.PointLight(0xff9a4a, 1.1, 30, 1.6); lamp.position.set(0, 7, -9); scene.add(lamp);
+    const scene = new T.Scene(), cam = new T.PerspectiveCamera(54, innerWidth / innerHeight, 0.1, 300);
+
+    // Ambiente de show disco en el hangar VIP
+    scene.background = L('#1a1036');
+    scene.fog = new T.Fog(L('#1a1036'), 32, 90);
+    scene.add(new T.HemisphereLight(0xc4b5fd, 0x3b1d5e, 1.0));
+    const keyLight = new T.DirectionalLight(0xfff0c4, 0.85);
+    keyLight.position.set(0, 12, 8);
+    scene.add(keyLight);
+    const spotL = new T.PointLight(0x38bdf8, 1.3, 28, 1.5);
+    spotL.position.set(-4, 7, STAGE_Z + 3);
+    scene.add(spotL);
+    const spotR = new T.PointLight(0xf472b6, 1.3, 28, 1.5);
+    spotR.position.set(4, 7, STAGE_Z + 3);
+    scene.add(spotR);
+
     const mk = (geo, mat) => { const m = new T.Mesh(keep(geo), keep(mat)); scene.add(m); return m; };
     const canvasTex = (w, h, draw, rx = 1, ry = 1) => {
       const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
@@ -67,364 +66,442 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       g.fillStyle = r; g.fillRect(0, 0, 64, 64);
     });
 
-    // Piso de tablones (por código): 9 × 26 m de arena y alrededor el mismo piso más oscuro
-    const planks = (dark) => (g, w, h) => {
-      g.fillStyle = dark ? '#2a1c16' : '#4a3122'; g.fillRect(0, 0, w, h);
-      const n = 8, pw = w / n;
-      for (let i = 0; i < n; i++) {
-        for (let y = -(i * 37) % 128; y < h; y += 128) {
-          const l = (dark ? 14 : 24) + Math.random() * (dark ? 8 : 14);
-          g.fillStyle = `hsl(${22 + Math.random() * 10},${34 + Math.random() * 14}%,${l}%)`;
-          g.fillRect(i * pw + 2, y + 2, pw - 4, 124);
-          g.fillStyle = 'rgba(255,210,160,.07)'; g.fillRect(i * pw + 4, y + 6, pw - 8, 4);
-          g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(i * pw + pw * 0.2, y + 18, 3, 3); g.fillRect(i * pw + pw * 0.75, y + 18, 3, 3);
-        }
+    // Piso y tarima del escenario disco
+    const stageFloorTex = canvasTex(256, 256, (g, w, h) => {
+      g.fillStyle = '#140c2c'; g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(167, 139, 250, 0.18)'; g.lineWidth = 3;
+      for (let i = 0; i <= 4; i++) {
+        g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, h); g.stroke();
+        g.beginPath(); g.moveTo(0, i * 64); g.lineTo(w, i * 64); g.stroke();
       }
-    };
-    const floorTex = canvasTex(256, 256, planks(false), 9 / 4.5, 26 / 4.5);
-    const outerTex = canvasTex(256, 256, planks(true), 60 / 4.5, 40 / 4.5);
-    const outer = mk(new T.PlaneGeometry(60, 40), new T.MeshLambertMaterial({ map: outerTex }));
+    }, 8, 6);
+    const outer = mk(new T.PlaneGeometry(60, 40), new T.MeshLambertMaterial({ map: stageFloorTex }));
     outer.rotation.x = -Math.PI / 2; outer.position.set(0, -0.02, -6);
-    const floor = mk(new T.PlaneGeometry(9, 26), new T.MeshLambertMaterial({ map: floorTex }));
-    floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -8);
-    // Borde de la arena (franja amarilla de seguridad, como el portón del galpón)
-    const edgeM = keep(new T.MeshLambertMaterial({ color: L('#e0b23a') }));
-    const edgeG = keep(new T.BoxGeometry(0.18, 0.06, 26));
-    for (const sd of [-1, 1]) { const e = new T.Mesh(edgeG, edgeM); e.position.set(sd * 4.5, 0.03, -8); scene.add(e); }
-    // Tarima al fondo, detrás de BIG CHAKY
-    // Tarima al fondo: BIG CHAKY está parado arriba (los barriles bajan por el frente)
-    const TD = TARIMA_FRONT - TARIMA_BACK;
-    const tarima = mk(new T.BoxGeometry(12, TARIMA_H, TD), new T.MeshLambertMaterial({ map: canvasTex(256, 64, planks(false), 3, TD / 4) }));
-    tarima.position.set(0, TARIMA_H / 2, (TARIMA_FRONT + TARIMA_BACK) / 2);
-    const tarimaFront = mk(new T.PlaneGeometry(12, TARIMA_H), new T.MeshLambertMaterial({ color: L('#2a1810') }));
-    tarimaFront.position.set(0, TARIMA_H / 2, TARIMA_FRONT + 0.01);
-    // Fondo pintado de Ezeiza (Grupo F) o del galpón detrás de todo (sin niebla: es una pintura)
-    const fondoKey = assets.has('arena_aeropuerto_fondo') ? 'arena_aeropuerto_fondo' : 'arena_fondo';
-    const fondo = assets.meta(fondoKey), BW = 84, BH = BW * fondo.h / fondo.w, BZ = ARENA.bossZ - 6;
-    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(fondoKey), fog: false }));
-    back.position.set(0, BH / 2 - BH * 0.3, BZ);
 
-    // Sprites (planos parados que miran a la cámara) con sombra redonda
-    const shG = keep(new T.PlaneGeometry(1, 1)); shG.rotateX(-Math.PI / 2);
-    const shM = keep(new T.MeshBasicMaterial({ map: radial([[0, 'rgba(20,10,40,.6)'], [1, 'rgba(20,10,40,0)']]), transparent: true, depthWrite: false }));
-    const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0); // apoyado en el piso
-    const unitC = keep(new T.PlaneGeometry(1, 1));                          // centrado (para girar)
-    // Texturas recortadas del manotazo: el cuerpo sin la mano y la mano sola
-    const slamMeta = assets.meta('arena_chaky_slam');
-    const slamTop = keep(assets.texture('arena_chaky_slam').clone());
-    slamTop.needsUpdate = true; slamTop.offset.set(0, 1 - SLAM_CUT); slamTop.repeat.set(1, SLAM_CUT);
-    const handTex = canvasTex(HAND_CROP.w, HAND_CROP.h, (g) => {
-      g.drawImage(assets.texture('arena_chaky_slam').image, HAND_CROP.x, HAND_CROP.y, HAND_CROP.w, HAND_CROP.h, 0, 0, HAND_CROP.w, HAND_CROP.h);
-      try {
-        const d = g.getImageData(0, 0, HAND_CROP.w, HAND_CROP.h), px = d.data;
-        for (let i = 0; i < px.length; i += 4) if (px[i] - px[i + 2] < 38) px[i + 3] = 0; // no es piel (gris/negro)
-        g.putImageData(d, 0, 0);
-      } catch (_) {}
-    });
-    handTex.wrapS = handTex.wrapT = T.ClampToEdgeWrapping; handTex.repeat.set(1, 1);
-    const CUSTOM = {
-      arena_chaky_slamtop: { map: slamTop, w: slamMeta.w, h: slamMeta.h * SLAM_CUT, hk: SLAM_CUT },
-      arena_chaky_hand: { map: handTex, w: HAND_CROP.w, h: HAND_CROP.h, hk: 1 }
-    };
-    const walkCols = assets.has('chaky_walk_sheet') ? (assets.meta('chaky_walk_sheet').cols || 6) : 0;
-    if (walkCols) {
-      const wm = assets.meta('chaky_walk_sheet');
-      for (let i = 0; i < walkCols; i++) {
-        const tx = keep(assets.texture('chaky_walk_sheet').clone());
-        tx.needsUpdate = true; tx.repeat.set(1 / walkCols, 1); tx.offset.set(i / walkCols, 0);
-        CUSTOM['arena_chaky_walk' + i] = { map: tx, w: wm.w / walkCols, h: wm.h, hk: 1 };
+    const TD = TARIMA_FRONT - TARIMA_BACK;
+    const tarima = mk(new T.BoxGeometry(11.5, TARIMA_H, TD), new T.MeshLambertMaterial({ color: L('#251447') }));
+    tarima.position.set(0, TARIMA_H / 2, (TARIMA_FRONT + TARIMA_BACK) / 2);
+    const tarimaTrim = mk(new T.PlaneGeometry(11.5, 0.12), new T.MeshBasicMaterial({ color: L('#f472b6') }));
+    tarimaTrim.position.set(0, TARIMA_H - 0.04, TARIMA_FRONT + 0.02);
+
+    // Baldosas LED luminosas sobre el escenario que laten al ritmo
+    const discoTiles = [];
+    const tileG = keep(new T.PlaneGeometry(1.55, 1.35));
+    tileG.rotateX(-Math.PI / 2);
+    for (let r = 0; r < 2; r++) {
+      for (let c = 0; c < 6; c++) {
+        const col = TILE_COLORS[(c + r * 2) % TILE_COLORS.length];
+        const mat = keep(new T.MeshBasicMaterial({ color: L(col), transparent: true, opacity: 0.42 }));
+        const tile = new T.Mesh(tileG, mat);
+        tile.position.set((c - 2.5) * 1.72, TARIMA_H + 0.015, STAGE_Z + 0.25 + r * 1.55);
+        scene.add(tile);
+        discoTiles.push({ mesh: tile, mat, baseCol: L(col), colIdx: (c + r) % TILE_COLORS.length });
       }
     }
+
+    // Fondo pintado del escenario disco en el hangar del aeropuerto
+    const fondoKey = assets.has('arena_aeropuerto_fondo') ? 'arena_aeropuerto_fondo' : 'arena_fondo';
+    const fondo = assets.meta(fondoKey), BW = 52, BH = BW * fondo.h / fondo.w, BZ = STAGE_Z - 4.2;
+    const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(fondoKey), fog: false }));
+    back.position.set(0, BH / 2 - BH * 0.24, BZ);
+
+    // Sprites (ambos de frente mirando a cámara) con sombra redonda
+    const shG = keep(new T.PlaneGeometry(1, 1)); shG.rotateX(-Math.PI / 2);
+    const shM = keep(new T.MeshBasicMaterial({ map: radial([[0, 'rgba(12,4,28,.65)'], [1, 'rgba(12,4,28,0)']]), transparent: true, depthWrite: false }));
+    const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
+
+    // Recortes de las hojas frontales de baile y acciones del héroe (Douge / Marine DE FRENTE)
+    const CUSTOM = {};
+    const danceSheetKey = heroId + '_dance_sheet';
+    if (assets.has(danceSheetKey)) {
+      const dm = assets.meta(danceSheetKey), cols = dm.cols || 4;
+      const names = ['hero_dance_point', 'hero_dance_jump', 'hero_dance_left', 'hero_dance_right'];
+      for (let i = 0; i < cols; i++) {
+        const tx = keep(assets.texture(danceSheetKey).clone());
+        tx.needsUpdate = true;
+        tx.repeat.set(1 / cols, 1);
+        tx.offset.set(i / cols, 0);
+        CUSTOM[names[i]] = { map: tx, w: dm.w / cols, h: dm.h, hk: i === 1 ? 1.06 : 1 };
+      }
+    }
+    const actSheetKey = heroId + '_actions_sheet';
+    if (assets.has(actSheetKey)) {
+      const am = assets.meta(actSheetKey), cols = am.cols || 4;
+      const actNames = ['hero_act_jump', 'hero_act_dodge', 'hero_act_hurt', 'hero_act_power'];
+      for (let i = 0; i < cols; i++) {
+        const tx = keep(assets.texture(actSheetKey).clone());
+        tx.needsUpdate = true;
+        tx.repeat.set(1 / cols, 1);
+        tx.offset.set(i / cols, 0);
+        CUSTOM[actNames[i]] = { map: tx, w: am.w / cols, h: am.h, hk: 1 };
+      }
+    }
+
     const setTex = (m, key) => {
       if (m.userData.key === key) return;
       const c = CUSTOM[key], meta = c || assets.meta(key);
-      m.material.map = c ? c.map : assets.texture(key); m.material.needsUpdate = true; m.userData.key = key;
-      const h = m.userData.h * (c ? c.hk : (meta.hk || 1)); // hk: el salto con los brazos arriba es más alto
-      m.userData.w = h * meta.w / meta.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+      if (!meta) return;
+      m.material.map = c ? c.map : assets.texture(key);
+      m.material.needsUpdate = true;
+      m.userData.key = key;
+      const h = m.userData.h * (c ? c.hk : (meta.hk || 1));
+      m.userData.w = h * meta.w / meta.h;
+      m.userData.hh = h;
+      m.scale.set(m.userData.w, h, 1);
     };
-    function sprite(key, h, shadow = 1, centered = false) {
-      const m = new T.Mesh(centered ? unitC : unit, keep(new T.MeshBasicMaterial({ alphaTest: 0.45, side: T.DoubleSide })));
-      m.userData.h = h; setTex(m, key); scene.add(m);
-      if (shadow) { const s = new T.Mesh(shG, shM); s.scale.set(h * 0.8 * shadow, 1, h * 0.4 * shadow); s.renderOrder = 1; scene.add(s); m.userData.sh = s; }
+
+    function sprite(key, h, shadow = 1) {
+      const m = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ alphaTest: 0.42, side: T.DoubleSide })));
+      m.userData.h = h;
+      setTex(m, key);
+      scene.add(m);
+      if (shadow) {
+        const s = new T.Mesh(shG, shM);
+        s.scale.set(h * 0.65 * shadow, 1, h * 0.32 * shadow);
+        s.renderOrder = 1;
+        scene.add(s);
+        m.userData.sh = s;
+      }
       return m;
     }
-    function place(m, x, y, z) {
-      m.position.set(x, y, z);
-      m.rotation.y = Math.atan2(cam.position.x - x, cam.position.z - z) * 0.6;
-      const s = m.userData.sh; if (s) { s.position.set(x, 0.03, z); s.visible = m.visible; }
-    }
-    const B = sprite('arena_chaky_idle', BOSS_H, 0.9);
-    const hand = sprite('arena_chaky_hand', HAND_W * HAND_CROP.h / HAND_CROP.w, 0); hand.visible = false;
-    const P = sprite(heroPre + 'idle', HERO_H);
-    // Mano del manotazo: sombra que crece en el piso donde va a caer
-    const handM = keep(new T.MeshBasicMaterial({ map: radial([[0, 'rgba(8,2,16,.92)'], [0.6, 'rgba(8,2,16,.6)'], [1, 'rgba(8,2,16,0)']]), transparent: true, depthWrite: false }));
-    const handSh = new T.Mesh(shG, handM); handSh.renderOrder = 2; handSh.visible = false; scene.add(handSh);
-    // Proyectiles: barriles (dorados con halo que late) y cajones con anillo rojo en el punto de caída
-    const haloTex = radial([[0, 'rgba(255,214,90,.95)'], [0.45, 'rgba(255,170,40,.45)'], [1, 'rgba(255,150,30,0)']]);
-    const ringG = keep(new T.RingGeometry(0.55, 0.78, 28)); ringG.rotateX(-Math.PI / 2);
-    const GOLD = L('#ffcc33'), WHITE = new T.Color(1, 1, 1);
-    const pool = { barrel: [], crate: [], giant: [] }, live = new Map();
-    function take(kind) {
-      const p = pool[kind].pop();
-      if (p) { p.m.visible = true; return p; }
-      const isB = kind !== 'crate';
-      const m = sprite(isB ? 'arena_barril' : 'arena_cajon', kind === 'giant' ? GIANT_H : isB ? BARREL_H : CRATE_H, kind === 'giant' ? 1.2 : 0.7, true);
-      const e = { kind, m };
-      if (isB) {
-        e.halo = new T.Sprite(keep(new T.SpriteMaterial({ map: haloTex, blending: T.AdditiveBlending, transparent: true, depthWrite: false })));
-        e.halo.visible = false; scene.add(e.halo);
-        // aviso en el piso: dónde se mete el de curva y el carril del gigante
-        e.ring = new T.Mesh(ringG, keep(new T.MeshBasicMaterial({ color: L('#ff7a2e'), transparent: true, opacity: 0.8, depthWrite: false })));
-        e.ring.renderOrder = 2; e.ring.visible = false; scene.add(e.ring);
-      } else {
-        e.ring = new T.Mesh(ringG, keep(new T.MeshBasicMaterial({ color: L('#ff4d5e'), transparent: true, opacity: 0.85, depthWrite: false })));
-        e.ring.renderOrder = 2; scene.add(e.ring);
-      }
-      return e;
-    }
-    function drop(e) {
-      e.m.visible = false; if (e.m.userData.sh) e.m.userData.sh.visible = false;
-      if (e.halo) e.halo.visible = false;
-      if (e.ring) e.ring.visible = false;
-      pool[e.kind].push(e);
+
+    function place(m, px, py, pz) {
+      m.position.set(px, py, pz);
+      m.rotation.y = Math.atan2(cam.position.x - px, cam.position.z - pz) * 0.35;
+      const s = m.userData.sh;
+      if (s) { s.position.set(px, TARIMA_H + 0.025, pz); s.visible = m.visible; }
     }
 
-    // Carteles propios: solo el fogonazo y los textos que flotan
-    const ui = document.createElement('div'); ui.id = 'arena-ui';
-    ui.innerHTML = '<div class="piu hidden"><div class="rhythm-status"><div class="dice-dots hidden"></div><div class="dance-caption"></div><div class="piu-judge"></div></div><div class="lanes">' + PIU_LANES.map((l, i) => '<div class="lane l' + i + '" data-lane="' + i + '"><b class="rec">' + l + '</b></div>').join('') + '</div></div>' +
-      '<div class="arena-flash"></div><div class="chaky-sign hidden"><b class="ico"></b><span class="txt"></span><i class="timer"><i></i></i></div>' +
+    const initialBossKey = assets.has('arena_chaky_dance_idle') ? 'arena_chaky_dance_idle' : 'arena_chaky_idle';
+    const initialHeroKey = CUSTOM.hero_dance_point ? 'hero_dance_point' : (heroId + '_idle');
+    const B = sprite(initialBossKey, BOSS_H, 0.95);
+    const P = sprite(initialHeroKey, HERO_H, 0.85);
+
+    // Interfaz del Duelo de Baile (5 carriles con botones receptores ABAJO y flechas que BAJAN)
+    const ui = document.createElement('div');
+    ui.id = 'arena-ui';
+    ui.className = 'dice-mode';
+    ui.innerHTML =
+      '<div class="piu">' +
+        '<div class="rhythm-status">' +
+          '<div class="dice-dots"></div>' +
+          '<div class="dance-caption"></div>' +
+          '<div class="piu-judge"></div>' +
+        '</div>' +
+        '<div class="lanes">' +
+          PIU_LANES.map((l, i) => '<div class="lane l' + i + '" data-lane="' + i + '"><b class="rec">' + l + '</b></div>').join('') +
+        '</div>' +
+      '</div>' +
+      '<div class="arena-flash"></div>' +
+      '<div class="chaky-sign hidden"><b class="ico"></b><span class="txt"></span><i class="timer"><i></i></i></div>' +
       '<div class="phase-card hidden"><small></small><b></b><span></span><em hidden></em></div>';
-    document.body.append(ui); document.body.classList.add('arena-on');
+    document.body.append(ui);
+    document.body.classList.add('arena-on', 'chaky-dance', 'piu-on');
+
     const flashE = ui.querySelector('.arena-flash');
-    const signE = ui.querySelector('.chaky-sign'), signIco = signE.querySelector('.ico'), signTxt = signE.querySelector('.txt');
-    // Cambio de fase bien evidente: cartel grande en el centro (número, nombre y qué hay que hacer)
     const cardE = ui.querySelector('.phase-card'), dotsE = ui.querySelector('.dice-dots');
-    const timerE = signE.querySelector('.timer i');
+    const piuE = ui.querySelector('.piu'), lanesE = piuE.querySelector('.lanes'), judgeE = piuE.querySelector('.piu-judge');
+    const captionE = piuE.querySelector('.dance-caption');
+    const laneEls = [...piuE.querySelectorAll('.lane')], noteEls = new Map();
+
+    // Estrellas de 3 vidas extra (⭐⭐⭐) en el HUD junto al nombre del héroe
+    const hudName = document.getElementById('hud-name');
+    let livesEl = document.getElementById('hud-chaky-lives');
+    if (!livesEl && hudName) {
+      livesEl = document.createElement('span');
+      livesEl.id = 'hud-chaky-lives';
+      livesEl.className = 'chaky-lives';
+      hudName.after(livesEl);
+    }
+    function renderLives() {
+      if (!livesEl) return;
+      const lv = logic.state.lives, mx = logic.state.livesMax;
+      livesEl.textContent = '⭐'.repeat(lv) + '☆'.repeat(Math.max(0, mx - lv));
+      livesEl.title = `${lv} vidas extra`;
+    }
+    renderLives();
+
     const PHASE_CARDS = {
-      1: ['FASE 1', '¡BARRILES!', 'Devolvele los dorados 👊'],
-      2: ['FASE 2', '¡CLASE DE BAILE!', '«Si querés a Margot, vas a tener que seguirme el ritmo»', 'Tocá cada flecha cuando llega arriba'],
-      3: ['FASE 3', '¡ENOJADO!', 'Pegale a la mano trabada 👊']
+      1: ['RONDA 1', '¡DUELO DE BAILE!', '«Si querés a Margot, vas a tener que seguirme el ritmo»', 'Tocá cada botón cuando baja la flecha'],
+      2: ['RONDA 2', '¡SUBE EL RITMO!', '¡Seguí los pasos de Big Chaky!', 'Tocá cada botón cuando baja la flecha'],
+      3: ['RONDA 3', '¡FINAL A TODO DISCO!', '¡Última ronda para ganarle el duelo!', 'Tocá cada botón cuando baja la flecha']
     };
     let cardLeft = 0;
-    function phaseCard(n, secs = 2.2) {
-      if (speech && speech.t < speech.life) speech.t = speech.life; // el cartel de fase no se tapa con frases
-      const [a, b, c, d2] = PHASE_CARDS[n];
-      fillText(cardE.querySelector('small'), a); fillText(cardE.querySelector('b'), b); fillText(cardE.querySelector('span'), c);
-      const em = cardE.querySelector('em'); if (d2) { fillText(em, d2); em.hidden = false; } else em.hidden = true;
-      cardE.className = 'phase-card p' + n; void cardE.offsetWidth; cardE.classList.add('on');
+    function phaseCard(n, secs = 1.35) {
+      const info = PHASE_CARDS[n] || PHASE_CARDS[1];
+      const [a, b, c, d2] = info;
+      fillText(cardE.querySelector('small'), a);
+      fillText(cardE.querySelector('b'), b);
+      fillText(cardE.querySelector('span'), c);
+      const em = cardE.querySelector('em');
+      if (d2) { fillText(em, d2); em.hidden = false; } else em.hidden = true;
+      cardE.className = 'phase-card p2';
+      void cardE.offsetWidth;
+      cardE.classList.add('on');
       cardLeft = secs;
     }
-    // El botón que hay que tocar late; con ¡QUIETO! se apagan todos
-    const touchE = document.getElementById('touch');
-    function wantButton(cmd) {
-      for (const b of document.querySelectorAll('#touch .act')) b.classList.toggle('want', !!cmd && b.dataset.action === cmd);
-      touchE?.classList.toggle('want-still', cmd === 'still');
-    }
+
     function renderDots() {
       const d = logic.state.dice;
       if (!d) { dotsE.classList.add('hidden'); return; }
       dotsE.classList.remove('hidden');
       dotsE.innerHTML = Array.from({ length: d.total }, (_, i) => '<i class="' + (d.res[i] || (i === d.round ? 'now' : '')) + '"></i>').join('');
     }
-    // ---------- Clase de baile (Pump It Up) ----------
-    const piuE = ui.querySelector('.piu'), lanesE = piuE.querySelector('.lanes'), judgeE = piuE.querySelector('.piu-judge');
-    const laneEls = [...piuE.querySelectorAll('.lane')], noteEls = new Map();
-    const captionE = piuE.querySelector('.dance-caption');
-    let piuOn = false, judgeLeft = 0, captionLeft = 0, piuRound = -1;
+    renderDots();
+
+    // Barra de vida de BIG CHAKY ubicada en la cabecera central durante todo el duelo
+    const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
+    const barHome = bar?.parentElement;
+    const barName = bar?.querySelector('span');
+    if (bar) {
+      document.querySelector('.hud-center')?.append(bar);
+      bar.classList.remove('hidden');
+    }
+    const setBarName = () => {
+      if (barName) barName.textContent = tr('BIG CHAKY') + ' · ' + (logic.state.phase === 'ko' ? 3 : logic.state.phase) + '/3';
+    };
+    const setBar = () => {
+      if (fill) fill.style.width = (100 * logic.state.hp / logic.state.hpMax).toFixed(1) + '%';
+      setBarName();
+    };
+    setBar();
+
+    // Audio: arranca directamente con el ritmo de baile
+    try { audio.music('byd', { fade: 0.25 }); } catch (_) {}
+
+    let judgeLeft = 0, captionLeft = 0, piuRound = -1;
     let laneHeight = 0, viewportHeight = 0, viewportWidth = 0;
+    let heroStepLane = -1, heroStepTimer = 0;
+
     function piuTap(lane) {
-      if (!piuOn || game.state !== 'arena') return;
-      laneEls[lane].classList.remove('press'); void laneEls[lane].offsetWidth; laneEls[lane].classList.add('press');
+      if (game.state !== 'arena' || logic.state.phase === 'ko') return;
+      laneEls[lane].classList.remove('press');
+      void laneEls[lane].offsetWidth;
+      laneEls[lane].classList.add('press');
+      heroStepLane = lane;
+      heroStepTimer = 0.42;
       handle(logic.tap(lane));
     }
-    for (const el of laneEls) el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); piuTap(+el.dataset.lane); });
+    for (const el of laneEls) {
+      el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); piuTap(+el.dataset.lane); });
+    }
     const onKey = (ev) => {
-      if (!piuOn || game.state !== 'arena' || !(ev.code in PIU_KEYS)) return;
+      if (game.state !== 'arena' || !(ev.code in PIU_KEYS)) return;
       ev.preventDefault();
       if (!ev.repeat) piuTap(PIU_KEYS[ev.code]);
     };
     addEventListener('keydown', onKey);
-    function piuPulse(lane) { const r = laneEls[lane].querySelector('.rec'); r.classList.remove('beat'); void r.offsetWidth; r.classList.add('beat'); }
+
+    function piuPulse(lane) {
+      const r = laneEls[lane]?.querySelector('.rec');
+      if (!r) return;
+      r.classList.remove('beat');
+      void r.offsetWidth;
+      r.classList.add('beat');
+    }
+
     function piuText(txt, cls) {
-      fillText(judgeE, txt); judgeE.className = 'piu-judge ' + cls; void judgeE.offsetWidth; judgeE.classList.add('on');
-      judgeLeft = 0.5;
+      fillText(judgeE, txt);
+      judgeE.className = 'piu-judge ' + cls;
+      void judgeE.offsetWidth;
+      judgeE.classList.add('on');
+      judgeLeft = 0.55;
     }
-    function piuJudge(e) {
-      if (e.grade === 'empty') return; // tocar donde no hay flecha no castiga
-      if (e.grade === 'miss') { piuText('¡FALLÓ!', 'bad'); return; }
-      piuText(tr(e.grade === 'perfect' ? '¡PERFECTO!' : '¡BIEN!') + (e.combo > 1 ? ' ×' + e.combo : ''), e.grade);
-      sfx(e.grade === 'perfect' ? 'perfect' : 'pickup');
-      danceStep = (e.lane - 2) / 2;
-      if (y <= 0) vy = CHASE.jump * 0.45; // el héroe baila: saltito en cada paso
-    }
-    function piuDraw() {
-      const d = logic.state.dice, show = logic.state.mode === 'dice' && !!d;
-      if (show !== piuOn) {
-        piuOn = show; piuE.classList.toggle('hidden', !show); document.body.classList.toggle('piu-on', show);
-        if (!show) { for (const el of noteEls.values()) el.remove(); noteEls.clear(); piuRound = -1; laneHeight = 0; }
-      }
-      if (!show) return;
-      if (d.round !== piuRound) { for (const el of noteEls.values()) el.remove(); noteEls.clear(); piuRound = d.round; renderDots(); }
-      if (!laneHeight || innerHeight !== viewportHeight || innerWidth !== viewportWidth) {
-        viewportHeight = innerHeight; viewportWidth = innerWidth;
-        laneHeight = lanesE.clientHeight;
-      }
-      const H = laneHeight, recY = 8, speed = (H - recY) / ARENA.dice.travel;
-      d.notes.forEach((n, i) => {
-        let el = noteEls.get(i);
-        if (n.judged && n.judged !== 'miss') { if (el) { el.remove(); noteEls.delete(i); } return; }
-        const top = recY + (n.time - d.t) * speed;
-        if (top > H + 40 || top < -70) { if (el && top < -70) { el.remove(); noteEls.delete(i); } return; }
-        if (!el) { el = document.createElement('b'); el.className = 'note l' + n.lane; el.textContent = PIU_LANES[n.lane]; laneEls[n.lane].append(el); noteEls.set(i, el); }
-        el.style.transform = 'translateY(' + top + 'px)';
-        el.classList.toggle('missed', n.judged === 'miss');
-      });
-    }
-    function showSign(cmd, cls = '') {
-      signE.className = 'chaky-sign ' + cls;
-      if (cmd) { signIco.textContent = DANCE_SIGN[cmd][0]; fillText(signTxt, DANCE_SIGN[cmd][1]); }
-      else { signIco.textContent = '?'; signTxt.textContent = ''; }
-    }
-    const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
-    const barName = bar?.querySelector('span');
-    const setBarName = () => { if (barName) barName.textContent = tr('BIG CHAKY') + ' · ' + (logic.state.phase === 'ko' ? 3 : logic.state.phase) + '/3'; };
-    if (bar) { setBarName(); bar.classList.remove('hidden'); }
-    const setBar = () => { if (fill) fill.style.width = (100 * logic.state.hp / logic.state.hpMax).toFixed(1) + '%'; };
-    setBar();
-    const pops = [], seen = new Set(), scratch = new T.Vector3();
-    const pop = (x, y, z, txt, col = '#ffd36e', size = 22, life = 1.1) => {
-      const e = document.createElement('div'); e.className = 'pop'; fillText(e, txt); e.style.color = col; e.style.fontSize = size + 'px';
-      if (txt.length > 18) { e.style.whiteSpace = 'normal'; e.style.width = 'min(86vw, 340px)'; e.style.textAlign = 'center'; } // las frases largas van en dos renglones
-      const q = { e, v: new T.Vector3(x, y, z), t: 0, life, w: e.offsetWidth }; // ancho medido una vez
-      ui.append(e); pops.push(q); return q;
+
+    const pops = [], scratch = new T.Vector3();
+    const pop = (px, py, pz, txt, col = '#ffd36e', size = 22, life = 1.0) => {
+      const e = document.createElement('div');
+      e.className = 'pop';
+      fillText(e, txt);
+      e.style.color = col;
+      e.style.fontSize = size + 'px';
+      const q = { e, v: new T.Vector3(px, py, pz), t: 0, life, w: e.offsetWidth };
+      ui.append(e);
+      pops.push(q);
+      return q;
     };
+
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
     let flashTimer = 0;
-    const flash = (col, op = 0.45) => {
-      flashE.style.background = col; flashE.style.opacity = String(op);
-      clearTimeout(flashTimer); flashTimer = setTimeout(() => { flashE.style.opacity = '0'; }, 110);
+    const flash = (col, op = 0.38) => {
+      flashE.style.background = col;
+      flashE.style.opacity = String(op);
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => { flashE.style.opacity = '0'; }, 110);
     };
 
-    // Estado del héroe y de la escena
-    let x = 0, z = -1.5, y = 0, vy = 0, t = 0;
+    // Estado del escenario y los bailarines
+    let x = logic.state.heroX, z = STAGE_Z + 0.25, y = 0, vy = 0, t = 0;
     let phase = 'entrance', phaseT = 0, ended = false, closing = false;
-    let dashT = 0, dashCd = 0, dashX = 0, dashZ = 0, inv = 0, hurtT = 0, holdT = 0, powT = 0;
-    let swing = null, swingT = 0, swingHit = false, combo = 0, comboWindow = 0, buffer = 0;
-    let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_chaky_idle';
-    let danceBlend = 0, danceStep = 0;
-    let prevPose = 'idle', poseT = 0, stepT = 0;
+    let hurtT = 0, inv = 0, shakeT = 0, shakeA = 0, bossFlash = 0;
+    let heroPose = 'dance_idle', bossKey = initialBossKey, prevPose = 'dance_idle', poseT = 0, danceStep = 0;
     game.state = 'arena';
 
-    const shake = (a, s = 0.3) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, s); };
-    // Frases y puntos de BIG CHAKY a la altura del pecho: no le tapan la cara
-    const bossChest = () => new T.Vector3(logic.state.bossX, TARIMA_H + B.userData.hh * 0.38, ARENA.bossZ); // según la pose que se ve
+    const shake = (a, s = 0.25) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, s); };
     function addPts(n, px, py, pz) {
-      const before = game.score.total; game.score.addFlat(n); // valores fijos del spec, sin multiplicador
-      pop(px, py, pz, '+' + (game.score.total - before), '#ffd36e', 24);
+      const before = game.score.total;
+      game.score.addFlat(n);
+      pop(px, py, pz, '+' + (game.score.total - before), '#ffd36e', 22);
     }
     function charge(a) { hero.power = Math.min(1, hero.power + a); }
 
-    // Voz + globo de BIG CHAKY (voice.js decide si habla: prioridad, sin repetir, esperas)
-    let speech = null;
-    const barHome = bar?.parentElement;
-    function danceLayout(on) {
-      document.body.classList.toggle('chaky-dance', on);
-      if (bar) (on ? document.querySelector('.hud-center') : barHome)?.append(bar);
-    }
     function speak(event) {
       const text = voice.say('chaky', event);
-      if (!text || !cardE.classList.contains('hidden')) return; // con el cartel de fase en pantalla solo se escucha
-      if (logic.state.phase === 2) {
-        fillText(captionE, text);
-        captionLeft = 1.9;
+      if (!text) return;
+      fillText(captionE, text);
+      captionLeft = 2.0;
+    }
+
+    function piuJudge(e) {
+      if (e.grade === 'empty') return;
+      if (e.grade === 'miss') {
+        piuText('¡FALLÓ!', 'bad');
         return;
       }
-      // un solo globo de Chaky a la vez: el nuevo reemplaza al anterior (antes se pisaban)
-      if (speech && speech.t < speech.life) speech.t = Math.max(speech.t, speech.life - 0.12);
-      const p = bossChest(); speech = pop(p.x, p.y, p.z, text, '#ffffff', 28, 1.9);
+      const isPerf = e.grade === 'perfect';
+      piuText(tr(isPerf ? '¡PERFECTO!' : '¡BIEN!') + (e.combo > 1 ? ' ×' + e.combo : ''), e.grade);
+      sfx(isPerf ? 'perfect' : 'pickup');
+      addPts(isPerf ? ARENA.points.stepPerfect : ARENA.points.stepGood, x, TARIMA_H + HERO_H * 0.72, z);
+      charge(POWER.hit);
+      game.combo?.add?.(1);
+      danceStep = (e.lane - 2) / 2;
+      if (y <= 0) vy = CHASE.jump * (e.lane === 2 ? 0.52 : 0.35);
+      // Iluminar las baldosas LED del escenario con el color del carril acertado
+      const hitCol = L(TILE_COLORS[e.lane % TILE_COLORS.length]);
+      for (const tile of discoTiles) {
+        tile.mat.color.copy(hitCol);
+        tile.mat.opacity = 0.85;
+      }
     }
+
+    // Dibuja las flechas BAJANDO desde arriba hacia los 5 botones receptores ubicados ABAJO
+    function piuDraw() {
+      const d = logic.state.dice;
+      if (!d) return;
+      if (d.round !== piuRound) {
+        for (const el of noteEls.values()) el.remove();
+        noteEls.clear();
+        piuRound = d.round;
+        renderDots();
+      }
+      if (!laneHeight || innerHeight !== viewportHeight || innerWidth !== viewportWidth) {
+        viewportHeight = innerHeight;
+        viewportWidth = innerWidth;
+        laneHeight = lanesE.clientHeight;
+      }
+      const H = laneHeight || 110;
+      const startY = 6, recY = Math.max(30, H - 36);
+      const travel = d.travel || ARENA.dice.travel;
+      const speed = (recY - startY) / travel;
+      d.notes.forEach((n, i) => {
+        let el = noteEls.get(i);
+        if (n.judged && n.judged !== 'miss') {
+          if (el) { el.remove(); noteEls.delete(i); }
+          return;
+        }
+        // top crece a medida que d.t se acerca a n.time -> la flecha BAJA hacia recY (abajo)
+        const top = recY - (n.time - d.t) * speed;
+        if (top < -42 || top > H + 36) {
+          if (el && top > H + 36) { el.remove(); noteEls.delete(i); }
+          return;
+        }
+        if (!el) {
+          el = document.createElement('b');
+          el.className = 'note l' + n.lane;
+          el.textContent = PIU_LANES[n.lane];
+          laneEls[n.lane].append(el);
+          noteEls.set(i, el);
+        }
+        el.style.transform = 'translateY(' + top.toFixed(1) + 'px)';
+        el.classList.toggle('missed', n.judged === 'miss');
+      });
+    }
+
     function handle(evs) {
       for (const e of evs) {
         switch (e.type) {
           case 'hurt':
-            hero.hp = Math.max(0, hero.hp - 1); game.score.takeDamage(); game.combo?.reset?.();
-            hurtT = HURT_POSE; inv = INV; swing = null; buffer = 0;
-            flash('#ff4d5e', 0.45); shake(0.35, 0.35); sfx('hurt');
-            if (hero.hp > 0) speak('taunt');
-            if (hero.hp <= 0 && phase === 'fight') { phase = 'down'; phaseT = 0; }
-            break;
-          case 'dodge':
-            addPts(ARENA.points.dodge, x, 2.8, z); charge(POWER.dodge); sfx('pickup');
-            break;
-          case 'returned':
-            addPts(e.gold ? ARENA.points.returned : ARENA.points.returnedWhite, x, 3, z - 1); charge(e.gold ? POWER.finisher : POWER.hit * 2); sfx('hitHeavy'); shake(e.gold ? 0.25 : 0.12, 0.2);
-            break;
-          case 'handHit':
-            addPts(ARENA.points.hand, x, 2.6, z - 0.8); charge(POWER.hit); sfx('hit'); freezeT = 0.07; shake(0.25, 0.2);
-            break;
-          case 'bossHit':
-            setBar(); bossFlash = 0.18; flash('#fff2c4', 0.22);
-            if (e.by !== 'dice' && e.by !== 'barrel') speak('hurt');
-            break;
-          case 'phase':
-            setBarName(); showSign(null, 'hidden'); phaseCard(e.to, e.to === 2 ? ARENA.dice.start : ARENA.transition + 0.6);
-            if (e.to === 2) {
-              input.reset();
-              danceLayout(true);
-              flash('#ffd36e', 0.35); shake(0.3, 0.4); sfx('roar');
-              ui.classList.add('dice-mode'); renderDots();
-              try { audio.music('byd', { fade: 0.3 }); } catch (_) {} // otra música: cambió el juego
+            hero.hp = Math.max(0, hero.hp - 1);
+            game.score.takeDamage();
+            game.combo?.reset?.();
+            hurtT = HURT_POSE;
+            inv = INV;
+            flash('#ff4d5e', 0.42);
+            shake(0.28, 0.28);
+            sfx('hurt');
+            if (hero.hp <= 0 && phase === 'fight') {
+              // Si quedan vidas extra (⭐⭐⭐), gasta 1 estrella, recupera los corazones y sigue en la misma ronda
+              if (logic.useLife()) {
+                hero.hp = hero.hpMax;
+                renderLives();
+                for (const el of noteEls.values()) el.remove();
+                noteEls.clear();
+                piuText(tr('⭐ ¡VIDA EXTRA! ¡SEGUÍ BAILANDO!'), 'ok');
+                pop(x, TARIMA_H + HERO_H * 0.85, z, '⭐ ¡VIDA EXTRA!', '#ffd36e', 26, 1.3);
+                sfx('pickup');
+              } else {
+                phase = 'down';
+                phaseT = 0;
+              }
+            } else if (hero.hp > 0) {
+              speak('taunt');
             }
             break;
-          case 'voice': speak(e.event); break;
-          case 'danceBeat': sfx('tick'); piuPulse(e.lane); break;
-          case 'danceStep': piuJudge(e); break;
+          case 'bossHit':
+            setBar();
+            bossFlash = 0.16;
+            flash('#fff2c4', 0.16);
+            break;
+          case 'phase':
+            setBar();
+            renderDots();
+            phaseCard(e.to, 1.15);
+            flash('#ffd36e', 0.25);
+            break;
+          case 'voice':
+            speak(e.event);
+            break;
+          case 'danceBeat':
+            sfx('tick');
+            piuPulse(e.lane);
+            break;
+          case 'danceStep':
+            piuJudge(e);
+            break;
           case 'diceResult':
-            renderDots(); piuText((e.hits + '/' + e.of), e.ok ? 'ok' : 'bad');
-            if (e.ok) { addPts(ARENA.points.dice, x, 3, z - 1); charge(POWER.hit); sfx('hitHeavy'); shake(0.2, 0.2); }
-            else sfx('boo');
+            renderDots();
+            piuText(e.hits + '/' + e.of, e.ok ? 'ok' : 'bad');
+            if (e.ok) {
+              addPts(ARENA.points.dice, x, TARIMA_H + HERO_H * 0.78, z);
+              charge(POWER.hit);
+              sfx('hitHeavy');
+              shake(0.18, 0.18);
+            } else {
+              sfx('boo');
+            }
             break;
           case 'heal':
             hero.hp = Math.min(hero.hpMax || hero.hp + 1, hero.hp + 1);
-            pop(x, HERO_H + 0.8, z, '+❤', '#ff6b8a', 34, 1.4); sfx('pickup');
-            break;
-          case 'rage':
-            danceLayout(false);
-            input.reset();
-            setBar(); setBarName(); showSign(null, 'hidden'); flash('#ff7a2e', 0.4); shake(0.5, 0.8); sfx('roar');
-            wantButton(null); ui.classList.remove('dice-mode'); dotsE.classList.add('hidden');
-            try { audio.music('boss', { fade: 0.3 }); } catch (_) {}
+            pop(x, TARIMA_H + HERO_H * 0.85, z, '+❤', '#ff6b8a', 32, 1.3);
+            sfx('pickup');
             break;
           case 'ko': {
-            setBar(); flash('#ffffff', 0.6); shake(0.6, 0.9); sfx('ko');
-            const before = game.score.total; game.score.addKill('boss');
-            pop(logic.state.bossX, TARIMA_H + B.userData.hh * 0.38, ARENA.bossZ, '+' + (game.score.total - before), '#ffd36e', 34, 1.6);
+            setBar();
+            flash('#ffffff', 0.55);
+            shake(0.5, 0.8);
+            sfx('ko');
+            const before = game.score.total;
+            game.score.addKill('boss');
+            pop(logic.state.bossX, TARIMA_H + B.userData.hh * 0.5, STAGE_Z, '+' + (game.score.total - before), '#ffd36e', 34, 1.5);
             bar?.classList.add('hidden');
-            phase = 'ko'; phaseT = 0;
+            phase = 'ko';
+            phaseT = 0;
             break;
           }
-          case 'throw':
-            sfx(e.shot === 'giant' ? 'roar' : 'whoosh');
-            if (Math.random() < 0.25) speak('attack');
-            break;
-          case 'slam': shake(0.5, 0.4); sfx('slam'); break;
         }
       }
     }
 
-    function usePower() {
-      hero.power = 0; holdT = 0; powT = 1.0;
-      pop(x, HERO_H + 0.9, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#7ee0c3' : '#ffd36e', 30, 1.5);
-      sfx('power'); flash(isM ? '#7ee0c3' : '#ffd36e', 0.4); shake(0.4, 0.5);
-      handle(logic.power());
-    }
-    function startSwing() {
-      buffer = 0;
-      combo = comboWindow > 0 ? (combo + 1) % 3 : 0;
-      swing = SWINGS[combo]; swingT = 0; swingHit = false;
-      sfx(combo === 2 ? 'hitHeavy' : 'swing');
-    }
-    // Salida con la cortina (se tapa, cambia la escena y se destapa)
     function close(won) {
       if (closing) return;
       closing = true;
@@ -443,76 +520,35 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
     function update(dt) {
       if (ended) return;
       if (input.consume('pause')) { pause(); return; }
-      t += dt; phaseT += dt;
-      if (cardLeft > 0 && (logic.state.phase !== 2 || phase === 'fight') && (cardLeft -= dt) <= 0) cardE.classList.add('hidden');
+      t += dt;
+      phaseT += dt;
+      if (cardLeft > 0 && (cardLeft -= dt) <= 0) cardE.classList.add('hidden');
       if (judgeLeft > 0 && (judgeLeft -= dt) <= 0) judgeE.classList.remove('on');
       if (captionLeft > 0 && (captionLeft -= dt) <= 0) captionE.textContent = '';
-      if (freezeT > 0) { freezeT -= dt; draw(dt); updateHud(dt); return; } // pausa corta al pegarle a la mano
-      inv = Math.max(0, inv - dt); dashCd = Math.max(0, dashCd - dt); comboWindow = Math.max(0, comboWindow - dt);
-      buffer = Math.max(0, buffer - dt);
       if (hurtT > 0) hurtT -= dt;
-      if (powT > 0) powT -= dt;
-      moving = false;
-      const dancing = logic.state.phase === 2;
-      if (phase === 'fight' && !dancing) {
-        // Controles
-        if (input.consume('jump')) { if (y <= 0) { vy = CHASE.jump; sfx('jump'); } handle(logic.act('jump')); }
-        if (input.consume('dodge') && dashCd <= 0 && dashT <= 0) {
-          dashT = CHASE.dash.t; dashCd = CHASE.dash.cd;
-          const mx = input.moveX, mz = input.moveZ, len = Math.hypot(mx, mz);
-          if (len > 0.2) { dashX = mx / len; dashZ = mz / len; } else { dashX = x > 0 ? -1 : 1; dashZ = 0; }
-          sfx('dodge');
-          handle(logic.act('dodge'));
-        }
-        if (input.pressed('attack')) { holdT += dt; if (hero.power >= 1 && holdT >= POWER.hold) usePower(); } else holdT = 0;
-        if (input.consume('attack')) { handle(logic.act('attack')); if (!swing) startSwing(); else buffer = 0.2; }
-        if (input.consume('power') && hero.power >= 1) usePower();
-        // Movimiento
-        let vx, vz;
-        if (dashT > 0) { dashT -= dt; vx = dashX * DASH_SPEED; vz = dashZ * DASH_SPEED; }
-        else {
-          const mx = input.moveX, mz = input.moveZ, len = Math.max(1, Math.hypot(mx, mz));
-          const slow = swing ? 0.35 : 1;
-          vx = mx / len * MOVE * slow; vz = mz / len * MOVE * slow;
-          moving = Math.hypot(mx, mz) > 0.15;
-        }
-        x = Math.max(-ARENA.xMax, Math.min(ARENA.xMax, x + vx * dt));
-        z = Math.max(ARENA.zFar, Math.min(ARENA.zNear, z + vz * dt));
-        // Combo de 3 con los tiempos de hero.js
-        if (swing) {
-          swingT += dt;
-          if (!swingHit && swingT >= swing.hitAt) {
-            swingHit = true;
-            handle(logic.punch({ x, z, reach: swing.reach, dmg: swing.dmg }));
-          }
-          if (swing && swingT >= swing.dur) { swing = null; comboWindow = COMBO_WINDOW; if (buffer > 0) startSwing(); }
-        }
-      } else {
-        dashT = 0; swing = null; holdT = 0; buffer = 0;
-        if (dancing) {
-          const dx = DANCE_MARK.x - x, dz = DANCE_MARK.z - z, distance = Math.hypot(dx, dz);
-          const step = Math.min(1, MOVE * dt / (distance || 1));
-          moving = distance > 0.04;
-          x += dx * step; z += dz * step;
-          for (const action of ['jump', 'attack', 'dodge', 'power']) input.consume(action);
-        }
-      }
-      hero.holdT = holdT;
-      vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
+      if (heroStepTimer > 0) heroStepTimer -= dt;
+      inv = Math.max(0, inv - dt);
 
-      // La lógica de BIG CHAKY (se congela si el héroe cayó)
+      for (const action of ['jump', 'attack', 'dodge', 'power']) input.consume(action);
+      vy -= CHASE.gravity * dt;
+      y = Math.max(0, y + vy * dt);
+      if (y <= 0) vy = Math.max(0, vy);
+
       if (phase === 'entrance' && phaseT >= ENTRANCE) {
-        phase = 'fight'; phaseT = 0;
-        if (logic.state.phase === 1) {
-          sfx('roar'); shake(0.35, 0.45); phaseCard(1, 2);
-          setTimeout(() => {
-            if (!disposed && logic.state.phase === 1 && game.state === 'arena') speak('intro');
-          }, 2100);
-        }
+        phase = 'fight';
+        phaseT = 0;
+        phaseCard(logic.state.phase, 1.15);
+        speak('dice');
       }
-      if (phase === 'fight') handle(logic.update(dt, { x, z, y, moving: moving || dashT > 0, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
-      if (phase === 'fight' && hero.hp <= 0) { phase = 'down'; phaseT = 0; }
-      else if (phase === 'ko') logic.update(dt, { x, z, y, dodging: false, inv: true });
+      if (phase === 'fight') {
+        handle(logic.update(dt, { x, z, y, moving: false, dodging: false, inv: inv > 0 }));
+      }
+      if (phase === 'fight' && hero.hp <= 0) {
+        phase = 'down';
+        phaseT = 0;
+      } else if (phase === 'ko') {
+        logic.update(dt, { x, z, y, dodging: false, inv: true });
+      }
 
       if (phase === 'ko' && phaseT >= END_DELAY) return close(true);
       if (phase === 'down' && phaseT >= END_DELAY) return close(false);
@@ -522,175 +558,143 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
 
     function draw(dt) {
       const S = logic.state;
-      // Cámara detrás y arriba del héroe, mirando a BIG CHAKY
-      shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
+      setBar();
+      renderLives();
+      shakeT = Math.max(0, shakeT - dt);
+      if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
-      // Entrada: la cámara baja desde arriba y atrás hasta su lugar
-      const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
-      danceBlend = clamp01(danceBlend + (S.phase === 2 ? 1 : -1) * dt / 0.85);
-      const blend = danceBlend * danceBlend * (3 - 2 * danceBlend);
-      const followX = x * (innerWidth < innerHeight * 0.9 ? 0.7 : 0.4);
-      cam.position.set(
-        mix(followX + (Math.random() - 0.5) * sh, 0, blend),
-        mix(CAM.y + e * 7 + (Math.random() - 0.5) * sh, DANCE_CAM.y, blend),
-        mix(z + CAM.back + e * 9, DANCE_CAM.z + (innerHeight < 400 ? 4 : 0), blend)
-      );
-      cam.lookAt(0, mix(CAM.lookY + e * 2, DANCE_CAM.lookY, blend), ARENA.bossZ);
-      cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
+      const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0;
+      const e = k * k * (3 - 2 * k);
 
-      // BIG CHAKY: la pose de la lógica, salvo en el manotazo (una sola mano a la vista):
-      // - aviso (y preparación): pose `rage`, la mano todavía arriba; solo la sombra en el piso anuncia dónde cae
-      // - mano abajo / trabada / subiendo: el `slam` recortado sin la mano (el corte queda bajo la tarima) y la mano
-      //   suelta dibujada donde está de verdad, en (hand.x, hand.z); ahí también tapa el `hurt` de la lógica
-      const H = S.hand, handOut = H.state === 'down' || H.state === 'stuck' || H.state === 'up';
-      let pose = S.pose;
-      if (pose !== 'ko') {
-        if (handOut) pose = 'slamtop';
-        else if (pose === 'slam') pose = 'rage';
+      // Cámara frontal enfocando a los dos bailarines lado a lado sobre el escenario
+      const extraZ = innerHeight < 420 ? 1.8 : 0;
+      cam.position.set(
+        (Math.random() - 0.5) * sh,
+        STAGE_CAM.y + e * 2.2 + (Math.random() - 0.5) * sh,
+        STAGE_CAM.z + extraZ + e * 3.5
+      );
+      cam.lookAt(0, STAGE_CAM.lookY + e * 0.6, STAGE_Z);
+      cam.aspect = innerWidth / innerHeight;
+      cam.fov = cam.aspect < 0.9 ? STAGE_CAM.fovPortrait : STAGE_CAM.fov;
+      cam.updateProjectionMatrix();
+
+      // Pulso de luces disco y baldosas LED al ritmo de la música
+      const beatDur = S.dice?.beatDur || ARENA.dice.beat;
+      const beatPhase = ((S.dice?.t ?? t) * Math.PI) / beatDur;
+      const beatBounce = Math.abs(Math.sin(beatPhase));
+      const beatSway = Math.sin(beatPhase);
+      spotL.position.x = -3.8 + Math.sin(t * 2.4) * 1.6;
+      spotR.position.x = 3.8 - Math.sin(t * 2.4) * 1.6;
+      for (let i = 0; i < discoTiles.length; i++) {
+        const tile = discoTiles[i];
+        tile.mat.opacity += ((0.32 + 0.38 * Math.abs(Math.sin(beatPhase + i * 0.7))) - tile.mat.opacity) * Math.min(1, dt * 8);
+        tile.mat.color.lerp(tile.baseCol, Math.min(1, dt * 5));
       }
+
+      // 1. BIG CHAKY (a la derecha del escenario, DE FRENTE mirando a cámara)
+      let pose = S.pose;
       if (pose !== prevPose) { prevPose = pose; poseT = 0; }
       poseT += dt;
-      const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;
-      B.userData.prevX = S.bossX;
-      const walking = pose === 'idle' && walkCols > 0 && Math.abs(bvx) > 0.35;
-      let bx = S.bossX, by = 0, rz = 0, sx = 1, sy = 1;
-      if (walking) {
-        B.userData.stepT = (B.userData.stepT || 0) + dt * 9;
-        bossKey = 'arena_chaky_walk' + (Math.floor(B.userData.stepT) % walkCols);
-        sx = bvx < 0 ? -1 : 1;
-        by = Math.abs(Math.sin(B.userData.stepT * Math.PI)) * 0.22;
-        rz = -Math.sign(bvx) * 0.04;
-      } else {
-        bossKey = 'arena_chaky_' + pose;
-        if (!CUSTOM[bossKey] && !assets.has(bossKey)) {
-          const fallback = 'arena_chaky_' + DANCE_FALLBACK[pose];
-          bossKey = assets.has(fallback) ? fallback : 'arena_chaky_idle';
-        }
+      bossKey = 'arena_chaky_' + pose;
+      if (!CUSTOM[bossKey] && !assets.has(bossKey)) {
+        const fallback = 'arena_chaky_' + (DANCE_FALLBACK[pose] || 'idle');
+        bossKey = assets.has(fallback) ? fallback : 'arena_chaky_idle';
       }
       setTex(B, bossKey);
-      if (pose === 'throw') { const k = Math.min(1, poseT / 0.55); by = Math.abs(Math.sin(k * Math.PI)) * 0.48; sy = 1 + Math.sin(k * Math.PI) * 0.07; rz = Math.sin(poseT * 10) * 0.07; }
-      else if (pose === 'slamtop') { by = -0.25; if (H.state === 'stuck') { bx += (Math.random() - 0.5) * 0.18; by += Math.random() * 0.05; } } // forcejea con la mano trabada
-      else if (pose === 'rage') { bx += Math.sin(t * 40) * 0.12; sy = 1 + Math.sin(t * 12) * 0.04; sx = 1 + Math.cos(t * 12) * 0.03; }
-      else if (pose === 'hurt') { rz = Math.sin(poseT * 24) * 0.09; sy = 0.94; sx = 1.06; }
-      else if (pose === 'idle' && !walking) { sy = 1 + Math.sin(t * 2.4) * 0.02; by = Math.abs(Math.sin(t * 1.2)) * 0.06; }
-      else if (pose === 'dance_idle') { sy = 1 + Math.sin(t * 6.5) * 0.025; by = Math.abs(Math.sin(t * 3.25)) * 0.14; rz = Math.sin(t * 3.25) * 0.04; }
-      else if (pose === 'dance_jump') { by = 0.75 + Math.sin(Math.min(1, poseT / 0.35) * Math.PI) * 0.5; sy = 1.06; }
-      else if (pose === 'dance_attack') { if (S.dice?.step === 3) sx = -1; by = 0.12; sy = 1.04; }
-      else if (pose === 'dance_dodge') { if (S.dice?.step === 0) sx = -1; sy = 0.96; }
-      else if (pose === 'dance_laugh') { sy = 1 + Math.sin(t * 16) * 0.04; by = Math.abs(Math.sin(t * 8)) * 0.16; }
-      place(B, bx + blend * 1.2, TARIMA_H + by, ARENA.bossZ);
-      B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
+      let bx = S.bossX, by = beatBounce * 0.16, rz = beatSway * 0.04, sx = 1, sy = 1 + Math.sin(beatPhase * 2) * 0.025;
+      if (pose === 'dance_jump') {
+        by = 0.55 + Math.sin(Math.min(1, poseT / 0.35) * Math.PI) * 0.45;
+        sy = 1.06;
+      } else if (pose === 'dance_attack') {
+        if (S.dice?.step === 3) sx = -1;
+        by += 0.12;
+        sy = 1.04;
+      } else if (pose === 'dance_dodge') {
+        if (S.dice?.step === 0) sx = -1;
+        sy = 0.96;
+      } else if (pose === 'dance_laugh') {
+        sy = 1 + Math.sin(t * 16) * 0.04;
+        by = Math.abs(Math.sin(t * 8)) * 0.18;
+      } else if (pose === 'hurt') {
+        rz = Math.sin(poseT * 24) * 0.08;
+        sy = 0.95;
+        sx = 1.05;
+      }
+      place(B, bx, TARIMA_H + by, STAGE_Z);
+      B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1);
+      B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);
-      B.material.color.setRGB(1, bossFlash > 0 ? 0.55 : 1, bossFlash > 0 ? 0.55 : 1);
-      B.userData.sh.position.y = TARIMA_H + 0.02; B.userData.sh.scale.set(8, 1, 3);
+      B.material.color.setRGB(1, bossFlash > 0 ? 0.6 : 1, bossFlash > 0 ? 0.6 : 1);
 
-      // Héroe de espaldas
-      const hasDodge = assets.has(heroPre + 'dodge');
-      heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : dashT > 0 && hasDodge ? 'dodge' : moving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
-      // Carrera de espaldas: 4 cuadros (~10 por segundo) con un rebote chico; en el aire, la pose de salto; al esquivar, la pose de esquive
-      let bob = 0, lean = 0, key = heroPre + heroPose, hsx = 1;
-      if (heroPose === 'dodge') {
-        bob = 0.18;
-        hsx = dashX < 0 ? -1 : 1;
-      } else if (heroPose === 'run') {
-        if (y > 0.15) key = heroPre + 'jump';
-        else {
-          stepT += dt * 2 * Math.PI * 2.6;
-          key = heroPre + 'run' + (Math.floor(stepT / (Math.PI / 2)) % 4);
-          bob = Math.abs(Math.sin(stepT * 2)) * 0.05;
-          lean = -input.moveX * 0.07;
-        }
-      } else if (heroPose === 'idle') { stepT = 0; bob = Math.sin(t * 2.4) * 0.015; }
-      setTex(P, key);
-      const danceSize = 1 + blend * 0.25;
-      P.scale.set(P.userData.w * hsx * danceSize, P.userData.hh * danceSize, 1);
-      if (S.phase === 2 && !moving) {
-        const beat = Math.sin((S.dice?.t ?? phaseT) * Math.PI / ARENA.dice.beat);
-        bob += Math.abs(beat) * 0.11;
-        lean += beat * 0.06 + danceStep * y * 0.18;
-      }
-      P.visible = S.phase === 2 || !(inv > 0 && hurtT <= 0 && Math.floor(t * 14) % 2 === 0);
-      place(P, x, y + bob, z);
-      P.rotation.z = dashT > 0 && !hasDodge ? -dashX * 0.25 : lean;
-      P.userData.sh.visible = true; P.userData.sh.scale.set(1.6 * (1 - Math.min(0.5, y * 0.2)), 1, 0.8);
+      // 2. HÉROE (Douge o Marine a la izquierda del escenario, también DE FRENTE mirando a cámara)
+      x = S.heroX;
+      z = STAGE_Z + 0.15;
+      let hKey = CUSTOM.hero_dance_point ? 'hero_dance_point' : (heroId + '_idle');
+      let hsx = 1, hsy = 1 + Math.cos(beatPhase * 2) * 0.025;
+      let hBob = beatBounce * 0.15, hLean = -beatSway * 0.04;
 
-      // Mano: sombra que crece durante el aviso; la mano cae desde arriba, tiembla trabada y se levanta
-      if (handOut) {
-        hand.visible = true;
-        let hy = 0, hx = H.x;
-        if (H.state === 'down') hy = HAND_FALL * Math.max(0, 1 - H.t / 0.15);
-        else if (H.state === 'up') hy = HAND_FALL * Math.min(1, H.t / 0.4);
-        else { hx += (Math.random() - 0.5) * 0.12; hy = Math.random() * 0.04; }
-        place(hand, hx, hy, H.z - 0.35); // un poco detrás del punto: el héroe parado ahí queda adelante
-        hand.rotation.z = H.state === 'stuck' ? Math.sin(t * 30) * 0.03 : 0;
-      } else hand.visible = false;
-      if (H.state === 'none') handSh.visible = false;
-      else {
-        handSh.visible = true; handSh.position.set(H.x, 0.04, H.z);
-        let s = 2.8, op = 1;
-        if (H.state === 'warn') { const k = Math.min(1, H.t / ARENA.phase3.slamWarn); s = 0.6 + 2.2 * k; op = 0.45 + 0.55 * k; }
-        else if (H.state === 'up') { const k = Math.min(1, H.t / 0.4); op = 1 - k; }
-        else s = 2.8 + Math.sin(t * 18) * 0.06;
-        handSh.scale.set(s, 1, s); handM.opacity = op;
-      }
-
-      // Barriles y cajones
-      seen.clear();
-      for (const s of S.shots) {
-        seen.add(s.id);
-        let e = live.get(s.id);
-        if (!e) {
-          e = take(s.type === 'giant' ? 'giant' : s.kind); live.set(s.id, e);
-          if (s.kind === 'crate') e.from = { x: S.bossX, y: TARIMA_H + BOSS_H * 0.85, z: ARENA.bossZ + 0.5 };
-        }
-        if (s.kind === 'barrel') {
-          e.m.material.color.copy(s.gold ? GOLD : WHITE);
-          const by0 = s.z < TARIMA_FRONT ? TARIMA_H : 0; // ruedan por la tarima y bajan
-          const bh = s.type === 'giant' ? GIANT_H : BARREL_H;
-          place(e.m, s.x, bh / 2 + by0 + (s.y || 0), s.z);
-          if (e.m.userData.sh) { const k = 1 - Math.min(0.6, (s.y || 0) * 0.3); e.m.userData.sh.scale.set(bh * 0.56 * k, 1, bh * 0.28 * k); }
-          // aviso en el piso: la curva marca su carril final; el gigante, el suyo
-          const warnZ = -3.5, warn = !s.returning && (s.type === 'curve' || s.type === 'giant') && s.z < warnZ;
-          e.ring.visible = warn;
-          if (warn) { e.ring.position.set(s.type === 'curve' ? s.x1 : s.x, 0.05, warnZ); e.ring.scale.setScalar(s.type === 'giant' ? 2.6 : 1.3 + Math.sin(t * 12) * 0.12); }
-          if (e.m.userData.sh) e.m.userData.sh.position.y = by0 + 0.03;
-          e.m.rotation.z -= dt * (s.returning ? -14 : s.type === 'giant' ? 4 : 9);
-          e.halo.visible = s.gold;
-          if (s.gold) { const p = 1.9 + Math.sin(t * 10) * 0.35; e.halo.position.set(s.x, BARREL_H / 2 + by0 + (s.y || 0), s.z + 0.05); e.halo.scale.set(p, p, 1); e.halo.material.opacity = 0.65 + Math.sin(t * 10) * 0.25; }
+      if (hurtT > 0 || phase === 'down') {
+        heroPose = 'hurt';
+        hKey = CUSTOM.hero_act_hurt ? 'hero_act_hurt' : hKey;
+        hLean = Math.sin(t * 28) * 0.1;
+      } else if (S.phase === 'ko') {
+        heroPose = 'victory';
+        hKey = CUSTOM.hero_dance_jump ? 'hero_dance_jump' : (CUSTOM.hero_act_power || hKey);
+        hBob = Math.abs(Math.sin(t * 7)) * 0.45;
+      } else if (heroStepTimer > 0 && heroStepLane >= 0) {
+        heroPose = 'dance_step';
+        if (heroStepLane === 0) {
+          hKey = CUSTOM.hero_dance_left ? 'hero_dance_left' : hKey;
+          hLean = -0.08;
+        } else if (heroStepLane === 1) {
+          hKey = CUSTOM.hero_dance_point ? 'hero_dance_point' : hKey;
+          hLean = -0.05;
+        } else if (heroStepLane === 2) {
+          hKey = CUSTOM.hero_dance_jump ? 'hero_dance_jump' : hKey;
+          hsy = 1.06;
+        } else if (heroStepLane === 3) {
+          hKey = CUSTOM.hero_dance_point ? 'hero_dance_point' : hKey;
+          hsx = -1;
+          hLean = 0.05;
         } else {
-          const k = Math.max(0, Math.min(1, 1 - s.y / 8));
-          const cx = e.from.x + (s.x - e.from.x) * k, cz = e.from.z + (s.z - e.from.z) * k;
-          const cy = e.from.y * (1 - k) + Math.sin(Math.PI * k) * 2.5 + CRATE_H / 2; // sale de sus manos en arco
-          place(e.m, cx, cy, cz);
-          e.m.rotation.z += dt * 5;
-          if (e.m.userData.sh) { e.m.userData.sh.position.set(s.x, 0.03, s.z); e.m.userData.sh.scale.set(0.6 + k, 1, 0.4 + 0.6 * k); }
-          e.ring.visible = true; e.ring.position.set(s.x, 0.05, s.z); e.ring.scale.setScalar(1.6 - 0.7 * k); e.ring.material.opacity = 0.35 + 0.55 * k;
+          hKey = CUSTOM.hero_dance_right ? 'hero_dance_right' : hKey;
+          hLean = 0.08;
         }
+      } else {
+        heroPose = 'dance_idle';
+        // Alterna con gracia al ritmo del compás entre la pose base frontal y el paso disco
+        const idleToggle = Math.floor(((S.dice?.t ?? t) / beatDur)) % 2 === 1;
+        hKey = (idleToggle && CUSTOM.hero_dance_point) ? 'hero_dance_point' : (heroId + '_idle');
       }
-      for (const [id, e] of live) if (!seen.has(id)) { drop(e); live.delete(id); }
+      setTex(P, hKey);
+      P.scale.set(P.userData.w * hsx, P.userData.hh * hsy, 1);
+      P.visible = true;
+      place(P, x, TARIMA_H + y + hBob, z);
+      P.rotation.z = hLean + danceStep * y * 0.12;
 
-      // Cartel de «Chaky dice»: sobre las manos de BIG CHAKY
       piuDraw();
-      { const d = logic.state.dice; timerE.style.width = d && d.stage === 'turn' ? Math.max(0, 100 * (1 - d.t / ARENA.dice.stepWindow)) + '%' : '0%'; }
-      if (!signE.classList.contains('hidden')) {
-        const sp = scratch.set(B.position.x, B.position.y + B.userData.hh * 0.93, B.position.z).project(cam);
-        signE.style.left = ((sp.x + 1) / 2 * innerWidth) + 'px'; signE.style.top = ((1 - sp.y) / 2 * innerHeight) + 'px';
-      }
-      // Textos que flotan
+
+      // Textos flotantes de puntaje y vida
       for (let i = pops.length - 1; i >= 0; i--) {
-        const q = pops[i]; q.t += dt; q.v.y += dt * 0.8;
+        const q = pops[i];
+        q.t += dt;
+        q.v.y += dt * 0.85;
         const sp = scratch.copy(q.v).project(cam);
-        const half = Math.min(innerWidth / 2, q.w / 2 + 18); // las frases largas no se cortan en el borde
-        q.e.style.left = Math.max(half, Math.min(innerWidth - half, (sp.x + 1) / 2 * innerWidth)) + 'px'; q.e.style.top = (1 - sp.y) / 2 * innerHeight + 'px';
+        const half = Math.min(innerWidth / 2, q.w / 2 + 18);
+        q.e.style.left = Math.max(half, Math.min(innerWidth - half, (sp.x + 1) / 2 * innerWidth)) + 'px';
+        q.e.style.top = ((1 - sp.y) / 2 * innerHeight) + 'px';
         q.e.style.opacity = String(Math.max(0, Math.min(1, (q.life - q.t) / 0.35)));
         if (q.t > q.life) { q.e.remove(); pops.splice(i, 1); }
       }
     }
 
-    // Alto en pantalla (px, de arriba hacia abajo) de BIG CHAKY y del héroe: para las pruebas de tamaño
+    // Cajas en pantalla (px, de arriba hacia abajo) de BIG CHAKY y del héroe para validación de layout
     function screenBoxes() {
       const py = (m, k) => (1 - scratch.set(m.position.x, m.position.y + m.scale.y * k, m.position.z).project(cam).y) / 2 * innerHeight;
-      return { boss: { top: py(B, 1), face: py(B, 0.85), feet: py(B, 0) }, hero: { top: py(P, 1), feet: py(P, 0) } };
+      return {
+        boss: { top: py(B, 1), face: py(B, 0.85), feet: py(B, 0) },
+        hero: { top: py(P, 1), feet: py(P, 0) }
+      };
     }
 
     let disposed = false;
@@ -698,23 +702,26 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       if (disposed) return;
       disposed = true;
       clearTimeout(flashTimer);
-      if (document.body.classList.contains('chaky-dance')) danceLayout(false);
-      wantButton(null);
-      removeEventListener('keydown', onKey); document.body.classList.remove('piu-on');
-      ui.remove(); document.body.classList.remove('arena-on');
+      removeEventListener('keydown', onKey);
+      document.body.classList.remove('arena-on', 'chaky-dance', 'piu-on');
+      if (bar && barHome) barHome.append(bar);
       bar?.classList.add('hidden');
+      livesEl?.remove();
+      ui.remove();
       for (const o of own) o.dispose?.();
       if (cur === inst) cur = null;
     }
 
-    // La lógica que se expone (pruebas e2e): lo que devuelve pasa por los mismos efectos que en el juego
     const exposed = {
       get state() { return logic.state; },
       punch: (area) => { const evs = logic.punch(area); handle(evs); return evs; },
       power: () => { const evs = logic.power(); handle(evs); return evs; },
       act: (k) => { const evs = logic.act(k); handle(evs); return evs; },
+      tap: (lane) => { const evs = logic.tap(lane); handle(evs); return evs; },
+      useLife: () => logic.useLife(),
       _setHp: (hp) => { const evs = logic._setHp(hp); handle(evs); return evs; }
     };
+
     const inst = cur = {
       logic: exposed,
       update,
@@ -724,9 +731,15 @@ export function createArena({ game, input, audio, assets, renderer, banner, upda
       get state() {
         const S = logic.state;
         return {
-          ...S, shots: S.shots.map(s => ({ ...s })), hand: { ...S.hand },
-          hero: { x, z, y, pose: heroPose, tex: P.userData.key }, bossTex: bossKey,
-          hp: hero.hp, power: hero.power, scene: phase,
+          ...S,
+          shots: S.shots.map(s => ({ ...s })),
+          hand: { ...S.hand },
+          hero: { x, z, y, pose: heroPose, tex: P.userData.key, facing: 'front' },
+          bossTex: bossKey,
+          hp: hero.hp,
+          lives: S.lives,
+          power: hero.power,
+          scene: phase,
           screen: screenBoxes()
         };
       }

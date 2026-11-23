@@ -1061,5 +1061,33 @@
   "cols": 1,
   "rows": 1,
   "v": "1877d8fc"
+ },
+ "douge_dance_sheet": {
+  "file": "douge_dance_sheet.webp",
+  "w": 1200,
+  "h": 512,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 146.0,
+  "foot": 0.988
+ },
+ "marine_dance_sheet": {
+  "file": "marine_dance_sheet.webp",
+  "w": 1160,
+  "h": 512,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "skull": 144.0,
+  "foot": 0.988
+ },
+ "arena_aeropuerto_fondo": {
+  "file": "arena_aeropuerto_fondo.webp",
+  "w": 1280,
+  "h": 714,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1
  }
 }
