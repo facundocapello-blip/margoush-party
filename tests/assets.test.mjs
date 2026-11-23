@@ -8,17 +8,16 @@ const NAMES = ['douge_idle','douge_run','douge_attack','marine_idle','marine_run
   'boss_idle','boss_run','boss_attack','boss_hurt','margot_sheet','kidnap_sheet','courier','street_bg',
   'music_street',
   'face_secuaz_sheet','face_patovica_sheet','face_bombo_sheet','face_mozo_sheet','face_delivery_sheet',
-  'pinky_sheet','cepi_sheet','lale_sheet',
-  'arena_chaky_idle','arena_chaky_throw','arena_chaky_slam','arena_chaky_hurt','arena_chaky_rage','arena_chaky_ko',
+  'cepi_sheet',
   'arena_chaky_dance_idle','arena_chaky_dance_jump','arena_chaky_dance_attack','arena_chaky_dance_dodge','arena_chaky_dance_laugh',
-  'arena_douge_back_idle','arena_douge_back_run','arena_douge_back_punch','arena_douge_back_hurt','arena_douge_back_dodge',
-  'arena_marine_back_idle','arena_marine_back_run','arena_marine_back_punch','arena_marine_back_hurt','arena_marine_back_dodge',
+  'arena_douge_back_idle','arena_douge_back_punch','arena_douge_back_hurt','arena_douge_back_dodge',
+  'arena_marine_back_idle','arena_marine_back_punch','arena_marine_back_hurt','arena_marine_back_dodge',
   'arena_cepi_idle','arena_cepi_smash','arena_cepi_block','arena_cepi_tired','arena_cepi_stun','arena_cepi_back','arena_cepi_point','arena_cepi_cardboard','arena_cepi_ko','arena_cepi_fondo',
   'arena_lale_idle','arena_lale_throw','arena_lale_skate','arena_lale_floured','arena_lale_hurt','arena_lale_ko','arena_lale_fondo',
   'arena_pinky_wave','arena_pinky_charge','arena_pinky_reveal','arena_pinky_hurt','arena_pinky_ko','arena_pinky_fondo',
   'arena_margot_hero','arena_douge_victory','arena_marine_victory','arena_familia_festejo',
   'arena_aeropuerto_fondo','douge_dance_sheet','marine_dance_sheet',
-  'arena_barril','arena_cajon','arena_fondo'];
+  'arena_fondo'];
 
 test('manifest lists every asset and each file exists', () => {
   const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
@@ -28,10 +27,10 @@ test('manifest lists every asset and each file exists', () => {
   }
 });
 
-test('assets weigh less than 10.5 MB in total', () => {
-  // 10,5 MB con los 6 grupos A–F completos (Chaky, Cepi, Lale, Pinky, Héroes/Margot y Fondos, cargados bajo demanda por arena)
+test('assets weigh less than 9.6 MB in total', () => {
+  // 9,6 MB tras limpiar los 13 assets muertos heredados (y con carga diferida por acto/arena)
   const total = fs.readdirSync(dir).reduce((s, f) => s + fs.statSync(path.join(dir, f)).size, 0);
-  assert.ok(total < 10_500_000, `total ${total}`);
+  assert.ok(total < 9_600_000, `total ${total}`);
 });
 
 test('sheet metadata', () => {

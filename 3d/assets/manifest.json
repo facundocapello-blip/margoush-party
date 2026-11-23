@@ -200,16 +200,6 @@
   "foot": 0.985,
   "v": "5c8a0b24"
  },
- "pinky_sheet": {
-  "file": "pinky_sheet.webp",
-  "w": 1112,
-  "h": 400,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 131.0,
-  "foot": 0.985
- },
  "cepi_sheet": {
   "file": "cepi_sheet.webp",
   "w": 904,
@@ -218,16 +208,6 @@
   "cols": 4,
   "rows": 1,
   "skull": 164.0,
-  "foot": 0.985
- },
- "lale_sheet": {
-  "file": "lale_sheet.webp",
-  "w": 952,
-  "h": 400,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 125.0,
   "foot": 0.985
  },
  "calle_buenos_aires": {
@@ -627,76 +607,6 @@
   "cols": 1,
   "rows": 1
  },
- "arena_barril": {
-  "file": "arena_barril.webp",
-  "w": 439,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_cajon": {
-  "file": "arena_cajon.webp",
-  "w": 435,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_chaky_hurt": {
-  "file": "arena_chaky_hurt.webp",
-  "w": 452,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "101743d8"
- },
- "arena_chaky_idle": {
-  "file": "arena_chaky_idle.webp",
-  "w": 430,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "ba32073b"
- },
- "arena_chaky_ko": {
-  "file": "arena_chaky_ko.webp",
-  "w": 660,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "118107b4"
- },
- "arena_chaky_rage": {
-  "file": "arena_chaky_rage.webp",
-  "w": 430,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "3ec492e0"
- },
- "arena_chaky_slam": {
-  "file": "arena_chaky_slam.webp",
-  "w": 429,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "c51c8563"
- },
- "arena_chaky_throw": {
-  "file": "arena_chaky_throw.webp",
-  "w": 430,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "bf6170b7"
- },
  "arena_douge_back_hurt": {
   "file": "arena_douge_back_hurt.webp",
   "w": 588,
@@ -716,14 +626,6 @@
  "arena_douge_back_punch": {
   "file": "arena_douge_back_punch.webp",
   "w": 403,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_douge_back_run": {
-  "file": "arena_douge_back_run.webp",
-  "w": 316,
   "h": 768,
   "frames": 1,
   "cols": 1,
@@ -761,14 +663,6 @@
   "cols": 1,
   "rows": 1
  },
- "arena_marine_back_run": {
-  "file": "arena_marine_back_run.webp",
-  "w": 320,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
  "douge_walk_sheet": {
   "file": "douge_walk_sheet.webp",
   "w": 3000,
@@ -795,14 +689,6 @@
   "h": 128,
   "frames": 3,
   "cols": 3,
-  "rows": 1
- },
- "chase_ba_fondo": {
-  "file": "chase_ba_fondo.webp",
-  "w": 1200,
-  "h": 611,
-  "frames": 1,
-  "cols": 1,
   "rows": 1
  },
  "arena_douge_back_jump": {

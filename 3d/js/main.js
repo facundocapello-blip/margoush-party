@@ -464,7 +464,7 @@ function startChaseRun() {
   if (game.checkpoint?.id !== 'acto2') saveCheckpoint('acto2');
   game.state = 'curtain';
   audio.music('chase', { fade: 0.3 });
-  curtain(() => game.chase.start(), { label: CHECKPOINTS.acto2.label });
+  curtain(() => game.chase.start(), { label: CHECKPOINTS.acto2.label, wait: assets.ensure(['chase_']) });
 }
 // Mini nivel: romper el BYD antes de que Cepi lo cargue (bonus.js)
 function startBydLevel() {
@@ -472,7 +472,10 @@ function startBydLevel() {
   input.reset();
   audio.setIntensity?.(0);
   audio.music('byd', { fade: 0.3 });
-  game.bonus.start();
+  const wait = assets.ensure(['chase_', 'cepi_actions_sheet']);
+  if (assets.has('chase_cepi_dead')) { game.bonus.start(); return; }
+  game.state = 'curtain';
+  continueTransition(wait, () => game.bonus.start());
 }
 game.startBydLevel = startBydLevel;
 // Lo rompiste en el Acto 2: Cepi queda caliente → entra a su Arena de Pádel
@@ -649,7 +652,7 @@ function updateTransition(dt) {
   if (!game.transCrossed && (p.x >= BORDER_X + 0.5 || game.transT > TRANSITION_MAX_S)) {
     game.transCrossed = true;
     audio.sfx('secret');
-    curtain(() => { if (game.state === 'transition') endTransition(); }, { label: CHECKPOINTS.acto2.label });
+    curtain(() => { if (game.state === 'transition') endTransition(); }, { label: CHECKPOINTS.acto2.label, wait: assets.ensure(['chase_']) });
   }
 }
 
@@ -701,7 +704,8 @@ function spawnBoss({ instant = false } = {}) {
 function spawnCepi({ instant = false, hp = null } = {}) {
   input.reset();
   healBeforeBoss(instant);
-  const wait = assets.ensure(['arena_cepi_']);
+  const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
+  const wait = assets.ensure(['arena_cepi_', 'cepi_walk_sheet', heroBack]);
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaCepi.start();
@@ -716,7 +720,8 @@ function spawnCepi({ instant = false, hp = null } = {}) {
 function spawnLale({ instant = false, hp = null } = {}) {
   input.reset();
   healBeforeBoss(instant);
-  const wait = assets.ensure(['arena_lale_']);
+  const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
+  const wait = assets.ensure(['arena_lale_', 'lale_walk_sheet', 'lale_actions_sheet', heroBack]);
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaLale.start();
@@ -732,7 +737,8 @@ function spawnPinky({ instant = false, hp = null } = {}) {
   game.bossStarted = true;
   input.reset();
   healBeforeBoss(instant);
-  const wait = assets.ensure(['arena_pinky_', 'arena_margot_']);
+  const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
+  const wait = assets.ensure(['arena_pinky_', 'arena_margot_', 'pinky_walk_sheet', 'pinky_actions_sheet', heroBack]);
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaPinky.start();

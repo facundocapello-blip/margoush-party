@@ -328,3 +328,9 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - **Limpieza de sprites de secuaces (`3d/assets/face_*_sheet.webp`)**: eliminados los halos blancos y sombras grises pegadas a los pies. **Pendiente de arte**: regenerar los 5 secuaces en estilo Pixar cabezón 3D igual a Douge/Marine cuando se libere la cuota del generador de imágenes (~3h).
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (86/86 en verde, incluyendo nuevo test de invariante sin piquete y sin jefes en calle). Pendiente: prueba manual en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `4d21e2e`.
+
+## 2026-11-23 (3) · Limpieza de assets muertos y optimización de carga inicial para Safari iPhone
+- **Eliminación de 13 assets heredados sin uso (`3d/assets/`, `3d/assets/manifest.json`)**: `arena_chaky_{idle,throw,slam,hurt,rage,ko}`, `arena_barril`, `arena_cajon`, `chase_ba_fondo`, `lale_sheet`, `pinky_sheet`, `arena_douge_back_run`, `arena_marine_back_run`. Se liberaron **770 KB** (peso total de `3d/assets/`: **9,44 MB**, presupuesto ajustado a 9,6 MB en `tests/assets.test.mjs`).
+- **Carga inicial más liviana en Safari iPhone (`3d/js/assets.js`, `3d/js/main.js`)**: se sumaron a la carga diferida por cortina `chase_*`, `arena_{douge,marine}_back_*` y las hojas `cepi/lale/pinky_{walk,actions}_sheet`, asegurando su precarga bajo demanda en `startChaseRun`, `startBydLevel`, `updateTransition`, `spawnCepi`, `spawnLale` y `spawnPinky` (el arranque inicial solo precarga el núcleo de portada y Acto 1).
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74 + 12/12 pruebas de arenas = **86/86 en verde**, incluyendo `tests/check_sprites.py` y presupuesto < 9,6 MB). Pendiente: prueba en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `faba63c`.
