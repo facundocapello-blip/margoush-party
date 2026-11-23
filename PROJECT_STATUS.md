@@ -354,3 +354,10 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - **Auditoría de francés (`3d/js/i18n.js`, `3d/js/arena_lale.js`)**: agregadas las traducciones faltantes de las nuevas oleadas de secuaces (`SEGURIDAD VIP`, `CAMINO A LE BLÉ`, etc.), `¡K.O.! +{n}`, `¡PUM!`, `NIVEL {n}: {x}`, y traducida dinámicamente la etiqueta de la bolsa de harina de Lale (`HARINA` → `FARINE`, `👊 ¡PEGALE!` → `👊 FRAPPE !`).
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**. Pendiente: validación auditiva y ES/FR en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `2ac0b3b`.
+
+## 2026-11-23 (6) · Los 5 secuaces regenerados en estilo Pixar 3D (igual a Douge y Marine)
+- **Nuevos sprites de secuaces (`3d/assets/face_{secuaz,patovica,bombo,mozo,delivery}_sheet.webp` + `3d/assets/manifest.json`)**:
+  - Generados en 512 px de alto con exactamente las mismas proporciones cabezonas 3D tipo Pixar e iluminación cálida que los héroes y los jefes, recortados sobre fondo verde croma protegiendo los verdes de ropa/mochila y sin halos ni sombras pegadas.
+  - Peso total de `3d/assets/`: **9,59 MB** (< 9,6 MB).
+- **Verificación**: `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde** e inspección visual de los 5 recortes WebP. Pendiente: prueba en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `b412968`.

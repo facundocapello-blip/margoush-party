@@ -147,58 +147,58 @@
  },
  "face_secuaz_sheet": {
   "file": "face_secuaz_sheet.webp",
-  "w": 238,
-  "h": 390,
+  "w": 222,
+  "h": 512,
   "frames": 1,
   "cols": 1,
   "rows": 1,
-  "skull": 73.0,
-  "foot": 0.985,
-  "v": "1f5493a3"
+  "skull": 99.9,
+  "foot": 0.988,
+  "v": "cb35a70b"
  },
  "face_patovica_sheet": {
   "file": "face_patovica_sheet.webp",
-  "w": 262,
-  "h": 390,
+  "w": 362,
+  "h": 512,
   "frames": 1,
   "cols": 1,
   "rows": 1,
-  "skull": 62.0,
-  "foot": 0.985,
-  "v": "fff44560"
+  "skull": 162.9,
+  "foot": 0.988,
+  "v": "3d9d25a6"
  },
  "face_bombo_sheet": {
   "file": "face_bombo_sheet.webp",
-  "w": 274,
-  "h": 390,
+  "w": 322,
+  "h": 512,
   "frames": 1,
   "cols": 1,
   "rows": 1,
-  "skull": 96.0,
-  "foot": 0.985,
-  "v": "22f01f3d"
+  "skull": 144.9,
+  "foot": 0.988,
+  "v": "39344e11"
  },
  "face_mozo_sheet": {
   "file": "face_mozo_sheet.webp",
-  "w": 230,
-  "h": 389,
+  "w": 386,
+  "h": 512,
   "frames": 1,
   "cols": 1,
   "rows": 1,
-  "skull": 139.0,
-  "foot": 0.985,
-  "v": "3e0c8deb"
+  "skull": 173.7,
+  "foot": 0.988,
+  "v": "6d865c1e"
  },
  "face_delivery_sheet": {
   "file": "face_delivery_sheet.webp",
-  "w": 310,
-  "h": 378,
+  "w": 318,
+  "h": 512,
   "frames": 1,
   "cols": 1,
   "rows": 1,
-  "skull": 198.0,
-  "foot": 0.985,
-  "v": "5c8a0b24"
+  "skull": 143.1,
+  "foot": 0.988,
+  "v": "0d8f95dc"
  },
  "cepi_sheet": {
   "file": "cepi_sheet.webp",
