@@ -443,10 +443,10 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       cam.lookAt(0, CAM.lookY + e * 1.5, PINKY_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
-      // Pinky (camina y agita el trapo rojo en 6 cuadros reales durante `wave` + animaciones de revelación/cobro/golpe)
+      // Pinky (camina en 6 cuadros reales al desplazarse y usa arena_pinky_wave al pararse a hacer señas + reveal/charge/hurt/ko)
       const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;
       B.userData.prevX = S.bossX;
-      const wavingWalk = S.pose === 'wave' && walkCols > 0 && !assets.has('arena_pinky_wave');
+      const wavingWalk = S.pose === 'wave' && walkCols > 0 && (Math.abs(bvx) > 0.35 || !assets.has('arena_pinky_wave'));
       let sx = 1, sy = 1, by = 0, rz = 0;
       if (wavingWalk) {
         B.userData.stepT = (B.userData.stepT || 0) + dt * 11;
@@ -457,7 +457,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         rz = -sx * 0.05;
       } else {
         bossKey = 'arena_pinky_' + S.pose;
-        if (S.pose === 'wave') { rz = Math.sin(t * 10) * 0.09; by = Math.abs(Math.sin(t * 5)) * 0.12; }
+        if (S.pose === 'wave') { rz = Math.sin(t * 10) * 0.09; by = Math.abs(Math.sin(t * 5)) * 0.12; sy = 1 + Math.sin(t * 10) * 0.03; }
         else if (S.pose === 'reveal') { by = Math.abs(Math.sin(t * 8)) * 0.22; sy = 1 + Math.sin(t * 16) * 0.05; rz = Math.sin(t * 8) * 0.05; }
         else if (S.pose === 'charge') { by = Math.abs(Math.sin(t * 4)) * 0.09; sy = 1 + Math.sin(t * 8) * 0.03; rz = Math.sin(t * 4) * 0.04; }
         else if (S.pose === 'hurt') { rz = 0.16; sy = 0.92; by = 0.18; }

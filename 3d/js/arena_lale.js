@@ -417,7 +417,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       cam.lookAt(0, CAM.lookY + e * 1.5, LALE_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
-      // Lale (camina y patina en 6 cuadros reales + pose nueva arena_lale_idle y animaciones de ataque/harina)
+      // Lale (camina en 6 cuadros reales al desplazarse + poses dedicadas arena_lale_idle/throw/skate/floured/hurt/ko)
       const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;
       B.userData.prevX = S.bossX;
       const useWalk = walkCols > 0 && ((S.pose === 'idle' && Math.abs(bvx) > 0.35) || (S.pose === 'skate' && !assets.has('arena_lale_skate')));
@@ -433,7 +433,12 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
         if (S.pose === 'skate') sy = 0.94 + Math.abs(Math.sin(t * 14)) * 0.08;
       } else {
         bossKey = 'arena_lale_' + S.pose;
-        if (S.pose === 'skate' && S.skateDir < 0) sx = -1;
+        if (S.pose === 'skate') {
+          sx = S.skateDir < 0 ? -1 : 1;
+          by = 0.06 + Math.abs(Math.sin(t * 15)) * 0.16;
+          rz = -sx * 0.16 + Math.sin(t * 15) * 0.05;
+          sy = 0.95 + Math.abs(Math.sin(t * 15)) * 0.08;
+        }
         else if (S.pose === 'throw') { sx = x < S.bossX ? -1 : 1; sy = 0.95; rz = sx * 0.08; by = 0.14; }
         else if (S.pose === 'floured') { rz = Math.sin(t * 20) * 0.09; sy = 0.95 + Math.abs(Math.sin(t * 14)) * 0.08; }
         else if (S.pose === 'hurt') { rz = 0.16; sy = 0.92; by = 0.18; }

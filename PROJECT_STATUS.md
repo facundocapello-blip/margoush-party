@@ -308,3 +308,16 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - Eliminado Big Chaky de la portada por defecto (`cover.js` / `game.css`).
 - Margoth pasa a ser la protagonista gigante en el centro del póster dentro de una estrella dorada luminosa con destellos (`STAR_EMBLEM` + `STAR_FRONT`), flanqueada por Douge y Marine a los costados, con el cielo de París/Buenos Aires y el avión de fondo y la cinta «¡El rescate de Margoth!» (ES/FR).
 - Verificado en vertical (`430×932`) y horizontal (`844×390`) sin solapamientos y con `npm test` (73/73).
+
+## 2026-11-23 · Eliminación de Chupete Rush + Kit completo de poses, movimientos y fondos (Grupos C, D y E)
+- **Eliminación de Chupete Rush (`index.html`, `assets/petit-sprint.mp3`, `preview*`)**:
+  - Se eliminaron el minijuego Chupete Rush, su audio y las 5 carpetas `preview*`.
+  - La raíz `/` (`index.html`) redirige automáticamente a `3d/` conservando query string y hash (`?probar=...`), dejando **MARGOUSH · El rescate de Margot** como único proyecto del repositorio.
+- **Poses, movimientos y fondos faltantes completados (`3d/assets/`, `3d/assets/manifest.json`)**:
+  - **Grupo C (`C_lale_jefe`, 7/7 completos)**: agregados `arena_lale_throw`, `arena_lale_skate`, `arena_lale_floured`, `arena_lale_hurt`, `arena_lale_ko` y `arena_lale_fondo` (obrador de *Le Blé* con hornos encendidos), junto a `arena_lale_idle` y la caminata de 6 cuadros `lale_walk_sheet`.
+  - **Grupo D (`D_pinky_final`, completos)**: agregados `arena_pinky_wave`, `arena_pinky_charge`, `arena_pinky_reveal`, `arena_pinky_hurt`, `arena_pinky_ko` y `arena_pinky_fondo` (galpón convertido en playa de estacionamiento con cabina), combinados en `3d/js/arena_pinky.js` con la caminata de 6 cuadros `pinky_walk_sheet` cuando Pinky se desplaza y `arena_pinky_wave` cuando se detiene a hacer señas con el trapo.
+  - **Grupo E (`E_heroes`, 6/6 completos)**: agregados `arena_margot_hero` (bebé Margot en grito supersónico para el remate de Fase 3), `arena_familia_festejo` (Douge, Marine y Margot festejando en París con confeti), `arena_douge_victory` y `arena_marine_victory` (conectados a `3d/js/ui.js` y diferidos en `3d/js/assets.js`).
+- **Verificación**:
+  - `node tools/stamp_versions.mjs` y `npm test`: **85/85 pruebas automatizadas en verde** (incluyendo `arena_cepi`, `arena_lale`, `arena_pinky`, `arena`, `assets`, `check_sprites.py`, `campaign-continuity`, `versions`, etc.). Peso total de `3d/assets/`: **10,29 MB** (< 10,5 MB, con carga diferida por arena).
+  - Pendiente: validación manual en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `411ebf4`.

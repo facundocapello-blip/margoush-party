@@ -1089,5 +1089,156 @@
   "frames": 1,
   "cols": 1,
   "rows": 1
+ },
+ "arena_lale_throw": {
+  "file": "arena_lale_throw.webp",
+  "w": 349,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "1bba3cd3"
+ },
+ "arena_lale_skate": {
+  "file": "arena_lale_skate.webp",
+  "w": 571,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "4b38c2b9",
+  "hk": 1.04
+ },
+ "arena_lale_floured": {
+  "file": "arena_lale_floured.webp",
+  "w": 570,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "ef52314d",
+  "hk": 1.04
+ },
+ "arena_lale_hurt": {
+  "file": "arena_lale_hurt.webp",
+  "w": 588,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "d4704d9e",
+  "hk": 1.05
+ },
+ "arena_lale_ko": {
+  "file": "arena_lale_ko.webp",
+  "w": 626,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "fee17c88",
+  "hk": 0.86
+ },
+ "arena_pinky_wave": {
+  "file": "arena_pinky_wave.webp",
+  "w": 487,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "f720c312",
+  "hk": 1.12
+ },
+ "arena_pinky_charge": {
+  "file": "arena_pinky_charge.webp",
+  "w": 457,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "477ac4bb"
+ },
+ "arena_pinky_reveal": {
+  "file": "arena_pinky_reveal.webp",
+  "w": 314,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "19607cff"
+ },
+ "arena_pinky_hurt": {
+  "file": "arena_pinky_hurt.webp",
+  "w": 577,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "f42ad116",
+  "hk": 1.06
+ },
+ "arena_pinky_ko": {
+  "file": "arena_pinky_ko.webp",
+  "w": 693,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "9b469267",
+  "hk": 0.88
+ },
+ "arena_margot_hero": {
+  "file": "arena_margot_hero.webp",
+  "w": 796,
+  "h": 768,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "879842e7"
+ },
+ "arena_lale_fondo": {
+  "file": "arena_lale_fondo.webp",
+  "w": 1280,
+  "h": 714,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "0145c573"
+ },
+ "arena_pinky_fondo": {
+  "file": "arena_pinky_fondo.webp",
+  "w": 1280,
+  "h": 714,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "5e925450"
+ },
+ "arena_familia_festejo": {
+  "file": "arena_familia_festejo.webp",
+  "w": 1200,
+  "h": 896,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "0764dc29"
+ },
+ "arena_douge_victory": {
+  "file": "arena_douge_victory.webp",
+  "w": 495,
+  "h": 457,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "ecfa00ed"
+ },
+ "arena_marine_victory": {
+  "file": "arena_marine_victory.webp",
+  "w": 341,
+  "h": 502,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "fdfc3b37"
  }
 }
