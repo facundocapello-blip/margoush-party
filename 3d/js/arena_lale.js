@@ -169,9 +169,9 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       g.fillStyle = '#c83434'; g.fillRect(62, 128, 132, 48);
       g.strokeStyle = '#fff5dc'; g.lineWidth = 4; g.strokeRect(66, 132, 124, 40);
       g.fillStyle = '#fff'; g.font = '900 28px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText('HARINA', 128, 154);
+      g.fillText(tr('HARINA'), 128, 154);
       g.fillStyle = '#6d4724'; g.font = '900 18px Fredoka, sans-serif';
-      g.fillText('👊 ¡PEGALE!', 128, 204);
+      g.fillText(tr('👊 ¡PEGALE!'), 128, 204);
     });
     flourBagTex.wrapS = flourBagTex.wrapT = T.ClampToEdgeWrapping; flourBagTex.repeat.set(1, 1);
     const bagMat = keep(new T.MeshBasicMaterial({ map: flourBagTex, alphaTest: 0.25, transparent: true, side: T.DoubleSide }));

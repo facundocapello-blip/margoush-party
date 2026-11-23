@@ -284,7 +284,7 @@ export function createAudio(assets) {
         stopAll();
         current = name;
         paused = false;
-        if (musicBus) { const g = musicBus.gain, t0 = ac.currentTime; g.cancelScheduledValues(t0); g.setValueAtTime(0.0001, t0); g.linearRampToValueAtTime(1, t0 + 0.35); }
+        if (musicBus) { const g = musicBus.gain, t0 = ac.currentTime; g.cancelScheduledValues(t0); g.setValueAtTime(0.0001, t0); g.linearRampToValueAtTime(0.78, t0 + 0.35); }
         if (!name) return;
         if (SYNTH[name]) {
           if (!ensure()) return;
@@ -349,20 +349,9 @@ export function createAudio(assets) {
       g.setValueAtTime(k, t0 + secs);
       g.linearRampToValueAtTime(1, t0 + secs + 0.4);
     },
-    // Voz de un jefe (PROVISORIA: voz del sistema con el tono del perfil de voice.js)
-    bossLine(text, prof, dur = 1.5) {
-      if (muted || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
-      try {
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        const es = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang));
-        const v = es.find(x => /es[-_]AR/i.test(x.lang)) || es.find(x => /es[-_](US|MX|419)/i.test(x.lang)) || es[0];
-        if (v) { u.voice = v; u.lang = v.lang; } else u.lang = prof.lang || 'es-AR';
-        u.pitch = prof.pitch ?? 1; u.rate = prof.rate ?? 1; u.volume = 1;
-        speechSynthesis.speak(u);
-        this.duck(dur);
-      } catch (_) {}
-    },
+    // Audio hablado desactivado para personajes que no son héroes (los jefes/NPCs solo muestran texto + SFX arcade).
+    // Las voces habladas quedan reservadas exclusivamente para los héroes (Douge «¡Diuuushbag!» y Marine «¡Messi Goku!»).
+    bossLine() {},
     // Marine dice «¡Messi Goku!» como un «merci beaucoup» encantador
     messiGoku() {
       this.sfx('messigoku');

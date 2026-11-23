@@ -347,3 +347,10 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - **Corrección detectada por E2E**: restaurado `3d/assets/chase_ba_fondo.webp` (usado por el CSS de la portada en `3d/css/game.css`; sigue diferido para Three.js).
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas + **18/18 verificaciones E2E en Chromium móvil** (`tests/e2e/boss_arenas.e2e.py`, 0 errores JS, 0 HTTP 404, 0 `frameErrors`) e inspección visual de capturas en vertical y horizontal. Pendiente: validación en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `cf5cebb`.
+
+## 2026-11-23 (5) · Audio sin voces habladas en jefes/NPCs, balance de música y auditoría ES/FR (Punto 6)
+- **Audio hablado solo para los héroes (`3d/js/audio.js`)**: desactivado `speechSynthesis` en `bossLine()` para todos los personajes que no son héroes (Chaky, Cepi, Lale, Pinky y NPCs ahora muestran sus frases en texto/subtítulos con efectos de sonido arcade, sin TTS robótico ni ducking de música). Se conservan las voces de los héroes: Douge («¡Diuuushbag!») y Marine («¡Messi Goku!»).
+- **Balance de música vs SFX (`3d/js/audio.js`)**: ajustada la ganancia del bus de música sintetizada a `0.78` para que no tape golpes ni voces en iPhone.
+- **Auditoría de francés (`3d/js/i18n.js`, `3d/js/arena_lale.js`)**: agregadas las traducciones faltantes de las nuevas oleadas de secuaces (`SEGURIDAD VIP`, `CAMINO A LE BLÉ`, etc.), `¡K.O.! +{n}`, `¡PUM!`, `NIVEL {n}: {x}`, y traducida dinámicamente la etiqueta de la bolsa de harina de Lale (`HARINA` → `FARINE`, `👊 ¡PEGALE!` → `👊 FRAPPE !`).
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**. Pendiente: validación auditiva y ES/FR en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `2ac0b3b`.
