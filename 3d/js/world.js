@@ -516,41 +516,45 @@ export function buildStreet(scene, assets) {
     }
     return k;
   }
+  const baSeams = [];
   if (assets.has?.('calle_buenos_aires')) {
-    // Buenos Aires: alterna casitas coloridas de Caminito (KIOSCO, PIZZERÍA, FARMACIA, PARRILLA…) con calle_buenos_aires
-    // ajustando cada cuadra exactamente al hueco libre entre locales icónicos (cero superposiciones ni carteles cortados).
-    const t = assets.texture('calle_buenos_aires'), m = assets.meta('calle_buenos_aires');
-    const PH = 9.3, PW = PH * m.w / m.h, mat = new THREE.MeshBasicMaterial({ map: t, fog: false });
-    const baMats = SHOPS.map((_, i) => new THREE.MeshBasicMaterial({ map: canvasTex(512, 512, porteno(i)), fog: false }));
-    const BW = 7.4, BH = 8.4;
-    let bi = 0;
+    // Buenos Aires: recorta los 3 locales pintados estilo Pixar de calle_buenos_aires (KIOSCO, PARRILLA, PIZZERÍA)
+    // recortando el adoquín inferior (v0 = 0.08) y escalando a PH = 7.4 para que los carteles fileteados queden
+    // 100 % visibles dentro de cámara, encajando una cantidad entera por hueco (cero superposiciones ni recortes).
+    const tBA = assets.texture('calle_buenos_aires'), mBA = assets.meta('calle_buenos_aires');
+    const cropBA = (u0, u1, v0 = 0.08) => {
+      const c = tBA.clone();
+      c.needsUpdate = true;
+      c.wrapS = c.wrapT = THREE.ClampToEdgeWrapping;
+      c.offset.set(u0, v0);
+      c.repeat.set(u1 - u0, 1 - v0);
+      return c;
+    };
+    const PH = 7.4;
+    const baShops = [
+      { mat: new THREE.MeshBasicMaterial({ map: cropBA(0.004, 0.325), fog: false }), ideal: 5.3 },
+      { mat: new THREE.MeshBasicMaterial({ map: cropBA(0.325, 0.674), fog: false }), ideal: 5.7 },
+      { mat: new THREE.MeshBasicMaterial({ map: cropBA(0.674, 0.996), fog: false }), ideal: 5.3 }
+    ];
+    let si = 0;
     for (const [from, to] of baGaps) {
       const span = to - from;
-      // Elegimos una secuencia entera de bloques (alternando porteno y calle_buenos_aires) que mejor cubra `span`
+      const n = Math.max(1, Math.round(span / 5.4));
       const seq = [];
-      let sum = 0, step = 0;
-      while (true) {
-        const isShop = step % 2 === 0;
-        const ideal = isShop ? BW : Math.min(PW, 11.5);
-        if (seq.length > 0 && Math.abs((sum + ideal) - span) > Math.abs(sum - span)) break;
-        seq.push({ isShop, ideal });
-        sum += ideal;
-        step++;
-        if (sum >= span) break;
+      let sum = 0;
+      for (let i = 0; i < n; i++) {
+        const sh = baShops[si++ % baShops.length];
+        seq.push(sh);
+        sum += sh.ideal;
       }
       const scale = span / sum;
       let x0 = from;
-      for (const blk of seq) {
-        const w = blk.ideal * scale;
-        if (blk.isShop) {
-          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, BH), baMats[bi++ % baMats.length]);
-          mesh.position.set(x0 + w / 2, BH / 2, BACK_Z - 0.02);
-          scene.add(mesh);
-        } else {
-          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, PH), mat);
-          mesh.position.set(x0 + w / 2, PH / 2, BACK_Z - 0.02);
-          scene.add(mesh);
-        }
+      for (let i = 0; i < seq.length; i++) {
+        const w = seq[i].ideal * scale;
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, PH), seq[i].mat);
+        mesh.position.set(x0 + w / 2, PH / 2, BACK_Z - 0.02);
+        scene.add(mesh);
+        if (i < seq.length - 1) baSeams.push(x0 + w);
         x0 += w;
       }
     }
@@ -645,81 +649,38 @@ export function buildStreet(scene, assets) {
   leConcept.position.set(LE_CONCEPT_X, -lcH * 0.165 * 0, BACK_Z + 0.55);
   scene.add(leConcept);
 
-  // Francia: alterna edificios Haussmann de piedra crema/techo pizarra azulada (BOULANGERIE, FROMAGERIE, LIBRAIRIE, CAFÉ DE PARIS) con street_bg para diferenciarlo 100% de Buenos Aires
-  const PARIS_SHOPS = [
-    { name: 'BOULANGERIE', awning: '#264653', stripe: '#f4f1ea', stone: '#e7decb' },
-    { name: 'FROMAGERIE',  awning: '#6d2e46', stripe: '#f4f1ea', stone: '#dfd3bc' },
-    { name: 'LIBRAIRIE',   awning: '#2b4fa8', stripe: '#e8edf5', stone: '#eae2d0' },
-    { name: 'CAFÉ DE PARIS', awning: '#1f5e42', stripe: '#f4f1ea', stone: '#e2d7c2' }
+  // Francia: usa únicamente las fachadas pintadas estilo Pixar de street_bg (café parisino con mesas y boutique con toldo a rayas),
+  // recortando el adoquín inferior (v0 = 0.165) y ajustando cada hueco libre entre Roland Garros y Ferme LaPadite sin superposiciones.
+  const frH = 8.4;
+  const frParts = [
+    { mat: new THREE.MeshBasicMaterial({ map: crop(0.0, U_LC[0], 0.165), fog: false }), ideal: 8.8 },
+    { mat: new THREE.MeshBasicMaterial({ map: crop(U_LC[1], 1.0, 0.165), fog: false }), ideal: 6.4 }
   ];
-  const haussmannMat = (idx) => {
-    const ps = PARIS_SHOPS[idx % PARIS_SHOPS.length];
-    return new THREE.MeshBasicMaterial({ map: canvasTex(512, 512, (c, w, h) => {
-      c.fillStyle = ps.stone; c.fillRect(0, 0, w, h);
-      // Techo mansarda de pizarra azul-gris arriba
-      c.fillStyle = '#334155'; c.fillRect(0, 0, w, 68);
-      c.fillStyle = '#94a3b8'; c.fillRect(0, 66, w, 10);
-      // Líneas de piedra caliza Haussmann
-      c.fillStyle = 'rgba(110,95,70,0.14)';
-      for (let y = 96; y < h * 0.58; y += 34) c.fillRect(0, y, w, 3);
-      // Ventanas altas con balcones de hierro negro
-      for (const wx of [w * 0.14, w * 0.58]) {
-        c.fillStyle = '#1e293b'; c.fillRect(wx - 4, 98, 132, 168);
-        const wg = c.createLinearGradient(0, 98, 0, 266);
-        wg.addColorStop(0, '#93c5fd'); wg.addColorStop(1, '#3b5998');
-        c.fillStyle = wg; c.fillRect(wx, 102, 124, 160);
-        c.fillStyle = '#0f172a'; c.fillRect(wx - 12, 232, 148, 38);
-      }
-      // Toldo parisino a rayas + vidriera elegante en planta baja
-      const top = h * 0.58;
-      c.fillStyle = '#1e293b'; c.fillRect(14, top, w - 28, h - top);
-      for (let x = 14; x < w - 14; x += 36) {
-        c.fillStyle = ((x - 14) / 36) % 2 ? ps.stripe : ps.awning;
-        c.fillRect(x, top + 6, Math.min(36, w - 14 - x), 42);
-      }
-      c.fillStyle = '#141824'; c.fillRect(30, top + 52, w - 60, 46);
-      c.fillStyle = '#fde68a'; c.font = '900 32px Georgia, serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(ps.name, w / 2, top + 76);
-      const sg = c.createLinearGradient(0, top + 106, 0, h);
-      sg.addColorStop(0, '#fef3c7'); sg.addColorStop(1, '#f59e0b');
-      c.fillStyle = sg; c.fillRect(36, top + 106, w * 0.54, h - top - 116);
-      c.fillStyle = '#3f2e21'; c.fillRect(w * 0.64, top + 106, w * 0.24, h - top - 106);
-    }), fog: false });
-  };
-  const frParts = [[0, U_LC[0]], [U_LC[1], 1]].map(([u0, u1]) => ({ mat: new THREE.MeshBasicMaterial({ map: crop(u0, u1), fog: false }), w: (u1 - u0) * bgMeta.w / pxPerM }));
   const frReserved = LANDMARKS.filter(L => L.x >= BORDER_X && L.x < GALPON_X).map(L => [L.x - L.w / 2, L.x + L.w / 2]);
   const frGaps = splitGaps(BORDER_X, GALPON_X, frReserved);
-  let frPartIdx = 0, frShopIdx = 0;
+  const frSeams = [];
+  let frPartIdx = 0;
   for (const [from, to] of frGaps) {
     const span = to - from;
     const seq = [];
-    let sum = 0, step = 0;
+    let sum = 0;
     while (true) {
-      const isHaussmann = step % 2 === 1;
-      const pt = frParts[(frPartIdx + (step >> 1)) % 2];
-      const ideal = isHaussmann ? 8.4 : Math.min(pt.w, 10.5);
-      if (seq.length > 0 && Math.abs((sum + ideal) - span) > Math.abs(sum - span)) break;
-      seq.push({ isHaussmann, pt, ideal });
-      sum += ideal;
-      step++;
+      const pt = frParts[(frPartIdx + seq.length) % frParts.length];
+      if (seq.length > 0 && Math.abs((sum + pt.ideal) - span) > Math.abs(sum - span)) break;
+      seq.push(pt);
+      sum += pt.ideal;
       if (sum >= span) break;
     }
     const scale = span / sum;
     let fx0 = from;
-    for (const blk of seq) {
-      const w = blk.ideal * scale;
-      if (blk.isHaussmann) {
-        const BH = 9.0;
-        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, BH), haussmannMat(frShopIdx++));
-        m.position.set(fx0 + w / 2, BH / 2, BACK_Z - 0.02);
-        scene.add(m);
-      } else {
-        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, tileH), blk.pt.mat);
-        m.position.set(fx0 + w / 2, tileH * (0.5 - 0.165), BACK_Z - 0.02);
-        scene.add(m);
-        frPartIdx++;
-      }
+    for (let i = 0; i < seq.length; i++) {
+      const w = seq[i].ideal * scale;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, frH), seq[i].mat);
+      m.position.set(fx0 + w / 2, frH / 2, BACK_Z - 0.02);
+      scene.add(m);
+      if (i < seq.length - 1) frSeams.push(fx0 + w);
       fx0 += w;
+      frPartIdx++;
     }
   }
   // Galpón del fondo
@@ -732,14 +693,13 @@ export function buildStreet(scene, assets) {
   side.position.set(GALPON_X + 0.4, 4.5, -6.0);
   scene.add(side);
 
-  // Carteles
+  // Carteles (sin cartel flotante sobre fachadas porteñas ni banderines cruzando carteles)
   const sign = (text, x, y, color, w = 7) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w * 0.1875), new THREE.MeshBasicMaterial({ map: label(text, color), transparent: true, fog: false }));
     m.position.set(x, y, BACK_Z + 0.3);
     scene.add(m);
     return m;
   };
-  sign('BUENOS AIRES', 9, 3.7, '#7ec8ff', 4.6);
   // Arco de bienvenida sobre la calle, en la frontera
   const archPoleMat = new THREE.MeshLambertMaterial({ color: 0x2b4fa8 });
   const archParts = [];
@@ -806,20 +766,26 @@ export function buildStreet(scene, assets) {
   const airportSign = sign('✈ AEROPUERTO', BORDER_X - 5, 6.6, '#7ec8ff', 5); // fin del Nivel 1: se viaja en avión
   sign('GALPÓN DEL FONDO', GALPON_X + 18, 7.6, '#ff7a6b', 9);
 
-  // Helper para no plantar faroles, árboles, macetas ni banderines delante de locales icónicos o monumentos
+  // Helper para no plantar faroles, árboles, contenedores ni macetas delante de locales icónicos o monumentos
   const MONUMENT_XS = [46, 112, 176, 244];
-  const isLandmarkFront = (x, pad = 0.8) =>
+  const isLandmarkFront = (x, pad = 1.2) =>
     LANDMARKS.some(L => Math.abs(x - L.x) < L.w / 2 + pad) ||
     Math.abs(x - LE_CONCEPT_X) < lcW / 2 + pad ||
-    MONUMENT_XS.some(mx => Math.abs(x - mx) < 2.2 + pad);
+    MONUMENT_XS.some(mx => Math.abs(x - mx) < 2.6 + pad);
 
-  // Faroles con halo
+  // Faroles con halo: SOLO en uniones exactas entre dos fachadas (nunca cortando un cartel ni una vidriera)
   const glow = glowTex();
   const postMat = new THREE.MeshLambertMaterial({ color: 0x1d1b2b });
   const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe2a8 });
   const haloMat = new THREE.SpriteMaterial({ map: glow, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
-  for (let x = 6; x < GALPON_X; x += 15) {
-    if (isLandmarkFront(x, 0.8)) continue;
+  const allSeams = [...baSeams, ...frSeams].sort((a, b) => a - b);
+  const lampXs = [];
+  for (const x of allSeams) {
+    if (x < 4 || x > GALPON_X - 4 || isLandmarkFront(x, 1.2)) continue;
+    if (lampXs.length && x - lampXs[lampXs.length - 1] < 16) continue;
+    lampXs.push(x);
+  }
+  for (const x of lampXs) {
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 4.2, 8), postMat);
     post.position.set(x, 2.1, -4.95);
     scene.add(post);
@@ -850,25 +816,29 @@ export function buildStreet(scene, assets) {
     return m;
   }
 
-  // Buenos Aires: plátanos, contenedores verdes y una parada de colectivo.
-  // Van en las columnas que separan una casita de la otra en la pintura (nunca delante de una vidriera,
-  // una puerta o un cartel) y lejos de los locales famosos y de Le Concept.
-  const baSpots = streetSpotsBA(assets, { lcLeft, lcRight });
-  const keepClear = (x) => isLandmarkFront(x, 1.8) || Math.abs(x - 9) < 3.2;
+  // Buenos Aires: plátanos, contenedores verdes y parada de colectivo.
+  // Se colocan EXCLUSIVAMENTE en las uniones exactas (baSeams) entre dos locales pintados (nunca frente a carteles ni vidrieras).
+  const baSpots = baSeams.length ? baSeams : streetSpotsBA(assets, { lcLeft, lcRight });
+  const keepClear = (x) => isLandmarkFront(x, 1.6) || lampXs.some(lx => Math.abs(lx - x) < 3.5);
   const treeXs = [], binXs = [];
-  for (const x of baSpots) if (x >= 8 && !keepClear(x) && (!treeXs.length || x - treeXs[treeXs.length - 1] >= 16)) treeXs.push(x);
   for (const x of baSpots) {
-    if (binXs.length >= 4 || keepClear(x) || treeXs.some(t => Math.abs(t - x) < 3) || binXs.some(b => Math.abs(b - x) < 20) || x < 14) continue;
+    if (x < 6 || keepClear(x)) continue;
+    if (treeXs.length && x - treeXs[treeXs.length - 1] < 20) continue;
+    treeXs.push(x);
+  }
+  for (const x of baSpots) {
+    if (binXs.length >= 3 || x < 14 || keepClear(x)) continue;
+    if (treeXs.some(t => Math.abs(t - x) < 4) || binXs.some(b => Math.abs(b - x) < 24)) continue;
     binXs.push(x);
   }
   const barkMat = new THREE.MeshLambertMaterial({ color: 0x8a7a63 });
   const crownMat = new THREE.MeshLambertMaterial({ color: 0x3f6b34 });
   for (const x of treeXs) {
-    if (art('prop_arbol', 4.3, x, -4.85, { flip: treeXs.indexOf(x) % 2 === 1 })) continue;
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 3.4, 8), barkMat);
-    trunk.position.set(x, 1.7, -4.75);
+    if (art('prop_arbol', 3.1, x, -4.85, { flip: treeXs.indexOf(x) % 2 === 1 })) continue;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.2, 2.5, 8), barkMat);
+    trunk.position.set(x, 1.25, -4.75);
     scene.add(trunk);
-    for (const [dx, dy, r] of [[0, 4.2, 1.5], [-0.9, 3.7, 1.1], [0.9, 3.8, 1.15]]) {
+    for (const [dx, dy, r] of [[0, 3.0, 1.1], [-0.7, 2.7, 0.85], [0.7, 2.75, 0.9]]) {
       const crown = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), crownMat);
       crown.position.set(x + dx, dy, -4.9);
       scene.add(crown);
@@ -876,49 +846,33 @@ export function buildStreet(scene, assets) {
   }
   const binMat = new THREE.MeshLambertMaterial({ color: 0x2f7d4a });
   binXs.forEach((x, i) => {
-    if (art('prop_contenedor', 1.55, x, -4.7, { flip: i % 2 === 1 })) return;
-    const bin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.25, 0.9), binMat);
-    bin.position.set(x, 0.79, -4.75);
-    const lid = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 1.0), new THREE.MeshLambertMaterial({ color: 0x23603a }));
-    lid.position.set(x, 1.47, -4.75);
+    if (art('prop_contenedor', 1.35, x, -4.75, { flip: i % 2 === 1 })) return;
+    const bin = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.1, 0.85), binMat);
+    bin.position.set(x, 0.72, -4.75);
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 0.95), new THREE.MeshLambertMaterial({ color: 0x23603a }));
+    lid.position.set(x, 1.32, -4.75);
     scene.add(bin, lid);
   });
-  const stopPole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3, 6), postMat);
-  stopPole.position.set(70, 1.5, -4.4);
-  const stopSign = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: canvasTex(128, 128, (c, w, h) => {
+  const stopX = baSpots.find(x => x > 62 && x < 78 && !keepClear(x) && !treeXs.includes(x) && !binXs.includes(x)) ?? 70;
+  const stopPole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.8, 6), postMat);
+  stopPole.position.set(stopX, 1.4, -4.55);
+  const stopSign = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 0.85), new THREE.MeshBasicMaterial({ map: canvasTex(128, 128, (c, w, h) => {
     c.fillStyle = '#f2c230'; c.beginPath(); c.arc(64, 64, 60, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#111'; c.font = '900 30px Arial'; c.textAlign = 'center'; c.fillText('PARADA', 64, 58); c.font = '900 34px Arial'; c.fillText('60', 64, 94);
   }), transparent: true }));
-  stopSign.position.set(70, 3.1, -4.35);
+  stopSign.position.set(stopX, 2.9, -4.5);
   scene.add(stopPole, stopSign);
 
-  // Guirnaldas tricolor en Francia (celestes y blancas en Buenos Aires), despejando los carteles de locales icónicos
-  const flagCols = [0x2b4fa8, 0xf4f1ea, 0xd23a3a];
-  const flagGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.22, 0, 0), new THREE.Vector3(0.22, 0, 0), new THREE.Vector3(0, -0.45, 0)]);
-  const flagMats = flagCols.map(c => new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
-  const baFlagMats = [0x74b9e8, 0xf4f1ea].map(c => new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
-  for (let a = 6; a < GALPON_X - 8; a += 22) {
-    if (a + 18 > LE_CONCEPT_X - 11 && a < LE_CONCEPT_X + 11) continue;
-    const inBA = a + 18 < BORDER_X;
-    for (let k = 0; k <= 22; k++) {
-      const t = k / 22, x = a + t * 18, y = 4.35 - Math.sin(t * Math.PI) * 0.7;
-      if (LANDMARKS.some(L => Math.abs(x - L.x) < L.w / 2 + 0.5)) continue;
-      const f = new THREE.Mesh(flagGeo, inBA ? baFlagMats[k % 2] : flagMats[k % 3]);
-      f.position.set(x, y, -4.7);
-      scene.add(f);
-    }
-  }
-
-  // Macetas sobre la vereda francesa (despejando locales icónicos y monumentos)
+  // Macetas sobre la vereda francesa: solo en uniones exactas (frSeams), despejando faroles, locales icónicos y monumentos
   const potMat = new THREE.MeshLambertMaterial({ color: 0xb4643c });
   const leafMat = new THREE.MeshLambertMaterial({ color: 0x4f7a3c });
-  for (let x = BORDER_X + 4; x < GALPON_X; x += 15) {
-    if (isLandmarkFront(x, 0.8)) continue;
-    if (art('prop_maceta', 1.45, x, -5.0)) continue;
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), potMat);
-    pot.position.set(x, 0.41, -5.0);
-    const bush = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 8), leafMat);
-    bush.position.set(x, 0.95, -5.0);
+  for (const x of frSeams) {
+    if (isLandmarkFront(x, 1.2) || lampXs.some(lx => Math.abs(lx - x) < 2.5)) continue;
+    if (art('prop_maceta', 1.35, x, -4.95)) continue;
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.48, 10), potMat);
+    pot.position.set(x, 0.4, -4.95);
+    const bush = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 8), leafMat);
+    bush.position.set(x, 0.9, -4.95);
     scene.add(pot, bush);
   }
 

@@ -402,5 +402,13 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**; mapas completos de Buenos Aires y Francia recapturados y verificados en Chromium headless. Pendiente: prueba en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `af658b0`.
 
+## 2026-11-23 (12) · Limpieza visual completa: 100 % fachadas Pixar y mobiliario anclado a uniones exactas
+- **Buenos Aires (`3d/js/world.js`)**: eliminados los bloques planos por código (`porteno()`) cuando existe `calle_buenos_aires.webp`; recortados sus 3 locales pintados estilo Pixar (`KIOSCO`, `PARRILLA`, `PIZZERÍA`) con `v0 = 0.08` y `PH = 7.4` para mostrar los carteles fileteados completos dentro de cámara sin doble cordón.
+- **Francia (`3d/js/world.js`)**: eliminados los bloques planos por código (`haussmannMat`); usa únicamente las fachadas pintadas estilo Pixar de `street_bg.webp` (`v0 = 0.165`, `frH = 8.4`) ajustadas a los huecos libres alrededor de `Roland Garros` y `Ferme LaPadite`.
+- **Cero obstrucciones (`3d/js/world.js`)**: eliminados los banderines y el cartel flotante `BUENOS AIRES` que cruzaban carteles; faroles, árboles (`3.1 m`), contenedores, `PARADA 60` y macetas francesas anclados exclusivamente a las uniones exactas entre fachadas (`baSeams` / `frSeams`), respetando todos los locales icónicos, `★ LE CONCEPT ★ VIP` y monumentos.
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**; mapas de Buenos Aires y Francia verificados en Chromium headless. Pendiente: prueba en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `284b2a4`.
+
+
 
 
