@@ -390,3 +390,10 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**; capturas de recorrido en Chromium (`recorrido_acto1_argentina.png` y `recorrido_actos3y4_francia.png`) verificando contraste entre ambos países y carteles sin recorte. Pendiente: prueba en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `b769a8c`.
 
+## 2026-11-23 (10) · Le Concept pasa a ser el local VIP de Buenos Aires (Le Blé queda estándar)
+- **Le Concept VIP (`3d/js/world.js`, `x = 132`)**: convertido en el local más elegante y vistoso de Buenos Aires con fachada ensanchada (`1.65×`), cartel dorado luminoso `★ LE CONCEPT ★` con halo, guirnalda en arco de 17 focos cálidos y alfombra bordó con ribetes dorados.
+- **Le Blé (`3d/js/world.js`, `x = 86`)**: vuelve a local estándar (`w = 8.6`) mostrando únicamente su cartel pintado en fachada (sin cartel superpuesto duplicado, sin halo ni alfombra VIP).
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**; captura de Buenos Aires verificada en Chromium headless. Pendiente: prueba en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `355176b`.
+
+

@@ -72,10 +72,10 @@ function porteno(i) {
   };
 }
 
-// Locales icónicos de Buenos Aires (Punto de Oro, Le Blé VIP de Marine, HENRIS) y París (Roland Garros, Granja de Maese LaPadite).
+// Locales icónicos de Buenos Aires (Punto de Oro, Le Blé, HENRIS; más Le Concept VIP) y París (Roland Garros, Granja de Maese LaPadite).
 const LANDMARKS = [
   { id: 'punto_de_oro', x: 34, w: 9.2 },
-  { id: 'le_ble', x: 86, w: 11.4, vip: true },
+  { id: 'le_ble', x: 86, w: 8.6 },
   { id: 'henris', x: 104, w: 7.4 },
   { id: 'roland_garros', x: 190, w: 10.2 },
   { id: 'granja_lapadite', x: 230, w: 10.4 }
@@ -482,7 +482,7 @@ export function buildStreet(scene, assets) {
 
   // Buenos Aires: edificios porteños hasta Le Concept y entre Le Concept y la frontera
   // La cámara ve unos 4 m de fachada: el local se escala para que vidrieras y cartel entren en cuadro
-  const lcH = 9, lcW = 1.4 * lcH * ((U_LC[1] - U_LC[0]) * bgMeta.w) / (bgMeta.h * 0.835);
+  const lcH = 9, lcW = 1.65 * lcH * ((U_LC[1] - U_LC[0]) * bgMeta.w) / (bgMeta.h * 0.835);
   const lcLeft = LE_CONCEPT_X - lcW / 2, lcRight = LE_CONCEPT_X + lcW / 2;
   // Nivel 1: casitas porteñas de chapa de colores (Buenos Aires ya no se parece a Francia)
   const baMats = Array.from({ length: CHAPA.length }, (_, i) => new THREE.MeshBasicMaterial({ map: canvasTex(512, 768, porteno(i)), fog: false }));
@@ -530,38 +530,17 @@ export function buildStreet(scene, assets) {
     const kBA = portenoRun(-7, lcLeft);
     portenoRun(lcRight, BORDER_X, kBA);
   }
-  // Locales famosos, un poco adelante de las casitas (Le Blé lleva iluminación VIP dorada, guirnaldas y alfombra elegante)
+  // Locales famosos, un poco adelante de las casitas
   for (const L of LANDMARKS) {
     const painted = assets.has?.(L.id);
     const tex = painted ? assets.texture(L.id) : canvasTex(768, 512, landmarkPainter(L.id));
     const aspect = painted ? assets.meta(L.id).w / assets.meta(L.id).h : 1.5;
     const H = L.w / aspect;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(L.w, H), new THREE.MeshBasicMaterial({ map: tex, fog: false }));
-    m.position.set(L.x, H / 2, BACK_Z + (L.vip ? 0.5 : 0.3));
+    m.position.set(L.x, H / 2, BACK_Z + 0.3);
     m.userData.landmark = L.id;
     scene.add(m);
-    if (L.vip) {
-      // Cartel dorado luminoso ★ Le Blé ★ centrado a altura visible + halo + alfombra bordó + guirnalda de focos cálidos
-      const lbSign = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.25), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 196, (c, w, h) => {
-        c.fillStyle = '#1b4332'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 22); c.fill();
-        c.lineWidth = 9; c.strokeStyle = '#ffd36e'; c.stroke();
-        c.font = 'italic 700 108px Georgia, "Times New Roman", serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-        c.shadowColor = '#ffd36e'; c.shadowBlur = 28; c.fillStyle = '#fff3cf';
-        c.fillText('★ Le Blé ★', w / 2, h / 2 + 4);
-      }), transparent: true, fog: false }));
-      lbSign.position.set(L.x, 3.85, BACK_Z + 0.75);
-      const lbHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd36e, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.65 }));
-      lbHalo.scale.set(10.0, 3.3, 1); lbHalo.position.set(L.x, 3.85, BACK_Z + 0.85);
-      const lbCarpet = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.8), new THREE.MeshLambertMaterial({ color: 0x8f1d2c }));
-      lbCarpet.rotation.x = -Math.PI / 2; lbCarpet.position.set(L.x, 0.17, BACK_Z + 1.25);
-      scene.add(lbSign, lbHalo, lbCarpet);
-      const vipBulb = new THREE.SpriteMaterial({ map: glowTex(), color: 0xffe4a0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
-      for (let k = 0; k <= 16; k++) {
-        const u = k / 16, bx = L.x - L.w * 0.46 + u * L.w * 0.92, by = 4.95 - Math.sin(u * Math.PI) * 0.55;
-        const sp = new THREE.Sprite(vipBulb); sp.scale.set(0.6, 0.6, 1); sp.position.set(bx, by, BACK_Z + 0.72);
-        scene.add(sp);
-      }
-    } else if (L.id === 'punto_de_oro') {
+    if (L.id === 'punto_de_oro') {
       // Cartel luminoso 🎾 PUNTO DE ORO bien visible sobre el club de pádel
       const poSign = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 1.15), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 196, (c, w, h) => {
         c.fillStyle = '#0f2038'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 22); c.fill();
@@ -593,33 +572,47 @@ export function buildStreet(scene, assets) {
   obelisco.position.set(96, 0, BACK_Z - 2.6);
   scene.add(obelisco);
 
-  // LE CONCEPT: el local azul, más grande y adelantado, con cartel dorado sobre azul
+  // LE CONCEPT VIP: el local más elegante y vistoso de Buenos Aires (el restaurante de Marine)
   const leConcept = new THREE.Group();
   leConcept.userData.leConcept = true;
   const front = new THREE.Mesh(new THREE.PlaneGeometry(lcW, lcH), new THREE.MeshBasicMaterial({ map: crop(U_LC[0], U_LC[1], 0.165), fog: false }));
   front.position.set(0, lcH / 2, 0);
-  const sideMat = new THREE.MeshBasicMaterial({ color: 0x1f2a44, fog: false });
+  const sideMat = new THREE.MeshBasicMaterial({ color: 0x1a2644, fog: false });
   for (const sx of [-1, 1]) {
-    const sidePanel = new THREE.Mesh(new THREE.PlaneGeometry(0.9, lcH), sideMat);
+    const sidePanel = new THREE.Mesh(new THREE.PlaneGeometry(0.95, lcH), sideMat);
     sidePanel.rotation.y = sx * Math.PI / 2;
     sidePanel.position.set(sx * lcW / 2, lcH / 2, -0.45);
     leConcept.add(sidePanel);
   }
-  const lcSign = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.2), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 192, (c, w, h) => {
-    c.fillStyle = '#16264a'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 18); c.fill();
-    c.lineWidth = 8; c.strokeStyle = '#e9c46a'; c.stroke();
-    c.font = '700 104px Georgia, "Times New Roman", serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.shadowColor = '#ffd36e'; c.shadowBlur = 28; c.fillStyle = '#ffe6a6';
-    c.fillText('LE CONCEPT', w / 2, h / 2 + 6);
+  const lcSign = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 1.3), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 192, (c, w, h) => {
+    c.fillStyle = '#111f3f'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 22); c.fill();
+    c.lineWidth = 9; c.strokeStyle = '#ffd36e'; c.stroke();
+    c.font = '700 94px Georgia, "Times New Roman", serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.shadowColor = '#ffd36e'; c.shadowBlur = 32; c.fillStyle = '#fff3cf';
+    c.fillText('★ LE CONCEPT ★', w / 2, h / 2 + 5);
   }), transparent: true, fog: false }));
-  lcSign.position.set(0, 3.3, 0.35);
-  const lcHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd36e, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.55 }));
-  lcHalo.scale.set(9, 3.2, 1); lcHalo.position.set(0, 3.3, 0.45);
-  // Alfombra roja hasta la puerta
-  const carpet = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.4), new THREE.MeshLambertMaterial({ color: 0xa3202e }));
+  lcSign.position.set(0, 3.55, 0.35);
+  const lcHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd36e, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.72 }));
+  lcHalo.scale.set(11.0, 3.6, 1); lcHalo.position.set(0, 3.55, 0.45);
+  // Alfombra bordó VIP con ribetes dorados hasta la puerta
+  const carpet = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.9), new THREE.MeshLambertMaterial({ color: 0x9a1b2b }));
   carpet.rotation.x = -Math.PI / 2;
-  carpet.position.set(0, 0.17, 0.75);
+  carpet.position.set(0, 0.17, 0.95);
   leConcept.add(carpet);
+  const trimMat = new THREE.MeshBasicMaterial({ color: 0xf0c96a, fog: false });
+  for (const sx of [-1, 1]) {
+    const trim = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 1.9), trimMat);
+    trim.rotation.x = -Math.PI / 2;
+    trim.position.set(sx * 1.32, 0.175, 0.95);
+    leConcept.add(trim);
+  }
+  // Guirnalda en arco de focos cálidos VIP
+  const vipBulb = new THREE.SpriteMaterial({ map: glowTex(), color: 0xffe4a0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
+  for (let k = 0; k <= 16; k++) {
+    const u = k / 16, bx = -lcW * 0.46 + u * lcW * 0.92, by = 4.65 - Math.sin(u * Math.PI) * 0.45;
+    const sp = new THREE.Sprite(vipBulb); sp.scale.set(0.65, 0.65, 1); sp.position.set(bx, by, 0.32);
+    leConcept.add(sp);
+  }
   leConcept.add(front, lcSign, lcHalo);
   leConcept.position.set(LE_CONCEPT_X, -lcH * 0.165 * 0, BACK_Z + 0.55);
   scene.add(leConcept);
