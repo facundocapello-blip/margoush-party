@@ -88,8 +88,8 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     const road = mk(new T.PlaneGeometry(ROAD * 2, 260), new T.MeshLambertMaterial({ map: cobble })); road.rotation.x = -Math.PI / 2;
     const walks = [-1, 1].map(sd => { const m = mk(new T.PlaneGeometry(WALK, 260), new T.MeshLambertMaterial({ map: walkTex })); m.rotation.x = -Math.PI / 2; m.position.set(sd * (ROAD + WALK / 2), 0.12, 0); return m; });
     const curbs = [-1, 1].map(sd => { const m = mk(new T.BoxGeometry(0.35, 0.24, 260), new T.MeshLambertMaterial({ color: L('#c8c6c0') })); m.position.set(sd * ROAD, 0.1, 0); return m; });
-    // Fondo de París (avenida con la Torre Eiffel en el Acto 2 tras aterrizar en Francia) o Buenos Aires de respaldo
-    const fondoKey = assets.has('chase_paris_fondo') ? 'chase_paris_fondo' : (assets.has('chase_ba_fondo') ? 'chase_ba_fondo' : null);
+    // Avenida 9 de Julio antes del vuelo a París.
+    const fondoKey = assets.has('chase_ba_fondo') ? 'chase_ba_fondo' : null;
     const fondoTex = fondoKey ? assets.texture(fondoKey) : (() => {
       const c = document.createElement('canvas'); c.width = 1200; c.height = 300; const g = c.getContext('2d');
       const gr = g.createLinearGradient(0, 0, 0, 300); gr.addColorStop(0, '#5f9fe0'); gr.addColorStop(0.55, '#a9cdee'); gr.addColorStop(0.85, '#f6c48a'); gr.addColorStop(1, '#f39a5e');
@@ -111,11 +111,11 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     })();
     const fondo = fondoKey ? assets.meta(fondoKey) : { w: 1200, h: 300 }, BW = 260, BH = BW * fondo.h / fondo.w;
     const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: fondoTex, fog: false }));
-    // Fachadas a los costados (bistrós de Francia en Acto 2 o calle porteña de respaldo)
-    const FAC = [assets.has('street_bg') ? 'street_bg' : 'calle_buenos_aires'].filter(k => assets.has(k));
+    // Fachadas porteñas a los costados.
+    const fachada = assets.texture('calle_buenos_aires');
     const facW = 13.2, facH = 8.8, facs = [];
     for (const sd of [-1, 1]) for (let i = 0; i < 14; i++) {
-      const m = mk(new T.PlaneGeometry(facW, facH), new T.MeshLambertMaterial({ map: assets.texture(FAC[i % FAC.length]) }));
+      const m = mk(new T.PlaneGeometry(facW, facH), new T.MeshLambertMaterial({ map: fachada }));
       m.rotation.y = -sd * Math.PI / 2; m.position.set(sd * FX, facH / 2 - 0.05, -i * facW); facs.push(m);
     }
     // Árboles y faroles

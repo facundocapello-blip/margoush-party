@@ -101,3 +101,24 @@ test('no hay piquete y los 4 jefes (Chaky, Cepi, Lale, Pinky) no aparecen como s
     }
   }
 });
+
+test('un golpe mortal al cruzar el umbral del jefe conserva la derrota', () => {
+  const update = main.slice(main.indexOf('function frameStep('), main.indexOf('// Malos fuera de pantalla'));
+  const noop = () => {};
+  const idle = { update: noop };
+  const game = {
+    state: 'playing', timeScale: 1, hero: { ...idle, actor: { position: { x: 144 } } },
+    enemies: { update() { game.state = 'result'; } },
+    traps: idle, butter: idle, psycho: idle, powers: idle, cameos: idle, margot: idle,
+    props: idle, combo: idle, stats: {}, score: { multiplier: 1 }, perf: { record: noop }
+  };
+  const context = {
+    game, document: { hidden: false }, PAUSABLE: new Set(['playing']), input: { consume: () => false },
+    last: 1, performance, fx: { frozen: () => false, update: noop }, updateHud: noop,
+    updateZones() { game.state = 'curtain'; }, bannerCurrent: null, world: { updateGates: noop },
+    updateCamera: noop, updateOffscreen: noop, renderer: { render: noop }, scene: {}, camera: {},
+    frame: noop, requestAnimationFrame: noop
+  };
+  runInNewContext(update + '\nframeStep(17);', context);
+  assert.equal(game.state, 'result');
+});

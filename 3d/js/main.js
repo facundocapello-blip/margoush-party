@@ -458,7 +458,7 @@ function endIntro() {
   game.banner('ACTO 1 · BUENOS AIRES', TOUCH ? 'Deslizá el joystick a la derecha para avanzar.' : 'Usá la flecha derecha para avanzar.');
   audio.music('ba', { fade: 0.3 });
 }
-// Acto 2: Persecución de Cepi en su BYD (al cruzar a Francia) → ¡Rompé el BYD! → Arena de Cepi
+// Acto 2: Persecución de Cepi en su BYD en Buenos Aires → ¡Rompé el BYD! → Arena de Cepi
 function startChaseRun() {
   game.chaseDone = true;
   if (game.checkpoint?.id !== 'acto2') saveCheckpoint('acto2');
@@ -630,11 +630,11 @@ function startTransition() {
   h.actor.setFacing(1);
   Object.assign(h, { state: 'free', lift: 0, vy: 0, knock: 0, knockZ: 0 });
   updateCamera(0, true);
-  const done = LEVELS[0], next = LEVELS[1];
+  const done = LEVELS[0];
   $('#level-done').textContent = tr('¡BUENOS AIRES DESPEJADO!');
   $('#level-name').textContent = tr(done.name);
   $('#level-pts').textContent = tr(game.score.total.toLocaleString('es-AR') + ' puntos');
-  $('#level-next').textContent = '✈ ' + tr(`NIVEL ${next.id}: ${next.name}`);
+  $('#level-next').textContent = '✈ ' + tr(CHECKPOINTS.acto3.label);
   $('#level-card').classList.remove('hidden');
   $('#level-card').classList.add('travel');
   audio.sfx('clear');
@@ -961,8 +961,11 @@ function frameStep(now) {
       game.time += dt;
       game.hero.update(dt);
       game.enemies.update(dt);
+      if (game.state !== 'playing') { requestAnimationFrame(frame); return; }
       game.traps.update(dt);
+      if (game.state !== 'playing') { requestAnimationFrame(frame); return; }
       game.butter.update(dt);
+      if (game.state !== 'playing') { requestAnimationFrame(frame); return; }
       game.psycho.update(dt);
       game.powers.update(dt);
       game.cameos.update(dt);

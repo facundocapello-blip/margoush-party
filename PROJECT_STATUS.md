@@ -429,3 +429,15 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 
 
 
+
+## 2026-11-24 · Auditoría de continuidad, candidata de prueba
+
+Base verificada: main e15c81c, HTML idéntico al servido por GitHub Pages. Esta candidata conserva la rama principal. El acto 1 termina en el baile directo de Chaky, sin barriles. En el acto 2 la fuga y la destrucción del BYD seleccionaban arte francés antes del vuelo: ahora usan escenario porteño. El cartel del vuelo anuncia el acto 3 con su traducción vigente. En la calle, un golpe mortal podía dejar que el mismo cuadro activara un jefe. La lógica ahora detiene el cuadro al salir de la partida por daño.
+
+Pruebas: 74/74 en la base, reproducción de la transición indebida en simulación de cuadro, 75/75 después del arreglo. La prueba nueva usa una actualización de enemigos controlada, no una partida física. La suite cubre reglas de extras de Chaky y lógica de los cuatro encuentros. El navegador de previsualización no activó WebGL y el Chromium de las pruebas E2E no pudo crear su socket. Pendientes: partida completa desde el menú, superposición real del HUD, fluidez, multitáctil y audio en Safari físico. Algunos E2E históricos esperan pasar directamente desde la introducción a la persecución o del nivel 1 al checkpoint antiguo de Francia; requieren actualizar expectativas antes de usarlos para certificar la campaña actual.
+
+Lectura de diseño: Chaky exige ritmo, Cepi alterna devolución, esquive y reconocimiento, Lale combina harina y desplazamiento, Pinky usa autos y remate de Margot. El segundo acto concentra tres mecánicas consecutivas; falta medir cuántos intentos se deben a no entender el objetivo del BYD. Patovicas y bombos identifican Buenos Aires; mozos, delivery y secuaces identifican Francia. Las hojas incluyen cuatro poses; legibilidad en movimiento pendiente. Margot ya reacciona en el HUD, aparece en el auto y decide el remate. Probar primero una señal suya antes del peligro de la fuga usando una pose existente, luego anticipar el remate en Pinky. Criterio: alguien que juega por primera vez reconoce la señal y explica qué acción tomó.
+
+Reglas: la calle usa invulnerabilidad tras el impacto; antes del jefe se recuperan dos corazones con mínimo tres y tope en el máximo del personaje. Chaky tiene tres continuaciones dentro de ronda; Cepi, Lale y Pinky recuperan una vez el 60 % de los corazones redondeado hacia arriba, con mínimo dos. El BYD descuenta un corazón por intento fallido. Los checkpoints restauran personaje, puntos y tiempo guardados con vida llena. Falta validar la percepción de justicia con jugadores y la combinación de impactos de cada arena en dispositivo.
+
+Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b2. La publicación de GitHub Pages conserva el código de main.
