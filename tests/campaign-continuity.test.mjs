@@ -157,3 +157,22 @@ test('entrar a Big Chaky desde la calle limpia carteles y combo pendientes', () 
   assert.equal(arenaStarted, 1);
 });
 
+test('señales de Margot en fuga/Pinky y claridad de objetivo en ¡Rompé el BYD! con traducción FR', () => {
+  const chase = readFileSync(new URL('../3d/js/chase.js', import.meta.url), 'utf8');
+  const bonus = readFileSync(new URL('../3d/js/bonus.js', import.meta.url), 'utf8');
+  const pinky = readFileSync(new URL('../3d/js/arena_pinky.js', import.meta.url), 'utf8');
+  const i18n = readFileSync(new URL('../3d/js/i18n.js', import.meta.url), 'utf8');
+  assert.match(chase, /margot-ico/);
+  assert.match(chase, /hintE\.classList\.remove\('hidden'\)/);
+  assert.match(bonus, /JEFE 2 · CEPI «EL NIÑO»/);
+  assert.match(bonus, /bonus-goal/);
+  assert.match(pinky, /pinky-margot-cue/);
+  assert.match(pinky, /¡MARGOT SE PREPARA PARA AYUDAR!/);
+  assert.match(i18n, /¡CUIDADO! ¡CAMBIÁ DE CARRIL!/);
+  assert.match(i18n, /¡PEGALE A CEPI A LA DERECHA PARA DESENCHUFAR!/);
+  assert.match(i18n, /¡TOCÁ PARA EL GRITO DE MARGOT!/);
+  const bydStart = main.slice(main.indexOf('function startBydLevel()'), main.indexOf('function bydDone()'));
+  assert.match(bydStart, /_back_/);
+});
+
+

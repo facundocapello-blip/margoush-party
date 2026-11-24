@@ -379,8 +379,10 @@ body.chasing #labels, body.chasing #combo, body.chasing #boss-bar { visibility: 
 #chase-bat s { position: absolute; top: 50%; left: 0; transform: translate(-50%, -54%) scaleX(-1); font-size: 22px; text-decoration: none; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
 #chase-bat i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, #7ee0c3, #ffd36e); }
 #chase-bat em { font-style: normal; font-size: 22px; line-height: 1; }
-#chase-hint { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); background: #a1263e; color: #fff; border: 2px solid var(--gold); border-radius: 20px; padding: 6px 16px;
-  font-family: Fredoka, sans-serif; font-weight: 700; font-size: 16px; animation: banner-in 0.18s ease-out; }
+#chase-hint { position: absolute; left: 50%; top: calc(116px + var(--safe-t)); transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; background: rgba(161, 38, 62, 0.94); color: #fff; border: 2px solid var(--gold); border-radius: 22px; padding: 6px 14px 6px 8px; max-width: 92vw;
+  font-family: Fredoka, sans-serif; font-weight: 700; font-size: clamp(14px, 4vw, 17px); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); animation: banner-in 0.18s ease-out; }
+body.portrait #chase-hint { top: calc(158px + var(--safe-t)); }
+.margot-ico { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 50%; background: #2c2350 url(../assets/margot_faces.webp) no-repeat 100% 50% / 300% 100%; border: 2px solid var(--gold); }
 body.portrait #chase-bat { bottom: auto; top: calc(110px + var(--safe-t)); }
 
 
@@ -408,8 +410,12 @@ body.arena-on:not(.portrait) #boss-bar { top: calc(70px + var(--safe-t)); bottom
 #bonus-ui .bonus-clock b { font-size: 40px; }
 #bonus-ui .bonus-clock.hurry b { color: #ff6b6b; animation: bonus-hurry 0.5s infinite alternate; }
 @keyframes bonus-hurry { from { transform: scale(1); } to { transform: scale(1.15); } }
+#bonus-ui .bonus-goal { position: absolute; left: 50%; top: calc(146px + var(--safe-t)); transform: translateX(-50%); padding: 6px 14px; border-radius: 14px; background: rgba(16, 10, 30, 0.9); border: 2px solid var(--gold); color: #fff; font: 700 clamp(13px, 3.8vw, 16px)/1.2 Fredoka, sans-serif; text-align: center; max-width: 92vw; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); }
+#bonus-ui .bonus-goal.warn { background: rgba(128, 22, 38, 0.94); border-color: #ff9b8a; color: #ffe066; }
+#bonus-ui .bonus-goal.ok { background: rgba(16, 82, 54, 0.94); border-color: #7ee0c3; color: #eafff6; }
 body.bonus-on #hud-score, body.bonus-on #hud-mult { visibility: hidden; }
 body.portrait.bonus-on #bonus-ui .bonus-clock { top: calc(158px + var(--safe-t)); }
+body.portrait.bonus-on #bonus-ui .bonus-goal { top: calc(234px + var(--safe-t)); }
 body.bonus-on:not(.portrait) #boss-bar { top: calc(92px + var(--safe-t)); bottom: auto; }
 
 /* ---------- Idioma (i18n.js) ---------- */
@@ -854,8 +860,10 @@ body.cepi-duel-on #touch { display: none; }
 #arena-ui .cepi-btns button { min-height: 76px; border-radius: 20px; border: 3px solid #9fe4ff; background: rgba(16, 46, 98, .88); color: #fff; font: 700 26px Fredoka, sans-serif; box-shadow: 0 6px 0 #091c3e; touch-action: none; transition: background .12s, border-color .12s, box-shadow .12s; }
 #arena-ui .cepi-btns button.safe { border-color: #6dff8a; background: rgba(18, 96, 56, .92); box-shadow: 0 6px 0 #0b3d22, 0 0 24px #6dff8a99; }
 #arena-ui .cepi-btns button.picked, #arena-ui .cepi-btns button:active { background: #2f8cff; border-color: #ffe066; transform: translateY(3px); box-shadow: 0 3px 0 #091c3e; }
-/* Arena final de Pinky — botón de remate heroico de Margot */
-#arena-ui .margot-btn { position: absolute; left: 50%; top: calc(144px + var(--safe-t)); transform: translateX(-50%); padding: 12px 24px; border-radius: 22px; border: 3px solid #ffe066; background: linear-gradient(180deg, #ff5e99, #c82568); color: #fff; font: 700 clamp(18px, 4.8vw, 22px) Fredoka, sans-serif; box-shadow: 0 6px 0 #6e1036, 0 0 24px #ff77aa99; pointer-events: auto; touch-action: none; z-index: 6; animation: pulse-center .48s ease-in-out infinite alternate; white-space: nowrap; max-width: 92vw; }
+/* Arena final de Pinky — anticipación y botón de remate heroico de Margot */
+#arena-ui .pinky-margot-cue { position: absolute; left: 50%; top: calc(144px + var(--safe-t)); transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 18px; border: 2px solid #ff99cc; background: rgba(46, 14, 42, 0.92); color: #ffe6f2; font: 700 clamp(13px, 3.8vw, 16px)/1.15 Fredoka, sans-serif; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); pointer-events: none; z-index: 6; max-width: 92vw; }
+#arena-ui .pinky-margot-cue.hidden { display: none; }
+#arena-ui .margot-btn { position: absolute; left: 50%; top: calc(144px + var(--safe-t)); transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px 10px 10px; border-radius: 22px; border: 3px solid #ffe066; background: linear-gradient(180deg, #ff5e99, #c82568); color: #fff; font: 700 clamp(16px, 4.4vw, 20px) Fredoka, sans-serif; box-shadow: 0 6px 0 #6e1036, 0 0 24px #ff77aa99; pointer-events: auto; touch-action: none; z-index: 6; animation: pulse-center .48s ease-in-out infinite alternate; white-space: nowrap; max-width: 94vw; }
 #arena-ui .margot-btn.hidden { display: none; }
 #arena-ui .margot-btn:active { transform: translateX(-50%) scale(.95); animation: none; }
 @keyframes pulse-center { to { transform: translateX(-50%) scale(1.08); } }
@@ -863,7 +871,8 @@ body.cepi-duel-on #touch { display: none; }
   #arena-ui .cepi-tell { top: calc(102px + var(--safe-t)); padding: 6px 16px; font-size: 16px; }
   #arena-ui .cepi-btns { bottom: calc(12px + var(--safe-b)); max-width: 440px; }
   #arena-ui .cepi-btns button { min-height: 54px; font-size: 20px; border-radius: 16px; }
-  #arena-ui .margot-btn { top: calc(106px + var(--safe-t)); padding: 8px 18px; font-size: 18px; }
+  #arena-ui .pinky-margot-cue { top: calc(106px + var(--safe-t)); padding: 5px 12px 5px 7px; font-size: 14px; }
+  #arena-ui .margot-btn { top: calc(106px + var(--safe-t)); padding: 7px 16px 7px 8px; font-size: 16px; }
 }
 /* Pantalla de victoria — arte de Grupo E cuando exista */
 .host.victory img { max-height: 240px; width: auto; object-fit: contain; filter: drop-shadow(0 10px 18px #0006); }

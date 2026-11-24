@@ -181,11 +181,12 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     };
     setHero('idle');
 
-    // Carteles propios: reloj, fogonazo y textos que flotan
+    // Carteles propios: reloj, objetivo claro, fogonazo y textos que flotan
     const ui = document.createElement('div'); ui.id = 'bonus-ui';
-    ui.innerHTML = '<div class="bonus-flash"></div><div class="bonus-clock"><small>' + tr('CARGA DEL BYD') + '</small><b>⚡0%</b></div>';
+    ui.innerHTML = '<div class="bonus-flash"></div><div class="bonus-clock"><small>' + tr('CARGA DEL BYD') + '</small><b>⚡0%</b></div><div class="bonus-goal hidden"></div>';
     document.body.append(ui); document.body.classList.add('arena-on', 'bonus-on');
-    const flashE = ui.querySelector('.bonus-flash'), clockE = ui.querySelector('.bonus-clock b');
+    const flashE = ui.querySelector('.bonus-flash'), clockE = ui.querySelector('.bonus-clock b'), goalE = ui.querySelector('.bonus-goal');
+    let goalKey = '';
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
     if (bar) { bar.querySelector('span').textContent = tr('EL BYD DE CEPI'); bar.classList.remove('hidden'); }
     const setBar = () => { if (fill) fill.style.width = (100 * logic.state.hp / BONUS.hp).toFixed(1) + '%'; };
@@ -298,7 +299,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     function close() {
       if (closing) return;
       closing = true;
-      const label = result.wrecked ? 'NIVEL 1 · BUENOS AIRES' : '¡OTRA VEZ!';
+      const label = result.wrecked ? 'JEFE 2 · CEPI «EL NIÑO»' : '¡OTRA VEZ!';
       if (game.curtain) game.curtain(() => end(), { label }); else end();
     }
     function end() {
@@ -355,6 +356,22 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       clockE.textContent = '⚡' + Math.floor(S.bat) + '%';
       audio?.setIntensity?.(S.bat / 100);
       clockE.parentElement.classList.toggle('hurry', S.bat >= 70 && !S.over);
+      if (phase === 'play' && !S.over) {
+        const nextGoal = S.cepiStun > 0 ? 'ok' : (S.bat >= 55 ? 'warn' : 'spot');
+        if (nextGoal !== goalKey) {
+          goalKey = nextGoal;
+          const msg = nextGoal === 'ok'
+            ? '⚡ ¡DESENCHUFADO! ¡DALE AL BYD AHORA!'
+            : nextGoal === 'warn'
+              ? '🔌 ¡PEGALE A CEPI A LA DERECHA PARA DESENCHUFAR!'
+              : '👊 ¡PEGALE AL PUNTO BRILLANTE! (×3)';
+          fillText(goalE, msg);
+          goalE.className = 'bonus-goal ' + nextGoal;
+        }
+      } else if (goalKey !== 'off') {
+        goalKey = 'off';
+        goalE.className = 'bonus-goal hidden';
+      }
       screen.material.color.setHex(S.cepiStun > 0 ? 0xff4d5e : (Math.sin(t * 8) > 0 ? 0x2fd36b : 0x9cffc0));
       // Cepi: enchufando (parado), golpeado o tirado; el cable cae al piso mientras está desenchufado
       cepiHurtT = Math.max(0, cepiHurtT - dt);

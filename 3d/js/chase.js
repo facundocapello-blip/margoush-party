@@ -182,9 +182,9 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     const PK = isM ? 'chase_pk_hoja' : 'chase_pk_hongo';
     const picks = track.pickups.map(p => ({ ...p, m: sprite(PK, 0.85, 0), got: false }));
 
-    // Carteles propios: batería del BYD, aviso de saque, destello rojo y textos que flotan
+    // Carteles propios: batería del BYD, aviso de Margot antes del saque, destello rojo y textos que flotan
     const ui = document.createElement('div'); ui.id = 'chase-ui';
-    ui.innerHTML = '<div class="chase-flash"></div><div id="chase-bat" aria-label="Distancia al cargador"><b><i></i><s>🚗</s></b><em>🔌</em></div><div id="chase-hint" class="hidden">¡Cepi prepara el saque!</div>';
+    ui.innerHTML = '<div class="chase-flash"></div><div id="chase-bat" aria-label="Distancia al cargador"><b><i></i><s>🚗</s></b><em>🔌</em></div><div id="chase-hint" class="hidden"><i class="margot-ico" aria-hidden="true"></i><span>¡CUIDADO! ¡CAMBIÁ DE CARRIL!</span></div>';
     // Controles de la persecución (como los juegos de autos/carreras del celu): deslizar ← → cambia de carril
     // y tocar (o deslizar ↑) salta. En compu: flechas ← → y Espacio. Sin joystick ni botones.
     const pad = document.createElement('div'); pad.id = 'chase-pad';
@@ -328,7 +328,13 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         const want = stunT > 0 ? 9 : 12 + Math.sin(t * 0.7) * 1.5; // el BYD va más adelante: no tapa lo que viene
         gap += (want - gap) * dt * 0.8;
         cx += (Math.sin(t * 0.55) * 2.3 - cx) * dt * 1.2;
-        if (!shot && stunT <= 0 && windT <= 0) { throwT -= dt; if (throwT <= 0) { windT = CHASE.windup; cepiTo('windup'); } } // sin cartel: se ve a Cepi asomarse y la marca roja en el piso
+        if (!shot && stunT <= 0 && windT <= 0) {
+          throwT -= dt;
+          if (throwT <= 0) {
+            windT = CHASE.windup; cepiTo('windup');
+            hintE.classList.remove('hidden'); sfx('tick');
+          }
+        }
         if (windT > 0) {
           windT -= dt;
           if (windT <= 0) {
