@@ -6,10 +6,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const DIR = path.join(ROOT, '3d');
-const hash = (f) => crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0, 10);
+const hash = (f) => crypto.createHash('sha1').update(fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n')).digest('hex').slice(0, 10);
 
 export function expectedStamps() {
   const js = fs.readdirSync(path.join(DIR, 'js')).filter(f => f.endsWith('.js')).sort();
@@ -19,15 +20,16 @@ export function expectedStamps() {
 }
 
 export function stampedHtml(html) {
+  const eol = html.includes('\r\n') ? '\r\n' : '\n';
   const st = expectedStamps();
-  const map = '<script type="importmap">\n' + JSON.stringify({ imports: st.imports }, null, 2) + '\n  </script>';
+  const map = ('<script type="importmap">\n' + JSON.stringify({ imports: st.imports }, null, 2) + '\n  </script>').replace(/\n/g, eol);
   html = html.replace(/\s*<script type="importmap">[\s\S]*?<\/script>/, '');
-  html = html.replace(/<script type="module" src="[^"]*"><\/script>/, map + '\n  <script type="module" src="' + st.main.slice(2) + '"></script>');
+  html = html.replace(/<script type="module" src="[^"]*"><\/script>/, map + eol + '  <script type="module" src="' + st.main.slice(2) + '"></script>');
   html = html.replace(/<link rel="stylesheet" href="css\/game\.css[^"]*">/, '<link rel="stylesheet" href="' + st.css.slice(2) + '">');
   return html;
 }
 
-if (import.meta.url === 'file://' + process.argv[1]) {
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) {
   const f = path.join(DIR, 'index.html');
   const before = fs.readFileSync(f, 'utf8'), after = stampedHtml(before);
   fs.writeFileSync(f, after);

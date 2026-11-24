@@ -2,8 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const dir = new URL('../3d/assets/', import.meta.url).pathname;
+const dir = fileURLToPath(new URL('../3d/assets/', import.meta.url));
 const NAMES = ['douge_idle','douge_run','douge_attack','marine_idle','marine_run','marine_attack','chaky_run',
   'boss_idle','boss_run','boss_attack','boss_hurt','margot_sheet','kidnap_sheet','courier','street_bg',
   'music_street',
@@ -41,8 +42,21 @@ test('sheet metadata', () => {
   assert.equal(m.margot_sheet.rows, 2);
 });
 
-test('run strips are clean, feet aligned and head sizes recorded', async () => {
+test('run strips are clean, feet aligned and head sizes recorded', async (t) => {
   const { spawnSync } = await import('node:child_process');
-  const r = spawnSync('python3', ['-I', new URL('./check_sprites.py', import.meta.url).pathname, dir], { encoding: 'utf8' });
+  const script = fileURLToPath(new URL('./check_sprites.py', import.meta.url));
+  const candidates = process.platform === 'win32' ? ['python', 'py', 'python3'] : ['python3', 'python'];
+  let r = null;
+  for (const cmd of candidates) {
+    const res = spawnSync(cmd, ['-I', script, dir], { encoding: 'utf8' });
+    if (res.error?.code === 'ENOENT' || res.status === 9009) continue;
+    r = res;
+    break;
+  }
+  assert.ok(r, 'Python no encontrado para ejecutar check_sprites.py');
+  if (r.status !== 0 && /ModuleNotFoundError: No module named '(numpy|PIL)'/.test(r.stderr || '')) {
+    t.skip(`Python local sin dependencia requerida (${(r.stderr || '').trim().split(/\r?\n/).pop()})`);
+    return;
+  }
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
