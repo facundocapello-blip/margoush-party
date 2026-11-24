@@ -250,17 +250,20 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       return { root: g, isSprite: false, revLights };
     }
 
-    // Capa de UI + botón de Remate de Margot en Fase 3
+    // Capa de UI + anticipación y botón de Remate de Margot en Fase 3
     document.querySelector('#arena-ui')?.remove();
     const ui = document.createElement('div'); ui.id = 'arena-ui';
     ui.innerHTML =
       '<div class="arena-flash"></div>' +
       '<div class="phase-card"><i></i><b></b><span></span></div>' +
-      '<button type="button" class="margot-btn hidden">👶 ¡GRITO DE MARGOT!</button>';
+      '<div class="pinky-margot-cue hidden"><i class="margot-ico" aria-hidden="true"></i><span></span></div>' +
+      '<button type="button" class="margot-btn hidden"><i class="margot-ico" aria-hidden="true"></i><span>' + tr('¡TOCÁ PARA EL GRITO DE MARGOT!') + '</span></button>';
     document.body.append(ui);
     document.body.classList.add('arena-on');
     const flashE = ui.querySelector('.arena-flash');
     const cardE = ui.querySelector('.phase-card');
+    const margotCue = ui.querySelector('.pinky-margot-cue');
+    fillText(margotCue.querySelector('span'), '¡MARGOT SE PREPARA PARA AYUDAR!');
     const margotBtn = ui.querySelector('.margot-btn');
     margotBtn.addEventListener('pointerdown', (ev) => {
       ev.preventDefault();
@@ -528,8 +531,12 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         chargeRing.scale.setScalar(1 + Math.sin(t * 12) * 0.12);
       }
 
-      // Botón + animación de Margot heroica en Fase 3
-      margotBtn.classList.toggle('hidden', !S.margotReady || phase !== 'fight');
+      // Anticipación + botón + animación de Margot heroica en Fase 3
+      const showBtn = S.margotReady && phase === 'fight';
+      const showCue = !showBtn && phase === 'fight' && S.phase !== 'ko' &&
+        ((S.phase === 2 && S.hp <= PINKY_ARENA.p3At + 4) || (S.phase === 3 && S.mode === 'transition'));
+      margotCue.classList.toggle('hidden', !showCue);
+      margotBtn.classList.toggle('hidden', !showBtn);
       if (S.margotT > 0) {
         margotMesh.visible = true;
         margotMesh.position.set(0, 0.2 + Math.sin(t * 16) * 0.15, -5.5);

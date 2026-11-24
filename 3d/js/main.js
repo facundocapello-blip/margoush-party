@@ -472,8 +472,9 @@ function startBydLevel() {
   input.reset();
   audio.setIntensity?.(0);
   audio.music('byd', { fade: 0.3 });
-  const wait = assets.ensure(['chase_', 'cepi_actions_sheet']);
-  if (assets.has('chase_cepi_dead')) { game.bonus.start(); return; }
+  const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
+  const wait = assets.ensure(['chase_', 'cepi_actions_sheet', heroBack]);
+  if (assets.has('chase_cepi_dead') && assets.has(heroBack + 'idle')) { game.bonus.start(); return; }
   game.state = 'curtain';
   continueTransition(wait, () => game.bonus.start());
 }

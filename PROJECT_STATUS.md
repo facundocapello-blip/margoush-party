@@ -454,3 +454,16 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Pendiente en dispositivo físico (Safari iPhone):** validar entrada desde la calle al baile directo, tacto de la primera flecha, audio tras gesto y visibilidad de héroe, corazones y 5 carriles durante las 3 rondas; confirmar que no reaparece la pausa accidental.
 - **Rollback:** volver `main` y `feat-3d` al commit `e15c81c` (o revertir el merge automático en `main`).
 
+## 2026-11-24 (3) · Señales de Margot (Acto 2 y Pinky), claridad de «¡Rompé el BYD!» y fix de sprite diferido
+- **Señal de Margot antes del pelotazo en la fuga (`3d/js/chase.js`, `3d/css/game.css`):** al iniciar el `windup` de Cepi, aparece el aviso con la carita de Margot (`margot_faces.webp`, sin assets nuevos) y el mensaje *«¡CUIDADO! ¡CAMBIÁ DE CARRIL!»* + `sfx('tick')`, y se oculta al salir la pelota.
+- **Claridad del objetivo y fix de textura en «¡Rompé el BYD!» (`3d/js/bonus.js`, `3d/js/main.js`, `3d/css/game.css`):**
+  - Agregada cápsula dinámica `#bonus-ui .bonus-goal` que guía el objetivo en 1 línea: *«👊 ¡PEGALE AL PUNTO BRILLANTE! (×3)»*, cambia a *«🔌 ¡PEGALE A CEPI A LA DERECHA PARA DESENCHUFAR!»* a partir de 55 % de carga y a *«⚡ ¡DESENCHUFADO! ¡DALE AL BYD AHORA!»* al aturdir a Cepi.
+  - Corregido bug real detectado en captura móvil: `startBydLevel()` ahora precarga `arena_<heroe>_back_` antes de abrir el mininivel para que Douge/Marine no se dibujen como cuadrado blanco cuando el sprite está diferido.
+  - Corregido el cartel de cortina al romper el BYD (`NIVEL 1 · BUENOS AIRES` → `JEFE 2 · CEPI «EL NIÑO»`).
+- **Anticipación del remate de Margot en Pinky (`3d/js/arena_pinky.js`, `3d/css/game.css`):** agregado aviso previo `.pinky-margot-cue` (*«¡MARGOT SE PREPARA PARA AYUDAR!»*) antes de la Fase 3 e ícono de Margot en el botón `.margot-btn` (*«¡TOCÁ PARA EL GRITO DE MARGOT!»*).
+- **ES/FR (`3d/js/i18n.js`):** todas las nuevas señales traducidas al francés.
+- **Verificación:** `node --check`, `node tools/stamp_versions.mjs`, `npm test` (**77/77 pruebas JS en verde**; `tests/check_sprites.py` omitido por falta de `numpy` en esta VM) y capturas verificadas en Chromium móvil (`390×844`) en `?probar=persecucion`, `?probar=byd` y `?probar=pinky-margot` con `0` errores JS. *(No equivale a Safari físico en iPhone.)*
+- **Pendiente en dispositivo físico (Safari iPhone):** validar lectura rápida de las señales de Margot y el BYD con un jugador real, además de la prueba física pendiente de Big Chaky.
+- **Rollback:** volver `main` y `feat-3d` al commit `799fabc`.
+
+
