@@ -28,7 +28,9 @@ export const ARENA = {
     dmg: 2.0,
     healAt: 2,
     hurtAt: 1,
-    start: 0.9
+    start: 1.15,
+    feverAt: 4,
+    feverMult: 1.35
   },
   transition: 0.9,
   points: { stepPerfect: 120, stepGood: 70, dice: 250, returned: 300, returnedWhite: 120, hand: 50, dodge: 100 }
@@ -64,10 +66,25 @@ export function createArenaLogic({ rand = Math.random } = {}) {
   function makeNotes(n, r = 0, lead = 0.25) {
     const notes = [];
     const beat = roundBeat(r), travel = roundTravel(r);
-    let prev = -1;
+    let prev = -1, stairLeft = 0, stairDir = 1;
     for (let i = 0; i < n; i++) {
-      let lane = Math.floor(rand() * DANCE_LANES) % DANCE_LANES;
-      if (lane === prev) lane = (lane + 1 + i) % DANCE_LANES;
+      let lane;
+      if (r >= 1 && stairLeft > 0) {
+        lane = prev + stairDir;
+        if (lane < 0 || lane >= DANCE_LANES) {
+          stairDir = -stairDir;
+          lane = prev + stairDir;
+        }
+        stairLeft--;
+      } else {
+        lane = Math.floor(rand() * DANCE_LANES) % DANCE_LANES;
+        if (lane === prev) lane = (lane + 1 + i) % DANCE_LANES;
+        // En rondas 2 y 3, genera escaleras rítmicas de 2-3 carriles vecinos
+        if (r >= 1 && (i === 2 || (r === 2 && i === 6))) {
+          stairDir = lane <= 2 ? 1 : -1;
+          stairLeft = r === 2 ? 2 : 1;
+        }
+      }
       notes.push({ lane, time: lead + travel + i * beat, judged: null, beatDone: false });
       prev = lane;
     }
@@ -79,16 +96,19 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     const prev = state.dice;
     state.phase = idx + 1;
     state.mode = 'dice';
+    const combo = prev ? prev.combo : 0;
     state.dice = {
       round: idx,
       total: D.rounds.length,
       beatDur: roundBeat(idx),
       travel: roundTravel(idx),
+      lead,
       notes: makeNotes(D.rounds[idx], idx, lead),
       stage: 'play',
       t: 0,
       hits: 0,
-      combo: prev ? prev.combo : 0,
+      combo,
+      fever: combo >= D.feverAt,
       beat: -1,
       ok: prev ? prev.ok : 0,
       bad: prev ? prev.bad : 0,
@@ -132,16 +152,18 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     note.judged = grade;
     if (grade === 'miss') {
       d.combo = 0;
-      evs.push({ type: 'danceStep', ok: false, grade: 'miss', lane: note.lane, combo: 0 });
+      d.fever = false;
+      evs.push({ type: 'danceStep', ok: false, grade: 'miss', lane: note.lane, combo: 0, fever: false });
       evs.push({ type: 'hurt', by: 'dice' });
     } else {
       d.hits++;
       d.combo++;
+      d.fever = d.combo >= D.feverAt;
       d.heroStep = note.lane;
       d.heroStepT = d.t;
-      evs.push({ type: 'danceStep', ok: true, grade, lane: note.lane, combo: d.combo });
-      // El daño por paso baja la barra en tiempo real y deja el golpe de KO para el cierre de la 3.ª ronda
-      damage(A.stepDmg, 'dice', evs, false);
+      evs.push({ type: 'danceStep', ok: true, grade, lane: note.lane, combo: d.combo, fever: d.fever });
+      // El daño por paso baja la barra en tiempo real (bonus en Modo Disco) y deja el KO para la 3.ª ronda
+      damage(A.stepDmg * (d.fever ? D.feverMult : 1), 'dice', evs, false);
     }
   }
 
@@ -198,7 +220,7 @@ export function createArenaLogic({ rand = Math.random } = {}) {
           triggerKo(evs);
         } else {
           const nextRound = d.round < d.total - 1 ? d.round + 1 : d.round;
-          startRound(nextRound, 0.35);
+          startRound(nextRound, 0.9);
           evs.push({ type: 'phase', to: state.phase });
         }
       }
@@ -236,7 +258,7 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     if (!best) {
       d.heroStep = lane;
       d.heroStepT = d.t;
-      evs.push({ type: 'danceStep', ok: false, grade: 'empty', lane, combo: d.combo });
+      evs.push({ type: 'danceStep', ok: false, grade: 'empty', lane, combo: d.combo, fever: d.fever });
       return evs;
     }
     const grade = Math.abs(best.time - d.t) <= D.perfect ? 'perfect' : 'good';
@@ -249,7 +271,7 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     if (state.lives <= 0 || state.phase === 'ko') return false;
     state.lives--;
     const r = state.dice ? state.dice.round : Math.max(0, (Number(state.phase) || 1) - 1);
-    startRound(r, 0.75);
+    startRound(r, 1.05);
     return true;
   }
 

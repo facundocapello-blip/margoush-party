@@ -466,4 +466,20 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Pendiente en dispositivo físico (Safari iPhone):** validar lectura rápida de las señales de Margot y el BYD con un jugador real, además de la prueba física pendiente de Big Chaky.
 - **Rollback:** volver `main` y `feat-3d` al commit `799fabc`.
 
+## 2026-11-24 (4) · Historia continua en los 4 jefes, Margot a salvo afuera del BYD y Duelo de Baile mejorado
+- **Historia continua sin carteles secos de «JEFE X» (`3d/js/main.js`, `3d/js/boss_intro.js`, `3d/js/arena*.js`, `3d/js/i18n.js`):**
+  - Cortinas narrativas en los 4 actos (*«¡LLEGASTE AL HANGAR VIP!»*, *«CEPI SE QUEDÓ SIN BYD… ¡PERO NO SIN PALETA!»*, *«¡BIENVENIDO AL OBRADOR DE LE BLÉ!»*, *«ÚLTIMA PARADA · EL GALPÓN»*) y puentes de victoria conectados de Chaky → Cepi → Lale → Pinky.
+  - Mini-intro narrativa de 2 líneas (salteable con 1 toque/tecla, ES/FR) agregada a **Cepi**, **Lale** y **Pinky** (`3d/js/boss_intro.js`), y diálogo de **Big Chaky** pulido.
+- **Margot a salvo afuera del BYD (`3d/js/bonus.js`):**
+  - En *«¡Rompé el BYD!»* el auto ya no tiene a Margot adentro mientras se lo golpea; Margot espera a salvo afuera a la izquierda en su cochecito (`margot_sheet`) y festeja cuando el auto queda destruido.
+- **5 mejoras al Duelo de Baile de Big Chaky (`3d/js/arena_logic.js`, `3d/js/arena.js`, `3d/css/game.css`):**
+  - Conteo rítmico **3 · 2 · 1 · ¡A BAILAR!** antes de cada ronda y tras cada `⭐ ¡VIDA EXTRA!` (con `hurtT = 0` para volver limpio a pose de baile).
+  - Carriles con guías de color y anillos de acierto/fallo en los 5 botones receptores.
+  - **🔥 ¡MODO DISCO!** al encadenar 4+ aciertos seguidos (daño `×1,35`, reflectores rápidos, ola arcoíris en baldosas LED y Margot festejando al fondo).
+  - Progresión de rondas con escaleras rítmicas de carriles vecinos en Rondas 2 y 3.
+  - Haz de luz vertical suave sobre el héroe y chispazos sobre Chaky como feedback periférico en cada acierto.
+- **Verificación:** `node --check`, `node tools/stamp_versions.mjs`, `npm test` (**78/78 pruebas JS en verde**; `tests/check_sprites.py` omitido por falta de `numpy` en esta VM) y capturas verificadas en Chromium móvil (`390×844`) de BYD con Margot afuera, intro de Cepi, conteo 3·2·1 y Modo Disco `×4` con `0` errores JS. *(No reemplaza Safari físico en iPhone.)*
+- **Rollback:** volver `main` y `feat-3d` al commit `8f1e304`.
+
+
 

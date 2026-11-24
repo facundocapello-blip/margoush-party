@@ -119,10 +119,10 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     const curb = mk(new T.BoxGeometry(40, 0.25, 1.6), new T.MeshLambertMaterial({ color: L('#8f8c93') }));
     curb.position.set(0, 0.12, -7.4);
 
-    // El auto: textura propia sobre la que se dibujan los daños
+    // El auto: textura propia sobre la que se dibujan los daños (Margot está afuera a salvo, nunca adentro al romperlo)
     const img = assets.texture('chase_cepi_drive').image, meta = assets.meta('chase_cepi_drive');
     const carCanvas = document.createElement('canvas'); carCanvas.width = meta.w; carCanvas.height = meta.h;
-    const cg = carCanvas.getContext('2d'); cg.drawImage(bydCanvasWithMargot(assets, 'chase_cepi_drive') || img, 0, 0, meta.w, meta.h);
+    const cg = carCanvas.getContext('2d'); cg.drawImage(img, 0, 0, meta.w, meta.h);
     const carTex = keep(new T.CanvasTexture(carCanvas)); carTex.encoding = T.sRGBEncoding;
     const carW = CAR_H * meta.w / meta.h;
     const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
@@ -130,6 +130,28 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     const car = new T.Mesh(unit, carMat); car.scale.set(carW, CAR_H, 1); car.position.set(0, 0, CAR_Z); scene.add(car);
     const deadTex = assets.has('chase_cepi_dead') ? assets.texture('chase_cepi_dead') : null;
     const deadMeta = deadTex ? assets.meta('chase_cepi_dead') : null;
+    // Margot a salvo afuera del auto, mirando desde la izquierda en su cochecito (visible también en vertical)
+    let margotM = null, margotCell = -1;
+    const MARGOT_H = 1.55, margotX = -carW / 2 - 0.72;
+    if (assets.has('margot_sheet')) {
+      const mm = assets.meta('margot_sheet');
+      const tx = keep(assets.texture('margot_sheet').clone());
+      tx.needsUpdate = true;
+      tx.repeat.set(1 / (mm.cols || 2), 1 / (mm.rows || 2));
+      margotM = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: tx, alphaTest: 0.42, transparent: true, side: T.DoubleSide })));
+      margotM.userData.cols = mm.cols || 2;
+      margotM.userData.rows = mm.rows || 2;
+      margotM.scale.set(MARGOT_H, MARGOT_H, 1);
+      margotM.position.set(margotX, 0, CAR_Z + 0.85);
+      scene.add(margotM);
+    }
+    const setMargot = (cell) => {
+      if (!margotM || margotCell === cell) return;
+      margotCell = cell;
+      const c = margotM.userData.cols, r = margotM.userData.rows;
+      margotM.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
+    };
+    setMargot(1);
     const spotX = (i) => (SPOTS[i].u / meta.w - 0.5) * carW;
     const spotY = (i) => (1 - SPOTS[i].v / meta.h) * CAR_H;
     // El cargador (a la derecha del auto) con Cepi enchufándolo: se le puede pegar para desenchufarlo
@@ -299,7 +321,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     function close() {
       if (closing) return;
       closing = true;
-      const label = result.wrecked ? 'JEFE 2 · CEPI «EL NIÑO»' : '¡OTRA VEZ!';
+      const label = result.wrecked ? 'CEPI SE QUEDÓ SIN BYD… ¡PERO NO SIN PALETA!' : '¡OTRA VEZ!';
       if (game.curtain) game.curtain(() => end(), { label }); else end();
     }
     function end() {
@@ -408,6 +430,12 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       setHero(swing ? 'punch' : moving ? 'run' : 'idle');
       P.position.set(x, 0, HERO_Z);
       heroSh.position.set(x, 0.03, HERO_Z);
+      // Margot a salvo afuera mirando la escena (festeja cuando cae el BYD)
+      if (margotM) {
+        setMargot(S.wrecked ? 3 : S.charged ? 2 : 1);
+        const mb = S.wrecked ? Math.abs(Math.sin(t * 7)) * 0.28 : Math.abs(Math.sin(t * 3.2)) * 0.05;
+        margotM.position.set(margotX, mb, CAR_Z + 0.85);
+      }
       // Textos que flotan
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt; q.v.y += dt * 0.9; q.v.x += q.vx * dt;

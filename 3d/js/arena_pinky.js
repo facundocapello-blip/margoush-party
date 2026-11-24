@@ -7,6 +7,7 @@ import { createVoice } from './voice.js';
 import { SWINGS } from './hero.js';
 import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
+import { attachBossIntro } from './boss_intro.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -269,6 +270,13 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       ev.preventDefault();
       handle(logic.triggerMargot());
     });
+    const bossIntro = attachBossIntro(ui, {
+      name: 'PINKY «EL TRAPITO»',
+      line1: '¿Pensaste que el jefe era Chaky? ¡A mí nadie me pagó!',
+      line2: '¡Son 2 lucas o no pasa nadie!',
+      quick: !!game.probar,
+      onSkip() { if (phase === 'entrance') phaseT = bossIntro.dur; }
+    });
 
     const CARDS = {
       1: ['FASE 1 · 🚗', '¡DALE, DALE, QUE ENTRA!', 'Esquivá los autos y pegale cuando cobra'],
@@ -471,7 +479,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       hero.holdT = holdT;
       vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
 
-      if (phase === 'entrance' && phaseT >= ENTRANCE) {
+      if (phase === 'entrance' && bossIntro.update(phaseT)) {
         phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.26, 0.3);
         speak('intro');
         const curPhase = logic.state.phase === 'ko' ? 3 : logic.state.phase;
@@ -626,6 +634,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       if (disposed) return;
       disposed = true;
       clearTimeout(cardTimer); clearTimeout(flashTimer);
+      bossIntro.finish();
       ui.remove();
       document.body.classList.remove('arena-on');
       if (bar) bar.classList.add('hidden');
