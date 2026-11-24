@@ -396,4 +396,11 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**; captura de Buenos Aires verificada en Chromium headless. Pendiente: prueba en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `355176b`.
 
+## 2026-11-23 (11) · Auditoría de fondos: cero superposiciones de locales y respeto de espacios
+- **Partición exacta por huecos (`3d/js/world.js`, `splitGaps`)**: los locales icónicos de Buenos Aires (`Punto de Oro`, `Le Blé`, `Henri's`, `★ LE CONCEPT ★ VIP`) y Francia (`Roland Garros`, `Ferme LaPadite`) ahora reservan su intervalo exacto en la calle. Las cuadras intermedias ajustan una cantidad entera de fachadas al ancho de cada hueco libre, eliminando solapamientos (como `FARMACIA` detrás de `Punto de Oro` o `BOULANGERIE` cortada junto a `Ferme LaPadite`) y evitando carteles partidos.
+- **Despeje de mobiliario urbano (`3d/js/world.js`, `isLandmarkFront`)**: faroles, árboles, contenedores, macetas y banderines ahora respetan el frente de todos los locales icónicos, `★ LE CONCEPT ★ VIP` y los monumentos a Maradona y Zidane.
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**; mapas completos de Buenos Aires y Francia recapturados y verificados en Chromium headless. Pendiente: prueba en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `af658b0`.
+
+
 

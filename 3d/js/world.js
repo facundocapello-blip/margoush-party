@@ -484,60 +484,88 @@ export function buildStreet(scene, assets) {
   // La cámara ve unos 4 m de fachada: el local se escala para que vidrieras y cartel entren en cuadro
   const lcH = 9, lcW = 1.65 * lcH * ((U_LC[1] - U_LC[0]) * bgMeta.w) / (bgMeta.h * 0.835);
   const lcLeft = LE_CONCEPT_X - lcW / 2, lcRight = LE_CONCEPT_X + lcW / 2;
+  // Helper: divide un tramo [start, end] descontando los intervalos ocupados por locales icónicos
+  // para que ningún edificio del fondo se superponga ni tape a otro.
+  function splitGaps(start, end, reserved) {
+    const sorted = reserved
+      .map(([a, b]) => [Math.max(start, a), Math.min(end, b)])
+      .filter(([a, b]) => b > a)
+      .sort((u, v) => u[0] - v[0]);
+    const gaps = [];
+    let cur = start;
+    for (const [a, b] of sorted) {
+      if (a > cur + 0.25) gaps.push([cur, a]);
+      cur = Math.max(cur, b);
+    }
+    if (end > cur + 0.25) gaps.push([cur, end]);
+    return gaps;
+  }
+  const baReserved = [
+    ...LANDMARKS.filter(L => L.x < BORDER_X).map(L => [L.x - L.w / 2, L.x + L.w / 2]),
+    [lcLeft, lcRight]
+  ];
+  const baGaps = splitGaps(-7, BORDER_X, baReserved);
   // Nivel 1: casitas porteñas de chapa de colores (Buenos Aires ya no se parece a Francia)
-  const baMats = Array.from({ length: CHAPA.length }, (_, i) => new THREE.MeshBasicMaterial({ map: canvasTex(512, 768, porteno(i)), fog: false }));
+  const baMatsFallback = Array.from({ length: CHAPA.length }, (_, i) => new THREE.MeshBasicMaterial({ map: canvasTex(512, 768, porteno(i)), fog: false }));
   function portenoRun(from, to, k = 0) {
-    const BW = 6.2, BH = 9.3;
-    let x0 = from;
-    while (x0 < to - 0.01) {
-      const w = Math.min(BW, to - x0);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), baMats[k++ % baMats.length]);
-      m.position.set(x0 + w / 2, BH / 2, BACK_Z - 0.02);
-      if (w < BW) m.scale.x = w / BW;
+    const span = to - from, n = Math.max(1, Math.round(span / 6.8)), w = span / n, BH = 9.3;
+    for (let i = 0; i < n; i++) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, BH), baMatsFallback[k++ % baMatsFallback.length]);
+      m.position.set(from + (i + 0.5) * w, BH / 2, BACK_Z - 0.02);
       scene.add(m);
-      x0 += w;
     }
     return k;
   }
   if (assets.has?.('calle_buenos_aires')) {
-    // Buenos Aires: alterna las casitas coloridas de Caminito (KIOSCO, PIZZERÍA, PARRILLA…) con calle_buenos_aires para que cada cuadra sea distinta
+    // Buenos Aires: alterna casitas coloridas de Caminito (KIOSCO, PIZZERÍA, FARMACIA, PARRILLA…) con calle_buenos_aires
+    // ajustando cada cuadra exactamente al hueco libre entre locales icónicos (cero superposiciones ni carteles cortados).
     const t = assets.texture('calle_buenos_aires'), m = assets.meta('calle_buenos_aires');
     const PH = 9.3, PW = PH * m.w / m.h, mat = new THREE.MeshBasicMaterial({ map: t, fog: false });
-    const baMats = [0, 1, 2, 3, 4, 5].map(i => new THREE.MeshBasicMaterial({ map: canvasTex(512, 512, porteno(i)), fog: false }));
+    const baMats = SHOPS.map((_, i) => new THREE.MeshBasicMaterial({ map: canvasTex(512, 512, porteno(i)), fog: false }));
     const BW = 7.4, BH = 8.4;
     let bi = 0;
-    for (const [from, to] of [[-7, lcLeft], [lcRight, BORDER_X]]) {
-      let x0 = from, step = 0;
-      while (x0 < to - 0.01) {
-        if (step++ % 2 === 0) {
-          const w = Math.min(BW, to - x0);
-          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), baMats[bi++ % baMats.length]);
+    for (const [from, to] of baGaps) {
+      const span = to - from;
+      // Elegimos una secuencia entera de bloques (alternando porteno y calle_buenos_aires) que mejor cubra `span`
+      const seq = [];
+      let sum = 0, step = 0;
+      while (true) {
+        const isShop = step % 2 === 0;
+        const ideal = isShop ? BW : Math.min(PW, 11.5);
+        if (seq.length > 0 && Math.abs((sum + ideal) - span) > Math.abs(sum - span)) break;
+        seq.push({ isShop, ideal });
+        sum += ideal;
+        step++;
+        if (sum >= span) break;
+      }
+      const scale = span / sum;
+      let x0 = from;
+      for (const blk of seq) {
+        const w = blk.ideal * scale;
+        if (blk.isShop) {
+          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, BH), baMats[bi++ % baMats.length]);
           mesh.position.set(x0 + w / 2, BH / 2, BACK_Z - 0.02);
-          if (w < BW) mesh.scale.x = w / BW;
           scene.add(mesh);
-          x0 += w;
         } else {
-          const w = Math.min(PW, to - x0);
-          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), mat);
+          const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, PH), mat);
           mesh.position.set(x0 + w / 2, PH / 2, BACK_Z - 0.02);
-          if (w < PW) mesh.scale.x = w / PW;
           scene.add(mesh);
-          x0 += w;
         }
+        x0 += w;
       }
     }
   } else {
-    const kBA = portenoRun(-7, lcLeft);
-    portenoRun(lcRight, BORDER_X, kBA);
+    let kBA = 0;
+    for (const [from, to] of baGaps) kBA = portenoRun(from, to, kBA);
   }
-  // Locales famosos, un poco adelante de las casitas
+  // Locales famosos: cada uno ocupa su propio espacio reservado en la calle (sin nada detrás que se corte)
   for (const L of LANDMARKS) {
     const painted = assets.has?.(L.id);
     const tex = painted ? assets.texture(L.id) : canvasTex(768, 512, landmarkPainter(L.id));
     const aspect = painted ? assets.meta(L.id).w / assets.meta(L.id).h : 1.5;
     const H = L.w / aspect;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(L.w, H), new THREE.MeshBasicMaterial({ map: tex, fog: false }));
-    m.position.set(L.x, H / 2, BACK_Z + 0.3);
+    m.position.set(L.x, H / 2, BACK_Z + 0.05);
     m.userData.landmark = L.id;
     scene.add(m);
     if (L.id === 'punto_de_oro') {
@@ -549,7 +577,7 @@ export function buildStreet(scene, assets) {
         c.shadowColor = '#5ee08a'; c.shadowBlur = 22; c.fillStyle = '#ffd36e';
         c.fillText('🎾 PUNTO DE ORO', w / 2, h / 2 + 4);
       }), transparent: true, fog: false }));
-      poSign.position.set(L.x, 3.85, BACK_Z + 0.7);
+      poSign.position.set(L.x, 3.85, BACK_Z + 0.45);
       scene.add(poSign);
     }
   }
@@ -659,25 +687,40 @@ export function buildStreet(scene, assets) {
     }), fog: false });
   };
   const frParts = [[0, U_LC[0]], [U_LC[1], 1]].map(([u0, u1]) => ({ mat: new THREE.MeshBasicMaterial({ map: crop(u0, u1), fog: false }), w: (u1 - u0) * bgMeta.w / pxPerM }));
-  let fx0 = BORDER_X, part = 0;
-  while (fx0 < GALPON_X - 0.5) {
-    if (part % 2 === 1) {
-      const BW = 8.4, BH = 9.0, w = Math.min(BW, GALPON_X - fx0);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH), haussmannMat(part >> 1));
-      m.position.set(fx0 + w / 2, BH / 2, BACK_Z - 0.02);
-      if (w < BW) m.scale.x = w / BW;
-      scene.add(m);
-      fx0 += w;
-    } else {
-      const pt = frParts[(part >> 1) % 2];
-      const w = Math.min(pt.w, GALPON_X - fx0);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(pt.w, tileH), pt.mat);
-      m.position.set(fx0 + pt.w / 2, tileH * (0.5 - 0.165), BACK_Z - 0.02);
-      if (w < pt.w) { m.scale.x = w / pt.w; m.position.x = fx0 + w / 2; }
-      scene.add(m);
+  const frReserved = LANDMARKS.filter(L => L.x >= BORDER_X && L.x < GALPON_X).map(L => [L.x - L.w / 2, L.x + L.w / 2]);
+  const frGaps = splitGaps(BORDER_X, GALPON_X, frReserved);
+  let frPartIdx = 0, frShopIdx = 0;
+  for (const [from, to] of frGaps) {
+    const span = to - from;
+    const seq = [];
+    let sum = 0, step = 0;
+    while (true) {
+      const isHaussmann = step % 2 === 1;
+      const pt = frParts[(frPartIdx + (step >> 1)) % 2];
+      const ideal = isHaussmann ? 8.4 : Math.min(pt.w, 10.5);
+      if (seq.length > 0 && Math.abs((sum + ideal) - span) > Math.abs(sum - span)) break;
+      seq.push({ isHaussmann, pt, ideal });
+      sum += ideal;
+      step++;
+      if (sum >= span) break;
+    }
+    const scale = span / sum;
+    let fx0 = from;
+    for (const blk of seq) {
+      const w = blk.ideal * scale;
+      if (blk.isHaussmann) {
+        const BH = 9.0;
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, BH), haussmannMat(frShopIdx++));
+        m.position.set(fx0 + w / 2, BH / 2, BACK_Z - 0.02);
+        scene.add(m);
+      } else {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, tileH), blk.pt.mat);
+        m.position.set(fx0 + w / 2, tileH * (0.5 - 0.165), BACK_Z - 0.02);
+        scene.add(m);
+        frPartIdx++;
+      }
       fx0 += w;
     }
-    part++;
   }
   // Galpón del fondo
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(70, 13), new THREE.MeshBasicMaterial({ map: assets.has?.('galpon') ? galponTex(assets) : canvasTex(1024, 256, warehouse, 4, 1), fog: false }));
@@ -763,12 +806,20 @@ export function buildStreet(scene, assets) {
   const airportSign = sign('✈ AEROPUERTO', BORDER_X - 5, 6.6, '#7ec8ff', 5); // fin del Nivel 1: se viaja en avión
   sign('GALPÓN DEL FONDO', GALPON_X + 18, 7.6, '#ff7a6b', 9);
 
+  // Helper para no plantar faroles, árboles, macetas ni banderines delante de locales icónicos o monumentos
+  const MONUMENT_XS = [46, 112, 176, 244];
+  const isLandmarkFront = (x, pad = 0.8) =>
+    LANDMARKS.some(L => Math.abs(x - L.x) < L.w / 2 + pad) ||
+    Math.abs(x - LE_CONCEPT_X) < lcW / 2 + pad ||
+    MONUMENT_XS.some(mx => Math.abs(x - mx) < 2.2 + pad);
+
   // Faroles con halo
   const glow = glowTex();
   const postMat = new THREE.MeshLambertMaterial({ color: 0x1d1b2b });
   const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe2a8 });
   const haloMat = new THREE.SpriteMaterial({ map: glow, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
   for (let x = 6; x < GALPON_X; x += 15) {
+    if (isLandmarkFront(x, 0.8)) continue;
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 4.2, 8), postMat);
     post.position.set(x, 2.1, -4.95);
     scene.add(post);
@@ -803,7 +854,7 @@ export function buildStreet(scene, assets) {
   // Van en las columnas que separan una casita de la otra en la pintura (nunca delante de una vidriera,
   // una puerta o un cartel) y lejos de los locales famosos y de Le Concept.
   const baSpots = streetSpotsBA(assets, { lcLeft, lcRight });
-  const keepClear = (x) => [34, 46, 86, 104, 112].some(cx => Math.abs(x - cx) < 7.2);
+  const keepClear = (x) => isLandmarkFront(x, 1.8) || Math.abs(x - 9) < 3.2;
   const treeXs = [], binXs = [];
   for (const x of baSpots) if (x >= 8 && !keepClear(x) && (!treeXs.length || x - treeXs[treeXs.length - 1] >= 16)) treeXs.push(x);
   for (const x of baSpots) {
@@ -841,27 +892,28 @@ export function buildStreet(scene, assets) {
   stopSign.position.set(70, 3.1, -4.35);
   scene.add(stopPole, stopSign);
 
-  // Guirnaldas tricolor en Francia
+  // Guirnaldas tricolor en Francia (celestes y blancas en Buenos Aires), despejando los carteles de locales icónicos
   const flagCols = [0x2b4fa8, 0xf4f1ea, 0xd23a3a];
   const flagGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.22, 0, 0), new THREE.Vector3(0.22, 0, 0), new THREE.Vector3(0, -0.45, 0)]);
   const flagMats = flagCols.map(c => new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
-  // En Buenos Aires los banderines son celestes y blancos (como la bandera)
   const baFlagMats = [0x74b9e8, 0xf4f1ea].map(c => new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
   for (let a = 6; a < GALPON_X - 8; a += 22) {
     if (a + 18 > LE_CONCEPT_X - 11 && a < LE_CONCEPT_X + 11) continue;
     const inBA = a + 18 < BORDER_X;
     for (let k = 0; k <= 22; k++) {
       const t = k / 22, x = a + t * 18, y = 4.35 - Math.sin(t * Math.PI) * 0.7;
+      if (LANDMARKS.some(L => Math.abs(x - L.x) < L.w / 2 + 0.5)) continue;
       const f = new THREE.Mesh(flagGeo, inBA ? baFlagMats[k % 2] : flagMats[k % 3]);
       f.position.set(x, y, -4.7);
       scene.add(f);
     }
   }
 
-  // Macetas sobre la vereda francesa
+  // Macetas sobre la vereda francesa (despejando locales icónicos y monumentos)
   const potMat = new THREE.MeshLambertMaterial({ color: 0xb4643c });
   const leafMat = new THREE.MeshLambertMaterial({ color: 0x4f7a3c });
   for (let x = BORDER_X + 4; x < GALPON_X; x += 15) {
+    if (isLandmarkFront(x, 0.8)) continue;
     if (art('prop_maceta', 1.45, x, -5.0)) continue;
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), potMat);
     pot.position.set(x, 0.41, -5.0);
