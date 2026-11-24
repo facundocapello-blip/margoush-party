@@ -14,7 +14,7 @@ const INV = 0.8;
 const END_DELAY = 1.15;
 // Intro del jefe: BIG CHAKY con Margot (fuera de la jaula) anuncia «¡La prueba de Baile!»
 const INTRO = { line2: 1.9, reveal: 3.0, end: 3.7 };
-const INTRO_LINES = ['Te daré a Margoth, sólo si puedes vencerme en...', '¡La prueba de Baile!'];
+const INTRO_LINES = ['¿Pensaste que iba a pelear con este traje? Te devuelvo a Margot…', '¡Solo si me ganás en la Prueba de Baile!'];
 const CHAKY_VOICE = { lang: 'es-AR', pitch: 0.35, rate: 0.82 };
 const STAGE_Z = ARENA.bossZ;
 const TARIMA_H = 0.6, TARIMA_FRONT = STAGE_Z + 2.5, TARIMA_BACK = STAGE_Z - 3.5;
@@ -108,6 +108,22 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
     const fondo = assets.meta(fondoKey), BW = 52, BH = BW * fondo.h / fondo.w, BZ = STAGE_Z - 4.2;
     const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: assets.texture(fondoKey), fog: false }));
     back.position.set(0, BH / 2 - BH * 0.24, BZ);
+
+    // Haz de luz vertical suave sobre el héroe que destella en cada paso acertado (feedback periférico)
+    const beamTex = canvasTex(64, 128, (g, w, h) => {
+      const gx = g.createLinearGradient(0, 0, w, 0);
+      gx.addColorStop(0, 'rgba(255,255,255,0)'); gx.addColorStop(0.5, 'rgba(255,255,255,0.95)'); gx.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gx; g.fillRect(0, 0, w, h);
+      g.globalCompositeOperation = 'destination-in';
+      const gy = g.createLinearGradient(0, 0, 0, h);
+      gy.addColorStop(0, 'rgba(255,255,255,0)'); gy.addColorStop(0.25, 'rgba(255,255,255,0.9)'); gy.addColorStop(0.85, 'rgba(255,255,255,1)'); gy.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gy; g.fillRect(0, 0, w, h);
+    });
+    const beamMat = keep(new T.MeshBasicMaterial({ map: beamTex, color: L('#fde047'), transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide }));
+    const heroBeam = new T.Mesh(keep(new T.PlaneGeometry(4.2, 11)), beamMat);
+    heroBeam.position.set(-ARENA.stageX, 5.5, STAGE_Z + 0.05);
+    scene.add(heroBeam);
+    let beamT = 0;
 
     // Sprites (ambos de frente mirando a cámara) con sombra redonda
     const shG = keep(new T.PlaneGeometry(1, 1)); shG.rotateX(-Math.PI / 2);
@@ -228,6 +244,8 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
           PIU_LANES.map((l, i) => '<div class="lane l' + i + '" data-lane="' + i + '"><b class="rec">' + l + '</b></div>').join('') +
         '</div>' +
       '</div>' +
+      '<div class="fever-pill hidden"></div>' +
+      '<div class="dance-count hidden"></div>' +
       '<div class="arena-flash"></div>' +
       '<div class="chaky-sign hidden"><b class="ico"></b><span class="txt"></span><i class="timer"><i></i></i></div>' +
       '<div class="phase-card hidden"><small></small><b></b><span></span><em hidden></em></div>' +
@@ -239,6 +257,8 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
     const cardE = ui.querySelector('.phase-card'), dotsE = ui.querySelector('.dice-dots');
     const piuE = ui.querySelector('.piu'), lanesE = piuE.querySelector('.lanes'), judgeE = piuE.querySelector('.piu-judge');
     const captionE = piuE.querySelector('.dance-caption');
+    const feverE = ui.querySelector('.fever-pill'), countE = ui.querySelector('.dance-count');
+    let lastCountText = '';
     const introE = ui.querySelector('.chaky-intro');
     fillText(introE.querySelector('.skip'), 'Tocá para empezar');
     const laneEls = [...piuE.querySelectorAll('.lane')], noteEls = new Map();
@@ -420,25 +440,38 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       captionLeft = 2.0;
     }
 
+    function recBurst(lane, cls) {
+      const r = laneEls[lane]?.querySelector('.rec');
+      if (!r) return;
+      r.classList.remove('hit-perfect', 'hit-good', 'hit-bad');
+      void r.offsetWidth;
+      r.classList.add(cls);
+    }
+
     function piuJudge(e) {
       if (e.grade === 'empty') return;
       if (e.grade === 'miss') {
         piuText('¡FALLÓ!', 'bad');
+        recBurst(e.lane, 'hit-bad');
         return;
       }
       const isPerf = e.grade === 'perfect';
       piuText(tr(isPerf ? '¡PERFECTO!' : '¡BIEN!') + (e.combo > 1 ? ' ×' + e.combo : ''), e.grade);
+      recBurst(e.lane, isPerf ? 'hit-perfect' : 'hit-good');
       sfx(isPerf ? 'perfect' : 'pickup');
       addPts(isPerf ? ARENA.points.stepPerfect : ARENA.points.stepGood, x, TARIMA_H + HERO_H * 0.72, z);
+      pop(logic.state.bossX, TARIMA_H + BOSS_H * 0.65, STAGE_Z + 0.2, isPerf ? '✨' : '💥', '#ffd36e', isPerf ? 30 : 24, 0.55);
       charge(POWER.hit);
       game.combo?.add?.(1);
       danceStep = (e.lane - 2) / 2;
       if (y <= 0) vy = CHASE.jump * (e.lane === 2 ? 0.52 : 0.35);
-      // Iluminar las baldosas LED del escenario con el color del carril acertado
+      // Haz de luz vertical sobre el héroe + baldosas LED del color del carril acertado
       const hitCol = L(TILE_COLORS[e.lane % TILE_COLORS.length]);
+      beamMat.color.copy(hitCol);
+      beamT = isPerf ? 0.42 : 0.28;
       for (const tile of discoTiles) {
         tile.mat.color.copy(hitCol);
-        tile.mat.opacity = 0.85;
+        tile.mat.opacity = 0.88;
       }
     }
 
@@ -501,6 +534,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
               // Si quedan vidas extra (⭐⭐⭐), gasta 1 estrella, recupera los corazones y sigue en la misma ronda
               if (logic.useLife()) {
                 hero.hp = hero.hpMax;
+                hurtT = 0; // vuelve limpio a pose de baile para la cuenta regresiva de recuperación
                 renderLives();
                 for (const el of noteEls.values()) el.remove();
                 noteEls.clear();
@@ -662,17 +696,52 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       cam.fov = cam.aspect < 0.9 ? STAGE_CAM.fovPortrait : STAGE_CAM.fov;
       cam.updateProjectionMatrix();
 
-      // Pulso de luces disco y baldosas LED al ritmo de la música
+      // Pulso de luces disco y baldosas LED al ritmo de la música (más intenso en Modo Disco)
+      const feverOn = phase === 'fight' && !!S.dice?.fever;
       const beatDur = S.dice?.beatDur || ARENA.dice.beat;
       const beatPhase = ((S.dice?.t ?? t) * Math.PI) / beatDur;
       const beatBounce = Math.abs(Math.sin(beatPhase));
       const beatSway = Math.sin(beatPhase);
-      spotL.position.x = -3.8 + Math.sin(t * 2.4) * 1.6;
-      spotR.position.x = 3.8 - Math.sin(t * 2.4) * 1.6;
+      const sweepSpd = feverOn ? 5.2 : 2.4;
+      spotL.position.x = -3.8 + Math.sin(t * sweepSpd) * (feverOn ? 2.8 : 1.6);
+      spotR.position.x = 3.8 - Math.sin(t * sweepSpd) * (feverOn ? 2.8 : 1.6);
       for (let i = 0; i < discoTiles.length; i++) {
         const tile = discoTiles[i];
-        tile.mat.opacity += ((0.32 + 0.38 * Math.abs(Math.sin(beatPhase + i * 0.7))) - tile.mat.opacity) * Math.min(1, dt * 8);
-        tile.mat.color.lerp(tile.baseCol, Math.min(1, dt * 5));
+        tile.mat.opacity += (((feverOn ? 0.45 : 0.32) + 0.42 * Math.abs(Math.sin(beatPhase + i * 0.7))) - tile.mat.opacity) * Math.min(1, dt * 8);
+        if (feverOn) {
+          const ci = (i + Math.floor(t * 7)) % TILE_COLORS.length;
+          tile.mat.color.lerp(L(TILE_COLORS[ci]), Math.min(1, dt * 8));
+        } else {
+          tile.mat.color.lerp(tile.baseCol, Math.min(1, dt * 5));
+        }
+      }
+      beamT = Math.max(0, beamT - dt);
+      beamMat.opacity = beamT > 0 ? Math.min(0.45, beamT * 1.15) : 0;
+      heroBeam.position.x = S.heroX;
+      piuE.classList.toggle('fever', feverOn);
+      if (feverOn) {
+        feverE.classList.remove('hidden');
+        feverE.textContent = tr('🔥 ¡MODO DISCO!') + ' ×' + (S.dice?.combo || 4);
+      } else {
+        feverE.classList.add('hidden');
+      }
+
+      // Conteo rítmico «3 · 2 · 1 · ¡A BAILAR!» antes de la primera flecha de cada ronda
+      const dLead = S.dice?.lead || 0;
+      const inCountdown = phase === 'fight' && S.phase !== 'ko' && S.dice?.stage === 'play' && dLead >= 0.7 && S.dice.t < dLead + 0.32;
+      if (inCountdown) {
+        const frac = S.dice.t / dLead;
+        const cTxt = frac < 0.33 ? '3' : frac < 0.66 ? '2' : frac < 1.0 ? '1' : tr('¡A BAILAR!');
+        if (cTxt !== lastCountText) {
+          lastCountText = cTxt;
+          countE.textContent = cTxt;
+          countE.className = 'dance-count' + (frac >= 1 ? ' go' : '');
+          void countE.offsetWidth;
+          countE.classList.add('pop-in');
+        }
+      } else if (lastCountText) {
+        lastCountText = '';
+        countE.className = 'dance-count hidden';
       }
 
       // 1. BIG CHAKY (a la derecha del escenario, DE FRENTE mirando a cámara)
@@ -756,7 +825,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       place(P, x, TARIMA_H + y + hBob, z);
       P.rotation.z = hLean + danceStep * y * 0.12;
 
-      // 3. MARGOT: junto a Chaky en la intro; después rueda al fondo del escenario a mirar el duelo
+      // 3. MARGOT: junto a Chaky en la intro; después rueda al fondo y festeja en Modo Disco o KO
       if (M) {
         const inIntroShot = phase === 'intro' && phaseT < INTRO.reveal;
         const tx = inIntroShot ? S.bossX - 1.95 : 0;
@@ -765,7 +834,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
         const kk = Math.min(1, dt * 5);
         if (dt === 0 || phase === 'intro' && phaseT < 0.05) { mX = tx; mZ = tz; mH = th; }
         else { mX += (tx - mX) * kk; mZ += (tz - mZ) * kk; mH += (th - mH) * kk; }
-        if (S.phase === 'ko') setMargot(3);
+        if (S.phase === 'ko' || feverOn) setMargot(3);
         else if (phase === 'down' || (phase === 'intro' && phaseT < INTRO.reveal)) setMargot(2);
         else if (phase !== 'intro') setMargot(1);
         const mb = margotCell === 3 ? Math.abs(Math.sin(t * 7)) * 0.3 : beatBounce * 0.06;

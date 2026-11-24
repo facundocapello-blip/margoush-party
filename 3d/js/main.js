@@ -251,17 +251,17 @@ function setLevel(n) {
 const CP_KEY = 'margoush3d_checkpoint';
 const CHECKPOINTS = {
   calle:   { label: 'ACTO 1 · BUENOS AIRES', short: 'Acto 1 · Buenos Aires' },
-  chaky:   { label: 'JEFE 1 · BIG CHAKY', short: 'BIG CHAKY' },
+  chaky:   { label: '¡LLEGASTE AL HANGAR VIP!', short: 'Hangar · BIG CHAKY' },
   acto2:   { label: 'ACTO 2 · ¡SEGUÍ AL BYD!', short: 'Acto 2 · Persecución BYD' },
   byd:     { label: 'ACTO 2 · ¡ROMPÉ EL BYD!', short: 'el BYD de Cepi' },
-  cepi:    { label: 'JEFE 2 · CEPI «EL NIÑO»', short: 'Cepi (Pádel)' },
+  cepi:    { label: 'CEPI SE QUEDÓ SIN BYD… ¡PERO NO SIN PALETA!', short: 'Cepi (Pádel)' },
   acto3:   { label: 'ACTO 3 · PARÍS (BOULANGERIE)', short: 'Acto 3 · París' },
-  lale:    { label: 'JEFE 3 · LALE «MANTECOSO»', short: 'Lale (Obrador)' },
+  lale:    { label: '¡BIENVENIDO AL OBRADOR DE LE BLÉ!', short: 'Lale (Obrador)' },
   acto4:   { label: 'ACTO 4 · FERME LAPADITE → GALPÓN', short: 'Acto 4 · Galpón' },
-  pinky:   { label: 'JEFE FINAL · PINKY', short: 'Pinky (Final)' },
+  pinky:   { label: 'ÚLTIMA PARADA · EL GALPÓN', short: 'Pinky (Final)' },
   // compatibilidad con checkpoints previos guardados en localStorage
   francia: { label: 'ACTO 3 · PARÍS (BOULANGERIE)', short: 'París' },
-  boss:    { label: 'JEFE 1 · BIG CHAKY', short: 'BIG CHAKY' }
+  boss:    { label: '¡LLEGASTE AL HANGAR VIP!', short: 'Hangar · BIG CHAKY' }
 };
 function saveCheckpoint(id) {
   game.checkpoint = { id, heroId: game.heroId, score: game.score?.total ?? 0, time: Math.round(game.time || 0) };
@@ -632,7 +632,7 @@ function startTransition() {
   Object.assign(h, { state: 'free', lift: 0, vy: 0, knock: 0, knockZ: 0 });
   updateCamera(0, true);
   const done = LEVELS[0];
-  $('#level-done').textContent = tr('¡BUENOS AIRES DESPEJADO!');
+  $('#level-done').textContent = tr('¡CEPI CONFESÓ! LALE SE LLEVÓ A MARGOT A PARÍS');
   $('#level-name').textContent = tr(done.name);
   $('#level-pts').textContent = tr(game.score.total.toLocaleString('es-AR') + ' puntos');
   $('#level-next').textContent = '✈ ' + tr(CHECKPOINTS.acto3.label);
@@ -774,7 +774,7 @@ function enterAct4Street() {
   updateCamera(0, true);
   saveCheckpoint('acto4');
   game.state = 'curtain';
-  curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 }); }, { label: '¡LALE FUERA! MARGOT ESTÁ PASANDO LA FERME LAPADITE' });
+  curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 }); }, { label: '¡LALE FUERA! PINKY SE LA LLEVÓ PASANDO LA FERME LAPADITE' });
 }
 
 game.onBossDown = () => {

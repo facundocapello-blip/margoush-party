@@ -6,6 +6,7 @@ import { createVoice } from './voice.js';
 import { SWINGS } from './hero.js';
 import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
+import { attachBossIntro } from './boss_intro.js';
 
 const MOVE = 6.3;
 const DASH_SPEED = 11.5;
@@ -201,6 +202,13 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     document.body.classList.add('arena-on');
     const flashE = ui.querySelector('.arena-flash');
     const cardE = ui.querySelector('.phase-card');
+    const bossIntro = attachBossIntro(ui, {
+      name: 'LALE «MANTECOSO»',
+      line1: '¡Nadie toca mis croissants ni a la bebé!',
+      line2: '¡Te voy a dejar patinando hasta mañana!',
+      quick: !!game.probar,
+      onSkip() { if (phase === 'entrance') phaseT = bossIntro.dur; }
+    });
 
     const CARDS = {
       1: ['FASE 1 · 🧈', '¡MANTECA PARA TODOS!', 'Pegale a la bolsa de harina para enharinarlo'],
@@ -415,7 +423,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       hero.holdT = holdT;
       vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
 
-      if (phase === 'entrance' && phaseT >= ENTRANCE) {
+      if (phase === 'entrance' && bossIntro.update(phaseT)) {
         phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.22, 0.25);
         phaseCard(logic.state.phase === 'ko' ? 3 : logic.state.phase, 2.0);
         setTimeout(() => { if (!disposed) speak('intro'); }, 1900);
@@ -606,6 +614,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       if (disposed) return;
       disposed = true;
       clearTimeout(cardTimer); clearTimeout(flashTimer);
+      bossIntro.finish();
       ui.remove();
       document.body.classList.remove('arena-on');
       if (bar) bar.classList.add('hidden');

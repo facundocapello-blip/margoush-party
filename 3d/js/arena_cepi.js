@@ -6,6 +6,7 @@ import { createVoice, PROFILES } from './voice.js';
 import { SWINGS } from './hero.js';
 import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
+import { attachBossIntro } from './boss_intro.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -189,6 +190,13 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     const cardE = ui.querySelector('.phase-card');
     const duelE = ui.querySelector('.cepi-duel'), tellE = ui.querySelector('.cepi-tell');
     const duelBtns = [...ui.querySelectorAll('.cepi-btns button')];
+    const bossIntro = attachBossIntro(ui, {
+      name: 'CEPI «EL NIÑO»',
+      line1: '¡Me rompiste el eléctrico que todavía pago en cuotas!',
+      line2: '¡Si querés a Margot, ganame un Punto de Oro!',
+      quick: !!game.probar,
+      onSkip() { if (phase === 'entrance') phaseT = bossIntro.dur; }
+    });
 
     const CARDS = {
       1: ['FASE 1 · 🎾', '¡SAQUE Y REMATE!', 'Devolvé la dorada o pegale cuando se cansa'],
@@ -444,7 +452,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       hero.holdT = holdT;
       vy -= CHASE.gravity * dt; y = Math.max(0, y + vy * dt); if (y <= 0) vy = Math.max(0, vy);
 
-      if (phase === 'entrance' && phaseT >= ENTRANCE) {
+      if (phase === 'entrance' && bossIntro.update(phaseT)) {
         phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.25, 0.3);
         phaseCard(logic.state.phase === 'ko' ? 3 : logic.state.phase, 2.0);
         setTimeout(() => { if (!disposed) speak('intro'); }, 1900);
@@ -626,6 +634,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       if (disposed) return;
       disposed = true;
       clearTimeout(cardTimer); clearTimeout(flashTimer);
+      bossIntro.finish();
       removeEventListener('keydown', onKey);
       ui.remove();
       document.body.classList.remove('arena-on', 'cepi-duel-on');

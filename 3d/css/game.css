@@ -843,10 +843,74 @@ body.chaky-intro-on #arena-ui .piu { opacity: .25; transition: opacity .4s; }
 @keyframes intro-pop { to { opacity: 1; transform: scale(1) rotate(-3deg); } }
 @keyframes intro-glow { from { transform: scale(1) rotate(-3deg); } to { transform: scale(1.06) rotate(-3deg); } }
 #arena-ui .chaky-intro .skip { position: absolute; bottom: calc(14px + var(--safe-b)); left: 0; right: 0; font: 700 12px Nunito, sans-serif; font-style: normal; color: #ffffffb0; }
+#arena-ui .piu.fever {
+  border-color: #fde047;
+  box-shadow: 0 -6px 26px rgba(232, 121, 249, 0.45), 0 0 18px rgba(250, 204, 21, 0.35);
+}
+#arena-ui .lane::after {
+  content: ''; position: absolute; left: 50%; top: 8px; bottom: 38px; width: 2px; margin-left: -1px;
+  background: linear-gradient(180deg, transparent 0%, var(--lane-col) 100%); opacity: 0.24; pointer-events: none;
+}
+#arena-ui .rec.hit-perfect { animation: rec-hit-perf .28s ease-out; }
+#arena-ui .rec.hit-good { animation: rec-hit-good .24s ease-out; }
+#arena-ui .rec.hit-bad { animation: rec-hit-bad .24s ease-out; }
+@keyframes rec-hit-perf {
+  0% { transform: translateX(-50%) scale(1.22); background: #fde047; color: #1a1033; box-shadow: 0 0 22px #fde047; }
+  100% { transform: translateX(-50%) scale(1); }
+}
+@keyframes rec-hit-good {
+  0% { transform: translateX(-50%) scale(1.14); background: rgba(52, 211, 153, 0.65); box-shadow: 0 0 16px #34d399; }
+  100% { transform: translateX(-50%) scale(1); }
+}
+@keyframes rec-hit-bad {
+  0% { transform: translateX(-50%) scale(0.92); border-color: #ff4d5e; background: rgba(255, 77, 94, 0.35); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+#arena-ui .fever-pill {
+  position: absolute; left: 50%; bottom: calc(var(--deck-height) + var(--safe-b) + 6px); transform: translateX(-50%);
+  padding: 4px 12px; border-radius: 999px; border: 2px solid #fde047; background: linear-gradient(90deg, #a21caf, #db2777);
+  color: #fff7d6; font: 700 13px/1 Fredoka, sans-serif; letter-spacing: 0.5px; box-shadow: 0 4px 14px rgba(219, 39, 119, 0.55);
+  pointer-events: none; z-index: 4; white-space: nowrap;
+}
+#arena-ui .fever-pill.hidden { display: none; }
+#arena-ui .dance-count {
+  position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%) scale(0.7);
+  font: 700 clamp(38px, 11vw, 58px)/1 Fredoka, sans-serif; color: #fde047;
+  text-shadow: 0 4px 0 #701a75, 0 0 22px #f472b6; pointer-events: none; z-index: 6; opacity: 0;
+}
+#arena-ui .dance-count.go { font-size: clamp(28px, 8vw, 44px); color: #7ee0c3; }
+#arena-ui .dance-count.pop-in { animation: count-pop .32s cubic-bezier(.2, 1.7, .4, 1) forwards; }
+@keyframes count-pop { to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+#arena-ui .dance-count.hidden { display: none; }
+/* Intro narrativa compartida para Cepi, Lale y Pinky (2 líneas, salteable con 1 toque) */
+#arena-ui .boss-intro {
+  position: absolute; inset: 0; z-index: 7; pointer-events: auto; touch-action: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: calc(74px + var(--safe-t)) 16px 0; text-align: center; transition: opacity .38s;
+  background: linear-gradient(180deg, rgba(12, 8, 28, .82) 0%, rgba(12, 8, 28, .38) 38%, rgba(12, 8, 28, 0) 58%);
+}
+#arena-ui .boss-intro.out { opacity: 0; pointer-events: none; }
+#arena-ui .boss-intro small { font: 700 12px/1 Fredoka, sans-serif; letter-spacing: 3.5px; color: #ffd36e; opacity: 0; transition: opacity .25s; }
+#arena-ui .boss-intro .l1 {
+  margin: 8px 0 0; max-width: min(92vw, 520px); padding: 9px 15px; border-radius: 16px;
+  background: rgba(24, 16, 48, .92); border: 2px solid #ffd36e; box-shadow: 0 8px 22px #0009;
+  color: #fff; font: 700 clamp(16px, 4.4vw, 22px)/1.2 Fredoka, sans-serif; opacity: 0; transform: translateY(-6px); transition: opacity .25s, transform .25s;
+}
+#arena-ui .boss-intro .l2 {
+  display: block; margin-top: 10px; max-width: min(92vw, 540px); color: #ffd36e;
+  font: 700 clamp(22px, 6.2vw, 34px)/1.12 Fredoka, sans-serif;
+  text-shadow: 0 3px 0 #7c1d4b, 0 0 18px #f472b6, 0 0 4px #000; opacity: 0; transform: scale(.65);
+}
+#arena-ui .boss-intro.on1 small, #arena-ui .boss-intro.on1 .l1 { opacity: 1; transform: none; }
+#arena-ui .boss-intro.on2 .l2 { animation: intro-pop .4s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+#arena-ui .boss-intro .skip { position: absolute; bottom: calc(16px + var(--safe-b)); left: 0; right: 0; font: 700 12px Nunito, sans-serif; font-style: normal; color: #ffffffb8; }
 @media (orientation: landscape) and (max-height: 500px) {
   #arena-ui .chaky-intro { padding-top: calc(48px + var(--safe-t)); }
   #arena-ui .chaky-intro .l1 { padding: 6px 12px; font-size: 17px; }
   #arena-ui .chaky-intro .l2 { margin-top: 6px; font-size: 34px; }
+  #arena-ui .boss-intro { padding-top: calc(48px + var(--safe-t)); }
+  #arena-ui .boss-intro .l1 { padding: 6px 12px; font-size: 16px; }
+  #arena-ui .boss-intro .l2 { margin-top: 6px; font-size: 24px; }
 }
 /* Arena de Cepi — Duelo de la flechita (Fase 2) */
 body.cepi-duel-on #touch { display: none; }

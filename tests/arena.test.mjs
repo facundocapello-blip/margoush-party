@@ -160,3 +160,23 @@ test('ko happens once and nothing hurts after it', () => {
   assert.equal(after.filter(e => e.type === 'hurt').length, 0);
   assert.equal(l.tap(0).length, 0);
 });
+
+test('4 aciertos seguidos activan Modo Disco (fever) con daño extra y un fallo lo reinicia', () => {
+  const l = mk(), hero = safeHero();
+  for (let i = 0; i < 4; i++) {
+    const n = l.state.dice.notes[i];
+    runUntil(l, hero, () => Math.abs(l.state.dice.t - n.time) <= 0.02, 10);
+    const evs = l.tap(n.lane);
+    if (i < 3) assert.equal(l.state.dice.fever, false);
+    else {
+      assert.equal(l.state.dice.fever, true);
+      const hit = ofType(evs, 'bossHit')[0];
+      assert.ok(hit.dmg > ARENA.stepDmg, 'Modo Disco hace más daño por paso');
+    }
+  }
+  const n5 = l.state.dice.notes[4];
+  runUntil(l, hero, () => n5.judged === 'miss', 10);
+  assert.equal(l.state.dice.fever, false);
+  assert.equal(l.state.dice.combo, 0);
+});
+

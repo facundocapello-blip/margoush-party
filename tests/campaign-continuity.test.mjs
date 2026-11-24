@@ -164,8 +164,10 @@ test('señales de Margot en fuga/Pinky y claridad de objetivo en ¡Rompé el BYD
   const i18n = readFileSync(new URL('../3d/js/i18n.js', import.meta.url), 'utf8');
   assert.match(chase, /margot-ico/);
   assert.match(chase, /hintE\.classList\.remove\('hidden'\)/);
-  assert.match(bonus, /JEFE 2 · CEPI «EL NIÑO»/);
+  assert.match(bonus, /CEPI SE QUEDÓ SIN BYD/);
   assert.match(bonus, /bonus-goal/);
+  assert.doesNotMatch(bonus, /drawImage\(bydCanvasWithMargot/);
+  assert.match(bonus, /margot_sheet/);
   assert.match(pinky, /pinky-margot-cue/);
   assert.match(pinky, /¡MARGOT SE PREPARA PARA AYUDAR!/);
   assert.match(i18n, /¡CUIDADO! ¡CAMBIÁ DE CARRIL!/);
@@ -173,6 +175,14 @@ test('señales de Margot en fuga/Pinky y claridad de objetivo en ¡Rompé el BYD
   assert.match(i18n, /¡TOCÁ PARA EL GRITO DE MARGOT!/);
   const bydStart = main.slice(main.indexOf('function startBydLevel()'), main.indexOf('function bydDone()'));
   assert.match(bydStart, /_back_/);
+  // Cortinas narrativas en lugar de «JEFE X» y mini-intro de historia en Cepi, Lale y Pinky
+  assert.match(main, /¡LLEGASTE AL HANGAR VIP!/);
+  assert.match(main, /¡BIENVENIDO AL OBRADOR DE LE BLÉ!/);
+  assert.match(main, /ÚLTIMA PARADA · EL GALPÓN/);
+  for (const file of ['arena_cepi.js', 'arena_lale.js', 'arena_pinky.js']) {
+    const src = readFileSync(new URL('../3d/js/' + file, import.meta.url), 'utf8');
+    assert.match(src, /attachBossIntro\(/, `${file} debe tener su mini-intro de historia`);
+  }
 });
 
 
