@@ -680,6 +680,8 @@ function healBeforeBoss(instant = false) {
 // ---------- Jefes de los 4 Actos (con carga diferida por arena) ----------
 function spawnBoss({ instant = false } = {}) {
   input.reset();
+  clearBanners();
+  game.combo.reset();
   healBeforeBoss(instant);
   const wait = Promise.all([
     assets.ensure(['arena_chaky_dance_', 'arena_fondo', 'margot_sheet']), // solo el traje violeta de baile (sin sprites naranjas)

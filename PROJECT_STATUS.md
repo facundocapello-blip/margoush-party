@@ -441,3 +441,16 @@ Lectura de diseño: Chaky exige ritmo, Cepi alterna devolución, esquive y recon
 Reglas: la calle usa invulnerabilidad tras el impacto; antes del jefe se recuperan dos corazones con mínimo tres y tope en el máximo del personaje. Chaky tiene tres continuaciones dentro de ronda; Cepi, Lale y Pinky recuperan una vez el 60 % de los corazones redondeado hacia arriba, con mínimo dos. El BYD descuenta un corazón por intento fallido. Los checkpoints restauran personaje, puntos y tiempo guardados con vida llena. Falta validar la percepción de justicia con jugadores y la combinación de impactos de cada arena en dispositivo.
 
 Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b2. La publicación de GitHub Pages conserva el código de main.
+
+## 2026-11-24 (2) · Big Chaky: entrada desde la calle, primera flecha y visibilidad en las 3 rondas
+- **Base:** rama `audit/continuidad-20261124` (`d324490`, con los tres arreglos de continuidad porteña y derrota en umbral de jefe).
+- **Correcciones en Big Chaky (`3d/css/game.css`, `3d/js/arena.js`, `3d/js/main.js`):**
+  - **Cartel de ronda sin tapar los 5 carriles:** `body.chaky-dance #arena-ui .phase-card.p2` se movió arriba de `.piu` (`bottom: calc(var(--deck-height) + var(--safe-b) + 10px)`, compacto en horizontal) porque antes se superponía sobre los botones receptores durante 1,15 s al inicio de cada una de las 3 rondas.
+  - **Toque limpio y alineación de flechas:** `pointer-events: none` en `#arena-ui .rec, #arena-ui .note` y `ev.stopPropagation()` en `.lane` `pointerdown` para que el toque en Safari siempre golpee el carril estable; `recY = Math.max(8, H - 36)` en `piuDraw()` para alinear las flechas que bajan con el botón receptor también en horizontal (`844×390`).
+  - **Entrada limpia desde la calle:** `spawnBoss()` ahora limpia carteles (`clearBanners()`) y combo (`game.combo.reset()`) al cruzar el final del Acto 1 hacia Big Chaky; `arena.start()` llama `updateHud(0)` para mostrar de inmediato los corazones curados en el cuadro 0.
+- **Verificación ejecutada:**
+  - `node --check 3d/js/arena.js 3d/js/main.js`, `node tools/stamp_versions.mjs`, `npm test` (**76/76 pruebas JS en verde**; `tests/check_sprites.py` omitido localmente por ausencia de `numpy` en el Python del entorno).
+  - Auditoría automatizada en Chromium móvil emulado (`390×844` vertical y `844×390` horizontal) entrando desde la calle del Acto 1 hasta completar las 3 rondas de Chaky: `cardOverlapsPiu = false` en rondas 1, 2 y 3, respuesta inmediata en la primera flecha por `pointerdown` táctil, héroe/corazones/5 carriles visibles sin solapamientos y `0` errores JS / `0` `frameErrors`. **Nota:** Chromium emulado no equivale a Safari físico en iPhone.
+- **Pendiente en dispositivo físico (Safari iPhone):** validar entrada desde la calle al baile directo, tacto de la primera flecha, audio tras gesto y visibilidad de héroe, corazones y 5 carriles durante las 3 rondas; confirmar que no reaparece la pausa accidental.
+- **Rollback:** volver `main` y `feat-3d` al commit `e15c81c` (o revertir el merge automático en `main`).
+

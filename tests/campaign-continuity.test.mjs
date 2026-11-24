@@ -122,3 +122,38 @@ test('un golpe mortal al cruzar el umbral del jefe conserva la derrota', () => {
   runInNewContext(update + '\nframeStep(17);', context);
   assert.equal(game.state, 'result');
 });
+
+test('el cartel de ronda de Big Chaky no tapa los 5 carriles y las notas no interceptan el toque', () => {
+  const css = readFileSync(new URL('../3d/css/game.css', import.meta.url), 'utf8');
+  assert.match(css, /body\.chaky-dance #arena-ui \.phase-card\.p2\s*\{[^}]*bottom:\s*calc\(var\(--deck-height\)/);
+  assert.match(css, /#arena-ui \.rec,\s*#arena-ui \.note\s*\{[^}]*pointer-events:\s*none;/);
+});
+
+test('entrar a Big Chaky desde la calle limpia carteles y combo pendientes', () => {
+  const spawnSrc = main.slice(main.indexOf('function spawnBoss('), main.indexOf('function spawnCepi('));
+  let bannersCleared = 0, comboReset = 0, inputReset = 0, healed = 0, arenaStarted = 0;
+  const game = {
+    heroId: 'douge',
+    combo: { reset() { comboReset++; } },
+    ctx: { audio: { music() {} } },
+    arena: { start() { arenaStarted++; } }
+  };
+  const context = {
+    game,
+    input: { reset() { inputReset++; } },
+    clearBanners() { bannersCleared++; },
+    healBeforeBoss() { healed++; },
+    assets: { ensure: () => Promise.resolve() },
+    saveCheckpoint() {},
+    CHECKPOINTS: { chaky: { label: 'JEFE 1 · BIG CHAKY' } },
+    curtain(fn) { fn(); },
+    continueTransition(_, fn) { fn(); }
+  };
+  runInNewContext(spawnSrc + '\nspawnBoss();', context);
+  assert.equal(inputReset, 1);
+  assert.equal(bannersCleared, 1);
+  assert.equal(comboReset, 1);
+  assert.equal(healed, 1);
+  assert.equal(arenaStarted, 1);
+});
+

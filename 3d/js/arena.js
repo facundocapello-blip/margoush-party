@@ -350,7 +350,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       handle(logic.tap(lane));
     }
     for (const el of laneEls) {
-      el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); piuTap(+el.dataset.lane); });
+      el.addEventListener('pointerdown', (ev) => { ev.preventDefault(); ev.stopPropagation(); piuTap(+el.dataset.lane); });
     }
     const onKey = (ev) => {
       if (game.state === 'arena' && phase === 'intro' && !ev.repeat && ev.code !== 'Escape' && ev.code !== 'KeyP') { skipIntro(); return; }
@@ -458,7 +458,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
         laneHeight = lanesE.clientHeight;
       }
       const H = laneHeight || 110;
-      const startY = 6, recY = Math.max(30, H - 36);
+      const startY = 6, recY = Math.max(8, H - 36);
       const travel = d.travel || ARENA.dice.travel;
       const speed = (recY - startY) / travel;
       d.notes.forEach((n, i) => {
@@ -849,6 +849,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       }
     };
     draw(0);
+    updateHud(0);
   }
 
   return {
