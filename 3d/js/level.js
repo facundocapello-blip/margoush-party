@@ -22,22 +22,23 @@ export const GATES = [
 
 // Oleadas en orden. gate = índice del portón que abren al despejarse.
 // Chaky, Cepi, Lale y Pinky son únicamente JEFES de sus arenas; en la calle pelean sus secuaces.
+// Elenco 100 % separado por país: Buenos Aires (King Kong / patovica + bombo) · Francia (Hans Landa / secuaz + mozo + delivery).
 export const WAVES = [
-  { id: 'vereda', level: 1, trigger: 22, gate: null, title: 'LA VEREDA', text: '¡Llegaron los secuaces de BIG CHAKY!',
-    spawns: [{ dx: 9, dz: -0.9, kind: 'secuaz' }, { dx: 11, dz: 1.1, kind: 'secuaz' }] },
-  { id: 'vereda-2', level: 1, trigger: 50, gate: 0, title: 'SEGURIDAD VIP', text: 'Un patovica y su secuaz cortan la vereda.',
-    spawns: [{ dx: 9, dz: 1.1, kind: 'patovica' }, { dx: 8, dz: -1.1, kind: 'secuaz' }] },
+  { id: 'vereda', level: 1, trigger: 22, gate: null, title: 'LA VEREDA PORTEÑA', text: '¡Los bombos de BIG CHAKY copan la cuadra!',
+    spawns: [{ dx: 9, dz: -0.9, kind: 'bombo' }, { dx: 11, dz: 1.1, kind: 'bombo' }] },
+  { id: 'vereda-2', level: 1, trigger: 50, gate: 0, title: 'SEGURIDAD VIP', text: 'King Kong y un bombo cortan la vereda.',
+    spawns: [{ dx: 9, dz: 1.1, kind: 'patovica' }, { dx: 8, dz: -1.1, kind: 'bombo' }] },
   { id: 'avenida', level: 1, trigger: 76, gate: null, title: 'LA AVENIDA', text: 'Cuidado con el colectivo: no frena.',
-    spawns: [{ dx: 9, dz: -1.4, kind: 'bombo' }, { dx: -8, dz: 1.4, kind: 'secuaz' }] },
-  { id: 'le-concept', level: 1, trigger: 122, gate: null, endsLevel: true, title: '¡ÚLTIMA PARADA: EL AEROPUERTO!', text: 'Los secuaces no te dejan subir al avión.',
+    spawns: [{ dx: 9, dz: -1.4, kind: 'bombo' }, { dx: -8, dz: 1.4, kind: 'patovica' }] },
+  { id: 'le-concept', level: 1, trigger: 122, gate: null, endsLevel: true, title: '¡FRENTE A LE CONCEPT!', text: 'La patota de BIG CHAKY corta el camino a Ezeiza.',
     spawns: [{ dx: 8, dz: -0.6, kind: 'patovica' }, { dx: 10, dz: 1.6, kind: 'bombo' }] },
 
-  { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE', text: '¡Secuaces en las calles de París!',
+  { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE DE PARIS', text: '¡El inspector Landa y sus mozos vigilan París!',
     spawns: [{ dx: 8, dz: 0.4, kind: 'mozo' }, { dx: 10, dz: -1.3, kind: 'secuaz' }] },
-  { id: 'francia-2', level: 2, trigger: 186, gate: 1, title: 'CAMINO A LE BLÉ', text: 'Mozos y deliverys cuidan la panadería.',
+  { id: 'francia-2', level: 2, trigger: 186, gate: 1, title: 'CAMINO AL OBRADOR', text: 'Mozos y deliverys cuidan la boulangerie de Lale.',
     spawns: [{ dx: 10, dz: 1.4, kind: 'mozo' }, { dx: 9, dz: -1.6, kind: 'delivery' }] },
-  { id: 'boulevard-2', level: 2, trigger: 238, gate: 2, title: 'ÚLTIMO TRAMO', text: 'Atrás de esta barrera está el galpón.',
-    spawns: [{ dx: 8, dz: -1.4, kind: 'patovica' }, { dx: 10, dz: 1.6, kind: 'delivery' }, { dx: 11, dz: 0, kind: 'bombo' }] }
+  { id: 'boulevard-2', level: 2, trigger: 238, gate: 2, title: 'ÚLTIMO TRAMO', text: 'Pasando la Ferme LaPadite está el galpón.',
+    spawns: [{ dx: 8, dz: -1.4, kind: 'secuaz' }, { dx: 10, dz: 1.6, kind: 'delivery' }, { dx: 11, dz: 0, kind: 'mozo' }] }
 ];
 
 // Trampas. zone: tramo donde actúan las que aparecen solas.

@@ -164,7 +164,7 @@ export function createEnemies(ctx) {
     else if (st === 'windup' || st === 'ring' || e.stun > 0) pose = 'idle';
     else if (e.k.ai === 'bombo' && a.lift > 0.02) pose = Math.floor(e.beat * 2) % 2 ? 'step' : 'idle';
     else if (e.moving && a.poses.walk) pose = 'walk';
-    else if (e.k.ai !== 'mozo' && e.moving) pose = Math.floor(e.walk * (e.k.gait?.cadence || 2)) % 2 ? 'step' : 'idle';
+    else if (e.moving) pose = Math.floor(e.walk * (e.k.gait?.cadence || 2)) % 2 ? 'step' : 'idle';
     a.setPose(pose);
   }
 

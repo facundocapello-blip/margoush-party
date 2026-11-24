@@ -255,12 +255,12 @@ const CHECKPOINTS = {
   acto2:   { label: 'ACTO 2 · ¡SEGUÍ AL BYD!', short: 'Acto 2 · Persecución BYD' },
   byd:     { label: 'ACTO 2 · ¡ROMPÉ EL BYD!', short: 'el BYD de Cepi' },
   cepi:    { label: 'JEFE 2 · CEPI «EL NIÑO»', short: 'Cepi (Pádel)' },
-  acto3:   { label: 'ACTO 3 · FRANCIA (LE BLÉ)', short: 'Acto 3 · Francia' },
-  lale:    { label: 'JEFE 3 · LALE «MANTECOSO»', short: 'Lale (Le Blé)' },
-  acto4:   { label: 'ACTO 4 · CAMINO AL GALPÓN', short: 'Acto 4 · Galpón' },
+  acto3:   { label: 'ACTO 3 · PARÍS (BOULANGERIE)', short: 'Acto 3 · París' },
+  lale:    { label: 'JEFE 3 · LALE «MANTECOSO»', short: 'Lale (Obrador)' },
+  acto4:   { label: 'ACTO 4 · FERME LAPADITE → GALPÓN', short: 'Acto 4 · Galpón' },
   pinky:   { label: 'JEFE FINAL · PINKY', short: 'Pinky (Final)' },
   // compatibilidad con checkpoints previos guardados en localStorage
-  francia: { label: 'ACTO 3 · FRANCIA (LE BLÉ)', short: 'Francia' },
+  francia: { label: 'ACTO 3 · PARÍS (BOULANGERIE)', short: 'París' },
   boss:    { label: 'JEFE 1 · BIG CHAKY', short: 'BIG CHAKY' }
 };
 function saveCheckpoint(id) {
@@ -380,7 +380,7 @@ function resumeAt(cp) {
     return;
   }
   if (id === 'lale') {
-    clearWavesBefore(WAVES.findIndex(w => w.id === 'boulevard'));
+    clearWavesBefore(WAVES.findIndex(w => w.id === 'boulevard-2'));
     p.set(206, 0, 0);
     updateCamera(0, true);
     spawnLale();
@@ -613,7 +613,7 @@ function updateZones() {
   }
 }
 
-// ---------- cambio de nivel (Acto 1 → Acto 2: cruce a Francia) ----------
+// ---------- cambio de nivel (Acto 2 → Acto 3: vuelo de Buenos Aires a París tras vencer a Cepi) ----------
 const TRANSITION_MAX_S = 6;
 const TRANSITION_WAIT_S = 0.45;
 function startTransition() {
@@ -623,11 +623,15 @@ function startTransition() {
   input.reset();
   clearBanners();
   game.combo.reset();
+  setLevel(1);
   world.border?.raise();
-  game.hero.actor.setFacing(1);
-  Object.assign(game.hero, { state: 'free', lift: 0, vy: 0, knock: 0, knockZ: 0 });
+  const h = game.hero;
+  h.actor.position.set(BORDER_X - 6, 0, 0);
+  h.actor.setFacing(1);
+  Object.assign(h, { state: 'free', lift: 0, vy: 0, knock: 0, knockZ: 0 });
+  updateCamera(0, true);
   const done = LEVELS[0], next = LEVELS[1];
-  $('#level-done').textContent = tr('ACTO 1 · BUENOS AIRES');
+  $('#level-done').textContent = tr('¡BUENOS AIRES DESPEJADO!');
   $('#level-name').textContent = tr(done.name);
   $('#level-pts').textContent = tr(game.score.total.toLocaleString('es-AR') + ' puntos');
   $('#level-next').textContent = '✈ ' + tr(`NIVEL ${next.id}: ${next.name}`);
@@ -652,31 +656,18 @@ function updateTransition(dt) {
   if (!game.transCrossed && (p.x >= BORDER_X + 0.5 || game.transT > TRANSITION_MAX_S)) {
     game.transCrossed = true;
     audio.sfx('secret');
-    curtain(() => { if (game.state === 'transition') endTransition(); }, { label: CHECKPOINTS.acto2.label, wait: assets.ensure(['chase_']) });
+    curtain(() => { if (game.state === 'transition') endTransition(); }, { label: CHECKPOINTS.acto3.label });
   }
 }
 
 function endTransition() {
-  setLevel(2);
-  const L = LEVELS[1];
-  const h = game.hero;
+  $('#level-card').classList.add('hidden');
+  $('#level-card').classList.remove('travel');
   game.enemies.clear(); game.butter.clear(); game.psycho.stop(); game.powers.clear();
   game.cameos.onLevelStart();
   game.margot.clear();
   game.traps.reset();
-  h.actor.position.set(L.start, 0, 0);
-  h.actor.setFacing(1);
-  h.actor.setPose('idle');
-  h.hp = Math.min(h.hpMax, Math.max(3, h.hp + 2));
-  h.inv = 0;
-  $('#level-card').classList.add('hidden');
-  $('#level-card').classList.remove('travel');
-  input.reset();
-  // Acto 2 abre directo con la Persecución del BYD → ¡Rompé el BYD! → Arena de Cepi
-  game.chaseDone = true;
-  saveCheckpoint('acto2');
-  audio.music('chase', { fade: 0.3 });
-  game.chase.start();
+  enterAct3Street();
 }
 game.startTransition = startTransition;
 
@@ -780,7 +771,7 @@ function enterAct4Street() {
   updateCamera(0, true);
   saveCheckpoint('acto4');
   game.state = 'curtain';
-  curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 }); }, { label: CHECKPOINTS.acto4.label });
+  curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 }); }, { label: '¡LALE FUERA! MARGOT ESTÁ PASANDO LA FERME LAPADITE' });
 }
 
 game.onBossDown = () => {
@@ -1084,25 +1075,26 @@ async function boot() {
   game.pickups = game.props.pickups;
   game.crates = game.props.crates;
   game.story = createStory(ctx);
-  // Jefe 1 (Acto 1): BIG CHAKY → al ganar cruza a Francia (Acto 2: Persecución BYD)
+  // Jefe 1 (Acto 1): BIG CHAKY → al ganar, Cepi huye en el BYD por la 9 de Julio (Acto 2 en Buenos Aires)
   game.arena = createArena({
     game, input, audio, assets, renderer, banner: game.banner, updateHud, pause, POWER,
     onWin() {
       game.chakyDone = true;
       game.state = 'playing'; last = 0;
       if (PROBAR && PROBAR.startsWith('chaky')) { game.onBossDown(); return; }
-      startTransition();
+      game.state = 'curtain';
+      curtain(() => startChaseRun(), { label: '¡CHAKY CAYÓ! CEPI SE ESCAPA EN EL BYD POR LA 9 DE JULIO', wait: assets.ensure(['chase_']) });
     },
     onDown() { game.state = 'playing'; finish(false); }
   });
-  // Jefe 2 (Acto 2): Cepi «el Niño» → al ganar arranca Acto 3 (calle corta de Francia hasta Le Blé)
+  // Jefe 2 (Acto 2): Cepi «el Niño» → al ganar, vuelo a París (Acto 3)
   game.arenaCepi = createCepiArena({
     game, input, audio, assets, renderer, updateHud, pause, POWER,
     onWin() {
       game.cepiDone = true;
       game.state = 'playing'; last = 0;
       if (PROBAR && PROBAR.startsWith('cepi')) { finish(true); return; }
-      enterAct3Street();
+      startTransition();
     },
     onDown() { game.state = 'playing'; finish(false); }
   });

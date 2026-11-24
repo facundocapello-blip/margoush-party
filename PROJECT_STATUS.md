@@ -409,6 +409,23 @@ Base de los cuatro actos en GitHub Pages: `57ae713`. Accesos de prueba: `3d/?pro
 - **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**; mapas de Buenos Aires y Francia verificados en Chromium headless. Pendiente: prueba en Safari físico de iPhone.
 - **Rollback**: volver `main` al commit `284b2a4`.
 
+## 2026-11-23 (13) · Plan Maestro: continuidad de 4 actos, NPCs 100 % separados por país, hojas animadas de 4 poses y Ferme LaPadite Pixar
+- **Continuidad narrativa y geográfica (`3d/js/main.js`, `3d/js/i18n.js`)**:
+  - Al vencer a **BIG CHAKY (Jefe 1)** en Ezeiza, ahora muestra el puente narrativo *«¡CHAKY CAYÓ! CEPI SE ESCAPA EN EL BYD POR LA 9 DE JULIO»* y lanza el Acto 2 (Persecución BYD → ¡Rompé el BYD! → **Cepi Pádel**) todavía en Buenos Aires.
+  - Al vencer a **Cepi (Jefe 2)**, recién ahí se dispara `startTransition()` (barrera `EMBARQUE ✈` → `BIENVENUE EN FRANCE` → llegada a **Acto 3 · París (Boulangerie)**).
+  - Al vencer a **Lale (Jefe 3)**, muestra el puente *«¡LALE FUERA! MARGOT ESTÁ PASANDO LA FERME LAPADITE»* hacia el Acto 4 y **Pinky**.
+  - Corregido el bug de `resumeAt('lale')` (`'boulevard'` inexistente → `'boulevard-2'`) y actualizadas las traducciones ES/FR (`3d/js/i18n.js`).
+- **Elenco de NPCs 100 % separado por país (`3d/js/level.js`)**:
+  - **Buenos Aires (Acto 1)**: exclusivo **King Kong (`patovica`) + `bombo`**.
+  - **Francia (Actos 3 y 4)**: exclusivo **Hans Landa (`secuaz`) + `mozo` + `delivery`**.
+- **Animaciones completas de 4 poses para los 5 enemigos (`3d/assets/{patovica,secuaz,bombo,mozo,delivery}_sheet.webp`, `3d/js/enemies.js`)**:
+  - Generadas e integradas las 5 hojas animadas de 4 cuadros (`idle`, `step`, `strike`, `hurt`) con recorte croma limpio y sin residuos de bordes; habilitado el paso animado (`step`) para todos los enemigos en movimiento (incluyendo `mozo` y `delivery`).
+- **Ferme LaPadite Pixar (`3d/assets/granja_lapadite.webp`, `3d/assets/manifest.json`)**:
+  - Reemplazada la fachada por código por la pintura estilo Pixar de la granja de Normandía con cartel `FERME LAPADITE`, sábanas al viento, fardos y tarros de leche. Peso total `3d/assets/`: **9,97 MB** (< 10 MB).
+- **Verificación**: `node tools/stamp_versions.mjs`, `npm test` (74/74) + 12/12 pruebas de arenas = **86/86 en verde**; inspección visual de hojas WebP y mapas de recorrido en Chromium headless. Pendiente: validación táctil/audio en Safari físico de iPhone.
+- **Rollback**: volver `main` al commit `70f6ab2`.
+
+
 
 
 

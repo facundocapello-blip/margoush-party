@@ -288,11 +288,12 @@
  },
  "henris": {
   "file": "henris.webp",
-  "w": 1280,
-  "h": 853,
+  "w": 960,
+  "h": 640,
   "frames": 1,
   "cols": 1,
-  "rows": 1
+  "rows": 1,
+  "v": "3bced191"
  },
  "lale_actions_sheet": {
   "file": "lale_actions_sheet.webp",
@@ -316,11 +317,12 @@
  },
  "le_ble": {
   "file": "le_ble.webp",
-  "w": 1280,
-  "h": 853,
+  "w": 960,
+  "h": 640,
   "frames": 1,
   "cols": 1,
-  "rows": 1
+  "rows": 1,
+  "v": "4b1b4eea"
  },
  "marine_actions_sheet": {
   "file": "marine_actions_sheet.webp",
@@ -383,11 +385,12 @@
  },
  "punto_de_oro": {
   "file": "punto_de_oro.webp",
-  "w": 1280,
-  "h": 853,
+  "w": 960,
+  "h": 640,
   "frames": 1,
   "cols": 1,
-  "rows": 1
+  "rows": 1,
+  "v": "22edbd7a"
  },
  "rescate_sheet": {
   "file": "rescate_sheet.webp",
@@ -1158,5 +1161,64 @@
   "cols": 1,
   "rows": 1,
   "v": "bfacca4c"
+ },
+ "granja_lapadite": {
+  "file": "granja_lapadite.webp",
+  "w": 960,
+  "h": 640,
+  "frames": 1,
+  "cols": 0,
+  "rows": 0,
+  "v": "f74dc180"
+ },
+ "patovica_sheet": {
+  "file": "patovica_sheet.webp",
+  "w": 1064,
+  "h": 384,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "foot": 0.99,
+  "v": "7f9544d0"
+ },
+ "secuaz_sheet": {
+  "file": "secuaz_sheet.webp",
+  "w": 848,
+  "h": 384,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "foot": 0.99,
+  "v": "03497c15"
+ },
+ "bombo_sheet": {
+  "file": "bombo_sheet.webp",
+  "w": 896,
+  "h": 384,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "foot": 0.99,
+  "v": "8e1ec61b"
+ },
+ "mozo_sheet": {
+  "file": "mozo_sheet.webp",
+  "w": 888,
+  "h": 384,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "foot": 0.99,
+  "v": "e84bcdea"
+ },
+ "delivery_sheet": {
+  "file": "delivery_sheet.webp",
+  "w": 952,
+  "h": 384,
+  "frames": 4,
+  "cols": 4,
+  "rows": 1,
+  "foot": 0.99,
+  "v": "c805076c"
  }
 }
