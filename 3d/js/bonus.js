@@ -101,7 +101,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       g.fillStyle = gr; g.fillRect(0, 0, w, h);
     }), fog: false }));
     sky.position.set(0, 10, -20);
-    const bgStreet = assets.has('street_bg') ? 'street_bg' : (assets.has('calle_buenos_aires') ? 'calle_buenos_aires' : null);
+    const bgStreet = assets.has('calle_buenos_aires') ? 'calle_buenos_aires' : null;
     if (bgStreet) {
       const m = assets.meta(bgStreet), H = 9.3, W = H * m.w / m.h;
       for (const dx of [-W, 0, W]) {

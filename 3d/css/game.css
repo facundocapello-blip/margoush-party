@@ -769,7 +769,7 @@ body.chaky-dance.has-screen #arena-ui { visibility: hidden; }
 @keyframes lane-press { from { filter: brightness(1.45); } }
 #arena-ui .rec, #arena-ui .note {
   position: absolute; left: 50%; top: 0; width: 32px; height: 30px; margin-left: -16px;
-  display: grid; place-items: center; font-size: 0; border-radius: 8px;
+  display: grid; place-items: center; font-size: 0; border-radius: 8px; pointer-events: none;
 }
 /* Botones receptores ABAJO donde llegan las flechas */
 #arena-ui .rec {
@@ -794,20 +794,24 @@ body.chaky-dance.has-screen #arena-ui { visibility: hidden; }
 #arena-ui .rec.beat { animation: rec-beat .24s ease-out; }
 @keyframes rec-beat { from { border-color: #fff; background: rgba(255, 255, 255, 0.35); } }
 #arena-ui .note.missed { opacity: .32; }
-#arena-ui .phase-card.p2 {
-  top: auto; bottom: calc(8px + var(--safe-b)); left: 0; right: 0; max-width: 420px; min-width: 0; margin: 0 auto;
-  padding: 8px 12px; transform: none; opacity: 1; animation: none; border: 1.5px solid rgba(255, 211, 110, 0.5);
+body.chaky-dance #arena-ui .phase-card.p2 {
+  top: auto; bottom: calc(var(--deck-height) + var(--safe-b) + 10px); left: 0; right: 0; max-width: min(92vw, 420px); min-width: 0; margin: 0 auto;
+  padding: 7px 12px; transform: none; opacity: 1; animation: none; border: 1.5px solid rgba(255, 211, 110, 0.5);
   background: rgba(24, 16, 44, 0.94); border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
-#arena-ui .phase-card.p2 small { font-size: 10px; color: var(--rhythm); }
-#arena-ui .phase-card.p2 b { font-size: 20px; text-shadow: none; }
-#arena-ui .phase-card.p2 span { display: none; }
-#arena-ui .phase-card.p2 em { font-size: 14px; margin: 3px 0 0; padding: 0; background: none; }
+body.chaky-dance #arena-ui .phase-card.p2 small { font-size: 10px; color: var(--rhythm); }
+body.chaky-dance #arena-ui .phase-card.p2 b { font-size: 19px; text-shadow: none; }
+body.chaky-dance #arena-ui .phase-card.p2 span { display: none; }
+body.chaky-dance #arena-ui .phase-card.p2 em { font-size: 13px; margin: 2px 0 0; padding: 0; background: none; }
 #arena-ui .dance-caption { color: #f6f0ff; text-align: center; font: 700 11px/1.1 Nunito, sans-serif; }
 #arena-ui .dance-caption .sub { display: block; font-size: 10px; }
 @media (orientation: landscape) and (max-height: 500px) {
   body.chaky-dance { --deck-height: clamp(78px, 22%, 104px); }
   #arena-ui .piu { grid-template-rows: 22px 1fr; }
+  body.chaky-dance #arena-ui .phase-card.p2 { bottom: calc(var(--deck-height) + var(--safe-b) + 6px); padding: 4px 12px; }
+  body.chaky-dance #arena-ui .phase-card.p2 small { font-size: 9px; }
+  body.chaky-dance #arena-ui .phase-card.p2 b { font-size: 15px; }
+  body.chaky-dance #arena-ui .phase-card.p2 em { font-size: 11px; margin-top: 1px; }
 }
 /* Intro de BIG CHAKY con Margot: «Te daré a Margoth…» + «¡La prueba de Baile!» (tocá para saltar) */
 body.chaky-intro-on #arena-ui .piu { opacity: .25; transition: opacity .4s; }
