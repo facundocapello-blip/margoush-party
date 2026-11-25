@@ -130,9 +130,11 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     const car = new T.Mesh(unit, carMat); car.scale.set(carW, CAR_H, 1); car.position.set(0, 0, CAR_Z); scene.add(car);
     const deadTex = assets.has('chase_cepi_dead') ? assets.texture('chase_cepi_dead') : null;
     const deadMeta = deadTex ? assets.meta('chase_cepi_dead') : null;
-    // Margot a salvo afuera del auto, mirando desde la izquierda en su cochecito (visible también en vertical)
+    // El cargador (a la derecha del auto) con Cepi enchufándolo: se le puede pegar para desenchufarlo
+    const chargerX = carW / 2 + 2.2, cepiX = carW / 2 + 1.25;
+    // Margot a salvo afuera del auto, pero del lado de Cepi (detrás del cargador a la derecha)
     let margotM = null, margotCell = -1;
-    const MARGOT_H = 1.55, margotX = -carW / 2 - 0.72;
+    const MARGOT_H = 1.55, margotX = chargerX + 0.78;
     if (assets.has('margot_sheet')) {
       const mm = assets.meta('margot_sheet');
       const tx = keep(assets.texture('margot_sheet').clone());
@@ -142,7 +144,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       margotM.userData.cols = mm.cols || 2;
       margotM.userData.rows = mm.rows || 2;
       margotM.scale.set(MARGOT_H, MARGOT_H, 1);
-      margotM.position.set(margotX, 0, CAR_Z + 0.85);
+      margotM.position.set(margotX, 0, CAR_Z + 0.45);
       scene.add(margotM);
     }
     const setMargot = (cell) => {
@@ -151,11 +153,9 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       const c = margotM.userData.cols, r = margotM.userData.rows;
       margotM.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
     };
-    setMargot(1);
+    setMargot(2);
     const spotX = (i) => (SPOTS[i].u / meta.w - 0.5) * carW;
     const spotY = (i) => (1 - SPOTS[i].v / meta.h) * CAR_H;
-    // El cargador (a la derecha del auto) con Cepi enchufándolo: se le puede pegar para desenchufarlo
-    const chargerX = carW / 2 + 2.2, cepiX = carW / 2 + 1.25;
     const post = mk(new T.BoxGeometry(0.55, 1.9, 0.45), new T.MeshLambertMaterial({ color: L('#e9edf2') }));
     post.position.set(chargerX, 0.95, CAR_Z + 0.2);
     const screen = mk(new T.PlaneGeometry(0.36, 0.42), new T.MeshBasicMaterial({ color: L('#2fd36b') }));

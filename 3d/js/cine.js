@@ -121,12 +121,12 @@ export function createCine(ctx) {
       { at: 3.4, run: () => { phase = 'chaky'; ui.sub(''); ctx.audio?.sfx('roar'); } },
       { at: 4.6, run: () => { ui.sub('BIG CHAKY', '¡Esa bebé va a ser mía! ¡Jua, jua, jua!'); fx.shake?.(0.25, 0.3); ctx.audio?.sfx('laugh'); chaky.setPose('arms'); } },
       { at: 6.6, run: () => { phase = 'pay'; ui.sub('BIG CHAKY', '¡Les pago lo que quieran! ¡Tráiganmela!'); } },
-      { at: 7.2, run: () => { chaky.setPose('strike'); say(crew[0].a, '💵 ¡Estacionamiento pago!', '#ffe08a', 19, 3.0); ctx.audio?.sfx('coin'); } },
+      { at: 7.2, run: () => { chaky.setPose('strike'); say(crew[0].a, '💵 ¡Cheque al día!', '#ffe08a', 19, 3.0); ctx.audio?.sfx('coin'); } },
       { at: 8.0, run: () => { chaky.setPose('strike'); say(crew[1].a, '🧈 ¡Manteca de por vida!', '#ffe08a', 19, 3.6); ctx.audio?.sfx('coin'); } },
       { at: 8.8, run: () => { chaky.setPose('strike'); say(cepi, '🔌 ¡Un cargador para mi BYD!', '#ffe08a', 19, 3.0); ctx.audio?.sfx('coin'); } },
-      { at: 9.8, run: () => { phase = 'grab'; ui.sub(''); chaky.setPose('arms'); } },
-      { at: 11.4, run: () => { ui.sub('MARGOT', cry); } },
-      { at: 13.6, run: () => { ui.sub(''); ui.caption('¡CEPI SE LLEVÓ A MARGOT!', '¡Alcanzá a BIG CHAKY rumbo al aeropuerto!'); ctx.audio?.sfx('engine'); } }
+      { at: 9.8, run: () => { phase = 'grab'; ui.sub('BIG CHAKY', '¡Cepi, teneme el BYD listo en la 9 de Julio!'); chaky.setPose('arms'); } },
+      { at: 11.5, run: () => { ui.sub('MARGOT', cry); } },
+      { at: 13.6, run: () => { ui.sub(''); ui.caption('¡BIG CHAKY SE LLEVÓ A MARGOT!', '¡Cruzá Buenos Aires rumbo al aeropuerto!'); ctx.audio?.sfx('engine'); } }
     ];
     let grabbed = false;
     const frame = (t, dt) => {
@@ -141,21 +141,31 @@ export function createCine(ctx) {
       if (!grabbed) stroller.update(dt, 0);
       partner.update(dt, 0);
       // BIG CHAKY y la banda entran caminando
-      if (t > 3.4) walk(chaky, X + 6.6, 4.2, dt);
+      if (t > 3.4 && phase !== 'grab') walk(chaky, X + 6.6, 4.2, dt);
       crew.forEach((c, i) => {
-        if (c.a === cepi && phase === 'grab') return;
+        if (phase === 'grab') {
+          walk(c.a, X + 30, 8.5 + i * 0.4, dt, 'walk');
+          return;
+        }
         if (t > 3.6 + i * 0.2) walk(c.a, X + 7.6 + c.dx, 4.2, dt);
         if (phase === 'pay' && Math.abs(c.a.position.x - (X + 7.6 + c.dx)) < 0.1) { c.a.lift = Math.abs(Math.sin(t * 8 + i)) * 0.12; c.a.update(dt, 0); }
       });
       if (phase !== 'family') { H.setFacing(1); partner.setFacing(1); }
-      // Cepi corre, agarra el cochecito y se escapa por la derecha
+      // BIG CHAKY mismo agarra el cochecito de Margot (pose push) y escapa rumbo a Ezeiza
       if (phase === 'grab') {
         if (!grabbed) {
-          if (walk(cepi, stroller.position.x + 0.9, 9, dt, 'walk')) { grabbed = true; stroller.setPose('cry'); ctx.audio?.sfx('roar'); say(cepi, '¡Jua! ¡Me la llevo!', '#ff9b8a'); }
+          if (walk(chaky, stroller.position.x + 1.0, 9.5, dt, 'walk')) {
+            grabbed = true;
+            stroller.root.visible = false;
+            chaky.setFacing(1); chaky.setPose('push');
+            ctx.audio?.sfx('roar');
+            say(chaky, '¡Jua! ¡A Ezeiza!', '#ff9b8a');
+          }
         } else {
-          walk(cepi, X + 30, 10, dt, 'walk');
-          stroller.position.x = cepi.position.x + 1.0; stroller.setFacing(1);
-          stroller.lift = Math.abs(Math.sin(t * 14)) * 0.08; stroller.update(dt, 0);
+          chaky.setFacing(1); chaky.setPose('push');
+          chaky.position.x += 9.5 * dt;
+          chaky.lift = Math.abs(Math.sin(t * 14)) * 0.08;
+          chaky.update(dt, 9.5);
           if (t > 11.6) heroRun = true;
         }
       }
@@ -165,119 +175,170 @@ export function createCine(ctx) {
     return timeline(ev, 15.6, frame, dispose, 'intro');
   }
 
-  // ===== DESPUÉS DEL BYD: BIG CHAKY se la lleva a Francia =====
-  function afterByd(hero, heroId) {
-    const X = 12, H = hero.actor;
-    H.position.set(X - 3.4, 0, 0.6); H.setFacing(1); H.setPose('idle');
-    const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X, 0.2, -1, 'ko');
-    const stroller = actor(strollerPoses, 1.7, X + 1.1, 0.9, 1, 'cry');
-    const chaky = actor(chakyPoses(), 2.5, X + 16, -0.3, -1, 'walk');
-    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
-    const S = { a: { p: [X - 1, 3.2, 9.5], l: [X, 1.5, 0] }, b: { p: [X + 3, 3.3, 9.5], l: [X + 4, 1.5, 0] }, c: { p: [X + 9, 4.4, 14], l: [X + 11, 1.4, 0] } };
-    let phase = 'enter', pushing = false;
-    const ev = [
-      { at: 0, run: () => { ui.show(); ui.sub('CEPI', '¡Mi BYD! ¡Lo tengo en cuotas!'); } },
-      { at: 1.6, run: () => { ui.sub(''); ctx.audio?.sfx('roar'); } },
-      { at: 3.0, run: () => { ui.sub('BIG CHAKY', '¡Gracias, Niño! ¡A Margot me la llevo a Francia!'); ctx.audio?.sfx('laugh'); } },
-      { at: 4.4, run: () => { ui.sub('MARGOT', cry); } },
-      { at: 5.4, run: () => { phase = 'cepi'; cepi.setPose('idle'); ui.sub('CEPI', '¡Me rompiste el BYD! ¡Ahora es personal!'); fx.shake?.(0.2, 0.25); } },
-      { at: 7.4, run: () => { ui.sub(''); ui.caption('BIG CHAKY SE LLEVA A MARGOT A FRANCIA', '¡Corré al aeropuerto antes de que despegue! ✈'); ctx.audio?.sfx('bell'); } }
-    ];
-    const frame = (t, dt) => {
-      if (t < 3) cam(S.a, S.a, 0); else if (t < 5.4) cam(S.a, S.b, (t - 3) / 1.4); else cam(S.b, S.c, (t - 5.4) / 2);
-      cepi.update(dt, 0);
-      if (t > 1.6 && !pushing) {
-        if (walk(chaky, stroller.position.x + 1.0, 8, dt, 'walk')) { pushing = true; chaky.setFacing(1); chaky.setPose('push'); stroller.root.visible = false; }
-      }
-      if (pushing && t > 4.2) {
-        chaky.setFacing(1); chaky.setPose('push');
-        chaky.position.x += 7 * dt; chaky.lift = Math.abs(Math.sin(t * 12)) * 0.06; chaky.update(dt, 0);
-      } else if (pushing) chaky.update(dt, 0);
-      stroller.update(dt, 0);
-      if (phase === 'cepi' && t > 6.6) walk(cepi, X + 30, 8, dt, 'walk');
-      H.update(dt, 0);
-    };
-    const dispose = () => { cepi.dispose(); stroller.dispose(); chaky.dispose(); };
-    return timeline(ev, 9.6, frame, dispose, 'byd');
-  }
-
   // ===== MINI-ESCENA 1: Fin Calle BA → Hangar VIP (Big Chaky) =====
   function preChaky(hero, heroId) {
     const X = LE_CONCEPT_X + 4, H = hero.actor;
     H.position.set(X - 4.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
-    const stroller = actor(strollerPoses, 1.7, X + 2.2, 0.9, -1, 'cry');
-    const chaky = actor(chakyPoses(), 2.5, X + 10, -0.3, -1, 'walk');
+    const stroller = actor(strollerPoses, 1.7, X + 4.4, 0.9, -1, 'cry');
+    const chaky = actor(chakyPoses(), 2.5, X + 9.5, -0.3, -1, 'walk');
+    const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.15, X + 7.2, -1.6, -1, 'idle');
     const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    // Contrapicado cerrado sobre Chaky con Cepi asomado al fondo como Plan B
     const S = {
-      a: { p: [X - 1.2, 3.6, 11.2], l: [X, 1.5, 0] },
-      b: { p: [X + 1.5, 3.0, 8.6], l: [X + 2.2, 1.6, 0.2] },
-      c: { p: [X + 0.2, 3.4, 10.2], l: [X + 0.5, 1.5, 0] }
+      a: { p: [X - 2.4, 2.2, 8.8], l: [X + 1.8, 1.9, 0] },
+      b: { p: [X + 2.2, 1.9, 6.8], l: [X + 3.6, 1.8, 0.1] },
+      c: { p: [X + 0.4, 2.9, 9.4], l: [X + 1.2, 1.7, 0] }
     };
     const ev = [
-      { at: 0, run: () => { ui.show(); ui.caption('HANGAR VIP · EZEIZA', '¡Llegaste justo antes del despegue!'); ctx.audio?.sfx('bell'); } },
-      { at: 1.5, run: () => { ui.caption(''); ui.sub('MARGOT', cry); ctx.audio?.sfx('pickup'); } },
-      { at: 2.7, run: () => { chaky.setPose('arms'); ui.sub('BIG CHAKY', '¿Querés a Margot? ¡Primero ganame en la pista de baile!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('laugh'); } },
+      { at: 0, run: () => { ui.show(); ui.caption('HANGAR VIP · EZEIZA', '¡Alcanzaste a BIG CHAKY antes del despegue!'); ctx.audio?.sfx('bell'); } },
+      { at: 1.4, run: () => { ui.caption(''); ui.sub('MARGOT', cry); say(cepi, '🚗 ¡Chaky, el BYD ya está listo!', '#9fe4ff', 17, 3.0); ctx.audio?.sfx('pickup'); } },
+      { at: 2.6, run: () => { chaky.setPose('arms'); ui.sub('BIG CHAKY', '¿Pelear con este traje violeta? ¡Ganame en mi pista disco!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('laugh'); } },
       { at: 4.8, run: () => { ui.sub(''); ui.caption('¡DUELO DE BAILE DISCO!', '¡Seguí las flechas al ritmo!'); ctx.audio?.sfx('roar'); } }
     ];
     const frame = (t, dt) => {
       if (t < 2.2) cam(S.a, S.b, t / 2.2);
       else cam(S.b, S.c, Math.min(1, (t - 2.2) / 2.4));
-      walk(chaky, X + 3.4, 6.2, dt);
+      walk(chaky, X + 2.8, 6.4, dt);
+      cepi.update(dt, 0);
       stroller.lift = Math.abs(Math.sin(t * 9)) * 0.08;
       stroller.update(dt, 0);
       if (t > 4.6) { H.setPose(H.poses.run ? 'run' : 'walk'); H.position.x += 3.5 * dt; H.update(dt, 3.5); } else H.update(dt, 0);
     };
-    const dispose = () => { stroller.dispose(); chaky.dispose(); };
-    return timeline(ev, 6.0, frame, dispose, 'pre_chaky');
+    const dispose = () => { stroller.dispose(); chaky.dispose(); cepi.dispose(); };
+    return timeline(ev, 5.9, frame, dispose, 'pre_chaky');
   }
 
-  // ===== MINI-ESCENA 2: BYD roto → Cancha de Pádel (Cepi) =====
+  // ===== PASE DE POSTA 1 (EN PANTALLA): Big Chaky KO → Cepi se lleva a Margot en el BYD =====
+  function postChaky(hero, heroId) {
+    const X = LE_CONCEPT_X + 2, H = hero.actor;
+    H.position.set(X - 3.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
+    const chaky = actor(chakyPoses(), 2.5, X + 1.2, -0.2, -1, 'scared');
+    const stroller = actor(strollerPoses, 1.7, X + 3.2, 0.9, -1, 'cry');
+    const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X + 10.5, 0.3, -1, 'walk');
+    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    const S = {
+      a: { p: [X + 0.5, 2.7, 8.6], l: [X + 1.6, 1.5, 0] },
+      b: { p: [X + 5.8, 3.4, 11.4], l: [X + 6.5, 1.5, 0] }
+    };
+    let grabbed = false;
+    const ev = [
+      { at: 0, run: () => { ui.show(); ui.sub('BIG CHAKY', '¡CEPI! ¡PLAN B! ¡LLEVATELA EN EL BYD!'); fx.shake?.(0.2, 0.22); ctx.audio?.sfx('roar'); } },
+      { at: 1.5, run: () => { ui.sub('CEPI', '¡A fondo por la 9 de Julio!'); ctx.audio?.sfx('horn'); } },
+      { at: 2.6, run: () => { ui.sub('MARGOT', cry); ctx.audio?.sfx('engine'); } },
+      { at: 3.4, run: () => { ui.sub(''); ui.caption('¡CEPI ESCAPA EN EL BYD!', '¡Subite a tu vehículo y alcanzalos!'); } }
+    ];
+    const frame = (t, dt) => {
+      cam(S.a, S.b, Math.min(1, t / 3.4));
+      chaky.update(dt, 0);
+      if (!grabbed) {
+        if (walk(cepi, stroller.position.x + 0.9, 10.5, dt, 'walk')) {
+          grabbed = true;
+          say(cepi, '🚗 ¡Al BYD!', '#9fe4ff', 20, 3.2);
+        }
+        stroller.update(dt, 0);
+      } else {
+        walk(cepi, X + 26, 11.5, dt, 'walk');
+        stroller.position.x = cepi.position.x + 1.05; stroller.setFacing(1);
+        stroller.lift = Math.abs(Math.sin(t * 14)) * 0.08; stroller.update(dt, 0);
+      }
+      if (t > 2.4) { H.setPose(H.poses.run ? 'run' : 'walk'); H.position.x += 5 * dt; H.update(dt, 5); } else H.update(dt, 0);
+    };
+    const dispose = () => { chaky.dispose(); stroller.dispose(); cepi.dispose(); };
+    return timeline(ev, 4.6, frame, dispose, 'post_chaky');
+  }
+
+  // ===== MINI-ESCENA 2: BYD roto → Cancha de Pádel (Cepi se lleva a Margot) =====
   function preCepi(hero, heroId) {
     const X = 86, H = hero.actor;
     H.position.set(X - 3.6, 0, 0.6); H.setFacing(1); H.setPose('idle');
     const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X + 1.8, 0.1, -1, 'ko');
-    const stroller = actor(strollerPoses, 1.65, X - 1.4, 1.0, 1, 'happy');
+    // Margot está del lado DERECHO de Cepi (custodiada por él, NO libre junto al héroe)
+    const stroller = actor(strollerPoses, 1.65, X + 3.2, 0.9, -1, 'cry');
+    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    // Plano lateral rasante que sigue a Cepi llevándose a Margot al club
     const S = {
-      a: { p: [X - 0.8, 3.4, 10.2], l: [X, 1.5, 0] },
-      b: { p: [X + 1.6, 2.7, 7.6], l: [X + 1.8, 1.6, 0] },
-      c: { p: [X + 3.2, 3.3, 9.8], l: [X + 3.5, 1.5, 0] }
+      a: { p: [X + 1.4, 2.3, 7.2], l: [X + 2.2, 1.6, 0] },
+      b: { p: [X + 5.2, 2.9, 9.6], l: [X + 5.8, 1.5, 0] }
     };
     let furious = false;
     const ev = [
       { at: 0, run: () => { ui.show(); ui.caption('¡EL BYD QUEDÓ FUMANDO!', 'Cepi todavía lo paga en 48 cuotas'); ctx.audio?.sfx('crate'); } },
-      { at: 1.5, run: () => { ui.caption(''); furious = true; cepi.setPose('strike'); ui.sub('CEPI', '¡MI ELÉCTRICO! ¡Lo tengo en 48 cuotas, loco!'); fx.shake?.(0.25, 0.25); ctx.audio?.sfx('roar'); } },
-      { at: 3.3, run: () => { ui.sub('CEPI', '¡Esto se arregla en mi cancha de pádel! ¡Vení!'); say(cepi, '🎾 ¡A la cancha!', '#9fe4ff', 20, 3.2); ctx.audio?.sfx('bell'); } },
-      { at: 5.0, run: () => { ui.sub(''); ui.caption('CLUB DE PÁDEL', '¡Devolvé el Punto de Oro para vencer a Cepi!'); ctx.audio?.sfx('whoosh'); } }
+      { at: 1.4, run: () => { ui.caption(''); furious = true; cepi.setPose('strike'); ui.sub('CEPI', '¡MI ELÉCTRICO EN 48 CUOTAS! ¡Si querés a Margot, ganame un Punto de Oro!'); fx.shake?.(0.25, 0.25); ctx.audio?.sfx('roar'); } },
+      { at: 3.4, run: () => { ui.sub('MARGOT', cry); say(cepi, '🎾 ¡A mi cancha!', '#9fe4ff', 20, 3.2); ctx.audio?.sfx('bell'); } },
+      { at: 4.5, run: () => { ui.sub(''); ui.caption('CLUB DE PÁDEL', '¡Devolvé el Punto de Oro para vencer a Cepi!'); ctx.audio?.sfx('whoosh'); } }
     ];
     const frame = (t, dt) => {
-      if (t < 1.8) cam(S.a, S.b, t / 1.8);
-      else cam(S.b, S.c, Math.min(1, (t - 1.8) / 3.0));
-      stroller.lift = Math.abs(Math.sin(t * 7)) * 0.08;
+      cam(S.a, S.b, Math.min(1, t / 4.2));
+      if (furious && t > 3.2) {
+        walk(cepi, X + 18, 8.2, dt);
+        stroller.position.x = cepi.position.x + 1.1; stroller.setFacing(1);
+        stroller.lift = Math.abs(Math.sin(t * 13)) * 0.08;
+      } else {
+        cepi.lift = furious ? Math.abs(Math.sin(t * 14)) * 0.12 : 0;
+        cepi.update(dt, 0);
+        stroller.lift = Math.abs(Math.sin(t * 8)) * 0.07;
+      }
       stroller.update(dt, 0);
-      if (furious && t > 4.2) walk(cepi, X + 14, 7.5, dt);
-      else { cepi.lift = furious ? Math.abs(Math.sin(t * 14)) * 0.12 : 0; cepi.update(dt, 0); }
       H.update(dt, 0);
     };
     const dispose = () => { cepi.dispose(); stroller.dispose(); };
-    return timeline(ev, 6.2, frame, dispose, 'pre_cepi');
+    return timeline(ev, 5.6, frame, dispose, 'pre_cepi');
+  }
+
+  // ===== PASE DE POSTA 2 (EN PANTALLA): Cepi KO → Lale se lleva a Margot a París =====
+  function postCepi(hero, heroId) {
+    const X = 90, H = hero.actor;
+    H.position.set(X - 3.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
+    const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X + 1.0, 0.1, -1, 'ko');
+    const stroller = actor(strollerPoses, 1.65, X + 2.8, 0.9, -1, 'cry');
+    const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 10.5, 0.2, -1, 'walk');
+    const S = {
+      a: { p: [X + 0.2, 2.8, 8.8], l: [X + 1.8, 1.5, 0] },
+      b: { p: [X + 5.6, 3.5, 11.2], l: [X + 6.4, 1.5, 0] }
+    };
+    let grabbed = false;
+    const ev = [
+      { at: 0, run: () => { ui.show(); ui.sub('LALE', '¡Cepi falló! ¡Me llevo a Margot a París, a mi obrador!'); ctx.audio?.sfx('laugh'); } },
+      { at: 2.1, run: () => { ui.sub('CEPI', '¡Fue Lale… se escapó a Le Blé en París!'); ctx.audio?.sfx('bell'); } },
+      { at: 3.4, run: () => { ui.sub(''); ui.caption('✈ RUMBO A PARÍS', '¡Seguí a Lale hasta el obrador de Le Blé!'); ctx.audio?.sfx('secret'); } }
+    ];
+    const frame = (t, dt) => {
+      cam(S.a, S.b, Math.min(1, t / 3.4));
+      cepi.update(dt, 0);
+      if (!grabbed) {
+        if (walk(lale, stroller.position.x + 0.9, 10.0, dt, 'walk')) {
+          grabbed = true;
+          say(lale, '✈ ¡A París!', '#ffe08a', 20, 3.2);
+        }
+        stroller.update(dt, 0);
+      } else {
+        walk(lale, X + 26, 10.8, dt, 'walk');
+        stroller.position.x = lale.position.x + 1.05; stroller.setFacing(1);
+        stroller.lift = Math.abs(Math.sin(t * 14)) * 0.08; stroller.update(dt, 0);
+      }
+      H.update(dt, 0);
+    };
+    const dispose = () => { cepi.dispose(); stroller.dispose(); lale.dispose(); };
+    return timeline(ev, 4.6, frame, dispose, 'post_cepi');
   }
 
   // ===== MINI-ESCENA 3: Fin Calle París → Obrador de Le Blé (Lale) =====
   function preLale(hero, heroId) {
     const X = 200, H = hero.actor;
     H.position.set(X - 3.8, 0, 0.5); H.setFacing(1); H.setPose('idle');
-    const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 10, -0.2, -1, 'walk');
-    const stroller = actor(strollerPoses, 1.65, X + 5.2, 0.9, -1, 'cry');
+    const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 9.5, -0.2, -1, 'walk');
+    const stroller = actor(strollerPoses, 1.65, X + 4.8, 0.9, -1, 'cry');
     const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    // Diagonal cálida desde la derecha hacia la puerta de Le Blé
     const S = {
-      a: { p: [X - 0.5, 3.5, 11.0], l: [X + 0.5, 1.5, 0] },
-      b: { p: [X + 2.2, 2.8, 8.2], l: [X + 2.6, 1.6, 0] }
+      a: { p: [X + 4.6, 3.9, 10.6], l: [X + 1.6, 1.5, 0] },
+      b: { p: [X + 1.8, 2.5, 7.6], l: [X + 2.8, 1.6, 0] }
     };
     const ev = [
       { at: 0, run: () => { ui.show(); ui.caption('OBRADOR DE LE BLÉ · PARÍS', '¡Qué olor a manteca recién derretida!'); ctx.audio?.sfx('bell'); } },
-      { at: 1.5, run: () => { ui.caption(''); ui.sub('LALE', 'Tranqui… pasá. ¡Tengo manteca para todos!'); say(lale, '🧈 ¡Suavecito!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('laugh'); } },
-      { at: 3.2, run: () => { ui.sub('MARGOT', cry); ctx.audio?.sfx('pickup'); } },
-      { at: 4.4, run: () => { ui.sub(''); ui.caption('¡A ENHARINAR A LALE!', 'Pegale a las bolsas de harina para frenarlo'); ctx.audio?.sfx('roar'); } }
+      { at: 1.4, run: () => { ui.caption(''); ui.sub('LALE', 'Tranqui… pasá. ¡Tengo manteca para todos!'); say(lale, '🧈 ¡Suavecito!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('laugh'); } },
+      { at: 3.0, run: () => { ui.sub('MARGOT', cry); ctx.audio?.sfx('pickup'); } },
+      { at: 4.1, run: () => { ui.sub(''); ui.caption('¡A ENHARINAR A LALE!', 'Pegale a las bolsas de harina para frenarlo'); ctx.audio?.sfx('roar'); } }
     ];
     const frame = (t, dt) => {
       cam(S.a, S.b, Math.min(1, t / 3.0));
@@ -287,7 +348,44 @@ export function createCine(ctx) {
       H.update(dt, 0);
     };
     const dispose = () => { lale.dispose(); stroller.dispose(); };
-    return timeline(ev, 5.8, frame, dispose, 'pre_lale');
+    return timeline(ev, 5.4, frame, dispose, 'pre_lale');
+  }
+
+  // ===== PASE DE POSTA 3 (EN PANTALLA): Lale KO → Pinky traiciona por el cheque rebotado =====
+  function postLale(hero, heroId) {
+    const X = 212, H = hero.actor;
+    H.position.set(X - 3.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
+    const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 1.0, 0.1, -1, 'ko');
+    const stroller = actor(strollerPoses, 1.65, X + 2.8, 0.9, -1, 'cry');
+    const pinky = actor(sheetPoses(assets, 'pinky', 'courier_pinky'), 2.3, X + 10.5, 0.2, -1, 'walk');
+    const S = {
+      a: { p: [X + 0.4, 2.6, 8.4], l: [X + 1.8, 1.5, 0] },
+      b: { p: [X + 5.8, 3.3, 11.0], l: [X + 6.5, 1.5, 0] }
+    };
+    let grabbed = false;
+    const ev = [
+      { at: 0, run: () => { ui.show(); ui.sub('PINKY', '¡El cheque de Chaky rebotó! ¡Nadie me pagó el estacionamiento!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('roar'); } },
+      { at: 2.1, run: () => { ui.sub('PINKY', '¡Me llevo a Margot al Galpón hasta que paguen!'); ctx.audio?.sfx('horn'); } },
+      { at: 3.4, run: () => { ui.sub(''); ui.caption('¡PINKY TRAICIONÓ A LA BANDA!', '¡Alcanzalo pasando la Ferme LaPadite!'); ctx.audio?.sfx('bell'); } }
+    ];
+    const frame = (t, dt) => {
+      cam(S.a, S.b, Math.min(1, t / 3.4));
+      lale.update(dt, 0);
+      if (!grabbed) {
+        if (walk(pinky, stroller.position.x + 0.9, 10.5, dt, 'walk')) {
+          grabbed = true;
+          say(pinky, '💸 ¡Al Galpón!', '#ffe08a', 20, 3.2);
+        }
+        stroller.update(dt, 0);
+      } else {
+        walk(pinky, X + 26, 11.2, dt, 'walk');
+        stroller.position.x = pinky.position.x + 1.05; stroller.setFacing(1);
+        stroller.lift = Math.abs(Math.sin(t * 14)) * 0.08; stroller.update(dt, 0);
+      }
+      H.update(dt, 0);
+    };
+    const dispose = () => { lale.dispose(); stroller.dispose(); pinky.dispose(); };
+    return timeline(ev, 4.6, frame, dispose, 'post_lale');
   }
 
   // ===== MINI-ESCENA 4: Fin Ferme LaPadite → Galpón (Pinky Final) =====
@@ -297,15 +395,16 @@ export function createCine(ctx) {
     const pinky = actor(sheetPoses(assets, 'pinky', 'courier_pinky'), 2.3, X + 9.5, -0.2, -1, 'walk');
     const stroller = actor(strollerPoses, 1.65, X + 4.8, 0.9, -1, 'cry');
     const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    // Contrapicado dramático mirando hacia arriba al portón del Galpón
     const S = {
-      a: { p: [X - 0.8, 3.6, 11.2], l: [X + 0.5, 1.5, 0] },
-      b: { p: [X + 2.0, 2.8, 8.2], l: [X + 2.5, 1.6, 0] }
+      a: { p: [X - 2.2, 1.7, 9.0], l: [X + 2.0, 2.0, 0] },
+      b: { p: [X + 1.8, 1.9, 7.0], l: [X + 2.6, 1.8, 0] }
     };
     const ev = [
       { at: 0, run: () => { ui.show(); ui.caption('EL GALPÓN · ÚLTIMA PARADA', '¡Margot está ahí adentro!'); ctx.audio?.sfx('bell'); } },
-      { at: 1.5, run: () => { ui.caption(''); ui.sub('PINKY', '¿Pensaste que el jefe era Chaky? ¡Me debe el estacionamiento!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('roar'); } },
-      { at: 3.4, run: () => { stroller.setPose('happy'); ui.sub('MARGOT', cry); say(pinky, '🚗 ¡Son 2 lucas!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('horn'); } },
-      { at: 4.8, run: () => { ui.sub(''); ui.caption('¡DUELO FINAL EN EL GALPÓN!', '¡Esquivá los autos y rescatá a Margot!'); ctx.audio?.sfx('clear'); } }
+      { at: 1.4, run: () => { ui.caption(''); ui.sub('PINKY', '¡Acá mando yo! ¡Son dos mil por adelantado!'); fx.shake?.(0.24, 0.25); ctx.audio?.sfx('roar'); } },
+      { at: 3.1, run: () => { ui.sub('MARGOT', cry); say(pinky, '🚗 ¡Son 2 lucas!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('horn'); } },
+      { at: 4.4, run: () => { ui.sub(''); ui.caption('¡DUELO FINAL EN EL GALPÓN!', '¡Esquivá los autos y rescatá a Margot!'); ctx.audio?.sfx('clear'); } }
     ];
     const frame = (t, dt) => {
       cam(S.a, S.b, Math.min(1, t / 3.0));
@@ -315,7 +414,7 @@ export function createCine(ctx) {
       H.update(dt, 0);
     };
     const dispose = () => { pinky.dispose(); stroller.dispose(); };
-    return timeline(ev, 6.2, frame, dispose, 'pre_pinky');
+    return timeline(ev, 5.6, frame, dispose, 'pre_pinky');
   }
 
   return {
@@ -324,10 +423,12 @@ export function createCine(ctx) {
     get kind() { return cur?.kind || null; },
     start(kind, hero, heroId) {
       this.stop();
-      if (kind === 'byd') cur = afterByd(hero, heroId);
-      else if (kind === 'pre_chaky') cur = preChaky(hero, heroId);
+      if (kind === 'pre_chaky') cur = preChaky(hero, heroId);
+      else if (kind === 'post_chaky') cur = postChaky(hero, heroId);
       else if (kind === 'pre_cepi') cur = preCepi(hero, heroId);
+      else if (kind === 'post_cepi') cur = postCepi(hero, heroId);
       else if (kind === 'pre_lale') cur = preLale(hero, heroId);
+      else if (kind === 'post_lale') cur = postLale(hero, heroId);
       else if (kind === 'pre_pinky') cur = prePinky(hero, heroId);
       else cur = intro(hero, heroId);
     },

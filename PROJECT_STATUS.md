@@ -526,3 +526,20 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Verificación:** `node --check` OK en los 8 JS editados, `node tools/stamp_versions.mjs` OK, `npm test` **77/78 en verde, 0 fallos, 1 omitido** (`check_sprites.py` por falta de `numpy` local). **Pendiente en dispositivo físico (Safari iPhone 15 Pro Max):** probar voz femenina de Marine con/sin modo silencio, salto sobre mesas y rampas Turbo en BYD, velocidad del pádel de Cepi y las 4 mini-escenas.
 - **Rollback:** volver `main` al commit `1f52ee7`.
 
+## 2026-11-24 (9) · Lógica narrativa causal + Trayectoria continua de Margot + Escala uniforme de héroes + Voz natural de Marine + Cámaras propias por Boss
+- **Auditado con 2 agentes especialistas (`margoush-narrative-logic` y `margoush-margot-tracker`):**
+  - **Trayectoria 100 % continua de Margot y pases de posta EN PANTALLA (`3d/js/cine.js`, `3d/js/main.js`, `3d/js/bonus.js`, `3d/js/arena.js`, `3d/js/arena_cepi.js`, `3d/js/arena_lale.js`, `3d/js/arena_pinky.js`, `3d/js/i18n.js`):**
+    - **Intro (`Le Concept`):** Big Chaky paga a Pinky con un cheque (*«💵 ¡Cheque al día!»*, sembrando el giro del Acto 4), a Lale con manteca y a Cepi con el cargador, y **Big Chaky mismo agarra el cochecito de Margot** (`push`) rumbo a Ezeiza avisándole a Cepi que tenga el BYD listo. Eliminado código muerto `afterByd`.
+    - **Baile de Big Chaky (`arena.js`):** Margot movida del centro al **costado derecho del escenario** (`x = 4.45, z = STAGE_Z - 1.25`), dejando el centro libre entre héroe y Chaky y visible en vertical/horizontal.
+    - **3 pases de posta visibles en pantalla (`post_chaky`, `post_cepi`, `post_lale`):** al caer Chaky KO, Cepi entra corriendo y agarra a Margot para escapar en el BYD; en *¡Rompé el BYD!* y `pre_cepi` Margot queda custodiada del lado derecho de Cepi (`chargerX + 0.78`) y Cepi se la lleva a la cancha de pádel; al caer Cepi KO, Lale agarra a Margot rumbo a París (*Le Blé*); al caer Lale KO, Pinky entra furioso porque el cheque de Chaky rebotó y se lleva a Margot al Galpón.
+    - **Margot visible en las 4 arenas:** agregada al costado derecho en Cepi (`arena_cepi.js`), Lale (`arena_lale.js`) y visible toda la pelea al costado en Pinky (`arena_pinky.js`) hasta su Grito Supersónico de Fase 3.
+- **Tamaño 100 % uniforme de Douge y Marine (`3d/js/hero.js`):**
+  - Normalizadas las alturas visuales `POSE_H` de `idle`, `walk`, `run`, `combo_sheet` y `actions_sheet` (`marine_actions_sheet` pasaba de `1.64×` a `1.14×` y `run` de `0.76×` a `0.96×`), eliminando el salto de tamaño al saltar o pegar.
+- **Voz natural de Marine (`3d/js/audio.js`):**
+  - Tono bajado de `1.52` artificial a **`1.12`** natural (`rate: 0.96`), quitado el destello/arpegio invasivo en combate y suavizado `SFX.messigoku` a dos notas muy suaves para que la voz suene limpia y uniforme.
+- **Cámaras de entrada únicas por Boss (`3d/js/boss_intro.js`, `arena_cepi.js`, `arena_lale.js`, `arena_pinky.js`, `cine.js`):**
+  - `boss_intro.js` acortado a tarjeta VS ágil (`1.9 s`) sin repetir diálogos; cada arena tiene su propia cámara de entrada (frontal disco en Chaky, barrido lateral rasante sobre la red en Cepi, paneo diagonal desde los hornos en Lale, contrapicado dramático desde el piso en Pinky) y cada `cine.js` usa su propio ángulo.
+- **Verificación:** `node --check` OK en los 11 JS editados, `node tools/stamp_versions.mjs` OK, `npm test` **77/78 en verde, 0 fallos, 1 omitido** (`check_sprites.py` sin `numpy` local). **Pendiente en Safari físico iPhone 15 Pro Max:** validar voz natural de Marine, tamaño uniforme de sprites al saltar/pegar, Margot al costado en el baile y los pases de posta en campaña completa.
+- **Rollback:** volver `main` al commit `9597297`.
+
+

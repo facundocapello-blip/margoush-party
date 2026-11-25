@@ -450,8 +450,11 @@ function endIntro() {
   const kind = game.story.endIntro();
   input.reset();
   if (kind === 'pre_chaky') { spawnBoss(); return; }
+  if (kind === 'post_chaky') { startChaseRun(); return; }
   if (kind === 'pre_cepi' || kind === 'byd') { spawnCepi(); return; }
+  if (kind === 'post_cepi') { enterAct3Street(); return; }
   if (kind === 'pre_lale') { spawnLale(); return; }
+  if (kind === 'post_lale') { enterAct4Street(); return; }
   if (kind === 'pre_pinky') { spawnPinky(); return; }
   const { actor } = game.hero;
   actor.position.set(LEVELS[0].start, 0, 0.5);
@@ -487,14 +490,15 @@ function startBydLevel() {
   continueTransition(wait, () => game.bonus.start());
 }
 game.startBydLevel = startBydLevel;
-// Mini-escena cinematográfica entre nivel y jefe (salteable con 1 toque; en ?probar= entra directo)
+// Mini-escena cinematográfica entre nivel y jefe o pase de posta (salteable con 1 toque; en ?probar= entra directo)
 function playMiniScene(kind, fallback) {
   if (PROBAR) { fallback(); return; }
   input.reset();
   clearBanners();
   game.combo.reset();
   game.enemies.clear();
-  if (kind === 'pre_cepi') setLevel(1);
+  if (kind === 'pre_cepi' || kind === 'post_chaky' || kind === 'post_cepi') setLevel(1);
+  else if (kind === 'pre_lale' || kind === 'post_lale' || kind === 'pre_pinky') setLevel(2);
   game.state = 'intro';
   audio.music('intro', { fade: 0.25 });
   game.story.startIntro(game.hero, game.heroId, kind);
@@ -1110,37 +1114,36 @@ async function boot() {
   game.pickups = game.props.pickups;
   game.crates = game.props.crates;
   game.story = createStory(ctx);
-  // Jefe 1 (Acto 1): BIG CHAKY → al ganar, Cepi huye en el BYD por la 9 de Julio (Acto 2 en Buenos Aires)
+  // Jefe 1 (Acto 1): BIG CHAKY → al ganar, pase de posta en pantalla: Cepi agarra a Margot y huye en el BYD
   game.arena = createArena({
     game, input, audio, assets, renderer, banner: game.banner, updateHud, pause, POWER,
     onWin() {
       game.chakyDone = true;
       game.state = 'playing'; last = 0;
       if (PROBAR && PROBAR.startsWith('chaky')) { game.onBossDown(); return; }
-      game.state = 'curtain';
-      curtain(() => startChaseRun(), { label: '¡CHAKY CAYÓ! CEPI SE ESCAPA EN EL BYD POR LA 9 DE JULIO', wait: assets.ensure(['chase_']) });
+      playMiniScene('post_chaky', () => startChaseRun());
     },
     onDown() { game.state = 'playing'; finish(false); }
   });
-  // Jefe 2 (Acto 2): Cepi «el Niño» → al ganar, vuelo a París (Acto 3)
+  // Jefe 2 (Acto 2): Cepi «el Niño» → al ganar, pase de posta en pantalla: Lale se lleva a Margot a París (Acto 3)
   game.arenaCepi = createCepiArena({
     game, input, audio, assets, renderer, updateHud, pause, POWER,
     onWin() {
       game.cepiDone = true;
       game.state = 'playing'; last = 0;
       if (PROBAR && PROBAR.startsWith('cepi')) { finish(true); return; }
-      startTransition();
+      playMiniScene('post_cepi', () => enterAct3Street());
     },
     onDown() { game.state = 'playing'; finish(false); }
   });
-  // Jefe 3 (Acto 3): Lale «Mantecoso» → al ganar arranca Acto 4 (tramo final al Galpón)
+  // Jefe 3 (Acto 3): Lale «Mantecoso» → al ganar, pase de posta en pantalla: Pinky traiciona por el cheque rebotado (Acto 4)
   game.arenaLale = createLaleArena({
     game, input, audio, assets, renderer, updateHud, pause, POWER,
     onWin() {
       game.laleDone = true;
       game.state = 'playing'; last = 0;
       if (PROBAR && PROBAR.startsWith('lale')) { finish(true); return; }
-      enterAct4Street();
+      playMiniScene('post_lale', () => enterAct4Street());
     },
     onDown() { game.state = 'playing'; finish(false); }
   });

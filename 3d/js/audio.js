@@ -187,14 +187,11 @@ export function createAudio(assets) {
     s.start(t); s.stop(t + dur + 0.05);
   }
 
-  // «¡Diuuuuushbag!»: sale a veces con Douge (nunca con Marine, que tiene destello femenino), mínimo 3 s entre una y otra
+  // «¡Diuuuuushbag!»: solo para Douge (mínimo 3 s entre una y otra); Marine usa solo SFX arcade limpio
   let lastVoice = -10;
-  function marineSparkle(delay = 0) {
-    [1047, 1319, 1568, 2093].forEach((f, i) => tone('sine', f, f * 1.04, 0.12, 0.085, delay + i * 0.045));
-  }
   function voice(delay = 0) {
     lastVoice = ac.currentTime;
-    if (heroId === 'marine') { marineSparkle(delay); return; }
+    if (heroId === 'marine') return;
     const pitch = [0.72, 1, 1, 1.32][Math.floor(Math.random() * 4)];
     diushbag(ac, master, noise, ac.currentTime + delay, pitch);
   }
@@ -210,10 +207,10 @@ export function createAudio(assets) {
     hurt: () => { tone('sawtooth', 220, 90, 0.22, 0.3); hiss(0.1, 0.25, 500); },
     ko: () => { punch(ac, master, noise, ac.currentTime, 1.4); tone('square', 320, 80, 0.3, 0.12, 0.05); maybeVoice(0.4, 0.15); },
     diushbag: () => voice(0),
-    // Remate de «¡Messi Goku!»: brillitos agudos y livianos para no tapar la voz femenina de Marine
+    // Remate suave de «¡Messi Goku!» para que la voz de Marine suene natural y sin ruidos encima
     messigoku: () => {
-      [784, 1047, 1319, 1568, 2093].forEach((f, i) => tone('triangle', f, f * 1.03, 0.16, 0.09, i * 0.065));
-      hiss(0.35, 0.07, 3200, 1.2, 0.12);
+      tone('sine', 587, 587, 0.12, 0.045, 0);
+      tone('sine', 880, 880, 0.16, 0.045, 0.08);
     },
     jump: () => tone('sine', 320, 640, 0.15, 0.18),
     dodge: () => hiss(0.18, 0.25, 2200, 0.7),
@@ -356,7 +353,7 @@ export function createAudio(assets) {
         const list = cachedVoices.length ? cachedVoices : speechSynthesis.getVoices();
         const v = pickFemaleFrench(list);
         if (v) { u.voice = v; u.lang = v.lang; }
-        u.pitch = 1.52; u.rate = 0.96;
+        u.pitch = 1.12; u.rate = 0.96;
       }
       speechSynthesis.speak(u);
     },

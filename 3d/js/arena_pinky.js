@@ -512,8 +512,9 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
-      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + (Math.random() - 0.5) * sh, CAM.y + e * 5 + (Math.random() - 0.5) * sh, z + CAM.back + e * 7);
-      cam.lookAt(0, CAM.lookY + e * 1.5, PINKY_ARENA.bossZ);
+      // Entrada propia de Pinky: contrapicado dramático desde el piso mirando hacia arriba al jefe final
+      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + (Math.random() - 0.5) * sh, CAM.y - e * 3.8 + (Math.random() - 0.5) * sh, z + CAM.back - e * 3.2);
+      cam.lookAt(0, CAM.lookY + e * 1.6, PINKY_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
       // Pinky (camina en 6 cuadros reales al desplazarse y usa arena_pinky_wave al pararse a hacer señas + reveal/charge/hurt/ko)
@@ -548,7 +549,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         chargeRing.scale.setScalar(1 + Math.sin(t * 12) * 0.12);
       }
 
-      // Anticipación + botón + animación de Margot heroica en Fase 3
+      // Anticipación + botón + Margot siempre visible al costado derecho hasta que salta al frente en Fase 3
       const showBtn = S.margotReady && phase === 'fight';
       const showCue = !showBtn && phase === 'fight' && S.phase !== 'ko' &&
         ((S.phase === 2 && S.hp <= PINKY_ARENA.p3At + 4) || (S.phase === 3 && S.mode === 'transition'));
@@ -556,6 +557,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       margotBtn.classList.toggle('hidden', !showBtn);
       if (S.margotT > 0) {
         margotMesh.visible = true;
+        margotMesh.scale.set(2.4, 2.4, 1);
         margotMesh.position.set(0, 0.2 + Math.sin(t * 16) * 0.15, -5.5);
         waveRing.visible = true;
         const p = 1 - S.margotT / 2.0;
@@ -563,7 +565,9 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         waveRing.scale.setScalar(1 + p * 12);
         waveRing.material.opacity = Math.max(0, 0.85 * (1 - p));
       } else {
-        margotMesh.visible = false;
+        margotMesh.visible = true;
+        margotMesh.scale.set(1.85, 1.85, 1);
+        margotMesh.position.set(PINKY_ARENA.xMax - 0.5, Math.abs(Math.sin(t * 5)) * 0.12, PINKY_ARENA.bossZ + 0.5);
         waveRing.visible = false;
       }
 

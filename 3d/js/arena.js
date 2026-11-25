@@ -227,7 +227,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       M.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
     };
     setMargot(2);
-    let mX = 0, mZ = STAGE_Z + 0.5, mH = MARGOT_H;
+    let mX = 4.45, mZ = STAGE_Z - 1.25, mH = MARGOT_H;
 
     // Interfaz del Duelo de Baile (5 carriles con botones receptores ABAJO y flechas que BAJAN)
     const ui = document.createElement('div');
@@ -824,12 +824,12 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       place(P, x, TARIMA_H + y + hBob, z);
       P.rotation.z = hLean + danceStep * y * 0.12;
 
-      // 3. MARGOT: junto a Chaky en la intro; después rueda al fondo y festeja en Modo Disco o KO
+      // 3. MARGOT: al COSTADO DERECHO del escenario (nunca en el medio entre héroe y Chaky); festeja en Modo Disco o KO
       if (M) {
         const inIntroShot = phase === 'intro' && phaseT < INTRO.reveal;
-        const tx = inIntroShot ? S.bossX - 1.95 : 0;
-        const tz = inIntroShot ? STAGE_Z + 0.6 : STAGE_Z - 2.1;
-        const th = inIntroShot ? MARGOT_H : MARGOT_H * 0.82;
+        const tx = inIntroShot ? S.bossX + 1.55 : 4.45;
+        const tz = inIntroShot ? STAGE_Z + 0.35 : STAGE_Z - 1.25;
+        const th = inIntroShot ? MARGOT_H : MARGOT_H * 0.78;
         const kk = Math.min(1, dt * 5);
         if (dt === 0 || phase === 'intro' && phaseT < 0.05) { mX = tx; mZ = tz; mH = th; }
         else { mX += (tx - mX) * kk; mZ += (tz - mZ) * kk; mH += (th - mH) * kk; }

@@ -11,9 +11,9 @@ export function attachBossIntro(ui, { name, line1, line2, quick = false, onSkip 
   fillText(el.querySelector('.skip'), 'Tocá para empezar');
   ui.append(el);
 
-  const tLine2 = quick ? 0.55 : 1.35;
-  const tOut = quick ? 1.25 : 2.75;
-  const dur = quick ? 1.55 : 3.2;
+  const tLine2 = quick ? 0.35 : 0.7;
+  const tOut = quick ? 0.95 : 1.55;
+  const dur = quick ? 1.2 : 1.9;
   let step = 0, done = false;
 
   const skip = (ev) => {

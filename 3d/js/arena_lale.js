@@ -142,6 +142,24 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
 
     const B = sprite('arena_lale_idle', BOSS_H, 0.9, 'idle');
     const P = sprite(heroPre + 'idle', HERO_H, 0.9);
+    // Margot visible al costado derecho del obrador (del lado de Lale)
+    let M = null, margotCell = -1;
+    const MARGOT_H = 1.85;
+    if (assets.has('margot_sheet')) {
+      const mm = assets.meta('margot_sheet');
+      const tx = keep(assets.texture('margot_sheet').clone());
+      tx.needsUpdate = true; tx.repeat.set(1 / (mm.cols || 2), 1 / (mm.rows || 2));
+      M = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: tx, alphaTest: 0.42, transparent: true, side: T.DoubleSide })));
+      M.userData.cols = mm.cols || 2; M.userData.rows = mm.rows || 2;
+      M.scale.set(MARGOT_H, MARGOT_H, 1); scene.add(M);
+    }
+    const setMargot = (cell) => {
+      if (!M || margotCell === cell) return;
+      margotCell = cell;
+      const c = M.userData.cols, r = M.userData.rows;
+      M.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
+    };
+    setMargot(2);
 
     // Bolsa de harina ilustrada (reemplaza al cilindro liso) con etiqueta «HARINA» + nube voladora + aviso de patín
     const flourBagTex = canvasTex(256, 256, (g, w, h) => {
@@ -455,9 +473,14 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
-      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + (Math.random() - 0.5) * sh, CAM.y + e * 5 + (Math.random() - 0.5) * sh, z + CAM.back + e * 7);
-      cam.lookAt(0, CAM.lookY + e * 1.5, LALE_ARENA.bossZ);
+      // Entrada propia de Lale: paneo diagonal cálido desde los hornos a la derecha
+      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + e * 6.5 + (Math.random() - 0.5) * sh, CAM.y - e * 1.8 + (Math.random() - 0.5) * sh, z + CAM.back - e * 2.2);
+      cam.lookAt(e * 1.4, CAM.lookY + e * 0.4, LALE_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
+      if (M) {
+        setMargot(S.phase === 'ko' || S.mode === 'floured' ? 3 : 2);
+        place(M, LALE_ARENA.xMax - 0.5, Math.abs(Math.sin(t * 6)) * 0.1, LALE_ARENA.bossZ + 0.6);
+      }
 
       // Lale (camina en 6 cuadros reales al desplazarse + poses dedicadas arena_lale_idle/throw/skate/floured/hurt/ko)
       const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;

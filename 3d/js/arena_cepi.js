@@ -160,6 +160,24 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
 
     const B = sprite('arena_cepi_idle', BOSS_H, 0.85);
     const P = sprite(heroPre + 'idle', HERO_H, 0.9);
+    // Margot visible al costado derecho de la cancha (del lado de Cepi)
+    let M = null, margotCell = -1;
+    const MARGOT_H = 1.85;
+    if (assets.has('margot_sheet')) {
+      const mm = assets.meta('margot_sheet');
+      const tx = keep(assets.texture('margot_sheet').clone());
+      tx.needsUpdate = true; tx.repeat.set(1 / (mm.cols || 2), 1 / (mm.rows || 2));
+      M = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: tx, alphaTest: 0.42, transparent: true, side: T.DoubleSide })));
+      M.userData.cols = mm.cols || 2; M.userData.rows = mm.rows || 2;
+      M.scale.set(MARGOT_H, MARGOT_H, 1); scene.add(M);
+    }
+    const setMargot = (cell) => {
+      if (!M || margotCell === cell) return;
+      margotCell = cell;
+      const c = M.userData.cols, r = M.userData.rows;
+      M.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
+    };
+    setMargot(2);
     // 2 señuelos de cartón reutilizables para fase 3
     const decoyMeshes = [0, 1].map(() => {
       const m = sprite('arena_cepi_cardboard', BOSS_H, 0.75);
@@ -488,9 +506,14 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
       const sh = shakeA * Math.min(1, shakeT * 4);
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
-      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + (Math.random() - 0.5) * sh, CAM.y + e * 5 + (Math.random() - 0.5) * sh, z + CAM.back + e * 7);
-      cam.lookAt(0, CAM.lookY + e * 1.5, CEPI_ARENA.bossZ);
+      // Entrada propia de Cepi: barrido lateral rasante cruzando sobre la red de pádel
+      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) - e * 6.8 + (Math.random() - 0.5) * sh, CAM.y - e * 2.6 + (Math.random() - 0.5) * sh, z + CAM.back - e * 3.0);
+      cam.lookAt(-e * 1.2, CAM.lookY + e * 0.3, CEPI_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
+      if (M) {
+        setMargot(S.phase === 'ko' || S.mode === 'stun' ? 3 : 2);
+        place(M, CEPI_ARENA.xMax - 0.55, Math.abs(Math.sin(t * 6)) * 0.1, CEPI_ARENA.bossZ + 0.8);
+      }
 
       // Cepi real (corre en 6 cuadros al desplazarse por la cancha + animaciones de golpe/bloqueo/aturdido)
       const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;

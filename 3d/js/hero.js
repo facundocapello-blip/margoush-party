@@ -24,18 +24,29 @@ export const POWER = { start: 1, hit: 0.07, finisher: 0.12, kill: 0.08, dodge: 0
 // Puntería automática: al pegar, se da vuelta hacia el malo más cercano
 export const AIM = { reach: 2.8, depth: 1.3, snapZ: 0.45 };
 
+// Normalización exacta de altura visible entre hojas (idle, walk, run, combo y acciones)
+// para que Douge y Marine mantengan siempre el mismo tamaño al correr, saltar o pegar.
+const POSE_H = {
+  douge: { idle: 0.96, walk: 0.98, run: 1.11, combo: 0.99, actions: 1.06 },
+  marine: { idle: 0.96, walk: 0.99, run: 1.26, combo: 1.05, actions: 1.14 }
+};
+
 export function createHero(id, ctx) {
   const cfg = HERO_CFG[id];
+  const ph = POSE_H[id] || POSE_H.douge;
   const { input, world, fx, game } = ctx;
   // Hojas nuevas de la guía AAA, si ya están: combo (3 golpes) y acciones (salto, esquive, golpeado, poder)
-  const poses = { ...cfg.poses };
+  const poses = {
+    idle: { ...cfg.poses.idle, h: ph.idle },
+    run: { ...cfg.poses.run, h: ph.run },
+    attack: { ...cfg.poses.attack, h: ph.combo }
+  };
   const A = ctx.assets;
-  if (A.has?.(id + '_combo_sheet')) for (let i = 0; i < 3; i++) poses['attack' + (i + 1)] = { tex: id + '_combo_sheet', cell: i };
-  if (A.has?.('rescate_sheet')) poses.carry = { tex: 'rescate_sheet', cell: id === 'douge' ? 0 : 1 };
-  if (A.has?.(id + '_actions_sheet')) ['jump', 'dodge', 'hurt', 'power'].forEach((n, i) => { poses[n] = { tex: id + '_actions_sheet', cell: i }; });
-  // Caminata de 10 cuadros (sacada de un video hecho con IA): se usa yendo despacio; rápido sigue la de correr
-  // h: mismo alto de cuerpo que parado (no se escala por la cabeza: en el video el cuerpo es más largo y crecía)
-  if (A.has?.(id + '_walk_sheet')) poses.walk = { tex: id + '_walk_sheet', stride: WALK.stride, h: WALK.h };
+  if (A.has?.(id + '_combo_sheet')) for (let i = 0; i < 3; i++) poses['attack' + (i + 1)] = { tex: id + '_combo_sheet', cell: i, h: ph.combo };
+  if (A.has?.('rescate_sheet')) poses.carry = { tex: 'rescate_sheet', cell: id === 'douge' ? 0 : 1, h: ph.idle };
+  if (A.has?.(id + '_actions_sheet')) ['jump', 'dodge', 'hurt', 'power'].forEach((n, i) => { poses[n] = { tex: id + '_actions_sheet', cell: i, h: ph.actions }; });
+  // Caminata de 10 cuadros: se usa yendo despacio; rápido sigue la de correr (misma altura visual)
+  if (A.has?.(id + '_walk_sheet')) poses.walk = { tex: id + '_walk_sheet', stride: WALK.stride, h: ph.walk };
   const actor = new SpriteActor(ctx.scene, ctx.assets, { poses, heightM: cfg.heightM, scaleRef: cfg.scaleRef });
   const has = (n) => !!actor.poses[n];
 
