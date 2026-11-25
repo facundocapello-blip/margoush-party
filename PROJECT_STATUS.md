@@ -543,3 +543,10 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Rollback:** volver `main` al commit `9597297`.
 
 
+
+## 2026-11-25 · QA sobre `main` (`b98f22c`), arreglo del test de sprites y 8 agentes `gs-*` de solo lectura
+- **QA (solo lectura):** `index.html` publicado = `3d/index.html` de `main` (SHA-256 `8d2aec5a…`); `node --check` sin fallos; francés sin `tr()` sin traducir en el código (379 textos + 154 frases). No se jugó la campaña ni se corrieron los e2e. Safari físico sigue pendiente.
+- **Arreglo:** `tests/check_sprites.py` exigía los sprites `boss_*` que la poda del 24/11 eliminó; con `numpy`/`scipy`/`Pillow` instalados la prueba fallaba (en la VM anterior se omitía). Ahora `npm test` = 78/78.
+- **Agentes nuevos (`.claude/agents/gs-*.md`, solo lectura):** game-designer, narrative-director, localization-lead, art-director, audio-director, ux-designer, qa-lead y performance-analyst, adaptados de Donchitos/Claude-Code-Game-Studios (MIT, ver `NOTICE-game-studios.md`). Sin hooks ni settings del original.
+- **Pendiente:** decidir las voces de los jefes (hoy `audio.bossLine()` está vacío en `3d/js/audio.js`).
+- **Rollback:** volver `main` al commit `b98f22c`.
