@@ -1,5 +1,5 @@
 // Datos de la partida: dos niveles sobre una misma calle que avanza en +X.
-// Nivel 1 — Buenos Aires (termina peleando en la puerta de Le Concept)
+// Nivel 1 — Buenos Aires (termina peleando en el acceso a Ezeiza)
 // Nivel 2 — Francia (termina en el galpón de BIG CHAKY)
 
 export const LE_CONCEPT_X = 134;
@@ -30,7 +30,7 @@ export const WAVES = [
     spawns: [{ dx: 9, dz: 1.1, kind: 'patovica' }, { dx: 8, dz: -1.1, kind: 'bombo' }] },
   { id: 'avenida', level: 1, trigger: 76, gate: null, title: 'LA AVENIDA', text: 'Cuidado con el colectivo: no frena.',
     spawns: [{ dx: 9, dz: -1.4, kind: 'bombo' }, { dx: -8, dz: 1.4, kind: 'patovica' }, { dx: 12, dz: 1.0, kind: 'bombo' }] },
-  { id: 'le-concept', level: 1, trigger: 122, gate: null, endsLevel: true, title: '¡FRENTE A LE CONCEPT!', text: 'La patota de BIG CHAKY corta el camino a Ezeiza.',
+  { id: 'le-concept', level: 1, trigger: 122, gate: null, endsLevel: true, title: '¡ACCESO A EZEIZA!', text: 'La patota de BIG CHAKY bloquea la entrada al aeropuerto.',
     spawns: [{ dx: 8, dz: -0.6, kind: 'patovica' }, { dx: 10, dz: 1.6, kind: 'bombo' }, { dx: -7, dz: -1.2, kind: 'patovica' }] },
 
   { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE DE PARIS', text: '¡El inspector Landa y sus mozos vigilan París!',

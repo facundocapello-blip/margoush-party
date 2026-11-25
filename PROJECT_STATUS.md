@@ -557,3 +557,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Test nuevo:** `tests/arena_cepi.test.mjs` (dos pelotas devueltas, cambio de fase y KO). `npm test` 79/79.
 - **Prueba:** `?probar=cepi-carton`. Pantalla negra del duelo de la flechita con Marine: no reproducida; pendiente propuesta `?debug=1`.
 - **Rollback:** volver `main` al commit `4e62eaa`.
+
+## 2026-11-25 · Etapa A · A1: la calle de Buenos Aires termina en el acceso a Ezeiza
+- La oleada final del nivel 1 (`le-concept` en `3d/js/level.js`) ya no dice «FRENTE A LE CONCEPT»: ahora «¡ACCESO A EZEIZA!» / «La patota de BIG CHAKY bloquea la entrada al aeropuerto.» (FR en `3d/js/i18n.js`: «ACCÈS À EZEIZA !»). El id de la oleada y las posiciones no cambian.
+- Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79. Sin cambios de arte: el edificio de Le Concept sigue en el decorado de ese tramo. Safari físico pendiente.
+- **Prueba:** `?probar=calle` (o `?probar=le-concept` para ir directo a la oleada final).
+- **Rollback:** volver `main` al commit `c872c45`.
