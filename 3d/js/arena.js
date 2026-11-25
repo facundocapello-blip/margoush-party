@@ -8,6 +8,7 @@ import { ARENA, createArenaLogic } from './arena_logic.js';
 import { createVoice } from './voice.js';
 import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
+import { placePops } from './pop_layout.js';
 
 const HURT_POSE = 0.45;
 const INV = 0.8;
@@ -847,17 +848,18 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       if (phase !== 'intro' && S.phase !== 'ko') piuDraw();
 
       // Textos flotantes de puntaje y vida
+      const lay = [];
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i];
         q.t += dt;
         q.v.y += dt * 0.85;
         const sp = scratch.copy(q.v).project(cam);
         const half = Math.min(innerWidth / 2, q.w / 2 + 18);
-        q.e.style.left = Math.max(half, Math.min(innerWidth - half, (sp.x + 1) / 2 * innerWidth)) + 'px';
-        q.e.style.top = ((1 - sp.y) / 2 * innerHeight) + 'px';
+        if (q.t <= q.life) lay.push({ o: q, el: q.e, x: Math.max(half, Math.min(innerWidth - half, (sp.x + 1) / 2 * innerWidth)), y: (1 - sp.y) / 2 * innerHeight });
         q.e.style.opacity = String(Math.max(0, Math.min(1, (q.life - q.t) / 0.35)));
         if (q.t > q.life) { q.e.remove(); pops.splice(i, 1); }
       }
+      placePops(lay.reverse(), dt);
     }
 
     // Cajas en pantalla (px, de arriba hacia abajo) de BIG CHAKY y del héroe para validación de layout

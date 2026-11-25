@@ -177,7 +177,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     }
     const P = sprite(pre + '_drive', 2.6), C = sprite(assets.has('chase_cepi_drive') ? 'chase_cepi_drive' : 'chase_cepi_windup', 4.1, 1.1);
     const CEPI_DRIVE = C.userData.key;
-    C.userData.margot = true; setTex(C, CEPI_DRIVE); // Margot llorando en la luneta
+    C.userData.margot = true; setTex(C, CEPI_DRIVE); // Margot feliz en la luneta
     const mark = mk(new T.RingGeometry(0.55, 0.78, 28), new T.MeshBasicMaterial({ color: L('#ff4d5e'), transparent: true, opacity: 0.85, depthWrite: false }));
     mark.rotation.x = -Math.PI / 2; mark.visible = false; mark.renderOrder = 2;
     // Polvo que levantan las ruedas traseras del BYD (va de atrás: las ruedas no se ven girar, el polvo vende la velocidad)

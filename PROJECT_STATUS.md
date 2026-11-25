@@ -613,3 +613,11 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Poses de Facu: el juego usa `arena_facu_<idle|reveal|aim|throw|paint|windup|hurt|love|ko>` si existen; si no, el dibujo viejo `facu` animado por código. ZIP para Gemini entregado (10 imágenes, incl. `arena_facu_fondo`).
 - Tests: `npm test` 88/88 · humo móvil `tests/e2e/facu_galerista.e2e.mjs` OK sin errores. Safari físico pendiente.
 - Pendiente (Etapa D): pulido de diseño — HUD (carteles de fase tapan la acción, textos que se pisan), cinemáticas, arenas y personajes.
+
+## 2026-11-25 · Etapa D (parte 1, sin imágenes nuevas): HUD y cinemáticas
+- Textos flotantes que no se pisan: módulo nuevo `3d/js/pop_layout.js` (los textos viejos quedan quietos y los nuevos se corren arriba o abajo; nunca debajo del HUD ni de la barra del jefe). Lo usan la calle (`fx.js`) y las 5 arenas.
+- Cartel de fase: deja de estar en el medio de la pelea; ahora es una cinta más chica debajo del HUD y de la barra del jefe (variable CSS `--hud-b`). El cartel del duelo de baile no cambia.
+- Cinemáticas: Margot ya no llora cuando se la llevan. Se ríe, grita «¡Papááá, más rápido!» (FR «Mamaaan, plus vite !») y le tira el chupete por la cabeza al que la lleva (Chaky, Cepi, Lale o Pinky: «¡TOC!» + «¡AY! ¡El chupete no!»). En la luneta del BYD se la ve contenta.
+- Pruebas: `npm test` 91/91 (3 nuevas en `tests/pop_layout.test.mjs`). E2E nuevo `tests/e2e/etapa_d.e2e.mjs` OK (430×932): 4 textos en el mismo punto sin pisarse, cartel debajo del HUD y terminando al 31 % de la altura, chupete en `pre_cepi` y `pre_pinky`, sin errores JS. `facu_galerista` y `arena` OK.
+- Ya fallaban antes de este cambio (probado sobre `5bc3271`, no son de esta etapa): `cine.e2e` (espera la persecución después de SALTAR), `cepi_pinky.e2e` y `chase.e2e` (timeouts). Revisar aparte.
+- Pendiente: Safari físico; imágenes de Facu galerista; resto de la Etapa D (arenas y personajes, cuando lleguen las imágenes).

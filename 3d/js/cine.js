@@ -42,6 +42,9 @@ function overlay() {
 }
 
 // ---------- Escenas ----------
+// Lo que grita Margot cuando se la llevan (ya no llora: le parece un paseo)
+export const margotLine = (heroId) => heroId === 'marine' ? 'Mamaaan, plus vite !' : '¡Papááá, más rápido!';
+
 export function createCine(ctx) {
   const { scene, assets, fx, camera, game } = ctx;
   const ui = overlay();
@@ -55,6 +58,48 @@ export function createCine(ctx) {
   const strollerPoses = { sleep: { tex: 'margot_sheet', cell: 0 }, awake: { tex: 'margot_sheet', cell: 1 }, cry: { tex: 'margot_sheet', cell: 2 }, happy: { tex: 'margot_sheet', cell: 3 } };
   const chakyPoses = () => ({ ...sheetPoses(assets, 'chaky', 'chaky_run'), arms: { tex: 'kidnap_sheet', cell: 0 }, push: { tex: 'kidnap_sheet', cell: 2 }, scared: { tex: 'kidnap_sheet', cell: 3 } });
   const say = (a, text, color = '#fff', size = 19, y = 3.3) => fx.popup(a.position.clone().setY(y), text, color, { size, life: 1.1, rise: 0.15 });
+
+  // Etapa D: Margot ya no llora cuando se la llevan. Se lo toma como un paseo: se ríe, grita
+  // «¡Papááá, más rápido!» y le revolea el chupete por la cabeza al que la lleva.
+  const gags = [];
+  let chupeteMade = 0;
+  function chupeteMesh() {
+    const g = new THREE.Group();
+    const pink = new THREE.MeshBasicMaterial({ color: 0xff8fc8 }), blue = new THREE.MeshBasicMaterial({ color: 0x9fe4ff });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.035, 8, 16), pink); ring.position.y = 0.12;
+    const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.04, 16), blue); shield.rotation.x = Math.PI / 2;
+    const nip = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), pink); nip.position.z = -0.08;
+    g.add(ring, shield, nip);
+    return g;
+  }
+  function margotGag(stroller, target, heroId) {
+    ui.sub('MARGOT', margotLine(heroId));
+    stroller.setPose('happy');
+    if (!target) return;
+    const m = chupeteMesh(); chupeteMade++;
+    const from = stroller.position.clone().setY(1.0);
+    m.position.copy(from); scene.add(m);
+    gags.push({ m, from, target, t: 0, dur: 0.6 });
+    ctx.audio?.sfx('whoosh');
+  }
+  function tickGags(dt) {
+    for (let i = gags.length - 1; i >= 0; i--) {
+      const g = gags[i]; g.t += dt;
+      const k = Math.min(1, g.t / g.dur);
+      const to = g.target.position.clone().setY(2.2);
+      g.m.position.lerpVectors(g.from, to, k);
+      g.m.position.y += Math.sin(k * Math.PI) * 1.3;
+      g.m.rotation.z += dt * 18;
+      if (k >= 1) {
+        scene.remove(g.m); g.m.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); });
+        gags.splice(i, 1);
+        fx.popup(to.clone().setY(2.9), '¡TOC!', '#ff8fc8', { size: 24, life: 0.8, rise: 0.6 });
+        say(g.target, '¡AY! ¡El chupete no!', '#ffe08a', 17, 3.5);
+        fx.shake?.(0.12, 0.15); ctx.audio?.sfx('hit');
+      }
+    }
+  }
+  function clearGags() { for (const g of gags) { scene.remove(g.m); g.m.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); }); } gags.length = 0; }
 
   // Cámara: a de (pos, mira) → b, con suavizado. En celu parado se aleja en Z sin subir de más para no mostrar el corte del edificio.
   function cam(a, b, k) {
@@ -86,9 +131,10 @@ export function createCine(ctx) {
         t += dt;
         events.forEach((e, i) => { if (!done.has(i) && t >= e.at) { done.add(i); e.run(); } });
         frame(t, dt);
+        tickGags(dt);
         return t >= duration;
       },
-      dispose
+      dispose() { clearGags(); dispose(); }
     };
   }
 
@@ -107,7 +153,7 @@ export function createCine(ctx) {
     const crew = [['pinky', 1.2, -1.4], ['lale', 2.2, 1.2], ['cepi', 3.1, 0.1]].map(([id, dx, z]) =>
       ({ id, dx, a: actor(sheetPoses(assets, id, 'courier_' + id), 2.25, X + 14 + dx, z, -1, 'walk') }));
     const cepi = crew[2].a;
-    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    const cry = margotLine(heroId);
     const S = {
       wide: { p: [X - 0.4, 4.3, 12.5], l: [X - 0.4, 1.5, 0] }, close: { p: [X - 0.5, 2.6, 7.6], l: [X - 0.5, 1.6, 0.4] },
       right: { p: [X + 7.5, 3.1, 9.5], l: [X + 8.5, 1.6, 0] }, pay: { p: [X + 7.2, 2.7, 7.8], l: [X + 7.4, 1.7, 0] },
@@ -179,10 +225,9 @@ export function createCine(ctx) {
   function preChaky(hero, heroId) {
     const X = LE_CONCEPT_X + 4, H = hero.actor;
     H.position.set(X - 4.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
-    const stroller = actor(strollerPoses, 1.7, X + 4.4, 0.9, -1, 'cry');
+    const stroller = actor(strollerPoses, 1.7, X + 4.4, 0.9, -1, 'happy');
     const chaky = actor(chakyPoses(), 2.5, X + 9.5, -0.3, -1, 'walk');
     const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.15, X + 7.2, -1.6, -1, 'idle');
-    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
     // Contrapicado cerrado sobre Chaky con Cepi asomado al fondo como Plan B
     const S = {
       a: { p: [X - 2.4, 2.2, 8.8], l: [X + 1.8, 1.9, 0] },
@@ -191,7 +236,7 @@ export function createCine(ctx) {
     };
     const ev = [
       { at: 0, run: () => { ui.show(); ui.caption('HANGAR VIP · EZEIZA', '¡Alcanzaste a BIG CHAKY antes del despegue!'); ctx.audio?.sfx('bell'); } },
-      { at: 1.4, run: () => { ui.caption(''); ui.sub('MARGOT', cry); say(cepi, '🚗 ¡Chaky, el BYD ya está listo!', '#9fe4ff', 17, 3.0); ctx.audio?.sfx('pickup'); } },
+      { at: 1.4, run: () => { ui.caption(''); margotGag(stroller, chaky, heroId); say(cepi, '🚗 ¡Chaky, el BYD ya está listo!', '#9fe4ff', 17, 3.0); ctx.audio?.sfx('pickup'); } },
       { at: 2.6, run: () => { chaky.setPose('arms'); ui.sub('BIG CHAKY', '¡Es mi fiesta de despegue, en mi jet! ¡Ganame en mi pista disco!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('laugh'); } },
       { at: 4.8, run: () => { ui.sub(''); ui.caption('¡DUELO DE BAILE DISCO!', '¡Seguí las flechas al ritmo!'); ctx.audio?.sfx('roar'); } }
     ];
@@ -213,9 +258,8 @@ export function createCine(ctx) {
     const X = LE_CONCEPT_X + 2, H = hero.actor;
     H.position.set(X - 3.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
     const chaky = actor(chakyPoses(), 2.5, X + 1.2, -0.2, -1, 'scared');
-    const stroller = actor(strollerPoses, 1.7, X + 3.2, 0.9, -1, 'cry');
+    const stroller = actor(strollerPoses, 1.7, X + 3.2, 0.9, -1, 'happy');
     const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X + 10.5, 0.3, -1, 'walk');
-    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
     const S = {
       a: { p: [X + 0.5, 2.7, 8.6], l: [X + 1.6, 1.5, 0] },
       b: { p: [X + 5.8, 3.4, 11.4], l: [X + 6.5, 1.5, 0] }
@@ -224,7 +268,7 @@ export function createCine(ctx) {
     const ev = [
       { at: 0, run: () => { ui.show(); ui.sub('BIG CHAKY', '¡CEPI! ¡PLAN B! ¡LLEVATELA EN EL BYD!'); fx.shake?.(0.2, 0.22); ctx.audio?.sfx('roar'); } },
       { at: 1.5, run: () => { ui.sub('CEPI', '¡A fondo por la 9 de Julio!'); ctx.audio?.sfx('horn'); } },
-      { at: 2.6, run: () => { ui.sub('MARGOT', cry); ctx.audio?.sfx('engine'); } },
+      { at: 2.6, run: () => { margotGag(stroller, cepi, heroId); ctx.audio?.sfx('engine'); } },
       { at: 3.4, run: () => { ui.sub(''); ui.caption('¡CEPI ESCAPA EN EL BYD!', '¡Subite a tu vehículo y alcanzalos!'); } }
     ];
     const frame = (t, dt) => {
@@ -253,8 +297,7 @@ export function createCine(ctx) {
     H.position.set(X - 3.6, 0, 0.6); H.setFacing(1); H.setPose('idle');
     const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X + 1.8, 0.1, -1, 'ko');
     // Margot está del lado DERECHO de Cepi (custodiada por él, NO libre junto al héroe)
-    const stroller = actor(strollerPoses, 1.65, X + 3.2, 0.9, -1, 'cry');
-    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    const stroller = actor(strollerPoses, 1.65, X + 3.2, 0.9, -1, 'happy');
     // Plano lateral rasante que sigue a Cepi llevándose a Margot al club
     const S = {
       a: { p: [X + 1.4, 2.3, 7.2], l: [X + 2.2, 1.6, 0] },
@@ -264,7 +307,7 @@ export function createCine(ctx) {
     const ev = [
       { at: 0, run: () => { ui.show(); ui.caption('¡EL BYD QUEDÓ FUMANDO!', 'Cepi todavía lo paga en 48 cuotas'); ctx.audio?.sfx('crate'); } },
       { at: 1.4, run: () => { ui.caption(''); furious = true; cepi.setPose('strike'); ui.sub('CEPI', '¡MI ELÉCTRICO EN 48 CUOTAS! ¡Si querés a Margot, ganame un Punto de Oro!'); fx.shake?.(0.25, 0.25); ctx.audio?.sfx('roar'); } },
-      { at: 3.4, run: () => { ui.sub('MARGOT', cry); say(cepi, '🎾 ¡A mi cancha!', '#9fe4ff', 20, 3.2); ctx.audio?.sfx('bell'); } },
+      { at: 3.4, run: () => { margotGag(stroller, cepi, heroId); say(cepi, '🎾 ¡A mi cancha!', '#9fe4ff', 20, 3.2); ctx.audio?.sfx('bell'); } },
       { at: 4.5, run: () => { ui.sub(''); ui.caption('CLUB DE PÁDEL', '¡Devolvé el Punto de Oro para vencer a Cepi!'); ctx.audio?.sfx('whoosh'); } }
     ];
     const frame = (t, dt) => {
@@ -290,7 +333,7 @@ export function createCine(ctx) {
     const X = 90, H = hero.actor;
     H.position.set(X - 3.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
     const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X + 1.0, 0.1, -1, 'ko');
-    const stroller = actor(strollerPoses, 1.65, X + 2.8, 0.9, -1, 'cry');
+    const stroller = actor(strollerPoses, 1.65, X + 2.8, 0.9, -1, 'happy');
     const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 5.4, -1.0, -1, 'walk');
     const S = {
       a: { p: [X + 0.2, 2.8, 8.8], l: [X + 1.8, 1.5, 0] },
@@ -327,8 +370,7 @@ export function createCine(ctx) {
     const X = 200, H = hero.actor;
     H.position.set(X - 3.8, 0, 0.5); H.setFacing(1); H.setPose('idle');
     const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 9.5, -0.2, -1, 'walk');
-    const stroller = actor(strollerPoses, 1.65, X + 4.8, 0.9, -1, 'cry');
-    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    const stroller = actor(strollerPoses, 1.65, X + 4.8, 0.9, -1, 'happy');
     // Diagonal cálida desde la derecha hacia la puerta de Le Blé
     const S = {
       a: { p: [X + 4.6, 3.9, 10.6], l: [X + 1.6, 1.5, 0] },
@@ -337,7 +379,7 @@ export function createCine(ctx) {
     const ev = [
       { at: 0, run: () => { ui.show(); ui.caption('LE BLÉ · CASA CENTRAL · PARÍS', '¡La casa de la Le Blé porteña! ¡Qué olor a manteca!'); ctx.audio?.sfx('bell'); } },
       { at: 1.4, run: () => { ui.caption(''); ui.sub('LALE', 'Pasá, esta es la casa central de Le Blé. ¡Tengo manteca para todos!'); say(lale, '🧈 ¡Suavecito!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('laugh'); } },
-      { at: 3.0, run: () => { ui.sub('MARGOT', cry); ctx.audio?.sfx('pickup'); } },
+      { at: 3.0, run: () => { margotGag(stroller, lale, heroId); ctx.audio?.sfx('pickup'); } },
       { at: 4.1, run: () => { ui.sub(''); ui.caption('¡A ENHARINAR A LALE!', 'Pegale a las bolsas de harina para frenarlo'); ctx.audio?.sfx('roar'); } }
     ];
     const frame = (t, dt) => {
@@ -356,7 +398,7 @@ export function createCine(ctx) {
     const X = 212, H = hero.actor;
     H.position.set(X - 3.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
     const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 1.0, 0.1, -1, 'ko');
-    const stroller = actor(strollerPoses, 1.65, X + 2.8, 0.9, -1, 'cry');
+    const stroller = actor(strollerPoses, 1.65, X + 2.8, 0.9, -1, 'happy');
     const pinky = actor(sheetPoses(assets, 'pinky', 'courier_pinky'), 2.3, X + 10.5, 0.2, -1, 'walk');
     const S = {
       a: { p: [X + 0.4, 2.6, 8.4], l: [X + 1.8, 1.5, 0] },
@@ -393,8 +435,7 @@ export function createCine(ctx) {
     const X = 264, H = hero.actor;
     H.position.set(X - 4.0, 0, 0.5); H.setFacing(1); H.setPose('idle');
     const pinky = actor(sheetPoses(assets, 'pinky', 'courier_pinky'), 2.3, X + 9.5, -0.2, -1, 'walk');
-    const stroller = actor(strollerPoses, 1.65, X + 4.8, 0.9, -1, 'cry');
-    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    const stroller = actor(strollerPoses, 1.65, X + 4.8, 0.9, -1, 'happy');
     // Contrapicado dramático mirando hacia arriba al portón del Galpón
     const S = {
       a: { p: [X - 2.2, 1.7, 9.0], l: [X + 2.0, 2.0, 0] },
@@ -403,7 +444,7 @@ export function createCine(ctx) {
     const ev = [
       { at: 0, run: () => { ui.show(); ui.caption('EL GALPÓN · ÚLTIMA PARADA', '¡Margot está ahí adentro!'); ctx.audio?.sfx('bell'); } },
       { at: 1.4, run: () => { ui.caption(''); ui.sub('PINKY', '¡Acá mando yo! ¡Son dos mil por adelantado!'); fx.shake?.(0.24, 0.25); ctx.audio?.sfx('roar'); } },
-      { at: 3.1, run: () => { ui.sub('MARGOT', cry); say(pinky, '🚗 ¡Son 2 lucas!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('horn'); } },
+      { at: 3.1, run: () => { margotGag(stroller, pinky, heroId); say(pinky, '🚗 ¡Son 2 lucas!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('horn'); } },
       { at: 4.4, run: () => { ui.sub(''); ui.caption('¡DUELO FINAL EN EL GALPÓN!', '¡Esquivá los autos y rescatá a Margot!'); ctx.audio?.sfx('clear'); } }
     ];
     const frame = (t, dt) => {
@@ -446,6 +487,7 @@ export function createCine(ctx) {
 
   return {
     ui,
+    get chupetes() { return chupeteMade; },
     get active() { return !!cur; },
     get kind() { return cur?.kind || null; },
     start(kind, hero, heroId) {
