@@ -298,9 +298,9 @@ export function createCine(ctx) {
     };
     let grabbed = false;
     const ev = [
-      { at: 0, run: () => { ui.show(); ui.sub('LALE', '¡Lo vi todo desde las gradas! Chaky me presta su jet: ¡me llevo a Margot a París, a mi obrador!'); ctx.audio?.sfx('laugh'); } },
+      { at: 0, run: () => { ui.show(); ui.sub('LALE', '¡Lo vi todo desde las gradas! Chaky me presta su jet: ¡me llevo a Margot a la casa central de Le Blé, en París!'); ctx.audio?.sfx('laugh'); } },
       { at: 2.1, run: () => { ui.sub('CEPI', '¡Fue Lale… se escapó en el jet de Chaky a Le Blé, en París!'); ctx.audio?.sfx('bell'); } },
-      { at: 3.4, run: () => { ui.sub(''); ui.caption('✈ RUMBO A PARÍS', '¡Seguí a Lale hasta el obrador de Le Blé!'); ctx.audio?.sfx('secret'); } }
+      { at: 3.4, run: () => { ui.sub(''); ui.caption('✈ RUMBO A PARÍS', '¡Seguí a Lale hasta la casa central de Le Blé!'); ctx.audio?.sfx('secret'); } }
     ];
     const frame = (t, dt) => {
       cam(S.a, S.b, Math.min(1, t / 3.4));
@@ -335,8 +335,8 @@ export function createCine(ctx) {
       b: { p: [X + 1.8, 2.5, 7.6], l: [X + 2.8, 1.6, 0] }
     };
     const ev = [
-      { at: 0, run: () => { ui.show(); ui.caption('OBRADOR DE LE BLÉ · PARÍS', '¡Qué olor a manteca recién derretida!'); ctx.audio?.sfx('bell'); } },
-      { at: 1.4, run: () => { ui.caption(''); ui.sub('LALE', 'Tranqui… pasá. ¡Tengo manteca para todos!'); say(lale, '🧈 ¡Suavecito!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('laugh'); } },
+      { at: 0, run: () => { ui.show(); ui.caption('LE BLÉ · CASA CENTRAL · PARÍS', '¡La casa de la Le Blé porteña! ¡Qué olor a manteca!'); ctx.audio?.sfx('bell'); } },
+      { at: 1.4, run: () => { ui.caption(''); ui.sub('LALE', 'Bienvenido a la casa central de Le Blé. ¡Tengo manteca para todos!'); say(lale, '🧈 ¡Suavecito!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('laugh'); } },
       { at: 3.0, run: () => { ui.sub('MARGOT', cry); ctx.audio?.sfx('pickup'); } },
       { at: 4.1, run: () => { ui.sub(''); ui.caption('¡A ENHARINAR A LALE!', 'Pegale a las bolsas de harina para frenarlo'); ctx.audio?.sfx('roar'); } }
     ];

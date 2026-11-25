@@ -574,3 +574,8 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - `3d/js/cine.js` (`post_cepi`): Lale sale de ahí («¡Lo vi todo desde las gradas! Chaky me presta su jet…»), Cepi dice que se fue en el jet de Chaky, y al agarrar el cochecito: «¡Al jet de Chaky!». FR en `3d/js/i18n.js`.
 - Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79; arena de Cepi abierta en Chrome sin errores JS (Lale visible, captura revisada). La escena `post_cepi` no la pude mirar en pantalla. Safari físico pendiente.
 - **Prueba:** `?probar=cepi-carton` (pelear y ver a Lale; al ganar sale la escena). **Rollback:** volver `main` a `f1a550c`.
+
+## 2026-11-25 · Etapa A · A4: Le Blé París es la casa central de la Le Blé porteña
+- Textos (ES y FR) en `3d/js/cine.js`, `3d/js/main.js` (checkpoint `lale`), `3d/js/level.js` (oleada `francia-2`: «CAMINO A LE BLÉ») y `3d/js/i18n.js`: «obrador» pasa a «casa central de Le Blé» / «siège». Se mantienen las dos fachadas (la porteña y la de París). `tests/campaign-continuity.test.mjs` actualizado al nuevo cartel.
+- Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79; arena de Lale abierta en Chrome sin errores JS. La escena `pre_lale` no la miré en pantalla. Safari físico pendiente.
+- **Prueba:** `?probar=lale`. **Rollback:** volver `main` a `2d68dca`.
