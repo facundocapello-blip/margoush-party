@@ -7,7 +7,9 @@ export const RESCUE = { run: 1.3, bars: 1.0, pick: 1.7, crew: 2.4, photo: 6.3, d
 const CREW = [
   { id: 'pinky', fallback: 'courier_pinky', line: '¡Aguante Margot! (el estacionamiento va de onda)' },
   { id: 'lale', fallback: 'courier_lale', line: '¡Bravo! ¡Tomen manteca de regalo!' },
-  { id: 'cepi', fallback: 'courier_cepi', line: '¡Bueno, ganaste… esta vez!' }
+  { id: 'cepi', fallback: 'courier_cepi', line: '¡Bueno, ganaste… esta vez!' },
+  { id: 'chaky', fallback: 'chaky_run', line: '¡Bueno… ya que estamos, me sumo a la foto!' },
+  { id: 'facu', fallback: 'facu', line: '¡Perdón, perdón! ¡Les debía una foto!' }
 ];
 
 // Intro (Cepi se lleva a Margot y escapa en su BYD) y rescate final en el galpón.

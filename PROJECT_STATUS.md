@@ -597,3 +597,11 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Chaky** (`3d/js/arena.js`): al caer KO se arrodilla (antes reutilizaba el giro). **Cepi** (`arena_cepi.js`): 0,45 s de «golpeado» tras cada piña que recibe (lógica intacta). **Pinky** (`arena_pinky.js`): descansa con brazos cruzados y silbato cuando no hay autos. **Lale** (`arena_lale.js`): alterna los dos cuadros de patín. **Margot** en las arenas de Cepi y Lale: asustada normalmente y festejando cuando el jefe queda aturdido/KO; sin la imagen vuelve al cuadro de la hoja. `main.js` precarga `arena_margot_` en Cepi y Lale.
 - Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79; las arenas de Cepi, Lale, Pinky y Chaky abren en Chrome sin errores JS (capturas revisadas). No se vio en pantalla el KO de Chaky ni el golpe de Cepi. Safari físico pendiente.
 - **Pruebas:** `?probar=chaky-baile`, `cepi-carton`, `lale`, `pinky`. **Rollback:** volver `main` a `49c07d6`.
+
+## Actualización 2026-11-25 · Etapa B (Acto 5: Facu, jefe final)
+- Nueva arena `3d/js/arena_facu.js` (+ lógica pura `arena_facu_logic.js`, 7 tests). Galería HENRIS procedural; Facu usa el sprite viejo `facu.webp` (restaurado) animado por código.
+- Fase 1: cuadros voladores por 3 carriles · Fase 2: minijuego «¿cuál es el cuadro verdadero?» · Fase 3: Facu enojado; el llanto de Margot lo ablanda (KO «¡FACU SE ABLANDA!»).
+- Pinky ya no termina el juego: escena B2 `post_pinky` («el cheque lo firmó Facu») → `spawnFacu` → rescate/foto familiar con Chaky y Facu en `CREW`.
+- Checkpoint `facu` agregado. Pruebas: `?probar=facu`, `facu-verdadero`, `facu-enojado`, `final`.
+- QA: `npm test` 86/86; humo headless móvil sin errores JS. Safari físico pendiente.
+- Rollback: `main` en `1a0c162`.

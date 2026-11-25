@@ -1237,5 +1237,14 @@
     "cols": 1,
     "rows": 1,
     "frames": 1
+  },
+  "facu": {
+    "file": "facu.webp",
+    "w": 395,
+    "h": 783,
+    "cols": 1,
+    "rows": 1,
+    "frames": 1,
+    "skull": 229.5
   }
 }

@@ -417,6 +417,33 @@ export function createCine(ctx) {
     return timeline(ev, 5.6, frame, dispose, 'pre_pinky');
   }
 
+  // ===== PASE DE POSTA 4 (EN PANTALLA): Pinky KO → el cheque lo firmó Facu → duelo final en la galería HENRIS =====
+  function postPinky(hero, heroId) {
+    const X = hero.actor.position.x, H = hero.actor;
+    H.position.set(X - 3.0, 0, 0.5); H.setFacing(1); H.setPose('idle');
+    const pinky = actor(sheetPoses(assets, 'pinky', 'courier_pinky'), 2.3, X + 1.2, 0.1, -1, 'ko');
+    if (!pinky.poses.ko) pinky.setPose('idle');
+    const facu = actor(sheetPoses(assets, 'facu', 'facu'), 2.35, X + 12, 0.2, -1, 'idle');
+    const S = {
+      a: { p: [X + 0.4, 2.6, 8.4], l: [X + 1.8, 1.5, 0] },
+      b: { p: [X + 6.0, 3.2, 10.8], l: [X + 6.6, 1.6, 0] }
+    };
+    const ev = [
+      { at: 0, run: () => { ui.show(); ui.caption('EL GALPÓN · ¡PINKY CAYÓ!', ''); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('roar'); } },
+      { at: 1.2, run: () => { ui.caption(''); ui.sub('PINKY', '¡Bueno, bueno! Hoy no se cobra… ¡pero mirá, el cheque lo firmó Facu!'); say(pinky, '💵 Cheque firmado: FACU', '#9fe4ff', 20, 3.2); ctx.audio?.sfx('bell'); } },
+      { at: 3.0, run: () => { ui.sub('FACU', 'Pinky nunca pensó solo… ¡Los espero en mi galería HENRIS, con Margot!'); ctx.audio?.sfx('horn'); } },
+      { at: 4.6, run: () => { ui.sub(''); ui.caption('¡DUELO FINAL EN LA GALERÍA HENRIS!', '¡Rescatá a Margot del cerebro de la banda!'); ctx.audio?.sfx('clear'); } }
+    ];
+    const frame = (t, dt) => {
+      cam(S.a, S.b, Math.min(1, t / 3.4));
+      pinky.update(dt, 0);
+      if (t > 2.4) walk(facu, X + 9, 6, dt, 'walk'); else facu.update(dt, 0);
+      H.update(dt, 0);
+    };
+    const dispose = () => { pinky.dispose(); facu.dispose(); };
+    return timeline(ev, 6.2, frame, dispose, 'post_pinky');
+  }
+
   return {
     ui,
     get active() { return !!cur; },
@@ -430,6 +457,7 @@ export function createCine(ctx) {
       else if (kind === 'pre_lale') cur = preLale(hero, heroId);
       else if (kind === 'post_lale') cur = postLale(hero, heroId);
       else if (kind === 'pre_pinky') cur = prePinky(hero, heroId);
+      else if (kind === 'post_pinky') cur = postPinky(hero, heroId);
       else cur = intro(hero, heroId);
     },
     // true cuando terminó

@@ -17,6 +17,7 @@ import { createArena } from './arena.js';
 import { createCepiArena } from './arena_cepi.js';
 import { createLaleArena } from './arena_lale.js';
 import { createPinkyArena } from './arena_pinky.js';
+import { createFacuArena } from './arena_facu.js';
 import { createChase } from './chase.js';
 import { createBonus } from './bonus.js';
 import { createStory } from './story.js';
@@ -231,6 +232,7 @@ function clearRun() {
   game.arenaCepi?.dispose();
   game.arenaLale?.dispose();
   game.arenaPinky?.dispose();
+  game.arenaFacu?.dispose();
   game.bonus?.dispose();
   game.bossStarted = false;
   game.chakyDone = false;
@@ -266,6 +268,7 @@ const CHECKPOINTS = {
   lale:    { label: '¡LLEGASTE A LA CASA CENTRAL DE LE BLÉ!', short: 'Lale (Casa central)' },
   acto4:   { label: 'ACTO 4 · FERME LAPADITE → GALPÓN', short: 'Acto 4 · Galpón' },
   pinky:   { label: 'ÚLTIMA PARADA · EL GALPÓN', short: 'Pinky (Final)' },
+  facu:    { label: 'ACTO 5 · LA GALERÍA HENRIS', short: 'Facu (Final)' },
   // compatibilidad con checkpoints previos guardados en localStorage
   francia: { label: 'ACTO 3 · PARÍS (BOULANGERIE)', short: 'París' },
   boss:    { label: '¡LLEGASTE AL HANGAR VIP!', short: 'Hangar · BIG CHAKY' }
@@ -402,6 +405,13 @@ function resumeAt(cp) {
     curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0 }); }, { label: CHECKPOINTS.acto4.label });
     return;
   }
+  if (id === 'facu') {
+    clearWavesBefore(WAVES.length);
+    p.set(GALPON_X + 8, 0, 0);
+    updateCamera(0, true);
+    spawnFacu();
+    return;
+  }
   // pinky (jefe final)
   clearWavesBefore(WAVES.length);
   p.set(GALPON_X + 8, 0, 0);
@@ -456,6 +466,7 @@ function endIntro() {
   if (kind === 'pre_lale') { spawnLale(); return; }
   if (kind === 'post_lale') { enterAct4Street(); return; }
   if (kind === 'pre_pinky') { spawnPinky(); return; }
+  if (kind === 'post_pinky') { spawnFacu(); return; }
   const { actor } = game.hero;
   actor.position.set(LEVELS[0].start, 0, 0.5);
   actor.setFacing(1);
@@ -498,7 +509,7 @@ function playMiniScene(kind, fallback) {
   game.combo.reset();
   game.enemies.clear();
   if (kind === 'pre_cepi' || kind === 'post_chaky' || kind === 'post_cepi') setLevel(1);
-  else if (kind === 'pre_lale' || kind === 'post_lale' || kind === 'pre_pinky') setLevel(2);
+  else if (kind === 'pre_lale' || kind === 'post_lale' || kind === 'pre_pinky' || kind === 'post_pinky') setLevel(2);
   game.state = 'intro';
   audio.music('intro', { fade: 0.25 });
   game.story.startIntro(game.hero, game.heroId, kind);
@@ -771,6 +782,24 @@ function spawnPinky({ instant = false, hp = null } = {}) {
   curtain(go, { label: CHECKPOINTS.pinky.label, wait });
 }
 
+function spawnFacu({ instant = false, hp = null } = {}) {
+  game.bossStarted = true;
+  input.reset();
+  healBeforeBoss(instant);
+  const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
+  // Facu y la banda de la foto final (Chaky) se cargan acá, no al arrancar
+  const wait = assets.ensure(['facu', 'arena_facu_', 'arena_margot_', 'chaky_', heroBack]);
+  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  const go = () => {
+    game.arenaFacu.start();
+    if (hp != null) { game.arenaFacu.logic._setHp(hp); game.arenaFacu.syncBar?.(); }
+  };
+  if (instant) { game.state = 'curtain'; continueTransition(wait, go); return; }
+  if (game.checkpoint?.id !== 'facu') saveCheckpoint('facu');
+  game.state = 'curtain';
+  curtain(go, { label: CHECKPOINTS.facu.label, wait });
+}
+
 function enterAct3Street() {
   game.cepiDone = true;
   world.border?.raise?.();
@@ -873,6 +902,10 @@ const QUICK_TESTS = {
   'lale-patin': { run: () => spawnLale({ instant: true, hp: 20 }) },
   'lale-horno': { run: () => spawnLale({ instant: true, hp: 10 }) },
   'lale-furia': { run: () => spawnLale({ instant: true, hp: 10 }) },
+  facu: { run: () => spawnFacu({ instant: true }) },
+  'facu-verdadero': { run: () => spawnFacu({ instant: true, hp: 20 }) },
+  'facu-enojado': { run: () => spawnFacu({ instant: true, hp: 10 }) },
+  final: { run: () => { game.state = 'curtain'; continueTransition(assets.ensure(['facu', 'chaky_']), () => { game.state = 'playing'; game.onBossDown(); }); } },
   pinky: { run: () => spawnPinky({ instant: true }) },
   'pinky-tarifa': { run: () => spawnPinky({ instant: true, hp: 20 }) },
   'pinky-margot': { run: () => spawnPinky({ instant: true, hp: 10 }) },
@@ -913,7 +946,7 @@ function finish(won) {
 game.finish = finish;
 
 // ---------- pausa ----------
-const PAUSABLE = new Set(['playing', 'intro', 'transition', 'curtain', 'chase', 'bonus', 'arena', 'arena-cepi', 'arena-lale', 'arena-pinky', 'rescue']);
+const PAUSABLE = new Set(['playing', 'intro', 'transition', 'curtain', 'chase', 'bonus', 'arena', 'arena-cepi', 'arena-lale', 'arena-pinky', 'arena-facu', 'rescue']);
 function pause() {
   if (!PAUSABLE.has(game.state)) return;
   game.pausedFrom = game.state;
@@ -974,7 +1007,8 @@ function frameStep(now) {
     ['arena', game.arena],
     ['arena-cepi', game.arenaCepi],
     ['arena-lale', game.arenaLale],
-    ['arena-pinky', game.arenaPinky]
+    ['arena-pinky', game.arenaPinky],
+    ['arena-facu', game.arenaFacu]
   ];
   for (const [st, mod] of scenes) {
     if (!mod) continue;
@@ -1149,6 +1183,17 @@ async function boot() {
   });
   // Jefe Final (Acto 4): Pinky «el Trapito» + Remate con Margot → Rescate y Foto Familiar
   game.arenaPinky = createPinkyArena({
+    game, input, audio, assets, renderer, updateHud, pause, POWER,
+    // El cheque rebotado lo firmó Facu: pase de posta en pantalla y duelo final en la galería HENRIS (Acto 5)
+    onWin() {
+      game.state = 'playing'; last = 0;
+      if (PROBAR && PROBAR.startsWith('pinky')) { game.onBossDown(); return; }
+      playMiniScene('post_pinky', () => spawnFacu());
+    },
+    onDown() { game.state = 'playing'; finish(false); }
+  });
+  // Jefe final (Acto 5): Facu «el Cerebro» en la galería HENRIS → Rescate y Foto Familiar (con Chaky y Facu)
+  game.arenaFacu = createFacuArena({
     game, input, audio, assets, renderer, updateHud, pause, POWER,
     onWin() { game.state = 'playing'; last = 0; game.onBossDown(); },
     onDown() { game.state = 'playing'; finish(false); }
