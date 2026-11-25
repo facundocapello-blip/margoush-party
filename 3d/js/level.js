@@ -29,14 +29,14 @@ export const WAVES = [
   { id: 'vereda-2', level: 1, trigger: 50, gate: 0, title: 'SEGURIDAD VIP', text: 'King Kong y un bombo cortan la vereda.',
     spawns: [{ dx: 9, dz: 1.1, kind: 'patovica' }, { dx: 8, dz: -1.1, kind: 'bombo' }] },
   { id: 'avenida', level: 1, trigger: 76, gate: null, title: 'LA AVENIDA', text: 'Cuidado con el colectivo: no frena.',
-    spawns: [{ dx: 9, dz: -1.4, kind: 'bombo' }, { dx: -8, dz: 1.4, kind: 'patovica' }] },
+    spawns: [{ dx: 9, dz: -1.4, kind: 'bombo' }, { dx: -8, dz: 1.4, kind: 'patovica' }, { dx: 12, dz: 1.0, kind: 'bombo' }] },
   { id: 'le-concept', level: 1, trigger: 122, gate: null, endsLevel: true, title: '¡FRENTE A LE CONCEPT!', text: 'La patota de BIG CHAKY corta el camino a Ezeiza.',
-    spawns: [{ dx: 8, dz: -0.6, kind: 'patovica' }, { dx: 10, dz: 1.6, kind: 'bombo' }] },
+    spawns: [{ dx: 8, dz: -0.6, kind: 'patovica' }, { dx: 10, dz: 1.6, kind: 'bombo' }, { dx: -7, dz: -1.2, kind: 'patovica' }] },
 
   { id: 'francia', level: 2, trigger: 162, gate: null, title: 'LA RUE DE PARIS', text: '¡El inspector Landa y sus mozos vigilan París!',
-    spawns: [{ dx: 8, dz: 0.4, kind: 'mozo' }, { dx: 10, dz: -1.3, kind: 'secuaz' }] },
+    spawns: [{ dx: 8, dz: 0.4, kind: 'mozo' }, { dx: 10, dz: -1.3, kind: 'secuaz' }, { dx: -7, dz: 1.3, kind: 'mozo' }] },
   { id: 'francia-2', level: 2, trigger: 186, gate: 1, title: 'CAMINO AL OBRADOR', text: 'Mozos y deliverys cuidan la boulangerie de Lale.',
-    spawns: [{ dx: 10, dz: 1.4, kind: 'mozo' }, { dx: 9, dz: -1.6, kind: 'delivery' }] },
+    spawns: [{ dx: 10, dz: 1.4, kind: 'mozo' }, { dx: 9, dz: -1.6, kind: 'delivery' }, { dx: -8, dz: 0.2, kind: 'secuaz' }] },
   { id: 'boulevard-2', level: 2, trigger: 238, gate: 2, title: 'ÚLTIMO TRAMO', text: 'Pasando la Ferme LaPadite está el galpón.',
     spawns: [{ dx: 8, dz: -1.4, kind: 'secuaz' }, { dx: 10, dz: 1.6, kind: 'delivery' }, { dx: 11, dz: 0, kind: 'mozo' }] }
 ];

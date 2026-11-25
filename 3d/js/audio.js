@@ -100,8 +100,8 @@ export function diushbag(ac, out, noise, t, pitch = 1) {
 }
 
 // Voz de Marine: una voz francesa de mujer, dulce (si el celu la tiene). «Messi Gokou» suena a «merci beaucoup».
-const FEMALE_FR = ['Amélie', 'Audrey', 'Aurélie', 'Marie', 'Virginie', 'Julie', 'Hortense', 'Denise', 'Céline', 'Léa', 'Chantal', 'Google français', 'Microsoft Denise'];
-const MALE_FR = ['Thomas', 'Jacques', 'Daniel', 'Nicolas', 'Paul', 'Henri', 'Claude', 'Microsoft Paul'];
+const FEMALE_FR = ['Amélie', 'Audrey', 'Aurélie', 'Marie', 'Virginie', 'Julie', 'Hortense', 'Denise', 'Céline', 'Léa', 'Chantal', 'Flo', 'Sandy', 'Shelley', 'Siri', 'Google français', 'Microsoft Denise'];
+const MALE_FR = ['Thomas', 'Jacques', 'Daniel', 'Nicolas', 'Paul', 'Henri', 'Claude', 'Eddy', 'Reed', 'Rocko', 'Grandpa', 'Arthur', 'Martin', 'Microsoft Paul'];
 export function pickFemaleFrench(voices) {
   const fr = voices.filter(v => /^fr/i.test(v.lang));
   for (const name of FEMALE_FR) { const v = fr.find(x => x.name.includes(name)); if (v) return v; }
@@ -109,10 +109,21 @@ export function pickFemaleFrench(voices) {
 }
 
 export function createAudio(assets) {
-  if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); speechSynthesis.addEventListener?.('voiceschanged', () => speechSynthesis.getVoices()); } catch (_) {} }
+  let cachedVoices = [];
+  const refreshVoices = () => {
+    try {
+      const list = speechSynthesis.getVoices();
+      if (list && list.length) cachedVoices = list;
+    } catch (_) {}
+  };
+  if ('speechSynthesis' in window) {
+    refreshVoices();
+    try { speechSynthesis.addEventListener?.('voiceschanged', refreshVoices); } catch (_) {}
+  }
   let muted = false;
   try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (_) {}
   let ac = null, master = null, noise = null;
+  let heroId = 'douge';
   // Temas musicales: todos sintetizados vía Web Audio (music.js); themes queda disponible si se agregan pistas <audio>.
   const themes = {};
   let current = null; // 'menu' | 'intro' | 'chase' | 'byd' | 'ba' | 'francia' | 'boss' | 'rescate' | 'street' | null
@@ -176,11 +187,15 @@ export function createAudio(assets) {
     s.start(t); s.stop(t + dur + 0.05);
   }
 
-  // «¡Diuuuuushbag!»: sale a veces, nunca dos seguidas (mínimo 3 s entre una y otra)
+  // «¡Diuuuuushbag!»: sale a veces con Douge (nunca con Marine, que tiene destello femenino), mínimo 3 s entre una y otra
   let lastVoice = -10;
+  function marineSparkle(delay = 0) {
+    [1047, 1319, 1568, 2093].forEach((f, i) => tone('sine', f, f * 1.04, 0.12, 0.085, delay + i * 0.045));
+  }
   function voice(delay = 0) {
-    const pitch = [0.72, 1, 1, 1.32][Math.floor(Math.random() * 4)];
     lastVoice = ac.currentTime;
+    if (heroId === 'marine') { marineSparkle(delay); return; }
+    const pitch = [0.72, 1, 1, 1.32][Math.floor(Math.random() * 4)];
     diushbag(ac, master, noise, ac.currentTime + delay, pitch);
   }
   function maybeVoice(chance, delay) {
@@ -195,11 +210,10 @@ export function createAudio(assets) {
     hurt: () => { tone('sawtooth', 220, 90, 0.22, 0.3); hiss(0.1, 0.25, 500); },
     ko: () => { punch(ac, master, noise, ac.currentTime, 1.4); tone('square', 320, 80, 0.3, 0.12, 0.05); maybeVoice(0.4, 0.15); },
     diushbag: () => voice(0),
-    // Remate de «¡Messi Goku!»: carga de poder que sube + brillitos
+    // Remate de «¡Messi Goku!»: brillitos agudos y livianos para no tapar la voz femenina de Marine
     messigoku: () => {
-      tone('sawtooth', 110, 880, 0.7, 0.12); tone('square', 220, 1760, 0.7, 0.05);
-      hiss(0.7, 0.18, 1500, 0.5);
-      [1319, 1568, 2093].forEach((f, i) => tone('sine', f, f, 0.18, 0.12, 0.62 + i * 0.07));
+      [784, 1047, 1319, 1568, 2093].forEach((f, i) => tone('triangle', f, f * 1.03, 0.16, 0.09, i * 0.065));
+      hiss(0.35, 0.07, 3200, 1.2, 0.12);
     },
     jump: () => tone('sine', 320, 640, 0.15, 0.18),
     dodge: () => hiss(0.18, 0.25, 2200, 0.7),
@@ -329,17 +343,20 @@ export function createAudio(assets) {
       if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
       try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (_) {}
     },
-    // opts: { female: true } = voz francesa de mujer, dulce y encantadora (más aguda y un poco más lenta)
+    setHero(id) { heroId = id === 'marine' ? 'marine' : 'douge'; },
+    // opts: { female: true } = voz francesa de mujer, dulce y encantadora (más aguda y clara)
     say(text, lang, opts = {}) {
       if (muted || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
+      refreshVoices();
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang;
       u.volume = 1;
       if (opts.female) {
-        const v = pickFemaleFrench(speechSynthesis.getVoices());
+        const list = cachedVoices.length ? cachedVoices : speechSynthesis.getVoices();
+        const v = pickFemaleFrench(list);
         if (v) { u.voice = v; u.lang = v.lang; }
-        u.pitch = 1.35; u.rate = 0.92;
+        u.pitch = 1.52; u.rate = 0.96;
       }
       speechSynthesis.speak(u);
     },

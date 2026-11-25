@@ -86,7 +86,7 @@ test('cepi arena: phase 2 duel turns back immediately, points, and rewards dodgi
 
   // Pick opposite side (+1 when dir is -1)
   l.pickSide(-tell.dir);
-  const resEvs = step(l, 1.35);
+  const resEvs = step(l, 1.85);
   assert.ok(resEvs.some(e => e.type === 'duelResult' && e.ok === true));
   assert.ok(l.state.hp < CEPI_ARENA.p2At);
 });

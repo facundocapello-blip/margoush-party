@@ -413,6 +413,7 @@ game.resumeAt = resumeAt;
 function startRun(heroId, withIntro = false, { keepCheckpoint = false, street = false } = {}) {
   if (!keepCheckpoint) clearCheckpoint();
   game.heroId = heroId;
+  audio.setHero?.(heroId);
   if (game.hero) game.hero.actor.dispose();
   clearRun();
   const ctx = game.ctx;
@@ -444,14 +445,14 @@ function startRun(heroId, withIntro = false, { keepCheckpoint = false, street = 
 }
 
 // Termina (o se saltea) una escena animada: tras la intro arranca el Acto 1 (calle porteña);
-// tras romper el BYD en el Acto 2 arranca la Arena de Cepi.
+// tras cada mini-escena entre nivel y jefe arranca la arena correspondiente.
 function endIntro() {
   const kind = game.story.endIntro();
   input.reset();
-  if (kind === 'byd') {
-    spawnCepi();
-    return;
-  }
+  if (kind === 'pre_chaky') { spawnBoss(); return; }
+  if (kind === 'pre_cepi' || kind === 'byd') { spawnCepi(); return; }
+  if (kind === 'pre_lale') { spawnLale(); return; }
+  if (kind === 'pre_pinky') { spawnPinky(); return; }
   const { actor } = game.hero;
   actor.position.set(LEVELS[0].start, 0, 0.5);
   actor.setFacing(1);
@@ -465,7 +466,7 @@ function endIntro() {
   game.banner('ACTO 1 · BUENOS AIRES', TOUCH ? 'Deslizá el joystick a la derecha para avanzar.' : 'Usá la flecha derecha para avanzar.');
   audio.music('ba', { fade: 0.3 });
 }
-// Acto 2: Persecución de Cepi en su BYD en Buenos Aires → ¡Rompé el BYD! → Arena de Cepi
+// Acto 2: Persecución de Cepi en su BYD en Buenos Aires → ¡Rompé el BYD! → Mini-escena → Arena de Cepi
 function startChaseRun() {
   game.chaseDone = true;
   if (game.checkpoint?.id !== 'acto2') saveCheckpoint('acto2');
@@ -486,7 +487,19 @@ function startBydLevel() {
   continueTransition(wait, () => game.bonus.start());
 }
 game.startBydLevel = startBydLevel;
-// Lo rompiste en el Acto 2: Cepi queda caliente → entra a su Arena de Pádel
+// Mini-escena cinematográfica entre nivel y jefe (salteable con 1 toque; en ?probar= entra directo)
+function playMiniScene(kind, fallback) {
+  if (PROBAR) { fallback(); return; }
+  input.reset();
+  clearBanners();
+  game.combo.reset();
+  game.enemies.clear();
+  if (kind === 'pre_cepi') setLevel(1);
+  game.state = 'intro';
+  audio.music('intro', { fade: 0.25 });
+  game.story.startIntro(game.hero, game.heroId, kind);
+}
+// Lo rompiste en el Acto 2: mini-escena de Cepi furioso → entra a su Arena de Pádel
 function bydDone() {
   const h = game.hero;
   Object.assign(h, { stunT: 0, slowT: 0, knock: 0, knockZ: 0, lift: 0, vy: 0, state: 'free', inv: 1.2 });
@@ -495,7 +508,7 @@ function bydDone() {
     spawnCepi();
     return;
   }
-  spawnCepi();
+  playMiniScene('pre_cepi', () => spawnCepi());
 }
 // Se cargó: Cepi se escapa, perdés un corazón y se vuelve a intentar (sin corazones, se terminó)
 function bydFailed() {
@@ -592,8 +605,10 @@ function updateZones() {
     if (st === 'active' && game.enemies.alive() === 0) {
       game.waves[w.id] = 'cleared';
       if (w.gate != null) openGate(w.gate);
-      // Margot (carita del HUD) se pone contenta
-      game.margot.cheer();
+      // Margot (carita del HUD + guiño flotante) festeja cada tramo despejado
+      game.margot.cheer(3.2);
+      const margotCheer = game.heroId === 'marine' ? '👶 ¡Allez maman !' : '👶 ¡Vamos, papá!';
+      fx.popup(hp.clone().setY(3.3), margotCheer, '#ffb3e6', { size: 22, life: 1.4, rise: 0.35 });
       if (w.endsLevel) {
         // El nivel termina al llegar al final de la calle, no apenas cae el último malo
         game.levelExit = true;
@@ -604,20 +619,21 @@ function updateZones() {
     const end = LEVELS[0].maxX - 2.5;
     if (x >= end) {
       game.levelExit = false;
-      if (!game.chakyDone) { spawnBoss(); return; }
+      if (!game.chakyDone) { playMiniScene('pre_chaky', () => spawnBoss()); return; }
       startTransition();
       return;
     }
   }
-  // Acto 3: al despejar las 2 oleadas de Francia (francia y francia-2) y cruzar el portón hacia Le Blé → Arena de Lale
+  // Acto 3: al despejar las 2 oleadas de Francia (francia y francia-2) y cruzar el portón hacia Le Blé → Mini-escena + Arena de Lale
   if (game.level === 2 && !game.laleDone && game.waves['francia-2'] === 'cleared' && x >= 206) {
-    spawnLale();
+    playMiniScene('pre_lale', () => spawnLale());
     return;
   }
-  // Acto 4: al despejar el último tramo y entrar al Galpón → Arena Final de Pinky (+ Margot)
+  // Acto 4: al despejar el último tramo y entrar al Galpón → Mini-escena + Arena Final de Pinky (+ Margot)
   const last = WAVES[WAVES.length - 1];
   if (!game.bossStarted && game.level === 2 && game.laleDone && game.waves[last.id] === 'cleared' && x > world.galponX + 6) {
-    spawnPinky();
+    game.bossStarted = true;
+    playMiniScene('pre_pinky', () => spawnPinky());
   }
 }
 
@@ -994,7 +1010,7 @@ function frameStep(now) {
     updateHud(dt);
     if (dt > 0) game.perf.record(dt * 1000, performance.now() - t0);
   } else if (game.state === 'intro') {
-    game.time = 0;
+    if (game.story.cine.kind === 'intro') game.time = 0;
     if (game.story.updateIntro(dt)) endIntro();
   } else if (game.state === 'transition') {
     updateTransition(dt);
@@ -1172,8 +1188,13 @@ async function boot() {
   for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => {
     if (picking) return;
     picking = true;
-    audio.primeSpeech();
-    if (card.dataset.hero === 'marine') audio.messiGoku(); else audio.sfx('diushbag');
+    audio.setHero?.(card.dataset.hero);
+    if (card.dataset.hero === 'marine') {
+      audio.messiGoku();
+    } else {
+      audio.primeSpeech();
+      audio.sfx('diushbag');
+    }
     audio.sfx('coin');
     card.classList.add('chosen'); card.parentElement.classList.add('picking');
     setTimeout(() => {

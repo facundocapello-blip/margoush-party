@@ -7,41 +7,51 @@ import { fillText, translateDom } from './i18n.js';
 import { bydTextureWithMargot } from './byd_margot.js';
 
 export const CHASE = {
-  length: 760,        // metros hasta el cargador
+  length: 520,        // metros hasta el cargador (~25 s bien intensos)
   lane: 2.6, xMax: 3.7,
-  speed: 16, speedGain: 5,
-  steer: 10, jump: 10.2, gravity: 27,
+  speed: 19, speedGain: 6,
+  steer: 10, jump: 10.8, gravity: 26,
   dash: { t: 0.36, cd: 1.05, speed: 15 },
-  throwEvery: [2.6, 4], windup: 0.95, ballTime: 1.05,
-  pickup: 50, catchBonus: 500
+  throwEvery: [2.2, 3.4], windup: 0.9, ballTime: 1.05,
+  pickup: 50, catchBonus: 500, turboBonus: 200
 };
 
-// Obstáculos: low = se salta; smash = puntos al romperlo con 👊 (0 = no se rompe)
-const OBST = {
-  table: { tex: 'chase_ob_table', h: 1.9, w: 1.25, low: false, smash: 150 },
+// Obstáculos: low = se salta (jumpH = altura mínima de salto para pasar limpio); smash = puntos
+export const OBST = {
+  table: { tex: 'chase_ob_table', h: 1.9, w: 1.25, low: true, jumpH: 0.8, smash: 150 },
   barricade: { tex: 'chase_ob_barricade', h: 2.5, w: 2.4, low: false, smash: 0 },
-  scooter: { tex: 'chase_ob_scooter', h: 0.9, w: 1.2, low: true, smash: 120 },
-  butter: { tex: 'chase_ob_butter', h: 0.55, w: 1.3, low: true, smash: 0, slip: true },
-  pigeons: { tex: 'chase_ob_pigeons', h: 1.1, w: 1.25, low: true, smash: 100, birds: true }
+  scooter: { tex: 'chase_ob_scooter', h: 0.9, w: 1.2, low: true, jumpH: 0.55, smash: 120 },
+  butter: { tex: 'chase_ob_butter', h: 0.55, w: 1.3, low: true, jumpH: 0.4, smash: 0, slip: true },
+  pigeons: { tex: 'chase_ob_pigeons', h: 1.1, w: 1.25, low: true, jumpH: 0.6, smash: 100, birds: true }
 };
 
-// Pista fija (misma para todos): siempre queda un carril libre
+// Pista fija (misma para todos): siempre queda un carril libre, acción desde los 48 m y rampas ⚡ Turbo
 export function buildTrack(seed = 7) {
   let s = seed;
   const rnd = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
-  const obstacles = [], pickups = [];
-  // Pocas cosas y claras: mesas y piquetes (se esquivan doblando) y monopatines (se saltan).
-  // Los hongos/hojitas solo aparecen en arco arriba de lo que se salta: premio por saltar.
-  for (let at = 110; at < CHASE.length - 70; at += 34 + rnd() * 14) { // el primero llega después del cartel y la ayuda
+  const obstacles = [], pickups = [], ramps = [];
+  let idx = 0;
+  for (let at = 48; at < CHASE.length - 55; at += 20 + rnd() * 7) {
     const r = rnd();
-    const kind = r < 0.4 ? 'table' : r < 0.62 ? 'barricade' : 'scooter';
+    const kind = r < 0.32 ? 'table' : r < 0.56 ? 'scooter' : r < 0.74 ? 'barricade' : r < 0.88 ? 'butter' : 'pigeons';
     const lane = Math.floor(rnd() * 3) - 1;
     let x = lane * CHASE.lane;
     if (kind === 'barricade') x = (rnd() < 0.5 ? -1 : 1) * CHASE.lane * 0.5; // tapa dos carriles
     obstacles.push({ kind, x, s: at });
-    if (OBST[kind].low) for (let j = -1; j <= 1; j++) pickups.push({ x, y: 1.3 + (1 - Math.abs(j)) * 1.1, s: at + j * 2.2 });
+    if (kind === 'table' || kind === 'scooter') {
+      for (let j = -1; j <= 1; j++) pickups.push({ x, y: 1.55 + (1 - Math.abs(j)) * 1.1, s: at + j * 2.2 });
+    } else if (kind === 'barricade') {
+      const freeLane = x > 0 ? -1 : 1;
+      for (let j = -1; j <= 1; j++) pickups.push({ x: freeLane * CHASE.lane, y: 0.9, s: at + j * 2.4 });
+    }
+    // Cada 4 tramos aparece una rampa ⚡ Turbo en un carril libre para chocar al BYD y bajarle batería
+    if (idx > 0 && idx % 4 === 0 && at < CHASE.length - 90) {
+      const rampLane = kind === 'barricade' ? (x > 0 ? -1 : 1) : ((lane + 2) % 3) - 1;
+      ramps.push({ x: rampLane * CHASE.lane, s: at + 10 });
+    }
+    idx++;
   }
-  return { obstacles, pickups };
+  return { obstacles, pickups, ramps };
 }
 
 export function createChase({ game, input, audio, assets, renderer, banner, updateHud, pause, POWER, onCaught, onDown, wonLabel = '' }) {
@@ -181,6 +191,23 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     const obs = track.obstacles.map(o => ({ ...o, ...OBST[o.kind], m: sprite(OBST[o.kind].tex, OBST[o.kind].h, OBST[o.kind].slip ? 0.6 : 0.9), dead: false, vy: 0, y: 0, spin: 0 }));
     const PK = isM ? 'chase_pk_hoja' : 'chase_pk_hongo';
     const picks = track.pickups.map(p => ({ ...p, m: sprite(PK, 0.85, 0), got: false }));
+    // Rampas ⚡ Turbo en el asfalto: te disparan para chocar el BYD y bajarle batería
+    const rampTex = canvasTex(128, 128, (g, w, h) => {
+      const gr = g.createLinearGradient(0, h, 0, 0);
+      gr.addColorStop(0, 'rgba(0,220,255,0.2)'); gr.addColorStop(0.5, 'rgba(0,245,255,0.85)'); gr.addColorStop(1, 'rgba(255,225,80,0.95)');
+      g.fillStyle = gr; g.fillRect(10, 6, w - 20, h - 12);
+      g.strokeStyle = '#ffffff'; g.lineWidth = 10; g.lineCap = 'round'; g.lineJoin = 'round';
+      for (const cy of [34, 68, 100]) {
+        g.beginPath(); g.moveTo(26, cy + 16); g.lineTo(w / 2, cy - 10); g.lineTo(w - 26, cy + 16); g.stroke();
+      }
+    }, 1, 1);
+    const rampGeo = keep(new T.PlaneGeometry(2.0, 3.4)); rampGeo.rotateX(-Math.PI / 2);
+    const rampMat = keep(new T.MeshBasicMaterial({ map: rampTex, transparent: true, opacity: 0.95, depthWrite: false }));
+    const ramps = (track.ramps || []).map(r => {
+      const m = new T.Mesh(rampGeo, rampMat);
+      m.renderOrder = 2; scene.add(m);
+      return { ...r, m, used: false };
+    });
 
     // Carteles propios: batería del BYD, aviso de Margot antes del saque, destello rojo y textos que flotan
     const ui = document.createElement('div'); ui.id = 'chase-ui';
@@ -190,8 +217,8 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     const pad = document.createElement('div'); pad.id = 'chase-pad';
     const hint = document.createElement('div'); hint.id = 'chase-tip';
     hint.innerHTML = matchMedia('(pointer: coarse)').matches
-      ? '<span><b>👈 👉</b>Deslizá para cambiar de carril</span><span><b>👆</b>Tocá para saltar</span>'
-      : '<span><b>← →</b>Cambiá de carril</span><span><b>Espacio</b>Saltá</span>';
+      ? '<span><b>👈 👉</b>Deslizá para cambiar de carril</span><span><b>👆</b>Tocá para saltar mesas y cosas</span>'
+      : '<span><b>← →</b>Cambiá de carril</span><span><b>Espacio</b>Saltá mesas y cosas</span>';
     ui.append(hint);
     translateDom(ui);
     document.body.append(pad, ui); document.body.classList.add('chasing'); // el panel de gestos va debajo del HUD (pausa y música siguen andando)
@@ -217,7 +244,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
 
     // Estado
     let dist = 0, x = 0, y = 0, vy = 0, v = 0, t = 0, phase = 'intro', phaseT = 0, gap = 14, cx = 0;
-    let dashT = 0, dashCd = 0, dashDir = 1, slipT = 0, slipDir = 1, hurtT = 0, inv = 0, holdT = 0, powT = 0, stunT = 0;
+    let dashT = 0, dashCd = 0, dashDir = 1, slipT = 0, slipDir = 1, hurtT = 0, inv = 0, holdT = 0, powT = 0, stunT = 0, turboT = 0, ramT = 0;
     let throwT = 3.2, windT = 0, shot = null, lastPick = 0, chain = 0;
     // Cepi maneja mirando adelante; se da vuelta para sacar y vuelve al volante (turnT = «giro» del cambio de pose)
     let cepiPose = 'drive', poseT = 0, turnT = 0, cxPrev = 0, carTilt = 0;
@@ -281,10 +308,11 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       if (input.consume('pause')) { pause(); return; }
       t += dt; phaseT += dt;
       inv = Math.max(0, inv - dt); dashCd = Math.max(0, dashCd - dt); stunT = Math.max(0, stunT - dt);
+      slipT = Math.max(0, slipT - dt); turboT = Math.max(0, turboT - dt); ramT = Math.max(0, ramT - dt);
       const mx = input.moveX, prog = dist / LEN, playing = phase === 'run' || phase === 'intro';
       if (t > 4.5 && !hint.classList.contains('out')) hint.classList.add('out');
-      if (phase === 'intro') { v = Math.min(v + dt * 9, 6); if (phaseT > 1.4) phase = 'run'; }
-      else if (phase === 'run') { const top = CHASE.speed + prog * CHASE.speedGain; v += (top - v) * Math.min(1, dt * (hurtT > 0 ? 0.6 : 1.6)); }
+      if (phase === 'intro') { v = Math.min(v + dt * 13, 9); if (phaseT > 1.0) phase = 'run'; }
+      else if (phase === 'run') { const top = CHASE.speed + prog * CHASE.speedGain + (turboT > 0 ? 14 : 0); v += (top - v) * Math.min(1, dt * (hurtT > 0 ? 0.8 : turboT > 0 ? 4.5 : 2.2)); }
       else if (phase === 'battery') v = Math.max(2.5, Math.min(v, (LEN - 6 - dist) * 1.7));
       else if (phase === 'down') v = Math.max(0, v - dt * 20);
       if (playing) {
@@ -294,7 +322,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         input.consume('dodge'); input.consume('attack'); input.consume('power');
         const km = Math.sign(Math.round(mx)); if (km !== 0 && km !== lastMx) laneStep(km); lastMx = km; // flechas: un carril por toque
         const tx = lane * CHASE.lane;
-        x += (tx - x) * Math.min(1, dt * 11);
+        x += (tx - x) * Math.min(1, dt * 12);
         P.rotation.z = (tx - x) * -0.06; // se inclina al cambiar de carril
       }
       hero.holdT = holdT;
@@ -308,26 +336,53 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       for (const o of obs) {
         if (o.dead) { o.y += o.vy * dt; o.vy -= 14 * dt; o.m.rotation.z += o.spin * dt; if (o.y < -4) o.m.visible = false; continue; }
         const dz = o.s - dist;
-        if (phase !== 'run' || Math.abs(dz) > 0.9 || Math.abs(o.x - x) > o.w / 2 + 0.55) continue;
-        if (o.low && y > o.h * 0.75) continue; // lo saltó
-        if (o.slip) { if (slipT <= 0) { slipT = 1; slipDir = Math.random() < 0.5 ? -1 : 1; pop(x, 2.6, -dist, '¡RESBALÓN!', '#ffd23a', 24); sfx('fall'); } continue; }
-        if (o.birds) { o.dead = true; o.vy = 7; v *= 0.7; pop(x, 2.6, -dist, '¡PALOMAS!', '#cfd8ff', 22); continue; }
-        if (dashT > 0 || powT > 0 || inv > 0) continue;
+        if (phase !== 'run' || Math.abs(dz) > 0.95 || Math.abs(o.x - x) > o.w / 2 + 0.52) continue;
+        if (o.low && y > (o.jumpH ?? o.h * 0.75)) continue; // lo saltó (incluye mesas de café)
+        if (o.slip) {
+          if (slipT <= 0 && turboT <= 0) {
+            slipT = 0.75;
+            slipDir = lane === -1 ? 1 : lane === 1 ? -1 : (Math.random() < 0.5 ? -1 : 1);
+            laneStep(slipDir);
+            pop(x, 2.6, -dist, '¡RESBALÓN!', '#ffd23a', 24); sfx('fall');
+          }
+          continue;
+        }
+        if (o.birds) { o.dead = true; o.vy = 7; v *= 0.82; pop(x, 2.6, -dist, '¡PALOMAS!', '#cfd8ff', 22); sfx('flap'); continue; }
+        if (dashT > 0 || powT > 0 || inv > 0 || turboT > 0) {
+          if (turboT > 0) { o.dead = true; o.vy = 8; o.spin = 7; game.score.addBonus(80); pop(o.x, 2.4, -o.s, '¡PUM!', '#6ef7ff', 22); sfx('crate'); }
+          continue;
+        }
         o.dead = true; o.vy = 5; o.spin = 5; hurt(o.kind === 'barricade' ? '¡PIQUETE!' : '¡PAF!');
+      }
+      // Rampas ⚡ Turbo: aceleran, chocan el BYD y le drenan batería
+      for (const r of ramps) {
+        if (r.used || phase !== 'run') continue;
+        if (Math.abs(r.s - dist) < 1.9 && Math.abs(r.x - x) < 1.35 && y < 1.15) {
+          r.used = true; r.m.visible = false;
+          turboT = 1.15; ramT = 0.7; inv = Math.max(inv, 1.35); stunT = Math.max(stunT, 1.2);
+          gap = 5.4;
+          dist = Math.min(LEN - 46, dist + 20);
+          game.score.addBonus(CHASE.turboBonus);
+          sfx('power'); sfx('crate');
+          pop(x, 3.0, -dist, '⚡ ¡TURBO! +' + CHASE.turboBonus, '#6ef7ff', 26);
+          pop(cx, 4.1, -(dist + gap), Math.random() < 0.5 ? '¡EY, EL PARAGOLPES!' : '¡MIS CUOTAS!', '#ffd36e', 22);
+          flash.style.background = '#5ff2ff'; flash.style.opacity = '.35';
+          setTimeout(() => { flash.style.opacity = '0'; flash.style.background = ''; }, 140);
+        }
       }
       // Coleccionables: hongos (Douge) u hojitas (Marine)
       for (const p of picks) {
-        if (p.got || Math.abs(p.s - dist) > 1 || Math.abs(p.x - x) > 1.1 || Math.abs(p.y - (y + 1)) > 1.5) continue;
+        if (p.got || Math.abs(p.s - dist) > 1.15 || Math.abs(p.x - x) > 1.15 || Math.abs(p.y - (y + 1)) > 1.6) continue;
         p.got = true; p.m.visible = false;
-        chain = t - lastPick < 0.6 ? chain + 1 : 0; lastPick = t;
+        chain = t - lastPick < 0.65 ? chain + 1 : 0; lastPick = t;
         const pts = CHASE.pickup + chain * 10; game.score.addBonus(pts); charge(0.045);
         if (chain % 3 === 0) sfx('pickup');
       }
       // Cepi en su BYD: se mantiene adelante, zigzaguea y tira pelotazos a donde estabas
       if (phase === 'run') {
-        const want = stunT > 0 ? 9 : 12 + Math.sin(t * 0.7) * 1.5; // el BYD va más adelante: no tapa lo que viene
-        gap += (want - gap) * dt * 0.8;
-        cx += (Math.sin(t * 0.55) * 2.3 - cx) * dt * 1.2;
+        const want = ramT > 0 ? 5.2 : stunT > 0 ? 8.5 : 11.5 + Math.sin(t * 0.75) * 1.4; // el BYD va adelante sin tapar lo que viene
+        gap += (want - gap) * dt * (ramT > 0 ? 5 : 1.1);
+        cx += (Math.sin(t * 0.65) * 2.4 - cx) * dt * 1.3;
         if (!shot && stunT <= 0 && windT <= 0) {
           throwT -= dt;
           if (throwT <= 0) {
@@ -339,12 +394,12 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
           windT -= dt;
           if (windT <= 0) {
             shot = { r: gap, x0: cx, x1: x, t: 0 }; ball.visible = true; cepiTo('throw'); hintE.classList.add('hidden');
-            const [a, b] = CHASE.throwEvery; throwT = a + Math.random() * (b - a) - prog * 0.8 + (prog < 0.3 ? 1.2 : 0); sfx('crate'); // al principio tira menos
+            const [a, b] = CHASE.throwEvery; throwT = a + Math.random() * (b - a) - prog * 0.6 + (prog < 0.25 ? 0.9 : 0); sfx('crate');
           }
         }
-        if (dist >= LEN - 40) {
+        if (dist >= LEN - 34) {
           phase = 'battery'; phaseT = 0; shot = null; ball.visible = false; mark.visible = false; windT = 0; hintE.classList.add('hidden');
-          banner('¡SIN BATERÍA!', 'El BYD de Cepi se apaga en el cargador…', 2.6);
+          banner('¡SIN BATERÍA!', 'El BYD de Cepi se apaga en el cargador…', 2.4);
         }
       }
       if (shot) {
@@ -355,7 +410,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         mark.visible = true; mark.position.set(shot.x1, 0.16, -dist - 1.3); mark.scale.setScalar(1.5 - 0.6 * k); mark.material.opacity = 0.35 + 0.55 * k;
         if (k >= 1) {
           if (Math.abs(bx - x) < 1.05 && y < 1.1) {
-            if (dashT > 0) { game.score.addBonus(100); charge(0.15); pop(x, 2.8, -dist, '¡ESQUIVE JUSTO!', '#7ee0c3', 24); }
+            if (dashT > 0 || turboT > 0) { game.score.addBonus(100); charge(0.15); pop(x, 2.8, -dist, '¡ESQUIVE JUSTO!', '#7ee0c3', 24); }
             else hurt('¡PELOTAZO!');
           }
           shot = null; ball.visible = false; mark.visible = false;
@@ -374,7 +429,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
           pop(x, 3, -dist, '¡ALCANZASTE A CEPI! +' + CHASE.catchBonus, '#ffd36e', 26); sfx('clear');
         }
         if (dist > stopAt) dist = stopAt;
-        if (phase === 'end' && phaseT > 1.3) return close(true);
+        if (phase === 'end' && phaseT > 1.2) return close(true);
       }
       if (phase === 'down' && phaseT > 1.3) return close(false);
 
@@ -388,9 +443,9 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
     function draw(dt, carZ = -(dist + gap)) {
       const pz = -dist;
       // Entrada: la cámara llega desde arriba y atrás en el primer segundo (no aparece quieta)
-      const ik = Math.max(0, 1 - t / 1.1), ie = ik * ik * (3 - 2 * ik);
+      const ik = Math.max(0, 1 - t / 1.0), ie = ik * ik * (3 - 2 * ik);
       cam.position.set(x * 0.45, 6.2 + y * 0.25 + ie * 5, pz + 10.5 + ie * 7); cam.lookAt(x * 0.3, 1.0 - ie * 0.8, pz - 20); // alta y lejos: se ve por encima del BYD lo que viene
-      cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? 74 : 58; cam.updateProjectionMatrix();
+      cam.aspect = innerWidth / innerHeight; cam.fov = (cam.aspect < 0.9 ? 74 : 58) + (turboT > 0 ? 8 : 0); cam.updateProjectionMatrix();
       road.position.set(0, 0, pz - 100); cobble.offset.y = dist / (260 / 46);
       for (const w of walks) w.position.z = pz - 100; walkTex.offset.y = dist / (260 / 60);
       for (const c of curbs) c.position.z = pz - 100;
@@ -403,7 +458,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       const lat = dt > 0 ? (cx - cxPrev) / dt : 0; cxPrev = cx;
       carTilt += (Math.max(-0.12, Math.min(0.12, -lat * 0.05)) - carTilt) * Math.min(1, dt * 6);
       const parked = cepiPose === 'dead', k = turnT / 0.2;
-      const bob = parked ? 0 : Math.abs(Math.sin(t * 9)) * 0.07 + Math.sin(t * 23) * 0.015;
+      const bob = parked ? 0 : Math.abs(Math.sin(t * 9)) * 0.07 + Math.sin(t * 23) * 0.015 + (ramT > 0 ? Math.abs(Math.sin(t * 36)) * 0.22 : 0);
       place(C, cx, bob + Math.sin(Math.PI * k) * 0.25, carZ);
       const meta = assets.meta(C.userData.key), w0 = C.userData.h * meta.w / meta.h;
       C.scale.set(w0 * (1 - 0.22 * Math.sin(Math.PI * k)), C.userData.h * (1 + 0.06 * Math.sin(Math.PI * k)), 1);
@@ -428,6 +483,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
         const sc = 0.5 + k * 1.4; d.sp.scale.set(sc, sc, 1); d.sp.material.opacity = 0.55 * (1 - k);
       }
       for (const o of obs) if (o.m.visible) { place(o.m, o.x, o.y, -o.s); if (o.dead && o.m.userData.sh) o.m.userData.sh.visible = false; }
+      for (const r of ramps) if (!r.used) { r.m.position.set(r.x, 0.06, -r.s); r.m.material.opacity = 0.72 + Math.sin(t * 10 + r.s) * 0.22; }
       for (const p of picks) if (!p.got) { place(p.m, p.x, p.y + Math.sin(t * 4 + p.s) * 0.15, -p.s); p.m.rotation.y = Math.sin(t * 3 + p.s) * 0.6; }
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt; q.v.y += dt * 0.9;

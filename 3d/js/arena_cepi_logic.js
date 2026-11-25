@@ -17,15 +17,15 @@ export const CEPI_ARENA = {
   zFar: -8.0,      // frente a la red (la red está en z = -8.6)
   netZ: -8.6,
   bossZ: -12.6,
-  ballSpeed: 15,
-  ballHitR: 0.95,
-  returnR: 1.75,
-  returnZMin: -2.2,
-  returnZMax: 1.5,
+  ballSpeed: 10.5, // ~1 s de vuelo: legible y divertido para jugador casual en iPhone
+  ballHitR: 0.9,
+  returnR: 2.15,
+  returnZMin: -2.8,
+  returnZMax: 1.8,
   meleeZ: -6.3,    // cerca de la red para pegarle de frente o voltear cartones
-  meleeX: 2.1,
+  meleeX: 2.2,
   lanes: [-2.65, 0, 2.65],
-  duel: { hide: 1.05, tell: 1.25, tellFast: 1.05, result: 1.05 },
+  duel: { hide: 1.05, tell: 1.75, tellFast: 1.45, result: 1.05 },
   points: { returned: 300, normalReturn: 120, melee: 180, duel: 250, cardboard: 100, dodge: 100 }
 };
 
@@ -133,14 +133,14 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
       const distZ = Math.max(4, hero.z - A.bossZ);
       vx = (hero.x - fromX) / (distZ / A.ballSpeed);
     }
-    const maxVx = glass ? 14 : 6.5;
+    const maxVx = glass ? 9.5 : 5.5;
     vx = Math.max(-maxVx, Math.min(maxVx, vx));
     state.shots.push({
       id: nextId++,
       x: fromX,
       z: A.bossZ + 1.2,
       vx,
-      vz: A.ballSpeed * (gold ? 0.92 : 1.05),
+      vz: A.ballSpeed * (gold ? 0.88 : 1.0),
       gold,
       glass,
       bounced: false,
@@ -257,10 +257,10 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
         seriesLeft--;
         if (seriesLeft <= 0) {
           state.mode = 'tired';
-          timer = state.phase === 3 ? 2.8 : 2.5;
+          timer = state.phase === 3 ? 3.4 : 3.2;
           evs.push({ type: 'tired' });
         } else {
-          timer = state.phase === 3 ? 0.75 : 0.85;
+          timer = state.phase === 3 ? 1.0 : 1.15;
         }
       }
     }
@@ -283,8 +283,8 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
           state.shots.splice(i, 1);
           if (s.gold) {
             state.mode = 'stun';
-            timer = 2.4;
-            setPose('stun', 2.4);
+            timer = 2.8;
+            setPose('stun', 2.8);
             evs.push({ type: 'voice', event: 'hurt' });
             damage(4, 'returned', evs);
           } else {

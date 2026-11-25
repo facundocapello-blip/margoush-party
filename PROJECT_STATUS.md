@@ -507,3 +507,22 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **P1-5 (`3d/js/main.js`):** `updateHud()` cachea nodos DOM y usa dirty-checking (cero mutaciones innecesarias por cuadro); `game.perf.record()` ahora también monitorea arenas, persecución y bonus.
 - **Verificación:** `node --check` OK en los 7 JS editados, `node tools/stamp_versions.mjs` OK, `npm test` **77/78 en verde, 0 fallos, 1 omitido** (`check_sprites.py` sin `numpy` local). **Pendiente:** publicar Tandas 2+3 y validar en Safari físico de iPhone 15 Pro Max.
 - **Rollback:** volver `main` al commit `f3bf1ab`.
+
+## 2026-11-24 (8) · Diversión y ritmo: voz femenina de Marine, Persecución BYD con Turbo y mesas saltables, Pádel de Cepi casual y 4 mini-escenas
+- **Voz de Marine (`3d/js/audio.js`, `3d/js/main.js`):**
+  - Eliminada la colisión de `primeSpeech()` justo antes de `messiGoku()` al elegir a Marine; caché de voces en `voiceschanged`, ampliada `FEMALE_FR` (`Flo`, `Sandy`, `Shelley`, `Siri`, `Amélie`, `Audrey`, `Aurélie`, `Marie`, `Léa`, `Denise`, etc.) y exclusión de voces masculinas iOS (`Eddy`, `Reed`, `Rocko`, `Grandpa`, `Arthur`, `Martin`, `Thomas`, `Daniel`); tono ajustado (`pitch: 1.52`, `rate: 0.96`).
+  - `SFX.messigoku` suavizado a un brillo agudo (sin `sawtooth` grave de 110 Hz); `audio.setHero(heroId)` evita que Marine dispare `¡DIUSHBAG!` en `hitHeavy`/`ko` (reemplazado por un destello femenino agudo).
+- **Persecución del BYD más ágil y divertida (`3d/js/chase.js`, `tests/chase.test.mjs`):**
+  - Duración reducida a ~25 s (`length: 520`, `speed: 19 → 25`, obstáculos desde los `48 m` cada `20–27 m`).
+  - **Mesas de café ahora saltables** (`OBST.table.low = true`, `jumpH: 0.8`) con arcos de hongos/hojitas encima.
+  - **Rampas ⚡ Turbo en el asfalto:** aceleran con zoom de FOV, chocan el paragolpes del BYD, le drenan distancia/batería, suman `+200 pts` y hacen gritar a Cepi (*«¡EY, EL PARAGOLPES!»* / *«¡MIS CUOTAS!»*).
+  - Reincorporados charcos de manteca (con deslizamiento de carril) y palomas para dar variedad constante.
+- **Pádel de Cepi balanceado para jugador casual (`3d/js/arena_cepi_logic.js`, `tests/arena_cepi.test.mjs`):**
+  - Pelotas ~30 % más legibles (`ballSpeed: 10.5`, ~1 s de vuelo; rebote por vidrio `maxVx: 9.5`; cadencia `1.15 s` / `1.0 s`), ventana de devolución ampliada (`returnR: 2.15`, `returnZMin: -2.8 .. 1.8`), ventanas `tired` (`3.2 s`/`3.4 s`) y `stun` (`2.8 s`) más cómodas, y **Duelo de la Flechita** con `1.75 s` / `1.45 s` de reacción.
+- **4 Mini-escenas cinematográficas entre Nivel y Boss (`3d/js/cine.js`, `3d/js/main.js`, `3d/js/i18n.js`):**
+  - Agregadas `pre_chaky` (Hangar VIP), `pre_cepi` (BYD humeante → club de pádel, resolviendo la transición confusa), `pre_lale` (Obrador de Le Blé) y `pre_pinky` (revelación en el Galpón), todas de ~6 s con franjas de cine, presencia de Margot, botón `SALTAR ⏭` y traducción completa ES/FR (0 KB extra de assets). Preservado `game.time` en escenas intermedias.
+- **Calles más vivas y guiños de Margot (`3d/js/level.js`, `3d/js/score.js`, `3d/js/main.js`):**
+  - Oleadas de Acto 1 (`avenida`, `le-concept`) y Acto 3 (`francia`, `francia-2`) con 3 enemigos flanqueando (manteniendo 100 % separación por país y sin jefes ni piquete); rangos recalibrados (`S: 14.250`, `A: 11.050`, `B: 7.150`); Margot festeja en pantalla al despejar cada oleada (`👶 ¡Vamos, papá!` / `👶 ¡Allez maman !`).
+- **Verificación:** `node --check` OK en los 8 JS editados, `node tools/stamp_versions.mjs` OK, `npm test` **77/78 en verde, 0 fallos, 1 omitido** (`check_sprites.py` por falta de `numpy` local). **Pendiente en dispositivo físico (Safari iPhone 15 Pro Max):** probar voz femenina de Marine con/sin modo silencio, salto sobre mesas y rampas Turbo en BYD, velocidad del pádel de Cepi y las 4 mini-escenas.
+- **Rollback:** volver `main` al commit `1f52ee7`.
+

@@ -201,13 +201,135 @@ export function createCine(ctx) {
     return timeline(ev, 9.6, frame, dispose, 'byd');
   }
 
+  // ===== MINI-ESCENA 1: Fin Calle BA → Hangar VIP (Big Chaky) =====
+  function preChaky(hero, heroId) {
+    const X = LE_CONCEPT_X + 4, H = hero.actor;
+    H.position.set(X - 4.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
+    const stroller = actor(strollerPoses, 1.7, X + 2.2, 0.9, -1, 'cry');
+    const chaky = actor(chakyPoses(), 2.5, X + 10, -0.3, -1, 'walk');
+    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    const S = {
+      a: { p: [X - 1.2, 3.6, 11.2], l: [X, 1.5, 0] },
+      b: { p: [X + 1.5, 3.0, 8.6], l: [X + 2.2, 1.6, 0.2] },
+      c: { p: [X + 0.2, 3.4, 10.2], l: [X + 0.5, 1.5, 0] }
+    };
+    const ev = [
+      { at: 0, run: () => { ui.show(); ui.caption('HANGAR VIP · EZEIZA', '¡Llegaste justo antes del despegue!'); ctx.audio?.sfx('bell'); } },
+      { at: 1.5, run: () => { ui.caption(''); ui.sub('MARGOT', cry); ctx.audio?.sfx('pickup'); } },
+      { at: 2.7, run: () => { chaky.setPose('arms'); ui.sub('BIG CHAKY', '¿Querés a Margot? ¡Primero ganame en la pista de baile!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('laugh'); } },
+      { at: 4.8, run: () => { ui.sub(''); ui.caption('¡DUELO DE BAILE DISCO!', '¡Seguí las flechas al ritmo!'); ctx.audio?.sfx('roar'); } }
+    ];
+    const frame = (t, dt) => {
+      if (t < 2.2) cam(S.a, S.b, t / 2.2);
+      else cam(S.b, S.c, Math.min(1, (t - 2.2) / 2.4));
+      walk(chaky, X + 3.4, 6.2, dt);
+      stroller.lift = Math.abs(Math.sin(t * 9)) * 0.08;
+      stroller.update(dt, 0);
+      if (t > 4.6) { H.setPose(H.poses.run ? 'run' : 'walk'); H.position.x += 3.5 * dt; H.update(dt, 3.5); } else H.update(dt, 0);
+    };
+    const dispose = () => { stroller.dispose(); chaky.dispose(); };
+    return timeline(ev, 6.0, frame, dispose, 'pre_chaky');
+  }
+
+  // ===== MINI-ESCENA 2: BYD roto → Cancha de Pádel (Cepi) =====
+  function preCepi(hero, heroId) {
+    const X = 86, H = hero.actor;
+    H.position.set(X - 3.6, 0, 0.6); H.setFacing(1); H.setPose('idle');
+    const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X + 1.8, 0.1, -1, 'ko');
+    const stroller = actor(strollerPoses, 1.65, X - 1.4, 1.0, 1, 'happy');
+    const S = {
+      a: { p: [X - 0.8, 3.4, 10.2], l: [X, 1.5, 0] },
+      b: { p: [X + 1.6, 2.7, 7.6], l: [X + 1.8, 1.6, 0] },
+      c: { p: [X + 3.2, 3.3, 9.8], l: [X + 3.5, 1.5, 0] }
+    };
+    let furious = false;
+    const ev = [
+      { at: 0, run: () => { ui.show(); ui.caption('¡EL BYD QUEDÓ FUMANDO!', 'Cepi todavía lo paga en 48 cuotas'); ctx.audio?.sfx('crate'); } },
+      { at: 1.5, run: () => { ui.caption(''); furious = true; cepi.setPose('strike'); ui.sub('CEPI', '¡MI ELÉCTRICO! ¡Lo tengo en 48 cuotas, loco!'); fx.shake?.(0.25, 0.25); ctx.audio?.sfx('roar'); } },
+      { at: 3.3, run: () => { ui.sub('CEPI', '¡Esto se arregla en mi cancha de pádel! ¡Vení!'); say(cepi, '🎾 ¡A la cancha!', '#9fe4ff', 20, 3.2); ctx.audio?.sfx('bell'); } },
+      { at: 5.0, run: () => { ui.sub(''); ui.caption('CLUB DE PÁDEL', '¡Devolvé el Punto de Oro para vencer a Cepi!'); ctx.audio?.sfx('whoosh'); } }
+    ];
+    const frame = (t, dt) => {
+      if (t < 1.8) cam(S.a, S.b, t / 1.8);
+      else cam(S.b, S.c, Math.min(1, (t - 1.8) / 3.0));
+      stroller.lift = Math.abs(Math.sin(t * 7)) * 0.08;
+      stroller.update(dt, 0);
+      if (furious && t > 4.2) walk(cepi, X + 14, 7.5, dt);
+      else { cepi.lift = furious ? Math.abs(Math.sin(t * 14)) * 0.12 : 0; cepi.update(dt, 0); }
+      H.update(dt, 0);
+    };
+    const dispose = () => { cepi.dispose(); stroller.dispose(); };
+    return timeline(ev, 6.2, frame, dispose, 'pre_cepi');
+  }
+
+  // ===== MINI-ESCENA 3: Fin Calle París → Obrador de Le Blé (Lale) =====
+  function preLale(hero, heroId) {
+    const X = 200, H = hero.actor;
+    H.position.set(X - 3.8, 0, 0.5); H.setFacing(1); H.setPose('idle');
+    const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 10, -0.2, -1, 'walk');
+    const stroller = actor(strollerPoses, 1.65, X + 5.2, 0.9, -1, 'cry');
+    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    const S = {
+      a: { p: [X - 0.5, 3.5, 11.0], l: [X + 0.5, 1.5, 0] },
+      b: { p: [X + 2.2, 2.8, 8.2], l: [X + 2.6, 1.6, 0] }
+    };
+    const ev = [
+      { at: 0, run: () => { ui.show(); ui.caption('OBRADOR DE LE BLÉ · PARÍS', '¡Qué olor a manteca recién derretida!'); ctx.audio?.sfx('bell'); } },
+      { at: 1.5, run: () => { ui.caption(''); ui.sub('LALE', 'Tranqui… pasá. ¡Tengo manteca para todos!'); say(lale, '🧈 ¡Suavecito!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('laugh'); } },
+      { at: 3.2, run: () => { ui.sub('MARGOT', cry); ctx.audio?.sfx('pickup'); } },
+      { at: 4.4, run: () => { ui.sub(''); ui.caption('¡A ENHARINAR A LALE!', 'Pegale a las bolsas de harina para frenarlo'); ctx.audio?.sfx('roar'); } }
+    ];
+    const frame = (t, dt) => {
+      cam(S.a, S.b, Math.min(1, t / 3.0));
+      walk(lale, X + 2.4, 6.5, dt);
+      stroller.lift = Math.abs(Math.sin(t * 9)) * 0.08;
+      stroller.update(dt, 0);
+      H.update(dt, 0);
+    };
+    const dispose = () => { lale.dispose(); stroller.dispose(); };
+    return timeline(ev, 5.8, frame, dispose, 'pre_lale');
+  }
+
+  // ===== MINI-ESCENA 4: Fin Ferme LaPadite → Galpón (Pinky Final) =====
+  function prePinky(hero, heroId) {
+    const X = 264, H = hero.actor;
+    H.position.set(X - 4.0, 0, 0.5); H.setFacing(1); H.setPose('idle');
+    const pinky = actor(sheetPoses(assets, 'pinky', 'courier_pinky'), 2.3, X + 9.5, -0.2, -1, 'walk');
+    const stroller = actor(strollerPoses, 1.65, X + 4.8, 0.9, -1, 'cry');
+    const cry = heroId === 'marine' ? 'Mamaaan !' : '¡Papááá!';
+    const S = {
+      a: { p: [X - 0.8, 3.6, 11.2], l: [X + 0.5, 1.5, 0] },
+      b: { p: [X + 2.0, 2.8, 8.2], l: [X + 2.5, 1.6, 0] }
+    };
+    const ev = [
+      { at: 0, run: () => { ui.show(); ui.caption('EL GALPÓN · ÚLTIMA PARADA', '¡Margot está ahí adentro!'); ctx.audio?.sfx('bell'); } },
+      { at: 1.5, run: () => { ui.caption(''); ui.sub('PINKY', '¿Pensaste que el jefe era Chaky? ¡Me debe el estacionamiento!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('roar'); } },
+      { at: 3.4, run: () => { stroller.setPose('happy'); ui.sub('MARGOT', cry); say(pinky, '🚗 ¡Son 2 lucas!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('horn'); } },
+      { at: 4.8, run: () => { ui.sub(''); ui.caption('¡DUELO FINAL EN EL GALPÓN!', '¡Esquivá los autos y rescatá a Margot!'); ctx.audio?.sfx('clear'); } }
+    ];
+    const frame = (t, dt) => {
+      cam(S.a, S.b, Math.min(1, t / 3.0));
+      walk(pinky, X + 2.2, 6.8, dt);
+      stroller.lift = Math.abs(Math.sin(t * 10)) * 0.1;
+      stroller.update(dt, 0);
+      H.update(dt, 0);
+    };
+    const dispose = () => { pinky.dispose(); stroller.dispose(); };
+    return timeline(ev, 6.2, frame, dispose, 'pre_pinky');
+  }
+
   return {
     ui,
     get active() { return !!cur; },
     get kind() { return cur?.kind || null; },
     start(kind, hero, heroId) {
       this.stop();
-      cur = kind === 'byd' ? afterByd(hero, heroId) : intro(hero, heroId);
+      if (kind === 'byd') cur = afterByd(hero, heroId);
+      else if (kind === 'pre_chaky') cur = preChaky(hero, heroId);
+      else if (kind === 'pre_cepi') cur = preCepi(hero, heroId);
+      else if (kind === 'pre_lale') cur = preLale(hero, heroId);
+      else if (kind === 'pre_pinky') cur = prePinky(hero, heroId);
+      else cur = intro(hero, heroId);
     },
     // true cuando terminó
     update(dt) { return cur ? cur.update(dt) : true; },
