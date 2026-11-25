@@ -10,6 +10,7 @@ import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
 import { attachBossIntro } from './boss_intro.js';
 import { createMargotFinish } from './margot_finish.js';
+import { placePops } from './pop_layout.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -716,15 +717,17 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       }
 
       // Textos flotantes
+      const lay = [];
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt;
         if (q.t >= q.life) { q.e.remove(); pops.splice(i, 1); if (q === lastSpeech) lastSpeech = null; continue; }
         scratch.copy(q.v); scratch.y += q.t * 0.7; scratch.project(cam);
         const px = Math.max(80, Math.min(innerWidth - 80, (scratch.x * 0.5 + 0.5) * innerWidth));
         const py = Math.max(60, Math.min(innerHeight - 60, (-scratch.y * 0.5 + 0.5) * innerHeight));
-        q.e.style.left = px + 'px'; q.e.style.top = py + 'px';
+        lay.push({ o: q, el: q.e, x: px, y: py });
         q.e.style.opacity = String(Math.min(1, (q.life - q.t) * 3));
       }
+      placePops(lay.reverse(), dt);
     }
 
     function dispose() {

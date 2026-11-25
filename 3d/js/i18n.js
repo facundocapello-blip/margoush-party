@@ -503,6 +503,9 @@ export const DICHOS = {
   '¡Te falta calle!': 'Il te manque de la pratique !', '¡Eso no es bailar!': "Ça, ce n'est pas danser !", '¡Dos pies izquierdos!': 'Deux pieds gauches !',
   // Margot y BIG CHAKY cuando cruzan al fondo
   '¡Papááá!': 'Papaaa !',
+  '¡Papááá, más rápido!': 'Papaaa, plus vite !',
+  '¡AY! ¡El chupete no!': 'AÏE ! Pas la tétine !',
+  '¡TOC!': 'TOC !',
   '¡Jua, jua, jua!': 'Mouahaha !',
   // Douge: verdades a los gritos
   '¡ESTÁS PELADO!': "T'ES CHAUVE !",

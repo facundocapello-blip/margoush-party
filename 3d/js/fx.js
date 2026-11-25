@@ -1,5 +1,6 @@
 // Efectos de golpe: chispas, anillos, sacudón, congelado y textos flotantes.
 import { fillText } from './i18n.js';
+import { placePops } from './pop_layout.js';
 export function createFx(scene, camera, labelsEl, flashEl) {
   const sparkTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -137,6 +138,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
         }
       }
       const w = innerWidth, h = innerHeight;
+      const lay = [];
       for (let i = pops.length - 1; i >= 0; i--) {
         const p = pops[i];
         p.life -= dt;
@@ -144,11 +146,11 @@ export function createFx(scene, camera, labelsEl, flashEl) {
         const v = p.pos.clone().project(camera);
         // que los textos largos no se corten en el borde de la pantalla
         const half = (p.halfW ??= p.el.offsetWidth / 2);
-        p.el.style.left = Math.min(w - half - 6, Math.max(half + 6, ((v.x + 1) / 2) * w)) + 'px';
-        p.el.style.top = ((1 - v.y) / 2) * h + 'px';
+        if (p.life > 0) lay.push({ o: p, el: p.el, x: Math.min(w - half - 6, Math.max(half + 6, ((v.x + 1) / 2) * w)), y: ((1 - v.y) / 2) * h });
         p.el.style.opacity = Math.min(1, p.life / (p.max * 0.4));
         if (p.life <= 0) { p.el.remove(); pops.splice(i, 1); }
       }
+      placePops(lay.reverse(), dt);
     },
     clear() {
       for (const p of parts) { scene.remove(p.obj); if (p.kind !== 'spark') p.obj.material.dispose(); }
