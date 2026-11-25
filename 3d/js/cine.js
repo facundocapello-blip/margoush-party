@@ -291,15 +291,15 @@ export function createCine(ctx) {
     H.position.set(X - 3.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
     const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X + 1.0, 0.1, -1, 'ko');
     const stroller = actor(strollerPoses, 1.65, X + 2.8, 0.9, -1, 'cry');
-    const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 10.5, 0.2, -1, 'walk');
+    const lale = actor(sheetPoses(assets, 'lale', 'courier_lale'), 2.3, X + 5.4, -1.0, -1, 'walk');
     const S = {
       a: { p: [X + 0.2, 2.8, 8.8], l: [X + 1.8, 1.5, 0] },
       b: { p: [X + 5.6, 3.5, 11.2], l: [X + 6.4, 1.5, 0] }
     };
     let grabbed = false;
     const ev = [
-      { at: 0, run: () => { ui.show(); ui.sub('LALE', '¡Cepi falló! ¡Me llevo a Margot a París, a mi obrador!'); ctx.audio?.sfx('laugh'); } },
-      { at: 2.1, run: () => { ui.sub('CEPI', '¡Fue Lale… se escapó a Le Blé en París!'); ctx.audio?.sfx('bell'); } },
+      { at: 0, run: () => { ui.show(); ui.sub('LALE', '¡Lo vi todo desde las gradas! Chaky me presta su jet: ¡me llevo a Margot a París, a mi obrador!'); ctx.audio?.sfx('laugh'); } },
+      { at: 2.1, run: () => { ui.sub('CEPI', '¡Fue Lale… se escapó en el jet de Chaky a Le Blé, en París!'); ctx.audio?.sfx('bell'); } },
       { at: 3.4, run: () => { ui.sub(''); ui.caption('✈ RUMBO A PARÍS', '¡Seguí a Lale hasta el obrador de Le Blé!'); ctx.audio?.sfx('secret'); } }
     ];
     const frame = (t, dt) => {
@@ -308,7 +308,7 @@ export function createCine(ctx) {
       if (!grabbed) {
         if (walk(lale, stroller.position.x + 0.9, 10.0, dt, 'walk')) {
           grabbed = true;
-          say(lale, '✈ ¡A París!', '#ffe08a', 20, 3.2);
+          say(lale, '✈ ¡Al jet de Chaky!', '#ffe08a', 20, 3.2);
         }
         stroller.update(dt, 0);
       } else {

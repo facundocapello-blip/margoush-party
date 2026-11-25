@@ -178,6 +178,17 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       M.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
     };
     setMargot(2);
+    // Lale mirando el partido desde las gradas (rincón derecho, atrás): después se lleva a Margot en el jet de Chaky.
+    // Se crea al primer cuadro en que su imagen ya está cargada (la arena se arma antes de la precarga).
+    let LS = null, lsTried = false;
+    const LS_X = CEPI_ARENA.xMax + 2.3, LS_Z = CEPI_ARENA.bossZ + 1.4, LS_Y = 1.1;
+    function makeLale() {
+      if (LS || !assets.has('arena_lale_idle')) return;
+      LS = sprite('arena_lale_idle', 3.0, 0);
+      const stand = new T.Mesh(keep(new T.BoxGeometry(2.8, LS_Y, 1.8)), keep(new T.MeshBasicMaterial({ color: L('#6b4a2e') })));
+      stand.position.set(LS_X, LS_Y / 2, LS_Z);
+      scene.add(stand);
+    }
     // 2 señuelos de cartón reutilizables para fase 3
     const decoyMeshes = [0, 1].map(() => {
       const m = sprite('arena_cepi_cardboard', BOSS_H, 0.75);
@@ -514,6 +525,9 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
         setMargot(S.phase === 'ko' || S.mode === 'stun' ? 3 : 2);
         place(M, CEPI_ARENA.xMax - 0.55, Math.abs(Math.sin(t * 6)) * 0.1, CEPI_ARENA.bossZ + 0.8);
       }
+
+      makeLale();
+      if (LS) place(LS, LS_X, LS_Y + Math.abs(Math.sin(t * 5)) * 0.06, LS_Z);
 
       // Cepi real (corre en 6 cuadros al desplazarse por la cancha + animaciones de golpe/bloqueo/aturdido)
       const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;

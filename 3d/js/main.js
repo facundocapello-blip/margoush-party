@@ -726,7 +726,7 @@ function spawnCepi({ instant = false, hp = null } = {}) {
   input.reset();
   healBeforeBoss(instant);
   const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
-  const wait = assets.ensure(['arena_cepi_', 'cepi_walk_sheet', heroBack]);
+  const wait = assets.ensure(['arena_cepi_', 'cepi_walk_sheet', 'arena_lale_idle', heroBack]);
   game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaCepi.start();

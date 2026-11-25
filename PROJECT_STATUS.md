@@ -568,3 +568,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Intro (`3d/js/cine.js`): «¡Cepi, teneme el BYD listo en el hangar!» (antes «en la 9 de Julio», contradecía el hangar). Escena del hangar: «¡Es mi fiesta de despegue, en mi jet! ¡Ganame en mi pista disco!» (antes «¿Pelear con este traje violeta?…»). FR actualizado en `3d/js/i18n.js`.
 - Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79. Safari físico pendiente.
 - **Prueba:** `?probar=chaky`. **Rollback:** volver `main` a `cfba750`.
+
+## 2026-11-25 · Etapa A · A3: Lale mira desde las gradas y se lleva a Margot en el jet de Chaky
+- `3d/js/arena_cepi.js`: Lale (`arena_lale_idle`) aparece sobre una tarima al costado derecho de la cancha durante toda la pelea de Cepi (se crea cuando su imagen ya está cargada). `3d/js/main.js` la precarga en `spawnCepi`.
+- `3d/js/cine.js` (`post_cepi`): Lale sale de ahí («¡Lo vi todo desde las gradas! Chaky me presta su jet…»), Cepi dice que se fue en el jet de Chaky, y al agarrar el cochecito: «¡Al jet de Chaky!». FR en `3d/js/i18n.js`.
+- Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79; arena de Cepi abierta en Chrome sin errores JS (Lale visible, captura revisada). La escena `post_cepi` no la pude mirar en pantalla. Safari físico pendiente.
+- **Prueba:** `?probar=cepi-carton` (pelear y ver a Lale; al ganar sale la escena). **Rollback:** volver `main` a `f1a550c`.
