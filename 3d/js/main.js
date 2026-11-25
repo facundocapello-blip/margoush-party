@@ -263,7 +263,7 @@ const CHECKPOINTS = {
   byd:     { label: 'ACTO 2 · ¡ROMPÉ EL BYD!', short: 'el BYD de Cepi' },
   cepi:    { label: 'CEPI SE QUEDÓ SIN BYD… ¡PERO NO SIN PALETA!', short: 'Cepi (Pádel)' },
   acto3:   { label: 'ACTO 3 · PARÍS (BOULANGERIE)', short: 'Acto 3 · París' },
-  lale:    { label: '¡BIENVENIDO A LA CASA CENTRAL DE LE BLÉ!', short: 'Lale (Casa central)' },
+  lale:    { label: '¡LLEGASTE A LA CASA CENTRAL DE LE BLÉ!', short: 'Lale (Casa central)' },
   acto4:   { label: 'ACTO 4 · FERME LAPADITE → GALPÓN', short: 'Acto 4 · Galpón' },
   pinky:   { label: 'ÚLTIMA PARADA · EL GALPÓN', short: 'Pinky (Final)' },
   // compatibilidad con checkpoints previos guardados en localStorage

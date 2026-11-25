@@ -24,26 +24,23 @@ export const COOLDOWN = { taunt: 6, attack: 2.5, hurt: 1.2, returned: 1.5, good:
 
 export const CATALOG = {
   chaky: {
-    intro: ['¡Soy BIG CHAKY… y traje barriles!'],
-    attack: ['¡Tomá, barrilito!', '¡Ahí va otro!', '¡Atajá esta!'],
-    returned: ['¡Me devolviste el barril, atrevido!', '¡Ey, ese era mío!'],
+    intro: ['¡Soy BIG CHAKY… y vine a bailar!'],
+    attack: ['¡Seguime el ritmo!', '¡Ahí va otro paso!', '¡Atajá este giro!'],
     hurt: ['¡Auch, mi panza!', '¡Ese me dolió en el alma!'],
-    taunt: ['¡Muy lento, campeón!', '¡Perdiste el compás!'],
+    taunt: ['¡Muy lento!', '¡Perdiste el compás!'],
     dice: ['¡Si querés a Margot, vas a tener que seguirme el ritmo!'],
     count: ['¡Y uno, y dos…!', '¡Mirá y aprendé!', '¡Atenti a la cadera!'],
     good: ['¡Esa cadera!', '¡Con onda, eh!', '¡Mirá vos, sabe bailar!'],
-    bad: ['¡Te falta calle, campeón!', '¡Eso no es bailar!', '¡Dos pies izquierdos!'],
+    bad: ['¡Te falta calle!', '¡Eso no es bailar!', '¡Dos pies izquierdos!'],
     phase: ['¡Ahora sí me enojé!'],
-    special: ['¡Barril gigante!'],
-    stuck: ['¡Soltá, soltá, soltá!'],
     ko: ['¡Esto no termina acá! ¡Nos vemos en Francia!']
   },
   cepi: {
     intro: ['¿Vos acá? Dale, te doy ventaja: saco yo.'],
     attack: ['¡Bandeja!', '¡Por el vidrio!', '¡Punto de oro!'],
     hurt: ['¡Eso fue suerte!', '¡Ey, no vale!'],
-    taunt: ['¡Comprate una paleta!', '¡Es eléctrico, papá!'],
-    phase: ['Se terminó el calentamiento.', 'Ahora juego en serio, papá.'],
+    taunt: ['¡Comprate una paleta!', '¡Es eléctrico, che!'],
+    phase: ['Se terminó el calentamiento.', 'Ahora juego en serio, che.'],
     ko: ['¡Pido revancha!… ¿y me cargás el BYD?']
   },
   lale: {
@@ -58,8 +55,8 @@ export const CATALOG = {
     intro: ['¿Pensaste que el jefe era Chaky? ¡Chaky me debe el estacionamiento!'],
     attack: ['¡Dale, dale, dale, que entra!', '¡Todo, todo, todo!', '¡Cortá, cortá!'],
     hurt: ['¡Eh, eh! ¡Sin tocar la mercadería!'],
-    taunt: ['¿Te lo cuido, jefe?', 'Son dos mil… por adelantado.'],
-    phase: ['Ahora te cobro hora y media.', 'Tarifa nocturna, papi.'],
+    taunt: ['¿Te lo cuido?', 'Son dos mil… por adelantado.'],
+    phase: ['Ahora te cobro hora y media.', 'Tarifa nocturna, che.'],
     ko: ['¡Bueno, bueno! Hoy no se cobra… ¡pero mirá, el cheque lo firmó Facu!']
   }
 };

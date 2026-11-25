@@ -336,7 +336,7 @@ export function createCine(ctx) {
     };
     const ev = [
       { at: 0, run: () => { ui.show(); ui.caption('LE BLÉ · CASA CENTRAL · PARÍS', '¡La casa de la Le Blé porteña! ¡Qué olor a manteca!'); ctx.audio?.sfx('bell'); } },
-      { at: 1.4, run: () => { ui.caption(''); ui.sub('LALE', 'Bienvenido a la casa central de Le Blé. ¡Tengo manteca para todos!'); say(lale, '🧈 ¡Suavecito!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('laugh'); } },
+      { at: 1.4, run: () => { ui.caption(''); ui.sub('LALE', 'Pasá, esta es la casa central de Le Blé. ¡Tengo manteca para todos!'); say(lale, '🧈 ¡Suavecito!', '#ffe08a', 20, 3.2); ctx.audio?.sfx('laugh'); } },
       { at: 3.0, run: () => { ui.sub('MARGOT', cry); ctx.audio?.sfx('pickup'); } },
       { at: 4.1, run: () => { ui.sub(''); ui.caption('¡A ENHARINAR A LALE!', 'Pegale a las bolsas de harina para frenarlo'); ctx.audio?.sfx('roar'); } }
     ];

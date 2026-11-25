@@ -585,3 +585,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Al caer Pinky: su línea de KO (`3d/js/voice.js`) dice que el cheque lo firmó Facu, y `3d/js/arena_pinky.js` muestra el cartel «💵 Cheque firmado: FACU». FR en `3d/js/i18n.js`. Deja sembrado el Acto 5 (Facu como jefe final, Etapa B).
 - Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79; arena de Pinky abierta en Chrome sin errores JS. Safari físico pendiente.
 - **Prueba:** `?probar=pinky-margot` (ganar la pelea para ver el KO). **Rollback:** volver `main` a `5cff8b4`.
+
+## 2026-11-25 · Etapa A · A6: sin frases de barriles y sin masculinos al jugar con Marine
+- `3d/js/voice.js`: Chaky ya no habla de barriles (intro «…y vine a bailar!», ataques de baile; se borraron `returned`, `special` y `stuck`, que ya no se usan). «campeón», «papá», «papi» y «jefe» pasaron a frases neutras (Chaky, Cepi, Pinky). Cartel de llegada a Le Blé: «¡LLEGASTE A LA CASA CENTRAL DE LE BLÉ!»; línea de Lale en `3d/js/cine.js` sin «bienvenido».
+- `3d/js/i18n.js`: borradas las 6 claves de barriles y actualizadas/agregadas las del francés. `tests/campaign-continuity.test.mjs` al nuevo cartel.
+- Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79; arenas de Chaky y Lale abiertas en Chrome sin errores JS. Safari físico pendiente. Pendiente conocido: «👶 ¡Vamos, papá!» y la tarjeta «¡Es eléctrico, papá!» (texto de escena de Cepi) siguen en masculino.
+- **Prueba:** `?probar=chaky-baile` (jugar con Marine). **Rollback:** volver `main` a `66ebe4a`.

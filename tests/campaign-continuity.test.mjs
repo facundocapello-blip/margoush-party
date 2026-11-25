@@ -177,7 +177,7 @@ test('señales de Margot en fuga/Pinky y claridad de objetivo en ¡Rompé el BYD
   assert.match(bydStart, /_back_/);
   // Cortinas narrativas en lugar de «JEFE X» y mini-intro de historia en Cepi, Lale y Pinky
   assert.match(main, /¡LLEGASTE AL HANGAR VIP!/);
-  assert.match(main, /¡BIENVENIDO A LA CASA CENTRAL DE LE BLÉ!/);
+  assert.match(main, /¡LLEGASTE A LA CASA CENTRAL DE LE BLÉ!/);
   assert.match(main, /ÚLTIMA PARADA · EL GALPÓN/);
   for (const file of ['arena_cepi.js', 'arena_lale.js', 'arena_pinky.js']) {
     const src = readFileSync(new URL('../3d/js/' + file, import.meta.url), 'utf8');
