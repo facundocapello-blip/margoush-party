@@ -29,7 +29,7 @@ const PIU_KEYS = {
 };
 export const DANCE_SIGN = { jump: ['⤴', '¡SALTO!'], attack: ['👊', '¡PIÑA!'], dodge: ['🌀', '¡GIRO!'] };
 // En el escenario BIG CHAKY usa SOLO su traje violeta de lentejuelas (nunca los sprites naranjas del galpón)
-const BOSS_POSE_TEX = { ko: 'dance_dodge', hurt: 'dance_dodge', idle: 'dance_idle' };
+const BOSS_POSE_TEX = { ko: 'dance_ko', hurt: 'dance_dodge', idle: 'dance_idle' };
 const TILE_COLORS = ['#38bdf8', '#e879f9', '#facc15', '#34d399', '#fb7185', '#a78bfa'];
 
 export function createArena({ game, input, audio, assets, renderer, updateHud, pause, POWER, onWin, onDown }) {
@@ -195,7 +195,9 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
     const initialBossKey = 'arena_chaky_dance_idle';
     const bossTexFor = (pose) => {
       const k = 'arena_chaky_' + (BOSS_POSE_TEX[pose] || pose);
-      return assets.has(k) ? k : initialBossKey;
+      if (assets.has(k)) return k;
+      // sin la pose de derrota, usa el giro de siempre
+      return pose === 'ko' && assets.has('arena_chaky_dance_dodge') ? 'arena_chaky_dance_dodge' : initialBossKey;
     };
     const initialHeroKey = CUSTOM.hero_dance_point ? 'hero_dance_point' : (heroId + '_idle');
     const B = sprite(initialBossKey, BOSS_H, 0.95);

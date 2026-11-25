@@ -168,12 +168,21 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       const tx = keep(assets.texture('margot_sheet').clone());
       tx.needsUpdate = true; tx.repeat.set(1 / (mm.cols || 2), 1 / (mm.rows || 2));
       M = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: tx, alphaTest: 0.42, transparent: true, side: T.DoubleSide })));
-      M.userData.cols = mm.cols || 2; M.userData.rows = mm.rows || 2;
+      M.userData.sheet = tx; M.userData.cols = mm.cols || 2; M.userData.rows = mm.rows || 2;
       M.scale.set(MARGOT_H, MARGOT_H, 1); scene.add(M);
     }
     const setMargot = (cell) => {
       if (!M || margotCell === cell) return;
       margotCell = cell;
+      // imagen propia: asustada (2) o festejando (3); si no está cargada, usa el cuadro de la hoja
+      const own = cell === 3 ? 'arena_margot_cheer' : 'arena_margot_scared';
+      if (assets.has(own)) {
+        const om = assets.meta(own);
+        M.material.map = assets.texture(own); M.material.needsUpdate = true;
+        M.scale.set(MARGOT_H * om.w / om.h, MARGOT_H, 1); M.userData.own = true;
+        return;
+      }
+      if (M.userData.own) { M.material.map = M.userData.sheet; M.material.needsUpdate = true; M.scale.set(MARGOT_H, MARGOT_H, 1); M.userData.own = false; }
       const c = M.userData.cols, r = M.userData.rows;
       M.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
     };
@@ -272,7 +281,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     let phase = 'entrance', phaseT = 0, ended = false, closing = false, disposed = false;
     let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
-    let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_cepi_idle';
+    let bossHurtT = 0, shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_cepi_idle';
     let lastSpeech = null, duelOn = false, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
     renderLife();
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
@@ -377,7 +386,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             }
             break;
           case 'bossHit':
-            bossFlash = 0.22; setBar(); sfx('hit'); shake(0.28, 0.22);
+            bossFlash = 0.22; bossHurtT = 0.45; setBar(); sfx('hit'); shake(0.28, 0.22);
             break;
           case 'hurt':
             hero.hp = Math.max(0, hero.hp - 1); hurtT = HURT_POSE; inv = INV;
@@ -543,6 +552,10 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       } else {
         bossKey = 'arena_cepi_' + S.pose;
       }
+      bossHurtT = Math.max(0, bossHurtT - dt);
+      // golpe recibido: se agarra la panza un instante (si la imagen existe y no es KO)
+      const hurtNow = bossHurtT > 0 && S.pose !== 'ko' && assets.has('arena_cepi_hurt');
+      if (hurtNow) bossKey = 'arena_cepi_hurt';
       setTex(B, bossKey);
       if (S.pose === 'smash') { by = 0.72 + Math.abs(Math.sin(t * 14)) * 0.16; sy = 1.07; sx = 0.95; rz = Math.sin(t * 16) * 0.05; }
       else if (S.pose === 'block') { sy = 0.95; sx = 1.06; by = 0.04; }

@@ -1186,5 +1186,56 @@
     "rows": 1,
     "frames": 1,
     "v": "f8af64c8"
+  },
+  "arena_cepi_hurt": {
+    "file": "arena_cepi_hurt.webp",
+    "w": 391,
+    "h": 700,
+    "cols": 1,
+    "rows": 1,
+    "frames": 1,
+    "hk": 0.93
+  },
+  "arena_chaky_dance_ko": {
+    "file": "arena_chaky_dance_ko.webp",
+    "w": 447,
+    "h": 540,
+    "cols": 1,
+    "rows": 1,
+    "frames": 1,
+    "hk": 0.72
+  },
+  "arena_pinky_idle": {
+    "file": "arena_pinky_idle.webp",
+    "w": 270,
+    "h": 768,
+    "cols": 1,
+    "rows": 1,
+    "frames": 1
+  },
+  "arena_lale_skate2": {
+    "file": "arena_lale_skate2.webp",
+    "w": 531,
+    "h": 768,
+    "cols": 1,
+    "rows": 1,
+    "frames": 1,
+    "hk": 1.04
+  },
+  "arena_margot_scared": {
+    "file": "arena_margot_scared.webp",
+    "w": 474,
+    "h": 512,
+    "cols": 1,
+    "rows": 1,
+    "frames": 1
+  },
+  "arena_margot_cheer": {
+    "file": "arena_margot_cheer.webp",
+    "w": 437,
+    "h": 512,
+    "cols": 1,
+    "rows": 1,
+    "frames": 1
   }
 }

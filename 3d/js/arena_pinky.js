@@ -532,6 +532,8 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         rz = -sx * 0.05;
       } else {
         bossKey = 'arena_pinky_' + S.pose;
+        // sin autos a la vista descansa con los brazos cruzados y el silbato
+        if (S.pose === 'wave' && !S.cars.length && assets.has('arena_pinky_idle')) bossKey = 'arena_pinky_idle';
         if (S.pose === 'wave') { rz = Math.sin(t * 10) * 0.09; by = Math.abs(Math.sin(t * 5)) * 0.12; sy = 1 + Math.sin(t * 10) * 0.03; }
         else if (S.pose === 'reveal') { by = Math.abs(Math.sin(t * 8)) * 0.22; sy = 1 + Math.sin(t * 16) * 0.05; rz = Math.sin(t * 8) * 0.05; }
         else if (S.pose === 'charge') { by = Math.abs(Math.sin(t * 4)) * 0.09; sy = 1 + Math.sin(t * 8) * 0.03; rz = Math.sin(t * 4) * 0.04; }

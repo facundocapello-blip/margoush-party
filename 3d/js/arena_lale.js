@@ -150,12 +150,21 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       const tx = keep(assets.texture('margot_sheet').clone());
       tx.needsUpdate = true; tx.repeat.set(1 / (mm.cols || 2), 1 / (mm.rows || 2));
       M = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: tx, alphaTest: 0.42, transparent: true, side: T.DoubleSide })));
-      M.userData.cols = mm.cols || 2; M.userData.rows = mm.rows || 2;
+      M.userData.sheet = tx; M.userData.cols = mm.cols || 2; M.userData.rows = mm.rows || 2;
       M.scale.set(MARGOT_H, MARGOT_H, 1); scene.add(M);
     }
     const setMargot = (cell) => {
       if (!M || margotCell === cell) return;
       margotCell = cell;
+      // imagen propia: asustada (2) o festejando (3); si no está cargada, usa el cuadro de la hoja
+      const own = cell === 3 ? 'arena_margot_cheer' : 'arena_margot_scared';
+      if (assets.has(own)) {
+        const om = assets.meta(own);
+        M.material.map = assets.texture(own); M.material.needsUpdate = true;
+        M.scale.set(MARGOT_H * om.w / om.h, MARGOT_H, 1); M.userData.own = true;
+        return;
+      }
+      if (M.userData.own) { M.material.map = M.userData.sheet; M.material.needsUpdate = true; M.scale.set(MARGOT_H, MARGOT_H, 1); M.userData.own = false; }
       const c = M.userData.cols, r = M.userData.rows;
       M.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
     };
@@ -498,6 +507,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
         if (S.pose === 'skate') sy = 0.94 + Math.abs(Math.sin(t * 14)) * 0.08;
       } else {
         bossKey = 'arena_lale_' + S.pose;
+        if (S.pose === 'skate' && assets.has('arena_lale_skate2') && Math.floor(t * 5) % 2) bossKey = 'arena_lale_skate2';
         if (S.pose === 'skate') {
           sx = S.skateDir < 0 ? -1 : 1;
           by = 0.06 + Math.abs(Math.sin(t * 15)) * 0.16;
