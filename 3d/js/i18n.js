@@ -412,7 +412,7 @@ export const TEXTOS = {
   '✈ ¡Al jet de Chaky!': '✈ Au jet de Chaky !',
   '✈ RUMBO A PARÍS': '✈ DIRECTION PARIS',
   '¡Seguí a Lale hasta la casa central de Le Blé!': 'Suis Lale jusqu\'au siège de Le Blé !',
-  '¡El cheque de Chaky rebotó! ¡Nadie me pagó el estacionamiento!': 'Le chèque de Chaky a rebondi ! Personne ne m\'a payé le parking !',
+  'Viajé en su jet cuidándole el estacionamiento a Chaky… ¡y el cheque rebotó!': 'J\'ai voyagé dans son jet en gardant le parking de Chaky… et le chèque a rebondi !',
   '¡Me llevo a Margot al Galpón hasta que paguen!': 'J\'emmène Margot à l\'Entrepôt tant qu\'on ne me paie pas !',
   '💸 ¡Al Galpón!': '💸 À l\'Entrepôt !',
   '¡PINKY TRAICIONÓ A LA BANDA!': 'PINKY A TRAHI LA BANDE !',
@@ -561,7 +561,7 @@ export const DICHOS = {
   'Son dos mil… por adelantado.': "C'est deux mille… d'avance.",
   'Ahora te cobro hora y media.': 'Maintenant je te facture une heure et demie.',
   'Tarifa nocturna, papi.': 'Tarif de nuit, mon grand.',
-  '¡Bueno, bueno! Hoy no se cobra…': "Bon, bon ! Aujourd'hui c'est gratuit…"
+  '¡Bueno, bueno! Hoy no se cobra… ¡pero mirá, el cheque lo firmó Facu!': "Bon, bon ! Aujourd'hui c'est gratuit… mais regarde, c'est Facu qui a signé le chèque !"
 };
 
 // Plantillas ({x}, {n}) armadas una sola vez

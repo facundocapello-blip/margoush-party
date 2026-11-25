@@ -412,6 +412,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             sfx('fanfare'); flash('#fff', 0.6); shake(0.55, 0.5);
             burst(logic.state.bossX, 2.6, PINKY_ARENA.bossZ + 0.4, '#6de37b', 18, true);
             pop(logic.state.bossX, BOSS_H * 0.7, PINKY_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.6);
+            pop(logic.state.bossX, BOSS_H * 0.45, PINKY_ARENA.bossZ, '💵 Cheque firmado: FACU', '#9fe4ff', 22, 2.4);
             break;
           }
         }

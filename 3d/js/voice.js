@@ -60,7 +60,7 @@ export const CATALOG = {
     hurt: ['¡Eh, eh! ¡Sin tocar la mercadería!'],
     taunt: ['¿Te lo cuido, jefe?', 'Son dos mil… por adelantado.'],
     phase: ['Ahora te cobro hora y media.', 'Tarifa nocturna, papi.'],
-    ko: ['¡Bueno, bueno! Hoy no se cobra…']
+    ko: ['¡Bueno, bueno! Hoy no se cobra… ¡pero mirá, el cheque lo firmó Facu!']
   }
 };
 

@@ -579,3 +579,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Textos (ES y FR) en `3d/js/cine.js`, `3d/js/main.js` (checkpoint `lale`), `3d/js/level.js` (oleada `francia-2`: «CAMINO A LE BLÉ») y `3d/js/i18n.js`: «obrador» pasa a «casa central de Le Blé» / «siège». Se mantienen las dos fachadas (la porteña y la de París). `tests/campaign-continuity.test.mjs` actualizado al nuevo cartel.
 - Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79; arena de Lale abierta en Chrome sin errores JS. La escena `pre_lale` no la miré en pantalla. Safari físico pendiente.
 - **Prueba:** `?probar=lale`. **Rollback:** volver `main` a `2d68dca`.
+
+## 2026-11-25 · Etapa A · A5: Pinky viajó en el jet de Chaky y muestra el cheque firmado por Facu
+- `post_lale` (`3d/js/cine.js`): Pinky explica que viajó en el jet cuidándole el estacionamiento a Chaky y que el cheque rebotó.
+- Al caer Pinky: su línea de KO (`3d/js/voice.js`) dice que el cheque lo firmó Facu, y `3d/js/arena_pinky.js` muestra el cartel «💵 Cheque firmado: FACU». FR en `3d/js/i18n.js`. Deja sembrado el Acto 5 (Facu como jefe final, Etapa B).
+- Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79; arena de Pinky abierta en Chrome sin errores JS. Safari físico pendiente.
+- **Prueba:** `?probar=pinky-margot` (ganar la pelea para ver el KO). **Rollback:** volver `main` a `5cff8b4`.

@@ -364,7 +364,7 @@ export function createCine(ctx) {
     };
     let grabbed = false;
     const ev = [
-      { at: 0, run: () => { ui.show(); ui.sub('PINKY', '¡El cheque de Chaky rebotó! ¡Nadie me pagó el estacionamiento!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('roar'); } },
+      { at: 0, run: () => { ui.show(); ui.sub('PINKY', 'Viajé en su jet cuidándole el estacionamiento a Chaky… ¡y el cheque rebotó!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('roar'); } },
       { at: 2.1, run: () => { ui.sub('PINKY', '¡Me llevo a Margot al Galpón hasta que paguen!'); ctx.audio?.sfx('horn'); } },
       { at: 3.4, run: () => { ui.sub(''); ui.caption('¡PINKY TRAICIONÓ A LA BANDA!', '¡Alcanzalo pasando la Ferme LaPadite!'); ctx.audio?.sfx('bell'); } }
     ];
