@@ -1,1224 +1,1172 @@
 {
- "boss_idle": {
-  "file": "boss_idle.webp",
-  "w": 503,
-  "h": 731,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 183.0
- },
- "boss_run": {
-  "file": "boss_run.webp",
-  "w": 597,
-  "h": 674,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 239.0
- },
- "boss_attack": {
-  "file": "boss_attack.webp",
-  "w": 711,
-  "h": 506,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 262.0
- },
- "boss_hurt": {
-  "file": "boss_hurt.webp",
-  "w": 523,
-  "h": 472,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 177.0
- },
- "douge_idle": {
-  "file": "douge_idle.webp",
-  "w": 194,
-  "h": 420,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 132.0
- },
- "douge_run": {
-  "file": "douge_run.webp",
-  "w": 1200,
-  "h": 400,
-  "frames": 6,
-  "cols": 6,
-  "rows": 1,
-  "skull": 143.0,
-  "foot": 0.925
- },
- "douge_attack": {
-  "file": "douge_attack.webp",
-  "w": 398,
-  "h": 420,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 164.0
- },
- "marine_idle": {
-  "file": "marine_idle.webp",
-  "w": 168,
-  "h": 420,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 121.0
- },
- "marine_run": {
-  "file": "marine_run.webp",
-  "w": 1200,
-  "h": 400,
-  "frames": 6,
-  "cols": 6,
-  "rows": 1,
-  "skull": 114.5,
-  "foot": 0.925
- },
- "marine_attack": {
-  "file": "marine_attack.webp",
-  "w": 390,
-  "h": 420,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 159.0
- },
- "chaky_run": {
-  "file": "chaky_run.webp",
-  "w": 1200,
-  "h": 400,
-  "frames": 6,
-  "cols": 6,
-  "rows": 1,
-  "skull": 61.0,
-  "foot": 0.925
- },
- "margot_sheet": {
-  "file": "margot_sheet.webp",
-  "w": 800,
-  "h": 800,
-  "frames": 4,
-  "cols": 2,
-  "rows": 2,
-  "skull": 152.0
- },
- "street_bg": {
-  "file": "street_bg.webp",
-  "w": 1024,
-  "h": 683,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 1024.0
- },
- "courier": {
-  "file": "courier.webp",
-  "w": 936,
-  "h": 1024,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 331.0
- },
- "kidnap_sheet": {
-  "file": "kidnap_sheet.webp",
-  "w": 800,
-  "h": 800,
-  "frames": 4,
-  "cols": 2,
-  "rows": 2,
-  "skull": 136.5
- },
- "music_street": {
-  "file": "music_street.mp3",
-  "w": 0,
-  "h": 0,
-  "frames": 0,
-  "cols": 0,
-  "rows": 0
- },
- "face_secuaz_sheet": {
-  "file": "face_secuaz_sheet.webp",
-  "w": 243,
-  "h": 512,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "68b4fbeb",
-  "skull": 109.4,
-  "foot": 0.988
- },
- "face_patovica_sheet": {
-  "file": "face_patovica_sheet.webp",
-  "w": 409,
-  "h": 512,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "95add3ac",
-  "skull": 184.1,
-  "foot": 0.988
- },
- "face_bombo_sheet": {
-  "file": "face_bombo_sheet.webp",
-  "w": 322,
-  "h": 512,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 144.9,
-  "foot": 0.988,
-  "v": "39344e11"
- },
- "face_mozo_sheet": {
-  "file": "face_mozo_sheet.webp",
-  "w": 386,
-  "h": 512,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 173.7,
-  "foot": 0.988,
-  "v": "6d865c1e"
- },
- "face_delivery_sheet": {
-  "file": "face_delivery_sheet.webp",
-  "w": 318,
-  "h": 512,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "skull": 143.1,
-  "foot": 0.988,
-  "v": "0d8f95dc"
- },
- "cepi_sheet": {
-  "file": "cepi_sheet.webp",
-  "w": 904,
-  "h": 400,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 164.0,
-  "foot": 0.985
- },
- "calle_buenos_aires": {
-  "file": "calle_buenos_aires.webp",
-  "w": 1280,
-  "h": 853,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "cepi_actions_sheet": {
-  "file": "cepi_actions_sheet.webp",
-  "w": 2400,
-  "h": 512,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 205.0,
-  "foot": 0.988
- },
- "cepi_walk_sheet": {
-  "file": "cepi_walk_sheet.webp",
-  "w": 1956,
-  "h": 512,
-  "frames": 6,
-  "cols": 6,
-  "rows": 1,
-  "skull": 221.5,
-  "foot": 0.988
- },
- "chaky_actions_sheet": {
-  "file": "chaky_actions_sheet.webp",
-  "w": 1696,
-  "h": 512,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 120.0,
-  "foot": 0.988
- },
- "chaky_walk_sheet": {
-  "file": "chaky_walk_sheet.webp",
-  "w": 2064,
-  "h": 512,
-  "frames": 6,
-  "cols": 6,
-  "rows": 1,
-  "skull": 129.5,
-  "foot": 0.988
- },
- "douge_actions_sheet": {
-  "file": "douge_actions_sheet.webp",
-  "w": 2016,
-  "h": 512,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 188.0,
-  "foot": 0.988
- },
- "douge_combo_sheet": {
-  "file": "douge_combo_sheet.webp",
-  "w": 1272,
-  "h": 512,
-  "frames": 3,
-  "cols": 3,
-  "rows": 1,
-  "skull": 187.0,
-  "foot": 0.988
- },
- "galpon": {
-  "file": "galpon.webp",
-  "w": 1280,
-  "h": 853,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "henris": {
-  "file": "henris.webp",
-  "w": 960,
-  "h": 640,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "3bced191"
- },
- "lale_actions_sheet": {
-  "file": "lale_actions_sheet.webp",
-  "w": 1680,
-  "h": 512,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 154.0,
-  "foot": 0.988
- },
- "lale_walk_sheet": {
-  "file": "lale_walk_sheet.webp",
-  "w": 1560,
-  "h": 512,
-  "frames": 6,
-  "cols": 6,
-  "rows": 1,
-  "skull": 153.0,
-  "foot": 0.988
- },
- "le_ble": {
-  "file": "le_ble.webp",
-  "w": 960,
-  "h": 640,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "4b1b4eea"
- },
- "marine_actions_sheet": {
-  "file": "marine_actions_sheet.webp",
-  "w": 1440,
-  "h": 512,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 90.0,
-  "foot": 0.988
- },
- "marine_combo_sheet": {
-  "file": "marine_combo_sheet.webp",
-  "w": 1428,
-  "h": 512,
-  "frames": 3,
-  "cols": 3,
-  "rows": 1,
-  "skull": 163.0,
-  "foot": 0.988
- },
- "objetos_sheet": {
-  "file": "objetos_sheet.webp",
-  "w": 768,
-  "h": 768,
-  "frames": 9,
-  "cols": 3,
-  "rows": 3,
-  "names": [
-   "manteca",
-   "pelota",
-   "ticket",
-   "cerveza",
-   "hongo",
-   "hongo_veneno",
-   "medialuna",
-   "sarten",
-   "corazon"
-  ]
- },
- "pinky_actions_sheet": {
-  "file": "pinky_actions_sheet.webp",
-  "w": 1864,
-  "h": 512,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 159.5,
-  "foot": 0.988
- },
- "pinky_walk_sheet": {
-  "file": "pinky_walk_sheet.webp",
-  "w": 2268,
-  "h": 512,
-  "frames": 6,
-  "cols": 6,
-  "rows": 1,
-  "skull": 154.0,
-  "foot": 0.988
- },
- "punto_de_oro": {
-  "file": "punto_de_oro.webp",
-  "w": 960,
-  "h": 640,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "22edbd7a"
- },
- "rescate_sheet": {
-  "file": "rescate_sheet.webp",
-  "w": 620,
-  "h": 512,
-  "frames": 2,
-  "cols": 2,
-  "rows": 1,
-  "skull": 152.0,
-  "foot": 0.988
- },
- "chase_cepi_dead": {
-  "file": "chase_cepi_dead.webp",
-  "w": 384,
-  "h": 340,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_cepi_throw": {
-  "file": "chase_cepi_throw.webp",
-  "w": 396,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_cepi_windup": {
-  "file": "chase_cepi_windup.webp",
-  "w": 396,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_cepi_drive": {
-  "file": "chase_cepi_drive.webp",
-  "w": 396,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_douge_drive": {
-  "file": "chase_douge_drive.webp",
-  "w": 295,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_douge_hit": {
-  "file": "chase_douge_hit.webp",
-  "w": 367,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_douge_jump": {
-  "file": "chase_douge_jump.webp",
-  "w": 233,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_douge_power": {
-  "file": "chase_douge_power.webp",
-  "w": 384,
-  "h": 362,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_marine_drive": {
-  "file": "chase_marine_drive.webp",
-  "w": 361,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_marine_hit": {
-  "file": "chase_marine_hit.webp",
-  "w": 381,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_marine_jump": {
-  "file": "chase_marine_jump.webp",
-  "w": 341,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_marine_power": {
-  "file": "chase_marine_power.webp",
-  "w": 384,
-  "h": 329,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_ob_barricade": {
-  "file": "chase_ob_barricade.webp",
-  "w": 384,
-  "h": 321,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_ob_butter": {
-  "file": "chase_ob_butter.webp",
-  "w": 384,
-  "h": 205,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_ob_pigeons": {
-  "file": "chase_ob_pigeons.webp",
-  "w": 384,
-  "h": 242,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_ob_scooter": {
-  "file": "chase_ob_scooter.webp",
-  "w": 384,
-  "h": 200,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_ob_table": {
-  "file": "chase_ob_table.webp",
-  "w": 384,
-  "h": 224,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_pk_hoja": {
-  "file": "chase_pk_hoja.webp",
-  "w": 156,
-  "h": 160,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_pk_hongo": {
-  "file": "chase_pk_hongo.webp",
-  "w": 160,
-  "h": 143,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "chase_paris_fondo": {
-  "file": "chase_paris_fondo.webp",
-  "w": 1200,
-  "h": 289,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "prop_arbol": {
-  "file": "prop_arbol.webp",
-  "w": 278,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "prop_contenedor": {
-  "file": "prop_contenedor.webp",
-  "w": 443,
-  "h": 358,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "prop_cajones": {
-  "file": "prop_cajones.webp",
-  "w": 448,
-  "h": 333,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "prop_maceta": {
-  "file": "prop_maceta.webp",
-  "w": 316,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "prop_fuente": {
-  "file": "prop_fuente.webp",
-  "w": 364,
-  "h": 369,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "prop_galpon": {
-  "file": "prop_galpon.webp",
-  "w": 434,
-  "h": 384,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_douge_back_hurt": {
-  "file": "arena_douge_back_hurt.webp",
-  "w": 588,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_douge_back_idle": {
-  "file": "arena_douge_back_idle.webp",
-  "w": 380,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_douge_back_punch": {
-  "file": "arena_douge_back_punch.webp",
-  "w": 403,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_fondo": {
-  "file": "arena_fondo.webp",
-  "w": 1280,
-  "h": 714,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_marine_back_hurt": {
-  "file": "arena_marine_back_hurt.webp",
-  "w": 544,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_marine_back_idle": {
-  "file": "arena_marine_back_idle.webp",
-  "w": 317,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_marine_back_punch": {
-  "file": "arena_marine_back_punch.webp",
-  "w": 371,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "douge_walk_sheet": {
-  "file": "douge_walk_sheet.webp",
-  "w": 3000,
-  "h": 512,
-  "frames": 10,
-  "cols": 10,
-  "rows": 1,
-  "skull": 141.0,
-  "foot": 0.996
- },
- "marine_walk_sheet": {
-  "file": "marine_walk_sheet.webp",
-  "w": 1744,
-  "h": 400,
-  "frames": 8,
-  "cols": 8,
-  "rows": 1,
-  "skull": 137.0,
-  "foot": 0.985
- },
- "margot_faces": {
-  "file": "margot_faces.webp",
-  "w": 384,
-  "h": 128,
-  "frames": 3,
-  "cols": 3,
-  "rows": 1
- },
- "arena_douge_back_jump": {
-  "file": "arena_douge_back_jump.webp",
-  "w": 344,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "88384aca",
-  "hk": 1.15
- },
- "arena_douge_back_run0": {
-  "file": "arena_douge_back_run0.webp",
-  "w": 318,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "9b7618aa"
- },
- "arena_douge_back_run1": {
-  "file": "arena_douge_back_run1.webp",
-  "w": 287,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "18b145d9"
- },
- "arena_douge_back_run2": {
-  "file": "arena_douge_back_run2.webp",
-  "w": 317,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "5284ade9"
- },
- "arena_douge_back_run3": {
-  "file": "arena_douge_back_run3.webp",
-  "w": 286,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "a4b798dc"
- },
- "arena_marine_back_jump": {
-  "file": "arena_marine_back_jump.webp",
-  "w": 500,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "9ff54fa1",
-  "hk": 1.15
- },
- "arena_marine_back_run0": {
-  "file": "arena_marine_back_run0.webp",
-  "w": 320,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "1ec34539"
- },
- "arena_marine_back_run1": {
-  "file": "arena_marine_back_run1.webp",
-  "w": 278,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "43bc02be"
- },
- "arena_marine_back_run2": {
-  "file": "arena_marine_back_run2.webp",
-  "w": 318,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "118937c3"
- },
- "arena_marine_back_run3": {
-  "file": "arena_marine_back_run3.webp",
-  "w": 285,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "f0499ea2"
- },
- "arena_chaky_dance_idle": {
-  "file": "arena_chaky_dance_idle.webp",
-  "w": 420,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "61d352e6"
- },
- "arena_chaky_dance_jump": {
-  "file": "arena_chaky_dance_jump.webp",
-  "w": 582,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "ba9ca02d",
-  "hk": 1.04
- },
- "arena_chaky_dance_attack": {
-  "file": "arena_chaky_dance_attack.webp",
-  "w": 429,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "7d98a91d",
-  "hk": 1.08
- },
- "arena_chaky_dance_dodge": {
-  "file": "arena_chaky_dance_dodge.webp",
-  "w": 597,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "3486adbb",
-  "hk": 0.9
- },
- "arena_chaky_dance_laugh": {
-  "file": "arena_chaky_dance_laugh.webp",
-  "w": 350,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "20ee9138"
- },
- "arena_douge_back_dodge": {
-  "file": "arena_douge_back_dodge.webp",
-  "w": 462,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "9a3eade3"
- },
- "arena_marine_back_dodge": {
-  "file": "arena_marine_back_dodge.webp",
-  "w": 503,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "1d82352c"
- },
- "arena_cepi_idle": {
-  "file": "arena_cepi_idle.webp",
-  "w": 416,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "7a7c70e7"
- },
- "arena_cepi_smash": {
-  "file": "arena_cepi_smash.webp",
-  "w": 455,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "b6d5dc1c",
-  "hk": 1.12
- },
- "arena_cepi_block": {
-  "file": "arena_cepi_block.webp",
-  "w": 362,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "01f378bb"
- },
- "arena_cepi_tired": {
-  "file": "arena_cepi_tired.webp",
-  "w": 368,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "bed44179",
-  "hk": 0.94
- },
- "arena_cepi_stun": {
-  "file": "arena_cepi_stun.webp",
-  "w": 429,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "552c5847",
-  "hk": 1.06
- },
- "arena_cepi_back": {
-  "file": "arena_cepi_back.webp",
-  "w": 382,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "e5e1b3b2"
- },
- "arena_cepi_point": {
-  "file": "arena_cepi_point.webp",
-  "w": 411,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "52ca62da"
- },
- "arena_cepi_cardboard": {
-  "file": "arena_cepi_cardboard.webp",
-  "w": 421,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "cf2a2b9c",
-  "hk": 1.12
- },
- "arena_cepi_ko": {
-  "file": "arena_cepi_ko.webp",
-  "w": 443,
-  "h": 344,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "e20c277f",
-  "hk": 0.65
- },
- "arena_cepi_fondo": {
-  "file": "arena_cepi_fondo.webp",
-  "w": 714,
-  "h": 1280,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "4bb9b413"
- },
- "arena_lale_idle": {
-  "file": "arena_lale_idle.webp",
-  "w": 409,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "1877d8fc"
- },
- "douge_dance_sheet": {
-  "file": "douge_dance_sheet.webp",
-  "w": 1200,
-  "h": 512,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 146.0,
-  "foot": 0.988
- },
- "marine_dance_sheet": {
-  "file": "marine_dance_sheet.webp",
-  "w": 1160,
-  "h": 512,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "skull": 144.0,
-  "foot": 0.988
- },
- "arena_aeropuerto_fondo": {
-  "file": "arena_aeropuerto_fondo.webp",
-  "w": 1280,
-  "h": 714,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1
- },
- "arena_lale_throw": {
-  "file": "arena_lale_throw.webp",
-  "w": 349,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "1bba3cd3"
- },
- "arena_lale_skate": {
-  "file": "arena_lale_skate.webp",
-  "w": 571,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "4b38c2b9",
-  "hk": 1.04
- },
- "arena_lale_floured": {
-  "file": "arena_lale_floured.webp",
-  "w": 570,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "ef52314d",
-  "hk": 1.04
- },
- "arena_lale_hurt": {
-  "file": "arena_lale_hurt.webp",
-  "w": 588,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "d4704d9e",
-  "hk": 1.05
- },
- "arena_lale_ko": {
-  "file": "arena_lale_ko.webp",
-  "w": 626,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "fee17c88",
-  "hk": 0.86
- },
- "arena_pinky_wave": {
-  "file": "arena_pinky_wave.webp",
-  "w": 487,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "f720c312",
-  "hk": 1.12
- },
- "arena_pinky_charge": {
-  "file": "arena_pinky_charge.webp",
-  "w": 457,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "477ac4bb"
- },
- "arena_pinky_reveal": {
-  "file": "arena_pinky_reveal.webp",
-  "w": 314,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "19607cff"
- },
- "arena_pinky_hurt": {
-  "file": "arena_pinky_hurt.webp",
-  "w": 577,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "f42ad116",
-  "hk": 1.06
- },
- "arena_pinky_ko": {
-  "file": "arena_pinky_ko.webp",
-  "w": 693,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "9b469267",
-  "hk": 0.88
- },
- "arena_margot_hero": {
-  "file": "arena_margot_hero.webp",
-  "w": 796,
-  "h": 768,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "879842e7"
- },
- "arena_lale_fondo": {
-  "file": "arena_lale_fondo.webp",
-  "w": 1280,
-  "h": 714,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "0145c573"
- },
- "arena_pinky_fondo": {
-  "file": "arena_pinky_fondo.webp",
-  "w": 1280,
-  "h": 714,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "5e925450"
- },
- "arena_familia_festejo": {
-  "file": "arena_familia_festejo.webp",
-  "w": 1200,
-  "h": 896,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "0764dc29"
- },
- "arena_douge_victory": {
-  "file": "arena_douge_victory.webp",
-  "w": 495,
-  "h": 457,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "ecfa00ed"
- },
- "arena_marine_victory": {
-  "file": "arena_marine_victory.webp",
-  "w": 341,
-  "h": 502,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "fdfc3b37"
- },
- "monumento_maradona": {
-  "file": "monumento_maradona.webp",
-  "w": 271,
-  "h": 512,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "5391a89f"
- },
- "monumento_zidane": {
-  "file": "monumento_zidane.webp",
-  "w": 220,
-  "h": 512,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "13812d81"
- },
- "roland_garros": {
-  "file": "roland_garros.webp",
-  "w": 1280,
-  "h": 714,
-  "frames": 1,
-  "cols": 1,
-  "rows": 1,
-  "v": "bfacca4c"
- },
- "granja_lapadite": {
-  "file": "granja_lapadite.webp",
-  "w": 960,
-  "h": 640,
-  "frames": 1,
-  "cols": 0,
-  "rows": 0,
-  "v": "f74dc180"
- },
- "patovica_sheet": {
-  "file": "patovica_sheet.webp",
-  "w": 1064,
-  "h": 384,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "foot": 0.99,
-  "v": "7f9544d0"
- },
- "secuaz_sheet": {
-  "file": "secuaz_sheet.webp",
-  "w": 848,
-  "h": 384,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "foot": 0.99,
-  "v": "03497c15"
- },
- "bombo_sheet": {
-  "file": "bombo_sheet.webp",
-  "w": 896,
-  "h": 384,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "foot": 0.99,
-  "v": "8e1ec61b"
- },
- "mozo_sheet": {
-  "file": "mozo_sheet.webp",
-  "w": 888,
-  "h": 384,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "foot": 0.99,
-  "v": "e84bcdea"
- },
- "delivery_sheet": {
-  "file": "delivery_sheet.webp",
-  "w": 952,
-  "h": 384,
-  "frames": 4,
-  "cols": 4,
-  "rows": 1,
-  "foot": 0.99,
-  "v": "c805076c"
- }
+  "douge_idle": {
+    "file": "douge_idle.webp",
+    "w": 194,
+    "h": 420,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "skull": 132
+  },
+  "douge_run": {
+    "file": "douge_run.webp",
+    "w": 1200,
+    "h": 400,
+    "frames": 6,
+    "cols": 6,
+    "rows": 1,
+    "skull": 143,
+    "foot": 0.925
+  },
+  "douge_attack": {
+    "file": "douge_attack.webp",
+    "w": 398,
+    "h": 420,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "skull": 164
+  },
+  "marine_idle": {
+    "file": "marine_idle.webp",
+    "w": 168,
+    "h": 420,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "skull": 121
+  },
+  "marine_run": {
+    "file": "marine_run.webp",
+    "w": 1200,
+    "h": 400,
+    "frames": 6,
+    "cols": 6,
+    "rows": 1,
+    "skull": 114.5,
+    "foot": 0.925
+  },
+  "marine_attack": {
+    "file": "marine_attack.webp",
+    "w": 390,
+    "h": 420,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "skull": 159
+  },
+  "chaky_run": {
+    "file": "chaky_run.webp",
+    "w": 1200,
+    "h": 400,
+    "frames": 6,
+    "cols": 6,
+    "rows": 1,
+    "skull": 61,
+    "foot": 0.925
+  },
+  "margot_sheet": {
+    "file": "margot_sheet.webp",
+    "w": 800,
+    "h": 800,
+    "frames": 4,
+    "cols": 2,
+    "rows": 2,
+    "skull": 152
+  },
+  "street_bg": {
+    "file": "street_bg.webp",
+    "w": 1024,
+    "h": 683,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "skull": 1024
+  },
+  "courier": {
+    "file": "courier.webp",
+    "w": 936,
+    "h": 1024,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "skull": 331
+  },
+  "kidnap_sheet": {
+    "file": "kidnap_sheet.webp",
+    "w": 800,
+    "h": 800,
+    "frames": 4,
+    "cols": 2,
+    "rows": 2,
+    "skull": 136.5
+  },
+  "face_secuaz_sheet": {
+    "file": "face_secuaz_sheet.webp",
+    "w": 243,
+    "h": 512,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "68b4fbeb",
+    "skull": 109.4,
+    "foot": 0.988
+  },
+  "face_patovica_sheet": {
+    "file": "face_patovica_sheet.webp",
+    "w": 409,
+    "h": 512,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "95add3ac",
+    "skull": 184.1,
+    "foot": 0.988
+  },
+  "face_bombo_sheet": {
+    "file": "face_bombo_sheet.webp",
+    "w": 322,
+    "h": 512,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "skull": 144.9,
+    "foot": 0.988,
+    "v": "39344e11"
+  },
+  "face_mozo_sheet": {
+    "file": "face_mozo_sheet.webp",
+    "w": 386,
+    "h": 512,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "skull": 173.7,
+    "foot": 0.988,
+    "v": "6d865c1e"
+  },
+  "face_delivery_sheet": {
+    "file": "face_delivery_sheet.webp",
+    "w": 318,
+    "h": 512,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "skull": 143.1,
+    "foot": 0.988,
+    "v": "0d8f95dc"
+  },
+  "cepi_sheet": {
+    "file": "cepi_sheet.webp",
+    "w": 904,
+    "h": 400,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "skull": 164,
+    "foot": 0.985
+  },
+  "calle_buenos_aires": {
+    "file": "calle_buenos_aires.webp",
+    "w": 1280,
+    "h": 853,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "cepi_actions_sheet": {
+    "file": "cepi_actions_sheet.webp",
+    "w": 2400,
+    "h": 512,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "skull": 205,
+    "foot": 0.988
+  },
+  "cepi_walk_sheet": {
+    "file": "cepi_walk_sheet.webp",
+    "w": 1956,
+    "h": 512,
+    "frames": 6,
+    "cols": 6,
+    "rows": 1,
+    "skull": 221.5,
+    "foot": 0.988
+  },
+  "chaky_actions_sheet": {
+    "file": "chaky_actions_sheet.webp",
+    "w": 1696,
+    "h": 512,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "skull": 120,
+    "foot": 0.988
+  },
+  "chaky_walk_sheet": {
+    "file": "chaky_walk_sheet.webp",
+    "w": 2064,
+    "h": 512,
+    "frames": 6,
+    "cols": 6,
+    "rows": 1,
+    "skull": 129.5,
+    "foot": 0.988
+  },
+  "douge_actions_sheet": {
+    "file": "douge_actions_sheet.webp",
+    "w": 2016,
+    "h": 512,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "skull": 188,
+    "foot": 0.988
+  },
+  "douge_combo_sheet": {
+    "file": "douge_combo_sheet.webp",
+    "w": 1272,
+    "h": 512,
+    "frames": 3,
+    "cols": 3,
+    "rows": 1,
+    "skull": 187,
+    "foot": 0.988
+  },
+  "galpon": {
+    "file": "galpon.webp",
+    "w": 1280,
+    "h": 853,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "henris": {
+    "file": "henris.webp",
+    "w": 960,
+    "h": 640,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "3bced191"
+  },
+  "lale_actions_sheet": {
+    "file": "lale_actions_sheet.webp",
+    "w": 1680,
+    "h": 512,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "skull": 154,
+    "foot": 0.988
+  },
+  "lale_walk_sheet": {
+    "file": "lale_walk_sheet.webp",
+    "w": 1560,
+    "h": 512,
+    "frames": 6,
+    "cols": 6,
+    "rows": 1,
+    "skull": 153,
+    "foot": 0.988
+  },
+  "le_ble": {
+    "file": "le_ble.webp",
+    "w": 960,
+    "h": 640,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "4b1b4eea"
+  },
+  "marine_actions_sheet": {
+    "file": "marine_actions_sheet.webp",
+    "w": 1440,
+    "h": 512,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "skull": 90,
+    "foot": 0.988
+  },
+  "marine_combo_sheet": {
+    "file": "marine_combo_sheet.webp",
+    "w": 1428,
+    "h": 512,
+    "frames": 3,
+    "cols": 3,
+    "rows": 1,
+    "skull": 163,
+    "foot": 0.988
+  },
+  "objetos_sheet": {
+    "file": "objetos_sheet.webp",
+    "w": 768,
+    "h": 768,
+    "frames": 9,
+    "cols": 3,
+    "rows": 3,
+    "names": [
+      "manteca",
+      "pelota",
+      "ticket",
+      "cerveza",
+      "hongo",
+      "hongo_veneno",
+      "medialuna",
+      "sarten",
+      "corazon"
+    ]
+  },
+  "pinky_actions_sheet": {
+    "file": "pinky_actions_sheet.webp",
+    "w": 1864,
+    "h": 512,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "skull": 159.5,
+    "foot": 0.988
+  },
+  "pinky_walk_sheet": {
+    "file": "pinky_walk_sheet.webp",
+    "w": 2268,
+    "h": 512,
+    "frames": 6,
+    "cols": 6,
+    "rows": 1,
+    "skull": 154,
+    "foot": 0.988
+  },
+  "punto_de_oro": {
+    "file": "punto_de_oro.webp",
+    "w": 960,
+    "h": 640,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "22edbd7a"
+  },
+  "rescate_sheet": {
+    "file": "rescate_sheet.webp",
+    "w": 620,
+    "h": 512,
+    "frames": 2,
+    "cols": 2,
+    "rows": 1,
+    "skull": 152,
+    "foot": 0.988
+  },
+  "chase_cepi_dead": {
+    "file": "chase_cepi_dead.webp",
+    "w": 384,
+    "h": 340,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_cepi_throw": {
+    "file": "chase_cepi_throw.webp",
+    "w": 396,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_cepi_windup": {
+    "file": "chase_cepi_windup.webp",
+    "w": 396,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_cepi_drive": {
+    "file": "chase_cepi_drive.webp",
+    "w": 396,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_douge_drive": {
+    "file": "chase_douge_drive.webp",
+    "w": 295,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_douge_hit": {
+    "file": "chase_douge_hit.webp",
+    "w": 367,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_douge_jump": {
+    "file": "chase_douge_jump.webp",
+    "w": 233,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_douge_power": {
+    "file": "chase_douge_power.webp",
+    "w": 384,
+    "h": 362,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_marine_drive": {
+    "file": "chase_marine_drive.webp",
+    "w": 361,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_marine_hit": {
+    "file": "chase_marine_hit.webp",
+    "w": 381,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_marine_jump": {
+    "file": "chase_marine_jump.webp",
+    "w": 341,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_marine_power": {
+    "file": "chase_marine_power.webp",
+    "w": 384,
+    "h": 329,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_ob_barricade": {
+    "file": "chase_ob_barricade.webp",
+    "w": 384,
+    "h": 321,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_ob_butter": {
+    "file": "chase_ob_butter.webp",
+    "w": 384,
+    "h": 205,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_ob_pigeons": {
+    "file": "chase_ob_pigeons.webp",
+    "w": 384,
+    "h": 242,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_ob_scooter": {
+    "file": "chase_ob_scooter.webp",
+    "w": 384,
+    "h": 200,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_ob_table": {
+    "file": "chase_ob_table.webp",
+    "w": 384,
+    "h": 224,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_pk_hoja": {
+    "file": "chase_pk_hoja.webp",
+    "w": 156,
+    "h": 160,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "chase_pk_hongo": {
+    "file": "chase_pk_hongo.webp",
+    "w": 160,
+    "h": 143,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "prop_arbol": {
+    "file": "prop_arbol.webp",
+    "w": 278,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "prop_contenedor": {
+    "file": "prop_contenedor.webp",
+    "w": 443,
+    "h": 358,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "prop_cajones": {
+    "file": "prop_cajones.webp",
+    "w": 448,
+    "h": 333,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "prop_maceta": {
+    "file": "prop_maceta.webp",
+    "w": 316,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "prop_fuente": {
+    "file": "prop_fuente.webp",
+    "w": 364,
+    "h": 369,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "prop_galpon": {
+    "file": "prop_galpon.webp",
+    "w": 434,
+    "h": 384,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "arena_douge_back_hurt": {
+    "file": "arena_douge_back_hurt.webp",
+    "w": 588,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "arena_douge_back_idle": {
+    "file": "arena_douge_back_idle.webp",
+    "w": 380,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "arena_douge_back_punch": {
+    "file": "arena_douge_back_punch.webp",
+    "w": 403,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "arena_fondo": {
+    "file": "arena_fondo.webp",
+    "w": 1280,
+    "h": 714,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "arena_marine_back_hurt": {
+    "file": "arena_marine_back_hurt.webp",
+    "w": 544,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "arena_marine_back_idle": {
+    "file": "arena_marine_back_idle.webp",
+    "w": 317,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "arena_marine_back_punch": {
+    "file": "arena_marine_back_punch.webp",
+    "w": 371,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "douge_walk_sheet": {
+    "file": "douge_walk_sheet.webp",
+    "w": 3000,
+    "h": 512,
+    "frames": 10,
+    "cols": 10,
+    "rows": 1,
+    "skull": 141,
+    "foot": 0.996
+  },
+  "marine_walk_sheet": {
+    "file": "marine_walk_sheet.webp",
+    "w": 1744,
+    "h": 400,
+    "frames": 8,
+    "cols": 8,
+    "rows": 1,
+    "skull": 137,
+    "foot": 0.985
+  },
+  "margot_faces": {
+    "file": "margot_faces.webp",
+    "w": 384,
+    "h": 128,
+    "frames": 3,
+    "cols": 3,
+    "rows": 1
+  },
+  "arena_douge_back_jump": {
+    "file": "arena_douge_back_jump.webp",
+    "w": 344,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "88384aca",
+    "hk": 1.15
+  },
+  "arena_douge_back_run0": {
+    "file": "arena_douge_back_run0.webp",
+    "w": 318,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "9b7618aa"
+  },
+  "arena_douge_back_run1": {
+    "file": "arena_douge_back_run1.webp",
+    "w": 287,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "18b145d9"
+  },
+  "arena_douge_back_run2": {
+    "file": "arena_douge_back_run2.webp",
+    "w": 317,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "5284ade9"
+  },
+  "arena_douge_back_run3": {
+    "file": "arena_douge_back_run3.webp",
+    "w": 286,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "a4b798dc"
+  },
+  "arena_marine_back_jump": {
+    "file": "arena_marine_back_jump.webp",
+    "w": 500,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "9ff54fa1",
+    "hk": 1.15
+  },
+  "arena_marine_back_run0": {
+    "file": "arena_marine_back_run0.webp",
+    "w": 320,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "1ec34539"
+  },
+  "arena_marine_back_run1": {
+    "file": "arena_marine_back_run1.webp",
+    "w": 278,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "43bc02be"
+  },
+  "arena_marine_back_run2": {
+    "file": "arena_marine_back_run2.webp",
+    "w": 318,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "118937c3"
+  },
+  "arena_marine_back_run3": {
+    "file": "arena_marine_back_run3.webp",
+    "w": 285,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "f0499ea2"
+  },
+  "arena_chaky_dance_idle": {
+    "file": "arena_chaky_dance_idle.webp",
+    "w": 420,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "61d352e6"
+  },
+  "arena_chaky_dance_jump": {
+    "file": "arena_chaky_dance_jump.webp",
+    "w": 582,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "ba9ca02d",
+    "hk": 1.04
+  },
+  "arena_chaky_dance_attack": {
+    "file": "arena_chaky_dance_attack.webp",
+    "w": 429,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "7d98a91d",
+    "hk": 1.08
+  },
+  "arena_chaky_dance_dodge": {
+    "file": "arena_chaky_dance_dodge.webp",
+    "w": 597,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "3486adbb",
+    "hk": 0.9
+  },
+  "arena_chaky_dance_laugh": {
+    "file": "arena_chaky_dance_laugh.webp",
+    "w": 350,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "20ee9138"
+  },
+  "arena_douge_back_dodge": {
+    "file": "arena_douge_back_dodge.webp",
+    "w": 462,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "9a3eade3"
+  },
+  "arena_marine_back_dodge": {
+    "file": "arena_marine_back_dodge.webp",
+    "w": 503,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "1d82352c"
+  },
+  "arena_cepi_idle": {
+    "file": "arena_cepi_idle.webp",
+    "w": 416,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "7a7c70e7"
+  },
+  "arena_cepi_smash": {
+    "file": "arena_cepi_smash.webp",
+    "w": 455,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "b6d5dc1c",
+    "hk": 1.12
+  },
+  "arena_cepi_block": {
+    "file": "arena_cepi_block.webp",
+    "w": 362,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "01f378bb"
+  },
+  "arena_cepi_tired": {
+    "file": "arena_cepi_tired.webp",
+    "w": 368,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "bed44179",
+    "hk": 0.94
+  },
+  "arena_cepi_stun": {
+    "file": "arena_cepi_stun.webp",
+    "w": 429,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "552c5847",
+    "hk": 1.06
+  },
+  "arena_cepi_back": {
+    "file": "arena_cepi_back.webp",
+    "w": 382,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "e5e1b3b2"
+  },
+  "arena_cepi_point": {
+    "file": "arena_cepi_point.webp",
+    "w": 411,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "52ca62da"
+  },
+  "arena_cepi_cardboard": {
+    "file": "arena_cepi_cardboard.webp",
+    "w": 421,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "cf2a2b9c",
+    "hk": 1.12
+  },
+  "arena_cepi_ko": {
+    "file": "arena_cepi_ko.webp",
+    "w": 443,
+    "h": 344,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "e20c277f",
+    "hk": 0.65
+  },
+  "arena_cepi_fondo": {
+    "file": "arena_cepi_fondo.webp",
+    "w": 714,
+    "h": 1280,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "4bb9b413"
+  },
+  "arena_lale_idle": {
+    "file": "arena_lale_idle.webp",
+    "w": 409,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "1877d8fc"
+  },
+  "douge_dance_sheet": {
+    "file": "douge_dance_sheet.webp",
+    "w": 1200,
+    "h": 512,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "skull": 146,
+    "foot": 0.988
+  },
+  "marine_dance_sheet": {
+    "file": "marine_dance_sheet.webp",
+    "w": 1160,
+    "h": 512,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "skull": 144,
+    "foot": 0.988
+  },
+  "arena_aeropuerto_fondo": {
+    "file": "arena_aeropuerto_fondo.webp",
+    "w": 1280,
+    "h": 714,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1
+  },
+  "arena_lale_throw": {
+    "file": "arena_lale_throw.webp",
+    "w": 349,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "1bba3cd3"
+  },
+  "arena_lale_skate": {
+    "file": "arena_lale_skate.webp",
+    "w": 571,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "4b38c2b9",
+    "hk": 1.04
+  },
+  "arena_lale_floured": {
+    "file": "arena_lale_floured.webp",
+    "w": 570,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "ef52314d",
+    "hk": 1.04
+  },
+  "arena_lale_hurt": {
+    "file": "arena_lale_hurt.webp",
+    "w": 588,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "d4704d9e",
+    "hk": 1.05
+  },
+  "arena_lale_ko": {
+    "file": "arena_lale_ko.webp",
+    "w": 626,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "fee17c88",
+    "hk": 0.86
+  },
+  "arena_pinky_wave": {
+    "file": "arena_pinky_wave.webp",
+    "w": 487,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "f720c312",
+    "hk": 1.12
+  },
+  "arena_pinky_charge": {
+    "file": "arena_pinky_charge.webp",
+    "w": 457,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "477ac4bb"
+  },
+  "arena_pinky_reveal": {
+    "file": "arena_pinky_reveal.webp",
+    "w": 314,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "19607cff"
+  },
+  "arena_pinky_hurt": {
+    "file": "arena_pinky_hurt.webp",
+    "w": 577,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "f42ad116",
+    "hk": 1.06
+  },
+  "arena_pinky_ko": {
+    "file": "arena_pinky_ko.webp",
+    "w": 693,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "9b469267",
+    "hk": 0.88
+  },
+  "arena_margot_hero": {
+    "file": "arena_margot_hero.webp",
+    "w": 796,
+    "h": 768,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "879842e7"
+  },
+  "arena_lale_fondo": {
+    "file": "arena_lale_fondo.webp",
+    "w": 1280,
+    "h": 714,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "0145c573"
+  },
+  "arena_pinky_fondo": {
+    "file": "arena_pinky_fondo.webp",
+    "w": 1280,
+    "h": 714,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "5e925450"
+  },
+  "arena_familia_festejo": {
+    "file": "arena_familia_festejo.webp",
+    "w": 1200,
+    "h": 896,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "0764dc29"
+  },
+  "arena_douge_victory": {
+    "file": "arena_douge_victory.webp",
+    "w": 495,
+    "h": 457,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "ecfa00ed"
+  },
+  "arena_marine_victory": {
+    "file": "arena_marine_victory.webp",
+    "w": 341,
+    "h": 502,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "fdfc3b37"
+  },
+  "monumento_maradona": {
+    "file": "monumento_maradona.webp",
+    "w": 271,
+    "h": 512,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "5391a89f"
+  },
+  "monumento_zidane": {
+    "file": "monumento_zidane.webp",
+    "w": 220,
+    "h": 512,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "13812d81"
+  },
+  "roland_garros": {
+    "file": "roland_garros.webp",
+    "w": 1280,
+    "h": 714,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "bfacca4c"
+  },
+  "granja_lapadite": {
+    "file": "granja_lapadite.webp",
+    "w": 960,
+    "h": 640,
+    "frames": 1,
+    "cols": 0,
+    "rows": 0,
+    "v": "f74dc180"
+  },
+  "patovica_sheet": {
+    "file": "patovica_sheet.webp",
+    "w": 1064,
+    "h": 384,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "foot": 0.99,
+    "v": "7f9544d0"
+  },
+  "secuaz_sheet": {
+    "file": "secuaz_sheet.webp",
+    "w": 848,
+    "h": 384,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "foot": 0.99,
+    "v": "03497c15"
+  },
+  "bombo_sheet": {
+    "file": "bombo_sheet.webp",
+    "w": 896,
+    "h": 384,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "foot": 0.99,
+    "v": "8e1ec61b"
+  },
+  "mozo_sheet": {
+    "file": "mozo_sheet.webp",
+    "w": 888,
+    "h": 384,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "foot": 0.99,
+    "v": "e84bcdea"
+  },
+  "delivery_sheet": {
+    "file": "delivery_sheet.webp",
+    "w": 952,
+    "h": 384,
+    "frames": 4,
+    "cols": 4,
+    "rows": 1,
+    "foot": 0.99,
+    "v": "c805076c"
+  }
 }

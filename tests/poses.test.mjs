@@ -10,7 +10,7 @@ const headM = (name, ref, heightM) => {
   return heightM * poseHeight(man, name, ref) / (m.h / m.rows) * m.skull;
 };
 
-for (const [hero, poses] of [['douge', ['run', 'attack']], ['marine', ['run', 'attack']], ['boss', ['run', 'attack', 'hurt']]]) {
+for (const [hero, poses] of [['douge', ['run', 'attack']], ['marine', ['run', 'attack']]]) {
   test(`${hero}: la cabeza mide lo mismo en todas las poses`, () => {
     const ref = hero + '_idle';
     const base = headM(ref, ref, 2.3);

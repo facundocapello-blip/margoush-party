@@ -393,7 +393,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
         }
         if (input.consume('attack')) { if (swing) buffer = 0.18; else startSwing(); }
         if (buffer > 0) buffer = Math.max(0, buffer - dt);
-        if (input.attackHeld && hero.power >= 1) { holdT += dt; if (holdT >= 0.45) usePower(); } else holdT = 0;
+        if (input.pressed('attack') && hero.power >= 1) { holdT += dt; if (holdT >= POWER.hold) usePower(); } else holdT = 0;
         if (input.consume('power') && hero.power >= 1) usePower();
 
         let tx, tz;

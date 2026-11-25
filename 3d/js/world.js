@@ -505,17 +505,6 @@ export function buildStreet(scene, assets) {
     [lcLeft, lcRight]
   ];
   const baGaps = splitGaps(-7, BORDER_X, baReserved);
-  // Nivel 1: casitas porteñas de chapa de colores (Buenos Aires ya no se parece a Francia)
-  const baMatsFallback = Array.from({ length: CHAPA.length }, (_, i) => new THREE.MeshBasicMaterial({ map: canvasTex(512, 768, porteno(i)), fog: false }));
-  function portenoRun(from, to, k = 0) {
-    const span = to - from, n = Math.max(1, Math.round(span / 6.8)), w = span / n, BH = 9.3;
-    for (let i = 0; i < n; i++) {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, BH), baMatsFallback[k++ % baMatsFallback.length]);
-      m.position.set(from + (i + 0.5) * w, BH / 2, BACK_Z - 0.02);
-      scene.add(m);
-    }
-    return k;
-  }
   const baSeams = [];
   if (assets.has?.('calle_buenos_aires')) {
     // Buenos Aires: recorta los 3 locales pintados estilo Pixar de calle_buenos_aires (KIOSCO, PARRILLA, PIZZERÍA)
@@ -559,8 +548,17 @@ export function buildStreet(scene, assets) {
       }
     }
   } else {
+    // Fallback procedural solo si falta calle_buenos_aires (evita crear 8 CanvasTexture de 512×768 sin uso)
+    const baMatsFallback = Array.from({ length: CHAPA.length }, (_, i) => new THREE.MeshBasicMaterial({ map: canvasTex(512, 768, porteno(i)), fog: false }));
     let kBA = 0;
-    for (const [from, to] of baGaps) kBA = portenoRun(from, to, kBA);
+    for (const [from, to] of baGaps) {
+      const span = to - from, n = Math.max(1, Math.round(span / 6.8)), w = span / n, BH = 9.3;
+      for (let i = 0; i < n; i++) {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, BH), baMatsFallback[kBA++ % baMatsFallback.length]);
+        m.position.set(from + (i + 0.5) * w, BH / 2, BACK_Z - 0.02);
+        scene.add(m);
+      }
+    }
   }
   // Locales famosos: cada uno ocupa su propio espacio reservado en la calle (sin nada detrás que se corte)
   for (const L of LANDMARKS) {

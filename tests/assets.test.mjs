@@ -6,8 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const dir = fileURLToPath(new URL('../3d/assets/', import.meta.url));
 const NAMES = ['douge_idle','douge_run','douge_attack','marine_idle','marine_run','marine_attack','chaky_run',
-  'boss_idle','boss_run','boss_attack','boss_hurt','margot_sheet','kidnap_sheet','courier','street_bg',
-  'music_street',
+  'margot_sheet','kidnap_sheet','courier','street_bg',
   'face_secuaz_sheet','face_patovica_sheet','face_bombo_sheet','face_mozo_sheet','face_delivery_sheet',
   'cepi_sheet',
   'arena_chaky_dance_idle','arena_chaky_dance_jump','arena_chaky_dance_attack','arena_chaky_dance_dodge','arena_chaky_dance_laugh',

@@ -483,3 +483,11 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 
 
 
+
+## 2026-11-24 (5) · Auditoría 360° (4 agentes) y Tanda 1 (4 fixes P0)
+- **P0-1 · Poder táctil en Cepi, Lale y Pinky (`3d/js/arena_cepi.js`, `arena_lale.js`, `arena_pinky.js`):** corregido `input.attackHeld` (inexistente) por `input.pressed('attack')` con `POWER.hold` (`0,45 s`) para que mantener `👊` en iPhone dispare el poder también en esas 3 arenas.
+- **P0-2 · Audio en Safari iOS (`3d/js/audio.js`):** `ensure()` y `unlock` ahora chequean `ac.state !== 'running'` (cubre estado `'interrupted'` de iOS al volver de segundo plano/llamada); `pauseMusic()` frena `synthTimer` y suspende el `AudioContext`; `resumeMusic()` lo reanuda y reactiva el sintetizador.
+- **P0-3 · HUD sin solapamientos en arenas (`3d/css/game.css`):** bajados `.cepi-tell`, `.pinky-margot-cue` y `.margot-btn` debajo de `#boss-bar` en vertical (`152px`) y horizontal (`118px`); separada `.fever-pill` por encima de `.phase-card.p2` cuando cambia de ronda en Modo Disco.
+- **P0-4 · Poda de assets muertos + ahorro de VRAM (`3d/assets/`, `manifest.json`, `3d/js/world.js`, `tests/`):** eliminados 6 archivos sin uso (`music_street.mp3`, `boss_{idle,run,attack,hurt}.webp`, `chase_paris_fondo.webp`) y movido `baMatsFallback` al `else` de `world.js` (ahorra 8 `CanvasTexture` de 512×768 al arranque). Peso total `3d/assets/`: **9,51 MB → 7,84 MB** (129 archivos).
+- **Verificación:** `node --check` OK en los 5 JS editados, `node tools/stamp_versions.mjs` OK, `npm test` **77/78 en verde, 0 fallos, 1 omitido** (`check_sprites.py` sin `numpy` local). **Pendiente:** validación física en Safari iPhone 15 Pro Max (multitouch + poder en Cepi/Lale/Pinky, recuperación de audio tras segundo plano y HUD vertical/horizontal).
+- **Rollback:** volver `main` al commit `a573d17`.

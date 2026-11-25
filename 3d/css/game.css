@@ -873,6 +873,7 @@ body.chaky-intro-on #arena-ui .piu { opacity: .25; transition: opacity .4s; }
   pointer-events: none; z-index: 4; white-space: nowrap;
 }
 #arena-ui .fever-pill.hidden { display: none; }
+#arena-ui:has(.phase-card.p2:not(.hidden)) .fever-pill { bottom: calc(var(--deck-height) + var(--safe-b) + 78px); }
 #arena-ui .dance-count {
   position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%) scale(0.7);
   font: 700 clamp(38px, 11vw, 58px)/1 Fredoka, sans-serif; color: #fde047;
@@ -916,7 +917,7 @@ body.chaky-intro-on #arena-ui .piu { opacity: .25; transition: opacity .4s; }
 body.cepi-duel-on #touch { display: none; }
 #arena-ui .cepi-duel { position: absolute; left: 0; right: 0; bottom: 0; top: 0; pointer-events: none; z-index: 4; }
 #arena-ui .cepi-duel.hidden { display: none; }
-#arena-ui .cepi-tell { position: absolute; left: 50%; top: calc(138px + var(--safe-t)); transform: translateX(-50%); padding: 9px 18px; border-radius: 16px; background: rgba(12, 24, 52, .9); border: 3px solid #7cc6ff; color: #fff; font: 700 clamp(16px, 4.4vw, 22px) / 1.15 Fredoka, sans-serif; text-shadow: 0 2px 0 #000a; max-width: 90vw; text-align: center; }
+#arena-ui .cepi-tell { position: absolute; left: 50%; top: calc(152px + var(--safe-t)); transform: translateX(-50%); padding: 9px 18px; border-radius: 16px; background: rgba(12, 24, 52, .9); border: 3px solid #7cc6ff; color: #fff; font: 700 clamp(16px, 4.4vw, 22px) / 1.15 Fredoka, sans-serif; text-shadow: 0 2px 0 #000a; max-width: 90vw; text-align: center; }
 #arena-ui .cepi-tell.alert { border-color: #ff4d5e; background: rgba(96, 12, 24, .94); color: #ffe066; animation: pulse-center .28s ease-in-out infinite alternate; }
 #arena-ui .cepi-tell.ok { border-color: #6dff8a; color: #9bf7c4; }
 #arena-ui .cepi-tell.bad { border-color: #ff4d5e; color: #ff9b9b; }
@@ -925,18 +926,18 @@ body.cepi-duel-on #touch { display: none; }
 #arena-ui .cepi-btns button.safe { border-color: #6dff8a; background: rgba(18, 96, 56, .92); box-shadow: 0 6px 0 #0b3d22, 0 0 24px #6dff8a99; }
 #arena-ui .cepi-btns button.picked, #arena-ui .cepi-btns button:active { background: #2f8cff; border-color: #ffe066; transform: translateY(3px); box-shadow: 0 3px 0 #091c3e; }
 /* Arena final de Pinky — anticipación y botón de remate heroico de Margot */
-#arena-ui .pinky-margot-cue { position: absolute; left: 50%; top: calc(144px + var(--safe-t)); transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 18px; border: 2px solid #ff99cc; background: rgba(46, 14, 42, 0.92); color: #ffe6f2; font: 700 clamp(13px, 3.8vw, 16px)/1.15 Fredoka, sans-serif; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); pointer-events: none; z-index: 6; max-width: 92vw; }
+#arena-ui .pinky-margot-cue { position: absolute; left: 50%; top: calc(152px + var(--safe-t)); transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 18px; border: 2px solid #ff99cc; background: rgba(46, 14, 42, 0.92); color: #ffe6f2; font: 700 clamp(13px, 3.8vw, 16px)/1.15 Fredoka, sans-serif; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); pointer-events: none; z-index: 6; max-width: 92vw; }
 #arena-ui .pinky-margot-cue.hidden { display: none; }
-#arena-ui .margot-btn { position: absolute; left: 50%; top: calc(144px + var(--safe-t)); transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px 10px 10px; border-radius: 22px; border: 3px solid #ffe066; background: linear-gradient(180deg, #ff5e99, #c82568); color: #fff; font: 700 clamp(16px, 4.4vw, 20px) Fredoka, sans-serif; box-shadow: 0 6px 0 #6e1036, 0 0 24px #ff77aa99; pointer-events: auto; touch-action: none; z-index: 6; animation: pulse-center .48s ease-in-out infinite alternate; white-space: nowrap; max-width: 94vw; }
+#arena-ui .margot-btn { position: absolute; left: 50%; top: calc(152px + var(--safe-t)); transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px 10px 10px; border-radius: 22px; border: 3px solid #ffe066; background: linear-gradient(180deg, #ff5e99, #c82568); color: #fff; font: 700 clamp(16px, 4.4vw, 20px) Fredoka, sans-serif; box-shadow: 0 6px 0 #6e1036, 0 0 24px #ff77aa99; pointer-events: auto; touch-action: none; z-index: 6; animation: pulse-center .48s ease-in-out infinite alternate; white-space: nowrap; max-width: 94vw; }
 #arena-ui .margot-btn.hidden { display: none; }
 #arena-ui .margot-btn:active { transform: translateX(-50%) scale(.95); animation: none; }
 @keyframes pulse-center { to { transform: translateX(-50%) scale(1.08); } }
 @media (orientation: landscape) {
-  #arena-ui .cepi-tell { top: calc(102px + var(--safe-t)); padding: 6px 16px; font-size: 16px; }
+  #arena-ui .cepi-tell { top: calc(118px + var(--safe-t)); padding: 6px 16px; font-size: 16px; }
   #arena-ui .cepi-btns { bottom: calc(12px + var(--safe-b)); max-width: 440px; }
   #arena-ui .cepi-btns button { min-height: 54px; font-size: 20px; border-radius: 16px; }
-  #arena-ui .pinky-margot-cue { top: calc(106px + var(--safe-t)); padding: 5px 12px 5px 7px; font-size: 14px; }
-  #arena-ui .margot-btn { top: calc(106px + var(--safe-t)); padding: 7px 16px 7px 8px; font-size: 16px; }
+  #arena-ui .pinky-margot-cue { top: calc(118px + var(--safe-t)); padding: 5px 12px 5px 7px; font-size: 14px; }
+  #arena-ui .margot-btn { top: calc(118px + var(--safe-t)); padding: 7px 16px 7px 8px; font-size: 16px; }
 }
 /* Pantalla de victoria — arte de Grupo E cuando exista */
 .host.victory img { max-height: 240px; width: auto; object-fit: contain; filter: drop-shadow(0 10px 18px #0006); }

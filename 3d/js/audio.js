@@ -113,11 +113,8 @@ export function createAudio(assets) {
   let muted = false;
   try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (_) {}
   let ac = null, master = null, noise = null;
-  // Música por tramo, como en los juegos profesionales: un tema de calle (el mismo para los dos héroes),
-  // otro para la persecución y otro para el jefe; al cambiar de tramo se funde en vez de cortarse.
-  const themes = {
-    street: Object.assign(new Audio(assets.url('music_street')), { loop: true, volume: 0.4, preload: 'none' })
-  };
+  // Temas musicales: todos sintetizados vía Web Audio (music.js); themes queda disponible si se agregan pistas <audio>.
+  const themes = {};
   let current = null; // 'menu' | 'intro' | 'chase' | 'byd' | 'ba' | 'francia' | 'boss' | 'rescate' | 'street' | null
   let musicBus = null, out = null; // out: adónde van los tonos (efectos → master, temas sintetizados → musicBus)
   let fadeTimer = null;
@@ -148,12 +145,11 @@ export function createAudio(assets) {
         } catch (_) {}
       }
     }
-    if (ac.state === 'suspended') ac.resume().catch(() => {});
+    if (ac.state !== 'running') ac.resume().catch(() => {});
     return true;
   }
-  // Safari exige un gesto del usuario para habilitar el sonido
-  // (iOS cuenta como gesto el toque al soltar o el click, no el pointerdown: se escuchan todos)
-  const unlock = () => { ensure(); };
+  // Safari exige un gesto del usuario para habilitar el sonido (y en iOS recupera también tras estado 'interrupted')
+  const unlock = () => { if (!ac || ac.state !== 'running') ensure(); };
   for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, unlock, { passive: true, capture: true });
   // iPhone con la llave de silencio: Web Audio queda muda salvo que la sesión sea de «reproducción»
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
@@ -315,10 +311,17 @@ export function createAudio(assets) {
     pauseMusic() {
       paused = true;
       for (const t of Object.values(themes)) t.pause();
+      if (synthTimer) { clearInterval(synthTimer); synthTimer = null; }
+      if (ac && ac.state === 'running') ac.suspend().catch(() => {});
       if ('speechSynthesis' in window) speechSynthesis.cancel();
     },
     resumeMusic() {
       paused = false;
+      if (ac && ac.state !== 'running') ac.resume().catch(() => {});
+      if (current && SYNTH[current] && ac && !synthTimer) {
+        synthNext = ac.currentTime + 0.1;
+        synthTimer = setInterval(synthTick, 90);
+      }
       if (current && themes[current]) themes[current].play().catch(() => {});
     },
     // iOS: la voz solo funciona si se arrancó una vez dentro de un toque
