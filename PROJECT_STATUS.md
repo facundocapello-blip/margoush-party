@@ -550,3 +550,10 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Agentes nuevos (`.claude/agents/gs-*.md`, solo lectura):** game-designer, narrative-director, localization-lead, art-director, audio-director, ux-designer, qa-lead y performance-analyst, adaptados de Donchitos/Claude-Code-Game-Studios (MIT, ver `NOTICE-game-studios.md`). Sin hooks ni settings del original.
 - **Pendiente:** decidir las voces de los jefes (hoy `audio.bossLine()` está vacío en `3d/js/audio.js`).
 - **Rollback:** volver `main` al commit `b98f22c`.
+
+## 2026-11-25 · Paso 0: arreglo de la traba de Cepi (`TypeError` en `arena_cepi_logic.js`)
+- **Causa:** en el bucle de pelotas de `update()`, `damage()` vacía `state.shots` (KO o cambio de fase) y el bucle seguía con un índice inexistente → `TypeError` al leer `s.x`; se perdía el evento `phase`/`ko` y la pelea quedaba trabada.
+- **Arreglo:** `if (!s) continue;` al inicio de la iteración. Revisado `arena_lale_logic.js` y `arena_pinky_logic.js`: sus bucles no llaman a `damage()` ni vacían la lista, sin cambios.
+- **Test nuevo:** `tests/arena_cepi.test.mjs` (dos pelotas devueltas, cambio de fase y KO). `npm test` 79/79.
+- **Prueba:** `?probar=cepi-carton`. Pantalla negra del duelo de la flechita con Marine: no reproducida; pendiente propuesta `?debug=1`.
+- **Rollback:** volver `main` al commit `4e62eaa`.

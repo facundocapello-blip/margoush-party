@@ -116,3 +116,17 @@ test('cepi arena: phase 3 spawns 2 cardboard decoys + real Cepi; knocking both s
   assert.equal(l.state.pose, 'ko');
   assert.equal(l.state.hp, 0);
 });
+
+test('cepi arena: a returned ball that changes phase or KOs while other balls fly does not crash', () => {
+  for (const hp of [CEPI_ARENA.p2At + 1, 1]) {
+    const l = createCepiArenaLogic({ rand: () => 0.5 });
+    const hero = { x: 0, z: -1, y: 0, dodging: false, inv: true };
+    l._setHp(hp);
+    const mk = (z, gold) => ({ id: z, x: 0, z, vx: 0, vz: 0, gold, glass: false, bounced: false, returning: true });
+    // el índice mayor se procesa primero: pega y vacía state.shots, el otro queda colgado
+    l.state.shots.push(mk(5, false), mk(CEPI_ARENA.bossZ, true));
+    let evs;
+    assert.doesNotThrow(() => { evs = l.update(0.05, hero); });
+    assert.ok(evs.some(e => e.type === 'phase' || e.type === 'ko'), 'debe llegar el evento phase/ko');
+  }
+});

@@ -268,6 +268,7 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
     // Mover pelotas
     for (let i = state.shots.length - 1; i >= 0; i--) {
       const s = state.shots[i];
+      if (!s) continue; // damage() puede vaciar state.shots (cambio de fase / KO) en medio del bucle
       s.x += s.vx * dt;
       s.z += s.vz * dt;
       // Rebote en las paredes de vidrio
