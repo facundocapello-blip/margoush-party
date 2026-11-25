@@ -491,3 +491,19 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **P0-4 · Poda de assets muertos + ahorro de VRAM (`3d/assets/`, `manifest.json`, `3d/js/world.js`, `tests/`):** eliminados 6 archivos sin uso (`music_street.mp3`, `boss_{idle,run,attack,hurt}.webp`, `chase_paris_fondo.webp`) y movido `baMatsFallback` al `else` de `world.js` (ahorra 8 `CanvasTexture` de 512×768 al arranque). Peso total `3d/assets/`: **9,51 MB → 7,84 MB** (129 archivos).
 - **Verificación:** `node --check` OK en los 5 JS editados, `node tools/stamp_versions.mjs` OK, `npm test` **77/78 en verde, 0 fallos, 1 omitido** (`check_sprites.py` sin `numpy` local). **Pendiente:** validación física en Safari iPhone 15 Pro Max (multitouch + poder en Cepi/Lale/Pinky, recuperación de audio tras segundo plano y HUD vertical/horizontal).
 - **Rollback:** volver `main` al commit `a573d17`.
+
+## 2026-11-24 (6) · Tanda 2 (`margoush-art`): `arena_pinky_car.webp` + `arena_cepi_fondo.webp` panorámico 16:9
+- **`3d/assets/arena_pinky_car.webp` (`512×484`, 23,4 KB):** generado en estilo Pixar 3D cálido (vista trasera de hatchback rojo con luces de reversa y patente `PK 912`), recortado de fondo verde croma con despill limpio y registrado en `3d/assets/manifest.json` (se conecta automáticamente al slot existente en `3d/js/arena_pinky.js:223`).
+- **`3d/assets/arena_cepi_fondo.webp` (`1280×720`, 71,2 KB):** regenerado en formato panorámico 16:9 (antes vertical `714×1280` estirado `2,13×`) y ajustado su recorte UV en `3d/js/arena_cepi.js` (`repeat(1, 0.72)`, `offset(0, 0.28)`) para encuadrar techo, reflectores, banderines, gradas y cartel `PÁDEL` sin distorsión.
+- **Peso total `3d/assets/`:** **7,86 MB** (130 archivos, < 10 MB).
+- **Verificación:** `node --check 3d/js/arena_cepi.js`, `node tools/stamp_versions.mjs`, `npm test` (**77/78 en verde, 0 fallos, 1 omitido** por `numpy` local) e inspección visual del recorte WebP. **Pendiente:** validación visual en Safari físico de iPhone 15 Pro Max (`?probar=cepi` y `?probar=pinky`).
+- **Rollback:** volver `main` al commit `f3bf1ab`.
+
+## 2026-11-24 (7) · Tanda 3 (`margoush-dev`): Bloque P1 (BYD, vidas extra, FR completo, baile limpio y HUD sin thrashing)
+- **P1-1 (`3d/js/bonus.js`, `3d/assets/manifest.json`):** el héroe en *¡Rompé el BYD!* ahora cicla `run0..3` al moverse (antes patinaba congelado en `idle`); registrado `chase_ba_fondo.webp` (`1200×611`) en `manifest.json` para que la fuga use el fondo porteño pintado, y normalizado `granja_lapadite` (`cols: 1, rows: 1, frames: 1`).
+- **P1-2 (`3d/js/arena_cepi.js`, `arena_lale.js`, `arena_pinky.js`, `3d/css/game.css`):** agregado indicador `⭐`/`☆` en el HUD de las 3 arenas; al activar vida extra ahora otorga `inv = 1,8 s`, `hurtT = 0,15 s` y limpia proyectiles/autos en curso; cambiada la etiqueta `<i>` a `<small>` en `.phase-card` para aplicar su estilo dorado y subidos los textos `< 12px` de `body.chaky-dance`.
+- **P1-3 (`3d/js/arena_cepi.js`, `3d/js/i18n.js`):** botones `← IZQ` / `DER →` traducidos (`← GAUCHE` / `DROITE →`) y agregadas al francés las ~25 frases de `voice.js` (Cepi, Lale, Pinky) y subtítulos de Rondas 2/3 de Big Chaky.
+- **P1-4 (`3d/js/arena.js`):** en reposo del duelo de baile, el héroe se mantiene en la hoja frontal `*_dance_sheet` sin saltar al sprite `*_idle` de calle.
+- **P1-5 (`3d/js/main.js`):** `updateHud()` cachea nodos DOM y usa dirty-checking (cero mutaciones innecesarias por cuadro); `game.perf.record()` ahora también monitorea arenas, persecución y bonus.
+- **Verificación:** `node --check` OK en los 7 JS editados, `node tools/stamp_versions.mjs` OK, `npm test` **77/78 en verde, 0 fallos, 1 omitido** (`check_sprites.py` sin `numpy` local). **Pendiente:** publicar Tandas 2+3 y validar en Safari físico de iPhone 15 Pro Max.
+- **Rollback:** volver `main` al commit `f3bf1ab`.

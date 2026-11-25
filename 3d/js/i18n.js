@@ -102,6 +102,11 @@ export const TEXTOS = {
   '¡PUM!': 'BOUM !',
   'HARINA': 'FARINE',
   '👊 ¡PEGALE!': '👊 FRAPPE !',
+  '← IZQ': '← GAUCHE',
+  'DER →': 'DROITE →',
+  '¡Seguí los pasos de Big Chaky!': 'Suis les pas de Big Chaky !',
+  '¡Última ronda para ganarle el duelo!': 'Dernier round pour gagner le duel !',
+  'Tocá cada botón cuando baja la flecha': 'Touche chaque bouton quand la flèche descend',
 
   // ---------- Malos (presentación) ----------
   'LALE «MANTECOSO»': 'LALE « LE BEURRÉ »',
@@ -470,6 +475,34 @@ export const DICHOS = {
   '🔌 ¡Un cargador para mi BYD!': '🔌 Un chargeur pour ma BYD !',
   '¡Gracias, Niño! ¡A Margot me la llevo a Francia!': "Merci, gamin ! J'emmène Margot en France !",
   '¡Me rompiste el BYD! ¡Ahora es personal!': "Tu as cassé ma BYD ! Maintenant c'est personnel !",
+  // Frases de Cepi, Lale y Pinky (voice.js)
+  '¿Vos acá? Dale, te doy ventaja: saco yo.': "Toi ici ? Allez, je te laisse de l'avance : je sers.",
+  '¡Bandeja!': 'Bandeja !',
+  '¡Por el vidrio!': 'Par la vitre !',
+  '¡Punto de oro!': 'Point en or !',
+  '¡Eso fue suerte!': "C'était de la chance !",
+  '¡Ey, no vale!': 'Hé, ça compte pas !',
+  '¡Comprate una paleta!': 'Achète-toi une raquette !',
+  'Se terminó el calentamiento.': "L'échauffement est terminé.",
+  'Ahora juego en serio, papá.': 'Maintenant je joue sérieux, mec.',
+  '¡Pido revancha!… ¿y me cargás el BYD?': 'Je demande une revanche !… et tu recharges ma BYD ?',
+  'Tranqui… todo suavecito, ¿viste?': 'Tranquille… tout en douceur, tu vois ?',
+  '¡Manteca para todos!': 'Du beurre pour tout le monde !',
+  'Untadito, untadito…': 'Bien beurré, bien beurré…',
+  '¡No, harina no! ¡Me arruinás el peinado!': 'Non, pas de farine ! Tu ruines ma coiffure !',
+  'Te derretiste como mi revés.': 'Tu as fondu comme mon revers.',
+  '¿Te resbalaste? Pasa.': 'Tu as glissé ? Ça arrive.',
+  'Subí el horno… que se derrita todo.': 'Monte le four… que tout fonde.',
+  'Se me derritió todo… hasta el orgullo.': "Tout a fondu… même ma fierté.",
+  '¿Pensaste que el jefe era Chaky? ¡Chaky me debe el estacionamiento!': 'Tu croyais que le boss était Chaky ? Il me doit le parking !',
+  '¡Dale, dale, dale, que entra!': 'Vas-y, vas-y, ça passe !',
+  '¡Todo, todo, todo!': 'À fond, à fond, à fond !',
+  '¡Cortá, cortá!': 'Stop, stop !',
+  '¡Eh, eh! ¡Sin tocar la mercadería!': 'Hé, hé ! Pas touche à la marchandise !',
+  'Son dos mil… por adelantado.': "C'est deux mille… d'avance.",
+  'Ahora te cobro hora y media.': 'Maintenant je te facture une heure et demie.',
+  'Tarifa nocturna, papi.': 'Tarif de nuit, mon grand.',
+  '¡Bueno, bueno! Hoy no se cobra…': "Bon, bon ! Aujourd'hui c'est gratuit…"
 };
 
 // Plantillas ({x}, {n}) armadas una sola vez

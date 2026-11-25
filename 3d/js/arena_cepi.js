@@ -109,8 +109,8 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     if (fondoKey === 'arena_cepi_fondo') {
       backMap = keep(backMap.clone());
       backMap.needsUpdate = true;
-      backMap.repeat.set(1, 0.48);
-      backMap.offset.set(0, 0.52);
+      backMap.repeat.set(1, 0.72);
+      backMap.offset.set(0, 0.28);
     }
     const BW = 84, BH = 34;
     const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: backMap, fog: false }));
@@ -179,10 +179,10 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     const ui = document.createElement('div'); ui.id = 'arena-ui';
     ui.innerHTML =
       '<div class="arena-flash"></div>' +
-      '<div class="phase-card"><i></i><b></b><span></span></div>' +
+      '<div class="phase-card"><small></small><b></b><span></span></div>' +
       '<div class="cepi-duel hidden">' +
         '<div class="cepi-tell"></div>' +
-        '<div class="cepi-btns"><button type="button" data-side="-1">← IZQ</button><button type="button" data-side="1">DER →</button></div>' +
+        '<div class="cepi-btns"><button type="button" data-side="-1">' + tr('← IZQ') + '</button><button type="button" data-side="1">' + tr('DER →') + '</button></div>' +
       '</div>';
     document.body.append(ui);
     document.body.classList.add('arena-on');
@@ -206,12 +206,17 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     let cardTimer = 0;
     function phaseCard(p, ms = 2.0) {
       const c = CARDS[p]; if (!c) return;
-      fillText(cardE.querySelector('i'), c[0]);
+      fillText(cardE.querySelector('small'), c[0]);
       fillText(cardE.querySelector('b'), c[1]);
       fillText(cardE.querySelector('span'), c[2]);
       cardE.classList.remove('on'); void cardE.offsetWidth; cardE.classList.add('on');
       clearTimeout(cardTimer); cardTimer = setTimeout(() => cardE.classList.remove('on'), ms * 1000);
     }
+
+    const hudName = document.getElementById('hud-name');
+    let lifeEl = document.getElementById('hud-boss-life');
+    if (!lifeEl && hudName) { lifeEl = document.createElement('span'); lifeEl.id = 'hud-boss-life'; lifeEl.className = 'chaky-lives'; hudName.after(lifeEl); }
+    const renderLife = () => { if (lifeEl) lifeEl.textContent = extraLifeUsed ? '☆' : '⭐'; };
 
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
     const barName = bar?.querySelector('span');
@@ -240,6 +245,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_cepi_idle';
     let lastSpeech = null, duelOn = false, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
+    renderLife();
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
     const addPts = (n, px, py, pz) => {
       const before = game.score.total;
@@ -351,6 +357,9 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             if (hero.hp <= 0 && !extraLifeUsed && phase === 'fight') {
               extraLifeUsed = true;
               hero.hp = Math.max(2, Math.ceil((hero.hpMax || 5) * 0.6));
+              inv = 1.8; hurtT = 0.15;
+              logic.state.shots.length = 0;
+              renderLife();
               pop(x, 3.4, z, '⭐ ¡VIDA EXTRA!', '#ffd36e', 26, 1.3);
               sfx('pickup');
             }
@@ -636,6 +645,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       clearTimeout(cardTimer); clearTimeout(flashTimer);
       bossIntro.finish();
       removeEventListener('keydown', onKey);
+      lifeEl?.remove();
       ui.remove();
       document.body.classList.remove('arena-on', 'cepi-duel-on');
       if (bar) bar.classList.add('hidden');

@@ -180,27 +180,34 @@ function showScreen(id) {
   queueMicrotask(updateRotateHint);
 }
 
+const hudDom = { hearts: null, score: null, mult: null, pwFill: null, pwBox: null, pwText: null, margot: null, atk: null, offscreen: null };
+const hudPrev = { hearts: '', score: -1, mult: '', pw: '', ready: null, pwText: '', hold: '', charging: null };
 function updateHud(dt = 0) {
   const h = game.hero;
+  if (!hudDom.hearts) {
+    hudDom.hearts = $('#hud-hearts'); hudDom.score = $('#hud-score'); hudDom.mult = $('#hud-mult');
+    hudDom.pwFill = $('#hud-power-fill'); hudDom.pwBox = $('#hud-power'); hudDom.pwText = $('#hud-power-text');
+    hudDom.margot = $('#hud-margot'); hudDom.atk = $('#act-attack'); hudDom.offscreen = $('#offscreen');
+  }
   const shown = Math.min(5, h.hpMax);
   const full = Math.min(shown, Math.ceil(h.hp * shown / h.hpMax));
-  $('#hud-hearts').textContent = '❤️'.repeat(full) + '🖤'.repeat(shown - full);
-  $('#hud-score').textContent = game.score.total.toLocaleString('es-AR');
-  const m = game.score.multiplier;
-  $('#hud-mult').textContent = m > 1 ? '×' + m.toFixed(1) : '';
-  const pw = Math.min(1, h.power), ready = pw >= 1;
-  $('#hud-power-fill').style.width = (pw * 100).toFixed(1) + '%';
-  $('#hud-power').classList.toggle('ready', ready);
+  const heartsTxt = '❤️'.repeat(full) + '🖤'.repeat(shown - full);
+  if (heartsTxt !== hudPrev.hearts) { hudPrev.hearts = heartsTxt; hudDom.hearts.textContent = heartsTxt; }
+  if (game.score.total !== hudPrev.score) { hudPrev.score = game.score.total; hudDom.score.textContent = game.score.total.toLocaleString('es-AR'); }
+  const m = game.score.multiplier, multTxt = m > 1 ? '×' + m.toFixed(1) : '';
+  if (multTxt !== hudPrev.mult) { hudPrev.mult = multTxt; hudDom.mult.textContent = multTxt; }
+  const pw = Math.min(1, h.power), ready = pw >= 1, pwPct = (pw * 100).toFixed(1) + '%';
+  if (pwPct !== hudPrev.pw) { hudPrev.pw = pwPct; hudDom.pwFill.style.width = pwPct; hudDom.atk.style.setProperty('--pw', pw.toFixed(3)); }
+  if (ready !== hudPrev.ready) { hudPrev.ready = ready; hudDom.pwBox.classList.toggle('ready', ready); hudDom.atk.classList.toggle('ready', ready); }
   const mood = game.margot?.mood(h) || 'calm';
-  const face = $('#hud-margot');
-  if (face.dataset.mood !== mood) { face.dataset.mood = mood; face.classList.remove('bump'); void face.offsetWidth; face.classList.add('bump'); }
-  $('#hud-power-text').textContent = ready ? tr(TOUCH ? '⚡ ¡PODER LISTO!' : '⚡ ¡PODER LISTO! (L)') : tr('PODER');
-  const atk = $('#act-attack');
-  atk.style.setProperty('--pw', pw.toFixed(3));
-  atk.style.setProperty('--hold', Math.min(1, h.holdT / POWER.hold).toFixed(3));
-  atk.classList.toggle('ready', ready);
-  if (ready && atk.dataset.ready !== tr('⚡ ¡PODER!')) atk.dataset.ready = tr('⚡ ¡PODER!');
-  atk.classList.toggle('charging', ready && h.holdT > 0.08);
+  if (hudDom.margot.dataset.mood !== mood) { hudDom.margot.dataset.mood = mood; hudDom.margot.classList.remove('bump'); void hudDom.margot.offsetWidth; hudDom.margot.classList.add('bump'); }
+  const pwLabel = ready ? tr(TOUCH ? '⚡ ¡PODER LISTO!' : '⚡ ¡PODER LISTO! (L)') : tr('PODER');
+  if (pwLabel !== hudPrev.pwText) { hudPrev.pwText = pwLabel; hudDom.pwText.textContent = pwLabel; }
+  const holdStr = Math.min(1, h.holdT / POWER.hold).toFixed(3);
+  if (holdStr !== hudPrev.hold) { hudPrev.hold = holdStr; hudDom.atk.style.setProperty('--hold', holdStr); }
+  if (ready && hudDom.atk.dataset.ready !== tr('⚡ ¡PODER!')) hudDom.atk.dataset.ready = tr('⚡ ¡PODER!');
+  const charging = ready && h.holdT > 0.08;
+  if (charging !== hudPrev.charging) { hudPrev.charging = charging; hudDom.atk.classList.toggle('charging', charging); }
 }
 
 function clearRun() {
@@ -953,9 +960,15 @@ function frameStep(now) {
     if (!mod) continue;
     if (mod.active && game.state !== st) mod.dispose();
     if (mod.active) {
+      const t0 = performance.now();
       if (game.state === st) mod.update(dt);
       if (bannerCurrent) { bannerTimer -= realDt; if (bannerTimer <= 0) nextBanner(); }
-      if (mod.active) { mod.render(); requestAnimationFrame(frame); return; }
+      if (mod.active) {
+        mod.render();
+        if (dt > 0) game.perf.record(dt * 1000, performance.now() - t0);
+        requestAnimationFrame(frame);
+        return;
+      }
     }
   }
   if (game.state === 'playing') {

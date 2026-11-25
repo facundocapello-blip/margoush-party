@@ -194,7 +194,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     const heroMat = keep(new T.MeshBasicMaterial({ alphaTest: 0.45, transparent: true }));
     const P = new T.Mesh(unit, heroMat); scene.add(P);
     const heroSh = new T.Mesh(shGeo, shMat); heroSh.scale.set(1.5, 1, 0.7); scene.add(heroSh);
-    let heroKey = null;
+    let heroKey = null, stepT = 0;
     const setHero = (pose) => {
       const key = heroPre + pose;
       if (key === heroKey || !assets.has(key)) return;
@@ -426,8 +426,9 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
         glow.position.set(spotX(S.spot) + car.position.x, spotY(S.spot) + car.position.y, CAR_Z + 0.25);
         glow.scale.set(p * 1.1, p * 1.1, 1);
       }
-      // Héroe
-      setHero(swing ? 'punch' : moving ? 'run' : 'idle');
+      // Héroe (cicla run0..3 al desplazarse para no patinar congelado)
+      if (moving && !swing) stepT += dt * 9; else stepT = 0;
+      setHero(swing ? 'punch' : moving ? 'run' + (Math.floor(stepT) % 4) : 'idle');
       P.position.set(x, 0, HERO_Z);
       heroSh.position.set(x, 0.03, HERO_Z);
       // Margot a salvo afuera mirando la escena (festeja cuando cae el BYD)

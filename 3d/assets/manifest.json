@@ -888,12 +888,12 @@
   },
   "arena_cepi_fondo": {
     "file": "arena_cepi_fondo.webp",
-    "w": 714,
-    "h": 1280,
-    "frames": 1,
+    "w": 1280,
+    "h": 720,
     "cols": 1,
     "rows": 1,
-    "v": "4bb9b413"
+    "frames": 1,
+    "v": "52c15b94"
   },
   "arena_lale_idle": {
     "file": "arena_lale_idle.webp",
@@ -1115,8 +1115,8 @@
     "w": 960,
     "h": 640,
     "frames": 1,
-    "cols": 0,
-    "rows": 0,
+    "cols": 1,
+    "rows": 1,
     "v": "f74dc180"
   },
   "patovica_sheet": {
@@ -1168,5 +1168,23 @@
     "rows": 1,
     "foot": 0.99,
     "v": "c805076c"
+  },
+  "arena_pinky_car": {
+    "file": "arena_pinky_car.webp",
+    "w": 512,
+    "h": 484,
+    "cols": 1,
+    "rows": 1,
+    "frames": 1,
+    "v": "7fb7a682"
+  },
+  "chase_ba_fondo": {
+    "file": "chase_ba_fondo.webp",
+    "w": 1200,
+    "h": 611,
+    "cols": 1,
+    "rows": 1,
+    "frames": 1,
+    "v": "f8af64c8"
   }
 }

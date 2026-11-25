@@ -256,7 +256,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const ui = document.createElement('div'); ui.id = 'arena-ui';
     ui.innerHTML =
       '<div class="arena-flash"></div>' +
-      '<div class="phase-card"><i></i><b></b><span></span></div>' +
+      '<div class="phase-card"><small></small><b></b><span></span></div>' +
       '<div class="pinky-margot-cue hidden"><i class="margot-ico" aria-hidden="true"></i><span></span></div>' +
       '<button type="button" class="margot-btn hidden"><i class="margot-ico" aria-hidden="true"></i><span>' + tr('¡TOCÁ PARA EL GRITO DE MARGOT!') + '</span></button>';
     document.body.append(ui);
@@ -286,12 +286,17 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     let cardTimer = 0;
     function phaseCard(p, ms = 2.0) {
       const c = CARDS[p]; if (!c) return;
-      fillText(cardE.querySelector('i'), c[0]);
+      fillText(cardE.querySelector('small'), c[0]);
       fillText(cardE.querySelector('b'), c[1]);
       fillText(cardE.querySelector('span'), c[2]);
       cardE.classList.remove('on'); void cardE.offsetWidth; cardE.classList.add('on');
       clearTimeout(cardTimer); cardTimer = setTimeout(() => cardE.classList.remove('on'), ms * 1000);
     }
+
+    const hudName = document.getElementById('hud-name');
+    let lifeEl = document.getElementById('hud-boss-life');
+    if (!lifeEl && hudName) { lifeEl = document.createElement('span'); lifeEl.id = 'hud-boss-life'; lifeEl.className = 'chaky-lives'; hudName.after(lifeEl); }
+    const renderLife = () => { if (lifeEl) lifeEl.textContent = extraLifeUsed ? '☆' : '⭐'; };
 
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
     const barName = bar?.querySelector('span');
@@ -320,6 +325,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_pinky_reveal';
     let lastSpeech = null, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
+    renderLife();
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
     const addPts = (n, px, py, pz) => {
       const before = game.score.total;
@@ -391,6 +397,9 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             if (hero.hp <= 0 && !extraLifeUsed && phase === 'fight') {
               extraLifeUsed = true;
               hero.hp = Math.max(2, Math.ceil((hero.hpMax || 5) * 0.6));
+              inv = 1.8; hurtT = 0.15;
+              logic.state.cars.length = 0;
+              renderLife();
               pop(x, 3.4, z, '⭐ ¡VIDA EXTRA!', '#ffd36e', 26, 1.3);
               sfx('pickup');
             }
@@ -635,6 +644,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       disposed = true;
       clearTimeout(cardTimer); clearTimeout(flashTimer);
       bossIntro.finish();
+      lifeEl?.remove();
       ui.remove();
       document.body.classList.remove('arena-on');
       if (bar) bar.classList.add('hidden');

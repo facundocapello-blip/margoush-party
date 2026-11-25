@@ -815,9 +815,8 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
         }
       } else {
         heroPose = 'dance_idle';
-        // Alterna con gracia al ritmo del compás entre la pose base frontal y el paso disco
-        const idleToggle = Math.floor(((S.dice?.t ?? t) / beatDur)) % 2 === 1;
-        hKey = (idleToggle && CUSTOM.hero_dance_point) ? 'hero_dance_point' : (heroId + '_idle');
+        // Mantiene siempre la hoja frontal de baile (evita salto de proporción con *_idle de calle)
+        hKey = CUSTOM.hero_dance_point ? 'hero_dance_point' : (heroId + '_idle');
       }
       setTex(P, hKey);
       P.scale.set(P.userData.w * hsx, P.userData.hh * hsy, 1);
