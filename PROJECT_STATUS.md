@@ -563,3 +563,8 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79. Sin cambios de arte: el edificio de Le Concept sigue en el decorado de ese tramo. Safari físico pendiente.
 - **Prueba:** `?probar=calle` (o `?probar=le-concept` para ir directo a la oleada final).
 - **Rollback:** volver `main` al commit `c872c45`.
+
+## 2026-11-25 · Etapa A · A2: Chaky pide el BYD en el hangar; el baile es su fiesta de despegue
+- Intro (`3d/js/cine.js`): «¡Cepi, teneme el BYD listo en el hangar!» (antes «en la 9 de Julio», contradecía el hangar). Escena del hangar: «¡Es mi fiesta de despegue, en mi jet! ¡Ganame en mi pista disco!» (antes «¿Pelear con este traje violeta?…»). FR actualizado en `3d/js/i18n.js`.
+- Verificación: `node --check`, `stamp_versions.mjs`, `npm test` 79/79. Safari físico pendiente.
+- **Prueba:** `?probar=chaky`. **Rollback:** volver `main` a `cfba750`.

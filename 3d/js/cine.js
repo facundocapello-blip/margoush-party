@@ -124,7 +124,7 @@ export function createCine(ctx) {
       { at: 7.2, run: () => { chaky.setPose('strike'); say(crew[0].a, '💵 ¡Cheque al día!', '#ffe08a', 19, 3.0); ctx.audio?.sfx('coin'); } },
       { at: 8.0, run: () => { chaky.setPose('strike'); say(crew[1].a, '🧈 ¡Manteca de por vida!', '#ffe08a', 19, 3.6); ctx.audio?.sfx('coin'); } },
       { at: 8.8, run: () => { chaky.setPose('strike'); say(cepi, '🔌 ¡Un cargador para mi BYD!', '#ffe08a', 19, 3.0); ctx.audio?.sfx('coin'); } },
-      { at: 9.8, run: () => { phase = 'grab'; ui.sub('BIG CHAKY', '¡Cepi, teneme el BYD listo en la 9 de Julio!'); chaky.setPose('arms'); } },
+      { at: 9.8, run: () => { phase = 'grab'; ui.sub('BIG CHAKY', '¡Cepi, teneme el BYD listo en el hangar!'); chaky.setPose('arms'); } },
       { at: 11.5, run: () => { ui.sub('MARGOT', cry); } },
       { at: 13.6, run: () => { ui.sub(''); ui.caption('¡BIG CHAKY SE LLEVÓ A MARGOT!', '¡Cruzá Buenos Aires rumbo al aeropuerto!'); ctx.audio?.sfx('engine'); } }
     ];
@@ -192,7 +192,7 @@ export function createCine(ctx) {
     const ev = [
       { at: 0, run: () => { ui.show(); ui.caption('HANGAR VIP · EZEIZA', '¡Alcanzaste a BIG CHAKY antes del despegue!'); ctx.audio?.sfx('bell'); } },
       { at: 1.4, run: () => { ui.caption(''); ui.sub('MARGOT', cry); say(cepi, '🚗 ¡Chaky, el BYD ya está listo!', '#9fe4ff', 17, 3.0); ctx.audio?.sfx('pickup'); } },
-      { at: 2.6, run: () => { chaky.setPose('arms'); ui.sub('BIG CHAKY', '¿Pelear con este traje violeta? ¡Ganame en mi pista disco!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('laugh'); } },
+      { at: 2.6, run: () => { chaky.setPose('arms'); ui.sub('BIG CHAKY', '¡Es mi fiesta de despegue, en mi jet! ¡Ganame en mi pista disco!'); fx.shake?.(0.22, 0.25); ctx.audio?.sfx('laugh'); } },
       { at: 4.8, run: () => { ui.sub(''); ui.caption('¡DUELO DE BAILE DISCO!', '¡Seguí las flechas al ritmo!'); ctx.audio?.sfx('roar'); } }
     ];
     const frame = (t, dt) => {
