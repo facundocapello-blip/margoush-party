@@ -605,3 +605,11 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Checkpoint `facu` agregado. Pruebas: `?probar=facu`, `facu-verdadero`, `facu-enojado`, `final`.
 - QA: `npm test` 86/86; humo headless móvil sin errores JS. Safari físico pendiente.
 - Rollback: `main` en `1a0c162`.
+
+## 2026-11-25 · Etapa C: jefes con gesto, Facu galerista y Margot sin llanto
+- **Margot ya no llora como golpe.** Pinky: le revolea la papilla a los anteojos (queda ciego y se tambalea). Facu: garabatea su cuadro con crayones y él se derrite («¡ES UNA OBRA MAESTRA!»). Módulo nuevo `3d/js/margot_finish.js`; eventos `margotPapilla` / `margotArt` (antes `margotCry`).
+- **Facu galerista con juego propio** (ya no es copia de Pinky): fase 1 «obra en vivo» = apunta (mira en el piso) → pincelazo en parábola → charco pegajoso que frena; después pinta en su atril (momento para pegarle). Fase 2 sin cambios (cuadro verdadero). Fase 3: pincelazos de a dos + levanta el cuadro antes de revolearlo + crayones de Margot. Atril 3D con lienzo que se pinta en vivo.
+- **Tiros con gesto previo:** `state.windup` en Cepi, Lale y Facu (se planta, carga y tiembla antes de soltar); Pinky señala con el trapo el cajón del próximo auto.
+- Poses de Facu: el juego usa `arena_facu_<idle|reveal|aim|throw|paint|windup|hurt|love|ko>` si existen; si no, el dibujo viejo `facu` animado por código. ZIP para Gemini entregado (10 imágenes, incl. `arena_facu_fondo`).
+- Tests: `npm test` 88/88 · humo móvil `tests/e2e/facu_galerista.e2e.mjs` OK sin errores. Safari físico pendiente.
+- Pendiente (Etapa D): pulido de diseño — HUD (carteles de fase tapan la acción, textos que se pisan), cinemáticas, arenas y personajes.

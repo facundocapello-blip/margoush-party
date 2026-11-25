@@ -564,6 +564,12 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       else if (S.pose === 'tired') { sy = 0.96 + Math.sin(t * 8) * 0.04; }
       else if (S.pose === 'back') { by = Math.abs(Math.sin(t * 4)) * 0.06; rz = Math.sin(t * 5) * 0.03; }
       else if (S.pose === 'idle' && !walking) { by = Math.abs(Math.sin(t * 2.8)) * 0.09; sy = 1 + Math.sin(t * 5.6) * 0.02; }
+      // Gesto previo al saque: se agacha con la paleta arriba (después salta al remate)
+      if (S.windup > 0 && S.pose === 'idle' && !hurtNow) {
+        const w = S.windup, e = w * w * (3 - 2 * w);
+        if (assets.has('arena_cepi_smash')) { bossKey = 'arena_cepi_smash'; setTex(B, bossKey); }
+        sy = 1 - 0.1 * e; sx = 1 + 0.06 * e; by = 0; rz = -0.12 * e + (w > 0.75 ? Math.sin(t * 60) * 0.025 : 0);
+      }
       place(B, bx, by, CEPI_ARENA.bossZ);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);

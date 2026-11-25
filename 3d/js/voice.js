@@ -20,7 +20,7 @@ export const PROFILES = {
   facu: { lang: 'es-AR', pitch: 0.85, rate: 1.0 }    // el cerebro: calmo, canchero, de galerista
 };
 
-export const PRIO = { ko: 3, phase: 3, intro: 3, dice: 3, hurt: 2, special: 2, stuck: 2, returned: 2, attack: 1, taunt: 1, good: 1, bad: 1, count: 2, pick: 2 };
+export const PRIO = { ko: 3, phase: 3, intro: 3, dice: 3, hurt: 2, special: 2, stuck: 2, returned: 2, attack: 1, taunt: 1, good: 1, bad: 1, count: 2, pick: 2, margot: 3 };
 export const COOLDOWN = { taunt: 6, attack: 2.5, hurt: 1.2, returned: 1.5, good: 0.5, bad: 0.5, count: 0.5 }; // s
 
 export const CATALOG = {
@@ -58,15 +58,17 @@ export const CATALOG = {
     hurt: ['¡Eh, eh! ¡Sin tocar la mercadería!'],
     taunt: ['¿Te lo cuido?', 'Son dos mil… por adelantado.'],
     phase: ['Ahora te cobro hora y media.', 'Tarifa nocturna, che.'],
+    margot: ['¡Puaj! ¡Papilla en los anteojos! ¡No veo nada!', '¡Mis Ray-Ban! ¡Son de zapallo!'],
     ko: ['¡Bueno, bueno! Hoy no se cobra… ¡pero mirá, el cheque lo firmó Facu!']
   },
   facu: {
     intro: ['¿Creían que era Pinky el cerebro? ¡Bienvenidos a mi galería!'],
-    attack: ['¡Esto es arte, che!', '¡Cuidado con el marco!', '¡Pieza única!'],
+    attack: ['¡Esto es arte, che!', '¡Un pincelazo de autor!', '¡Pieza única!'],
     hurt: ['¡Ey, ese cuadro era carísimo!', '¡Auch! ¡Con cuidado!'],
     taunt: ['Esto no lo entienden: es arte moderno.', '¡No toquen la obra!'],
     pick: ['¿Cuál es el verdadero? ¡Ojo con el ojo!'],
     phase: ['¡Ahora sí me enojé, che!', '¡Se acabó la paciencia!'],
+    margot: ['¡¿Qué hiciste?! …¡Es una obra maestra!', '¡Esos garabatos valen millones!'],
     ko: ['Bueno… está bien. ¡Les devuelvo a Margot!']
   }
 };

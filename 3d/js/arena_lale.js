@@ -514,10 +514,16 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
           rz = -sx * 0.16 + Math.sin(t * 15) * 0.05;
           sy = 0.95 + Math.abs(Math.sin(t * 15)) * 0.08;
         }
-        else if (S.pose === 'throw') { sx = x < S.bossX ? -1 : 1; sy = 0.95; rz = sx * 0.08; by = 0.14; }
+        else if (S.pose === 'throw') { sx = x < S.bossX ? -1 : 1; sy = 0.95; sx *= 1.06; rz = -Math.sign(sx) * 0.14; by = 0.14; } // suelta: se tira para adelante
         else if (S.pose === 'floured') { rz = Math.sin(t * 20) * 0.09; sy = 0.95 + Math.abs(Math.sin(t * 14)) * 0.08; }
         else if (S.pose === 'hurt') { rz = 0.16; sy = 0.92; by = 0.18; }
         else if (S.pose === 'idle') { by = Math.abs(Math.sin(t * 2.5)) * 0.08; sy = 1 + Math.sin(t * 5) * 0.02; }
+      }
+      // Gesto previo: se planta, levanta la manteca y se echa para atrás antes de revolearla
+      if (S.windup > 0 && S.pose === 'idle') {
+        const w = S.windup, e = w * w * (3 - 2 * w), dir = x < S.bossX ? -1 : 1;
+        if (assets.has('arena_lale_throw')) bossKey = 'arena_lale_throw';
+        sx = dir; rz = dir * 0.2 * e + (w > 0.75 ? Math.sin(t * 60) * 0.025 : 0); sy = 1 + 0.06 * e; by = 0.1 * e;
       }
       setTex(B, bossKey, S.pose);
       place(B, S.bossX, by, S.bossZ);

@@ -55,7 +55,7 @@ test('pinky arena: phase 3 unlocks Margot heroic cry, recharges if Pinky survive
   assert.ok(l.state.cars.length > 0);
 
   const mEvs = l.triggerMargot();
-  assert.ok(mEvs.some(e => e.type === 'margotCry'));
+  assert.ok(mEvs.some(e => e.type === 'margotPapilla'));
   assert.equal(l.state.cars.length, 0);
   assert.equal(l.state.hp, PINKY_ARENA.p3At - 6);
   assert.equal(l.state.mode, 'charge');

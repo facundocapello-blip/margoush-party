@@ -8,6 +8,7 @@ import { SWINGS } from './hero.js';
 import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
 import { attachBossIntro } from './boss_intro.js';
+import { createMargotFinish } from './margot_finish.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -170,21 +171,8 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const B = sprite('arena_pinky_reveal', BOSS_H, 0.9, 'reveal');
     const P = sprite(heroPre + 'idle', HERO_H, 0.9);
 
-    // Margot heroica (para el remate supersónico de Fase 3)
-    let margotMap = null, margotW = 1, margotH = 1;
-    if (assets.has('arena_margot_hero')) {
-      const mm = assets.meta('arena_margot_hero');
-      margotMap = assets.texture('arena_margot_hero'); margotW = mm.w; margotH = mm.h;
-    } else if (assets.has('margot_sheet')) {
-      const mm = assets.meta('margot_sheet');
-      const tx = keep(assets.texture('margot_sheet').clone());
-      tx.needsUpdate = true; tx.repeat.set(0.5, 0.5); tx.offset.set(0.5, 0.5);
-      margotMap = tx; margotW = mm.w / 2; margotH = mm.h / 2;
-    }
-    const margotMesh = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: margotMap, alphaTest: 0.4, side: T.DoubleSide })));
-    const mh = 2.6; margotMesh.scale.set(mh * margotW / margotH, mh, 1); margotMesh.visible = false; scene.add(margotMesh);
-    const waveRing = new T.Mesh(keep(new T.RingGeometry(0.6, 1.0, 32)), keep(new T.MeshBasicMaterial({ color: L('#ff99cc'), transparent: true, opacity: 0.8, side: T.DoubleSide, depthWrite: false })));
-    waveRing.rotation.x = -Math.PI / 2; waveRing.visible = false; scene.add(waveRing);
+    // Margot (remate de Fase 3): festeja y le revolea la papilla a los anteojos (ya no llora)
+    const margotFx = createMargotFinish({ T, scene, assets, keep, unit, L, kind: 'papilla' });
 
     // Autos compactos rojos entrando marcha atrás (estilo Pixar: patente, luneta con reflejo, espejos, luces con halo y sombra)
     const carBodyG = keep(new T.BoxGeometry(2.14, 0.96, 3.35));
@@ -258,7 +246,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       '<div class="arena-flash"></div>' +
       '<div class="phase-card"><small></small><b></b><span></span></div>' +
       '<div class="pinky-margot-cue hidden"><i class="margot-ico" aria-hidden="true"></i><span></span></div>' +
-      '<button type="button" class="margot-btn hidden"><i class="margot-ico" aria-hidden="true"></i><span>' + tr('¡TOCÁ PARA EL GRITO DE MARGOT!') + '</span></button>';
+      '<button type="button" class="margot-btn hidden"><i class="margot-ico" aria-hidden="true"></i><span>' + tr('¡TOCÁ: MARGOT TIRA LA PAPILLA!') + '</span></button>';
     document.body.append(ui);
     document.body.classList.add('arena-on');
     const flashE = ui.querySelector('.arena-flash');
@@ -281,7 +269,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const CARDS = {
       1: ['FASE 1 · 🚗', '¡DALE, DALE, QUE ENTRA!', 'Esquivá los autos y pegale cuando cobra'],
       2: ['FASE 2 · 🌙', '¡TARIFA NOCTURNA!', 'Entran de a dos: buscá el cajón libre'],
-      3: ['FASE 3 · 👶', '¡REMATE CON MARGOT!', '¡Tocá a Margot para su grito supersónico!']
+      3: ['FASE 3 · 👶', '¡REMATE CON MARGOT!', '¡Tocá a Margot: le tira la papilla!']
     };
     let cardTimer = 0;
     function phaseCard(p, ms = 2.0) {
@@ -381,12 +369,16 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             sfx('pickup');
             pop(x, 3.6, z, '👶 ¡MARGOT ESTÁ LISTA!', '#ff99cc', 24, 1.4);
             break;
-          case 'margotCry':
+          case 'margotPapilla':
             addPts(PINKY_ARENA.points.margot, 0, 3.5, -5);
-            sfx('power'); flash('#ff99cc', 0.48); shake(0.55, 0.45); freezeT = 0.09;
-            burst(0, 2.4, -5.5, '#ff99cc', 16, false);
-            burst(logic.state.bossX, 2.6, PINKY_ARENA.bossZ + 0.4, '#6de37b', 12, true);
-            pop(0, 4.2, -5, '👶 ¡BUAAAAAÁ! 💥', '#ff99cc', 30, 1.5);
+            sfx('power'); flash('#ffb347', 0.4); shake(0.4, 0.35); freezeT = 0.06;
+            pop(0, 3.4, -5, '👶 ¡AHÍ VA LA PAPILLA! 🥣', '#ffb347', 26, 0.75);
+            setTimeout(() => {
+              if (disposed) return;
+              sfx('hit'); shake(0.5, 0.4);
+              burst(logic.state.bossX, BOSS_H * 0.8, PINKY_ARENA.bossZ + 0.6, '#ffa53a', 16, false);
+              pop(logic.state.bossX, BOSS_H + 0.9, PINKY_ARENA.bossZ, '¡SPLASH! 🥣😎', '#ffb347', 30, 1.5);
+            }, 650);
             break;
           case 'bossHit': bossFlash = 0.22; setBar(); sfx('hit'); shake(0.28, 0.2); break;
           case 'hurt':
@@ -539,6 +531,14 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         else if (S.pose === 'charge') { by = Math.abs(Math.sin(t * 4)) * 0.09; sy = 1 + Math.sin(t * 8) * 0.03; rz = Math.sin(t * 4) * 0.04; }
         else if (S.pose === 'hurt') { rz = 0.16; sy = 0.92; by = 0.18; }
       }
+      // Gesto: antes de que entre el auto, Pinky señala con el trapo hacia ese cajón (se entiende de dónde viene)
+      const warnCar = S.cars.find(c => c.stage === 'warn');
+      if (warnCar && S.pose === 'wave' && !wavingWalk) {
+        const dir = warnCar.x - S.bossX > 0.3 ? 1 : warnCar.x - S.bossX < -0.3 ? -1 : (sx || 1);
+        sx = dir; rz = -dir * (0.14 + Math.abs(Math.sin(t * 14)) * 0.08); by += 0.08;
+      }
+      // Con la papilla en los anteojos se tambalea a ciegas
+      if (margotFx.blind && S.pose !== 'ko') { rz += Math.sin(t * 7) * 0.14; by += Math.abs(Math.sin(t * 3.5)) * 0.06; }
       setTex(B, bossKey, S.pose);
       place(B, S.bossX, by, PINKY_ARENA.bossZ);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
@@ -558,21 +558,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         ((S.phase === 2 && S.hp <= PINKY_ARENA.p3At + 4) || (S.phase === 3 && S.mode === 'transition'));
       margotCue.classList.toggle('hidden', !showCue);
       margotBtn.classList.toggle('hidden', !showBtn);
-      if (S.margotT > 0) {
-        margotMesh.visible = true;
-        margotMesh.scale.set(2.4, 2.4, 1);
-        margotMesh.position.set(0, 0.2 + Math.sin(t * 16) * 0.15, -5.5);
-        waveRing.visible = true;
-        const p = 1 - S.margotT / 2.0;
-        waveRing.position.set(0, 0.12, -5.5);
-        waveRing.scale.setScalar(1 + p * 12);
-        waveRing.material.opacity = Math.max(0, 0.85 * (1 - p));
-      } else {
-        margotMesh.visible = true;
-        margotMesh.scale.set(1.85, 1.85, 1);
-        margotMesh.position.set(PINKY_ARENA.xMax - 0.5, Math.abs(Math.sin(t * 5)) * 0.12, PINKY_ARENA.bossZ + 0.5);
-        waveRing.visible = false;
-      }
+      margotFx.draw(dt, t, S.margotT, 2.0, { x: S.bossX, z: PINKY_ARENA.bossZ, h: BOSS_H }, { x: PINKY_ARENA.xMax - 0.5, z: PINKY_ARENA.bossZ + 0.5 });
 
       // Avisos en los 3 cajones + autos asomando cola con luces de reversa parpadeando en `warn`
       const warned = new Set();

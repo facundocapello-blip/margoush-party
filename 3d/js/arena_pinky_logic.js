@@ -4,8 +4,8 @@
 // Fase 1 (HP 30→21): Dirige 1 auto a la vez entrando marcha atrás a uno de los 3 cajones;
 //   cada 3 autos se distrae cobrando (`charge`) y queda abierto para pegarle.
 // Fase 2 (HP 20→11): «Tarifa nocturna» — entran 2 autos en simultáneo (siempre queda ≥ 1 cajón libre).
-// Fase 3 (HP 10→0): Ráfaga final + se habilita el **remate heroico de Margot** (grito supersónico
-//   que despeja la playa y deja a Pinky listo para el K.O.).
+// Fase 3 (HP 10→0): Ráfaga final + se habilita el **remate de Margot**: le revolea la papilla a los
+//   anteojos, Pinky queda ciego un rato y los autos se frenan (listo para el K.O.).
 
 export const PINKY_ARENA = {
   hpMax: 30,
@@ -35,7 +35,7 @@ export function createPinkyArenaLogic({ rand = Math.random } = {}) {
     bossX: 0,
     cars: [],          // [{ id, lane, x, z, stage: 'warn'|'drive', t, hit }]
     margotReady: false,
-    margotT: 0,        // > 0 mientras Margot hace su grito supersónico
+    margotT: 0,        // > 0 mientras vuela la papilla de Margot
     t: 0
   };
 
@@ -229,9 +229,9 @@ export function createPinkyArenaLogic({ rand = Math.random } = {}) {
     state.cars.length = 0;
     state.mode = 'charge';
     timer = 2.6;
-    setPose('hurt', 0.8);
-    evs.push({ type: 'margotCry' });
-    evs.push({ type: 'voice', event: 'hurt' });
+    setPose('hurt', 1.6); // ciego con papilla en los anteojos
+    evs.push({ type: 'margotPapilla' });
+    evs.push({ type: 'voice', event: 'margot' });
     damage(6, 'margot', evs);
     return evs;
   }

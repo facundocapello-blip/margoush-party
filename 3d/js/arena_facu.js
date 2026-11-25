@@ -1,12 +1,15 @@
 // «La arena final de Facu»: galería de arte HENRIS en Buenos Aires (Acto 5, el cerebro de todo).
-// Usa el dibujo único de Facu (`facu`) animado por código (respira, se agacha a tirar, se enoja en la fase 3).
-// Fase 1: cuadros voladores · Fase 2: minijuego «¿cuál es el cuadro verdadero?» · Fase 3: enojado + llanto de Margot.
+// Facu galerista/pintor: apunta y revolea pincelazos (con gesto previo), pinta en su atril y se derrite
+// con los garabatos de Margot. Usa las poses `arena_facu_<pose>` si existen; si no, el dibujo `facu`
+// animado por código (el de presentador queda para cuando presenta).
+// Fase 1: obra en vivo · Fase 2: «¿cuál es el cuadro verdadero?» · Fase 3: enojado + crayones de Margot.
 import { FACU_ARENA, createFacuArenaLogic } from './arena_facu_logic.js';
 import { createVoice } from './voice.js';
 import { SWINGS } from './hero.js';
 import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
 import { attachBossIntro } from './boss_intro.js';
+import { createMargotFinish } from './margot_finish.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -167,21 +170,57 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     const B = sprite('facu', BOSS_H, 0.9);
     const P = sprite(heroPre + 'idle', HERO_H, 0.9);
 
-    // Margot heroica (para el remate supersónico de Fase 3)
-    let margotMap = null, margotW = 1, margotH = 1;
-    if (assets.has('arena_margot_hero')) {
-      const mm = assets.meta('arena_margot_hero');
-      margotMap = assets.texture('arena_margot_hero'); margotW = mm.w; margotH = mm.h;
-    } else if (assets.has('margot_sheet')) {
-      const mm = assets.meta('margot_sheet');
-      const tx = keep(assets.texture('margot_sheet').clone());
-      tx.needsUpdate = true; tx.repeat.set(0.5, 0.5); tx.offset.set(0.5, 0.5);
-      margotMap = tx; margotW = mm.w / 2; margotH = mm.h / 2;
+    // Margot (remate de Fase 3): gatea hasta el atril y garabatea el cuadro con crayones (ya no llora)
+    const margotFx = createMargotFinish({ T, scene, assets, keep, unit, L, kind: 'crayons' });
+
+    // Atril con el lienzo donde Facu pinta en vivo (se pinta de a poco; Margot le hace garabatos encima)
+    const EASEL = { x: 2.0, z: FACU_ARENA.bossZ + 0.9, y: 2.5 };
+    const lienzo = document.createElement('canvas'); lienzo.width = 256; lienzo.height = 200;
+    const lg = lienzo.getContext('2d');
+    const lienzoTex = keep(new T.CanvasTexture(lienzo)); lienzoTex.encoding = T.sRGBEncoding;
+    const clearLienzo = () => { lg.fillStyle = '#f6efe2'; lg.fillRect(0, 0, 256, 200); lienzoTex.needsUpdate = true; };
+    clearLienzo();
+    const woodM = keep(new T.MeshLambertMaterial({ color: L('#8a5a33') }));
+    const easel = new T.Group();
+    for (const [lx, rz] of [[-0.75, 0.12], [0.75, -0.12]]) { const leg = new T.Mesh(keep(new T.BoxGeometry(0.12, 4.2, 0.12)), woodM); leg.position.set(lx, 2.0, 0); leg.rotation.z = rz; easel.add(leg); }
+    const backLeg = new T.Mesh(keep(new T.BoxGeometry(0.1, 4.0, 0.1)), woodM); backLeg.position.set(0, 1.9, -0.6); backLeg.rotation.x = -0.25; easel.add(backLeg);
+    const shelf = new T.Mesh(keep(new T.BoxGeometry(1.9, 0.12, 0.3)), woodM); shelf.position.set(0, 1.35, 0.08); easel.add(shelf);
+    const canvasMesh = new T.Mesh(keep(new T.BoxGeometry(2.3, 1.8, 0.08)), [woodM, woodM, woodM, woodM, keep(new T.MeshBasicMaterial({ map: lienzoTex })), woodM]);
+    canvasMesh.position.set(0, EASEL.y, 0.1); easel.add(canvasMesh);
+    easel.position.set(EASEL.x, 0, EASEL.z); easel.rotation.y = -0.35; scene.add(easel);
+    let strokeAcc = 0, scribbleAcc = 0, wasCharge = false, wasMargot = false;
+    const PAL = ['#e63946', '#2a9df4', '#ffb703', '#2bb673', '#7b2cbf', '#111'];
+    function paintStroke() { // pincelada de «arte moderno» de Facu
+      lg.globalAlpha = 0.9; lg.fillStyle = lg.strokeStyle = PAL[Math.floor(Math.random() * PAL.length)];
+      if (Math.random() < 0.5) { lg.beginPath(); lg.arc(30 + Math.random() * 196, 30 + Math.random() * 140, 10 + Math.random() * 28, 0, 6.283); lg.fill(); }
+      else { lg.lineWidth = 8 + Math.random() * 10; lg.lineCap = 'round'; lg.beginPath(); lg.moveTo(Math.random() * 256, Math.random() * 200); lg.lineTo(Math.random() * 256, Math.random() * 200); lg.stroke(); }
+      lg.globalAlpha = 1; lienzoTex.needsUpdate = true;
     }
-    const margotMesh = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: margotMap, alphaTest: 0.4, side: T.DoubleSide })));
-    const mh = 2.6; margotMesh.scale.set(mh * margotW / margotH, mh, 1); margotMesh.visible = false; scene.add(margotMesh);
-    const waveRing = new T.Mesh(keep(new T.RingGeometry(0.6, 1.0, 32)), keep(new T.MeshBasicMaterial({ color: L('#ff99cc'), transparent: true, opacity: 0.8, side: T.DoubleSide, depthWrite: false })));
-    waveRing.rotation.x = -Math.PI / 2; waveRing.visible = false; scene.add(waveRing);
+    function crayonScribble() { // garabato de Margot: rulos de crayón
+      lg.strokeStyle = ['#ff3b3b', '#2f8bff', '#ffd400', '#28c76f', '#ff4fd8'][Math.floor(Math.random() * 5)];
+      lg.lineWidth = 4; lg.lineCap = 'round'; lg.beginPath();
+      let px = 40 + Math.random() * 176, py = 40 + Math.random() * 120; lg.moveTo(px, py);
+      for (let i = 0; i < 10; i++) { px += (Math.random() - 0.5) * 60; py += (Math.random() - 0.5) * 50; lg.lineTo(px, py); }
+      lg.stroke(); lienzoTex.needsUpdate = true;
+    }
+    function crayonSun() { // y un solcito con carita, la firma de Margot
+      lg.fillStyle = '#ffd400'; lg.beginPath(); lg.arc(200, 48, 26, 0, 6.283); lg.fill();
+      lg.strokeStyle = '#ffd400'; lg.lineWidth = 4;
+      for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283; lg.beginPath(); lg.moveTo(200 + Math.cos(a) * 32, 48 + Math.sin(a) * 32); lg.lineTo(200 + Math.cos(a) * 44, 48 + Math.sin(a) * 44); lg.stroke(); }
+      lg.fillStyle = '#222'; lg.fillRect(191, 40, 5, 5); lg.fillRect(205, 40, 5, 5);
+      lg.strokeStyle = '#222'; lg.lineWidth = 3; lg.beginPath(); lg.arc(200, 50, 10, 0.2, Math.PI - 0.2); lg.stroke();
+      lienzoTex.needsUpdate = true;
+    }
+
+    // Pincelazos: mira en el piso + gota en parábola + charcos pegajosos
+    const blobG = keep(new T.SphereGeometry(0.42, 14, 10));
+    const ringG = keep(new T.RingGeometry(0.85, 1.25, 30));
+    const discG = keep(new T.CircleGeometry(1, 24));
+    const liveBlobs = new Map(), livePuddles = new Map();
+    const colorMats = {};
+    const matFor = (hex, kind) => colorMats[hex + kind] || (colorMats[hex + kind] = keep(kind === 'blob'
+      ? new T.MeshLambertMaterial({ color: L(hex), emissive: L(hex), emissiveIntensity: 0.25 })
+      : new T.MeshBasicMaterial({ color: L(hex), transparent: true, opacity: kind === 'ring' ? 0.8 : 0.85, depthWrite: false, side: T.DoubleSide })));
 
     // Cuadros voladores: marco dorado con pintura (se reusan las 4 pinturas)
     const goldM = keep(new T.MeshStandardMaterial({ color: L('#e0a82a'), roughness: 0.35, metalness: 0.4 }));
@@ -218,7 +257,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       '<div class="arena-flash"></div>' +
       '<div class="phase-card"><small></small><b></b><span></span></div>' +
       '<div class="pinky-margot-cue hidden"><i class="margot-ico" aria-hidden="true"></i><span></span></div>' +
-      '<button type="button" class="margot-btn hidden"><i class="margot-ico" aria-hidden="true"></i><span>' + tr('¡TOCÁ PARA EL GRITO DE MARGOT!') + '</span></button>';
+      '<button type="button" class="margot-btn hidden"><i class="margot-ico" aria-hidden="true"></i><span>' + tr('¡TOCÁ: MARGOT LE PINTA EL CUADRO!') + '</span></button>';
     document.body.append(ui);
     document.body.classList.add('arena-on');
     const flashE = ui.querySelector('.arena-flash');
@@ -233,15 +272,15 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     const bossIntro = attachBossIntro(ui, {
       name: 'FACU «EL CEREBRO»',
       line1: '¿Creían que el cerebro era Pinky? ¡El cheque lo firmé yo!',
-      line2: '¡Bienvenidos a mi galería: acá se mira, no se toca!',
+      line2: '¡Bienvenidos a mi galería! Hoy pinto en vivo… ¡y ustedes son el lienzo!',
       quick: !!game.probar,
       onSkip() { if (phase === 'entrance') phaseT = bossIntro.dur; }
     });
 
     const CARDS = {
-      1: ['FASE 1 · 🖼️', '¡CUIDADO CON LOS CUADROS!', 'Esquivá los marcos y pegale cuando se queda sin cuadros'],
+      1: ['FASE 1 · 🎨', '¡OBRA EN VIVO!', 'Salí de la mira y pegale cuando se pone a pintar'],
       2: ['FASE 2 · 🔍', '¿CUÁL ES EL VERDADERO?', 'Mirá bien y pegale al cuadro verdadero'],
-      3: ['FASE 3 · 😡', '¡FACU SE ENOJÓ!', '¡Tocá a Margot: su llanto lo ablanda!']
+      3: ['FASE 3 · 😡', '¡FACU SE ENOJÓ!', '¡Tocá a Margot: le pinta el cuadro con crayones!']
     };
     let cardTimer = 0;
     function phaseCard(p, ms = 2.0) {
@@ -322,11 +361,18 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
           case 'carWarn': sfx('tick'); break;
           case 'carGo': sfx('honk'); break;
           case 'charging':
-            pop(0, BOSS_H + 0.2, FACU_ARENA.bossZ, '¡SE QUEDÓ SIN CUADROS! ¡PEGALE!', '#9bf7c4', 20, 1.4);
+            pop(0, BOSS_H + 0.2, FACU_ARENA.bossZ, '🎨 ¡SE PUSO A PINTAR! ¡PEGALE!', '#9bf7c4', 20, 1.4);
             break;
           case 'guarded':
             sfx('tick');
-            pop(e.x, 3.0, FACU_ARENA.bossZ, '¡ESPERÁ QUE SE QUEDE SIN CUADROS!', '#ffe066', 19, 1.0);
+            pop(e.x, 3.0, FACU_ARENA.bossZ, '¡ESPERÁ QUE SE PONGA A PINTAR!', '#ffe066', 19, 1.0);
+            break;
+          case 'aim': sfx('tick'); break;
+          case 'frameLift': sfx('tick'); break;
+          case 'blobGo': sfx('swing'); break;
+          case 'splat':
+            sfx('hit'); shake(0.12, 0.12);
+            burst(e.x, 0.4, e.z, e.color, 8, false);
             break;
           case 'meleeHit':
             addPts(FACU_ARENA.points.melee, e.x, 2.8, FACU_ARENA.bossZ); charge(POWER.hit);
@@ -341,12 +387,15 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
             sfx('pickup');
             pop(x, 3.6, z, '👶 ¡MARGOT ESTÁ LISTA!', '#ff99cc', 24, 1.4);
             break;
-          case 'margotCry':
+          case 'margotArt':
             addPts(FACU_ARENA.points.margot, 0, 3.5, -5);
-            sfx('power'); flash('#ff99cc', 0.48); shake(0.55, 0.45); freezeT = 0.09;
-            burst(0, 2.4, -5.5, '#ff99cc', 16, false);
-            burst(logic.state.bossX, 2.6, FACU_ARENA.bossZ + 0.4, '#ffd36e', 12, true);
-            pop(0, 4.2, -5, '👶 ¡BUAAAAAÁ! 💥', '#ff99cc', 30, 1.5);
+            sfx('power'); flash('#ffd400', 0.32); shake(0.3, 0.3);
+            pop(EASEL.x, 3.4, EASEL.z, '👶🖍️ ¡GARABATOS!', '#ffd400', 26, 1.0);
+            setTimeout(() => {
+              if (disposed) return;
+              sfx('fanfare');
+              pop(logic.state.bossX, BOSS_H + 0.9, FACU_ARENA.bossZ, '😍 ¡ES UNA OBRA MAESTRA!', '#ff8fc8', 30, 1.8);
+            }, 1100);
             break;
           case 'pickStage': {
             sfx('tick');
@@ -378,7 +427,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
               extraLifeUsed = true;
               hero.hp = Math.max(2, Math.ceil((hero.hpMax || 5) * 0.6));
               inv = 1.8; hurtT = 0.15;
-              logic.state.cars.length = 0;
+              logic.state.cars.length = 0; logic.state.blobs.length = 0;
               renderLife();
               pop(x, 3.4, z, '⭐ ¡VIDA EXTRA!', '#ffd36e', 26, 1.3);
               sfx('pickup');
@@ -392,7 +441,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
             sfx('fanfare'); flash('#fff', 0.6); shake(0.55, 0.5);
             burst(logic.state.bossX, 2.6, FACU_ARENA.bossZ + 0.4, '#ffd36e', 18, true);
             pop(logic.state.bossX, BOSS_H * 0.7, FACU_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.6);
-            pop(logic.state.bossX, BOSS_H * 0.45, FACU_ARENA.bossZ, '¡FACU SE ABLANDA!', '#9fe4ff', 22, 2.4);
+            pop(logic.state.bossX, BOSS_H * 0.45, FACU_ARENA.bossZ, '¡FACU SE RINDE ANTE EL ARTE!', '#9fe4ff', 22, 2.4);
             break;
           }
         }
@@ -450,7 +499,8 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
         if (dashT > 0) { dashT -= dt; vx = dashX * DASH_SPEED; vz = dashZ * DASH_SPEED; }
         else {
           const mx = input.moveX, mz = input.moveZ, len = Math.max(1, Math.hypot(mx, mz));
-          const slow = swing ? 0.35 : 1;
+          const sticky = y <= 0.05 && logic.inPaint(x, z) ? 0.45 : 1; // la pintura pegajosa frena
+          const slow = (swing ? 0.35 : 1) * sticky;
           vx = mx / len * MOVE * slow; vz = mz / len * MOVE * slow;
           moving = Math.hypot(mx, mz) > 0.15;
         }
@@ -498,50 +548,97 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       cam.lookAt(0, CAM.lookY + e * 1.6, FACU_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 
-      // Facu: un solo dibujo animado por código (respira, se agacha a tirar, se enoja y al final se ablanda)
+      // Facu: usa `arena_facu_<pose>` si ya está el dibujo; si no, el de presentador animado por código.
+      // Siempre hay gesto: se echa para atrás al apuntar (windup) y se tira para adelante al soltar.
       B.userData.prevX = S.bossX;
-      bossKey = 'facu';
+      const own = assets.has('arena_facu_' + S.pose);
+      const presenting = S.pose === 'reveal' || (S.mode === 'pick' && S.pose !== 'hurt');
+      bossKey = own ? 'arena_facu_' + S.pose : (presenting && assets.has('arena_facu_reveal') ? 'arena_facu_reveal' : (!own && assets.has('arena_facu_idle') && S.pose === 'idle' ? 'arena_facu_idle' : 'facu'));
       let sx = 1, sy = 1, by = 0, rz = 0;
+      const w = S.windup || 0, ease = w * w * (3 - 2 * w);
+      const toward = (S.blobs[0]?.tx ?? S.bossX) < S.bossX ? -1 : 1;
       if (S.pose === 'reveal') { by = Math.abs(Math.sin(t * 5)) * 0.18; sy = 1 + Math.sin(t * 10) * 0.03; rz = Math.sin(t * 5) * 0.05; }
-      else if (S.pose === 'throw') { const k = t * (S.angry ? 9 : 6); rz = Math.sin(k) * 0.16; sy = 1 - Math.max(0, Math.sin(k)) * 0.07; by = Math.abs(Math.sin(k * 0.5)) * 0.1; }
-      else if (S.pose === 'charge') { sy = 0.94 + Math.sin(t * 9) * 0.02; rz = Math.sin(t * 3) * 0.05; }
+      else if (S.pose === 'aim' || S.pose === 'windup') {
+        // carga el brazo: se echa para atrás, se estira y tiembla justo antes de soltar
+        sx = toward; rz = toward * 0.22 * ease + (w > 0.75 ? Math.sin(t * 60) * 0.025 : 0); sy = 1 + 0.06 * ease; by = 0.15 * ease;
+      } else if (S.pose === 'throw') { sx = toward; rz = -toward * 0.2; sy = 0.93; sx *= 1.06; by = 0.05; }
+      else if (S.pose === 'paint') {
+        // de espaldas al público, pinceleando en el atril
+        sx = -1; rz = Math.sin(t * 9) * 0.06; by = Math.abs(Math.sin(t * 9)) * 0.06;
+      }
       else if (S.pose === 'hurt') { rz = 0.2; sy = 0.9; sx = 1.06; by = 0.08; }
-      else if (S.pose === 'ko') { sy = 0.7; rz = Math.sin(t * 2) * 0.03; }
-      if (S.angry && S.pose !== 'ko') { sx += Math.sin(t * 38) * 0.012; rz += Math.sin(t * 31) * 0.02; }
+      else if (S.pose === 'love') { by = 0.25 + Math.abs(Math.sin(t * 6)) * 0.25; rz = Math.sin(t * 4) * 0.12; sy = 1 + Math.sin(t * 8) * 0.05; }
+      else if (S.pose === 'ko') { sy = own ? 1 : 0.7; rz = Math.sin(t * 2) * 0.03; }
+      else { by = Math.abs(Math.sin(t * 2.6)) * 0.08; sy = 1 + Math.sin(t * 5.2) * 0.02; } // idle: respira y se pasea
+      if (own) { sy = 1 + (sy - 1) * 0.5; rz *= 0.5; } // con el dibujo real alcanza con un gesto chico
+      if (S.angry && S.pose !== 'ko' && S.pose !== 'love') { sx += Math.sign(sx) * Math.sin(t * 38) * 0.012; rz += Math.sin(t * 31) * 0.02; }
       setTex(B, bossKey, S.pose);
       place(B, S.bossX, by, FACU_ARENA.bossZ);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;
       bossFlash = Math.max(0, bossFlash - dt);
-      const rage = S.angry && S.pose !== 'ko' ? 0.62 + 0.1 * Math.sin(t * 9) : 1;
+      const rage = S.angry && S.pose !== 'ko' && S.pose !== 'love' ? 0.7 + 0.1 * Math.sin(t * 9) : 1;
       B.material.color.setRGB(1, bossFlash > 0 ? 0.55 : rage, bossFlash > 0 ? 0.55 : rage);
-      // Aro verde cuando Pinky está distraído cobrando (invita a correr y pegarle)
-      chargeRing.visible = S.mode === 'charge';
+      // Aro verde cuando está distraído pintando (invita a correr y pegarle)
+      chargeRing.visible = S.mode === 'charge' && S.pose !== 'love';
       if (chargeRing.visible) {
         chargeRing.position.set(S.bossX, 0.04, FACU_ARENA.meleeZ);
         chargeRing.scale.setScalar(1 + Math.sin(t * 12) * 0.12);
       }
 
-      // Anticipación + botón + Margot siempre visible al costado derecho hasta que salta al frente en Fase 3
+      // Atril: el cuadro avanza mientras pinta; en el remate Margot lo llena de garabatos y un solcito
+      const charging = S.mode === 'charge' && S.pose === 'paint';
+      if (charging && !wasCharge) clearLienzo();
+      wasCharge = charging;
+      if (charging) { strokeAcc += dt; if (strokeAcc > 0.22) { strokeAcc = 0; paintStroke(); } }
+      const margotOn = S.margotT > 0;
+      if (margotOn && !wasMargot) { scribbleAcc = -0.6; }
+      if (margotOn) { scribbleAcc += dt; if (scribbleAcc > 0.12) { scribbleAcc = 0; crayonScribble(); } }
+      if (!margotOn && wasMargot) crayonSun();
+      wasMargot = margotOn;
+      canvasMesh.rotation.z = margotOn ? Math.sin(t * 20) * 0.03 : 0;
+
+      // Pincelazos: mira que late en el piso → gota en parábola desde la mano de Facu
+      const blobIds = new Set();
+      for (const bl of S.blobs) {
+        blobIds.add(bl.id);
+        let o = liveBlobs.get(bl.id);
+        if (!o) {
+          o = { ring: new T.Mesh(ringG, matFor(bl.color, 'ring')), ball: new T.Mesh(blobG, matFor(bl.color, 'blob')) };
+          o.ring.rotation.x = -Math.PI / 2; scene.add(o.ring); scene.add(o.ball); liveBlobs.set(bl.id, o);
+        }
+        const k2 = bl.stage === 'aim' ? bl.t / bl.dur : 1;
+        o.ring.position.set(bl.tx, 0.04, bl.tz);
+        o.ring.scale.setScalar(bl.stage === 'aim' ? 1.6 - 0.6 * k2 : 1 + Math.sin(t * 30) * 0.06);
+        o.ring.material.opacity = 0.5 + 0.4 * Math.abs(Math.sin(t * (bl.stage === 'aim' ? 10 : 24)));
+        if (bl.stage === 'aim') {
+          o.ball.visible = true; o.ball.scale.setScalar(0.5 + k2 * 0.5);
+          o.ball.position.set(S.bossX + toward * 0.9, BOSS_H * 0.72 + k2 * 0.4, FACU_ARENA.bossZ + 0.6);
+        } else {
+          const f = Math.min(1, bl.t / FACU_ARENA.blobFly);
+          o.ball.visible = true; o.ball.scale.set(1, 1 + f * 0.4, 1);
+          o.ball.position.set(bl.x0 + (bl.tx - bl.x0) * f, BOSS_H * 0.8 * (1 - f) + Math.sin(f * Math.PI) * 4.2 + 0.3, bl.z0 + (bl.tz - bl.z0) * f);
+        }
+      }
+      for (const [id, o] of liveBlobs) if (!blobIds.has(id)) { scene.remove(o.ring); scene.remove(o.ball); liveBlobs.delete(id); }
+      const pudIds = new Set();
+      for (const pd of S.puddles) {
+        pudIds.add(pd.id);
+        let m = livePuddles.get(pd.id);
+        if (!m) { m = new T.Mesh(discG, keep(matFor(pd.color, 'pud').clone())); m.rotation.x = -Math.PI / 2; m.rotation.z = Math.random() * 6; scene.add(m); livePuddles.set(pd.id, m); }
+        m.position.set(pd.x, 0.03, pd.z);
+        const grow = Math.min(1, (FACU_ARENA.puddleLife - pd.life) * 8);
+        m.scale.set(FACU_ARENA.puddleR * grow, FACU_ARENA.puddleR * 0.8 * grow, 1);
+        m.material.opacity = Math.min(0.85, pd.life * 0.9);
+      }
+      for (const [id, m] of livePuddles) if (!pudIds.has(id)) { scene.remove(m); livePuddles.delete(id); }
+
+      // Anticipación + botón + Margot siempre visible al costado derecho hasta que va al atril en Fase 3
       const showBtn = S.margotReady && phase === 'fight';
       const showCue = !showBtn && phase === 'fight' && S.phase !== 'ko' &&
         ((S.phase === 2 && S.hp <= FACU_ARENA.p3At + 4) || (S.phase === 3 && S.mode === 'transition'));
       margotCue.classList.toggle('hidden', !showCue);
       margotBtn.classList.toggle('hidden', !showBtn);
-      if (S.margotT > 0) {
-        margotMesh.visible = true;
-        margotMesh.scale.set(2.4, 2.4, 1);
-        margotMesh.position.set(0, 0.2 + Math.sin(t * 16) * 0.15, -5.5);
-        waveRing.visible = true;
-        const p = 1 - S.margotT / 2.0;
-        waveRing.position.set(0, 0.12, -5.5);
-        waveRing.scale.setScalar(1 + p * 12);
-        waveRing.material.opacity = Math.max(0, 0.85 * (1 - p));
-      } else {
-        margotMesh.visible = true;
-        margotMesh.scale.set(1.85, 1.85, 1);
-        margotMesh.position.set(FACU_ARENA.xMax - 0.5, Math.abs(Math.sin(t * 5)) * 0.12, FACU_ARENA.bossZ + 0.5);
-        waveRing.visible = false;
-      }
+      margotFx.draw(dt, t, S.margotT, 2.2, { x: S.bossX, z: FACU_ARENA.bossZ, h: BOSS_H }, { x: -FACU_ARENA.xMax + 0.5, z: FACU_ARENA.bossZ + 1.5 }, EASEL);
 
       // Avisos en los 3 cajones + autos asomando cola con luces de reversa parpadeando en `warn`
       const warned = new Set();
