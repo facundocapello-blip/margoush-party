@@ -24,6 +24,7 @@ export const LALE_ARENA = {
   skateZ: -3.2,
   skateSpeed: 8.6,
   skateWarn: 0.48,
+  windup: 0.4,     // anticipación antes de cada barra de manteca
   points: { flour: 250, melee: 180, dodge: 100, power: 300 }
 };
 
@@ -38,6 +39,7 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     bossX: 0,
     bossZ: A.bossZ,
     skateDir: 1,
+    windup: 0,         // 0..1 anticipación antes de tirar (la vista hace el gesto)
     skateWarnZ: A.skateZ,
     shots: [],         // [{ id, x, z, vx, vz, targetZ }]
     puddles: [],       // [{ id, x, z, life }]
@@ -143,6 +145,7 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
   function update(dt, hero) {
     const evs = [];
     state.t += dt;
+    state.windup = 0;
     if (poseT > 0) poseT = Math.max(0, poseT - dt);
     if (hitLock > 0) hitLock = Math.max(0, hitLock - dt);
     if (state.phase === 'ko') { state.pose = 'ko'; return evs; }
@@ -235,7 +238,9 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
       }
     } else if (state.mode === 'attack') {
       state.bossZ = A.bossZ;
-      state.bossX = Math.sin(state.t * 1.1) * 2.5;
+      // se pasea, pero se planta para cargar el tiro (la manteca sale de su mano, con gesto previo)
+      if (timer > A.windup) state.bossX = Math.sin(state.t * 1.1) * 2.5;
+      state.windup = timer > 0 && timer < A.windup ? 1 - timer / A.windup : 0;
       if (state.bags.every(b => !b.alive)) spawnBag(state.phase === 3 ? 2 : 1);
       timer -= dt;
       if (timer <= 0) {

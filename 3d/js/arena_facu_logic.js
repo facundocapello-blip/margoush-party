@@ -1,12 +1,13 @@
-// Lógica pura de la Arena Final de Facu «el Cerebro» (Acto 5 — Galería HENRIS, Buenos Aires).
-// Intro revelación + 3 fases + remate final con Margot (el llanto de Margot lo ablanda).
+// Lógica pura de la Arena Final de Facu «el Galerista» (Acto 5 — Galería HENRIS, Buenos Aires).
+// Facu pinta en vivo con paleta y pincel: tiene juego propio (no es el de los autos de Pinky).
 //
-// Fase 1 (HP 30→21): tira cuadros por los 3 carriles (aviso en el piso y después vuela el marco);
-//   cada 2 tandas se queda sin cuadros (`charge`) y queda abierto para pegarle.
+// Fase 1 (HP 30→21): «Obra en vivo» — apunta (`aim`, se marca el piso donde estás), revolea un pincelazo
+//   de pintura (`throw`) que cae en parábola y deja un charco pegajoso que te frena. Después de 3
+//   pincelazos se da vuelta a pintar su cuadro (`charge`/pose `paint`): ahí queda abierto para pegarle.
 // Fase 2 (HP 20→11): minijuego «¿cuál es el cuadro verdadero?»: se muestra el verdadero, se mezclan
 //   los tres y hay que pegarle al verdadero (cada acierto saca 3). El falso mancha de pintura (-1 ♥).
-// Fase 3 (HP 10→0): se enoja: tira de a dos cuadros más rápido y se habilita el remate de Margot
-//   (su llanto lo ablanda y lo deja listo para el K.O.).
+// Fase 3 (HP 10→0): se enoja: pincelazos de a dos + revolea cuadros por los carriles (con gesto previo)
+//   y se habilita el remate de Margot: garabatea el cuadro con crayones y Facu se derrite («¡obra maestra!»).
 
 export const FACU_ARENA = {
   hpMax: 30,
@@ -19,7 +20,15 @@ export const FACU_ARENA = {
   lanes: [-2.9, 0, 2.9],
   laneHalfW: 1.15,
   warnTime: 0.95,
-  carSpeed: 15.5,      // velocidad de los cuadros
+  carSpeed: 14.5,      // velocidad de los cuadros revoleados (fase 3)
+  frameWindup: 0.55,   // levanta el cuadro antes de revolearlo
+  aim: 0.75,           // cuánto marca el piso antes de tirar la pintura
+  aimFast: 0.6,
+  blobFly: 0.72,       // vuelo de la pintura
+  splashR: 1.25,       // radio de la mancha al caer
+  puddleR: 1.2,
+  puddleLife: 3.4,
+  easelStandX: 0.7,   // donde se para a pintar (el atril está a su derecha)
   meleeZ: -6.2,
   meleeX: 2.3,
   pickZ: -8.6,         // dónde cuelgan los tres cuadros del minijuego
@@ -35,10 +44,13 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
     hpMax: A.hpMax,
     phase: 1,          // 1 | 2 | 3 | 'ko'
     mode: 'reveal',    // 'reveal' | 'wave' | 'charge' | 'transition' | 'pick' | 'ko'
-    pose: 'reveal',    // reveal | throw | charge | hurt | ko  (la vista le agrega el enojo en la fase 3)
+    pose: 'reveal',    // reveal | aim | throw | paint | windup | hurt | love | ko
     bossX: 0,
-    cars: [],          // cuadros en vuelo: [{ id, lane, x, z, stage: 'warn'|'drive', t, hit }]
+    cars: [],          // cuadros revoleados (fase 3): [{ id, lane, x, z, stage: 'warn'|'drive', t, hit }]
+    blobs: [],         // pincelazos: [{ id, x0, z0, tx, tz, stage: 'aim'|'fly', t, dur, color }]
+    puddles: [],       // charcos de pintura pegajosa: [{ id, x, z, life, color }]
     pick: null,        // minijuego: { stage: 'show'|'shuffle'|'choose'|'result', t, round, frames: [{ id, x, real }] }
+    windup: 0,         // 0..1 anticipación antes de cada tiro (la vista lo usa para el gesto)
     angry: false,
     margotReady: false,
     margotT: 0,
@@ -47,11 +59,14 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
 
   let nextId = 1;
   let timer = 1.25;
-  let wavesLeft = 2;
+  let wavesLeft = 3;     // pincelazos (o tandas) que faltan en la serie actual
   let poseName = 'reveal', poseT = 0;
   let afterPhase = null;
   let hitLock = 0;
   let swap = null; // { a, b, fromA, fromB, t, left }
+  let frameNext = false; // fase 3: alterna pincelazos y cuadros revoleados
+  let pendingFrames = null; // { lanes, t } cuadro levantado esperando para salir
+  const COLORS = ['#ff4f8b', '#3fa9ff', '#ffd23f', '#48d597', '#a35bff'];
 
   function setPose(name, dur) { poseName = name; poseT = dur; state.pose = name; }
 
@@ -63,13 +78,46 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
     return picked;
   }
 
-  function spawnFrameWave(count, evs) {
-    for (const lane of pickLanes(count)) {
+  const clampX = (v) => Math.max(-A.xMax + 0.6, Math.min(A.xMax - 0.6, v));
+  const clampZ = (v) => Math.max(A.zFar + 1.0, Math.min(A.zNear - 0.3, v));
+
+  // Pincelazo: primero apunta (marca en el piso donde está el héroe), después vuela en parábola
+  function aimBlobs(hero, evs) {
+    const n = state.phase >= 3 ? 2 : 1;
+    const aimDur = state.phase >= 3 ? A.aimFast : A.aim;
+    for (let i = 0; i < n; i++) {
+      const off = i === 0 ? 0 : (hero.x > 0 ? -2.4 : 2.4);
+      state.blobs.push({
+        id: nextId++, x0: state.bossX, z0: A.bossZ + 1.0,
+        tx: clampX(hero.x + off), tz: clampZ(hero.z + (i ? 0.8 : 0)),
+        stage: 'aim', t: 0, dur: aimDur, color: COLORS[Math.floor(rand() * COLORS.length)]
+      });
+    }
+    setPose('aim', aimDur);
+    evs.push({ type: 'aim', count: n });
+    if (wavesLeft === 3 || state.phase >= 3) evs.push({ type: 'voice', event: 'attack' });
+  }
+
+  // Fase 3: levanta un cuadro (gesto) y recién después lo revolea por los carriles
+  function liftFrames(evs) {
+    pendingFrames = { lanes: pickLanes(2), t: 0 };
+    setPose('windup', A.frameWindup);
+    evs.push({ type: 'frameLift' });
+  }
+  function spawnFrameWave(lanes, evs) {
+    for (const lane of lanes) {
       state.cars.push({ id: nextId++, lane, x: A.lanes[lane], z: A.bossZ + 1.5, stage: 'warn', t: 0, hit: false });
     }
-    setPose('throw', 0.6);
+    setPose('throw', 0.5);
     evs.push({ type: 'carWarn' });
     evs.push({ type: 'voice', event: 'attack' });
+  }
+
+  function startSeries() {
+    state.mode = 'wave';
+    wavesLeft = 3;
+    timer = 0.45;
+    frameNext = false;
   }
 
   // ---------- minijuego de la fase 2 ----------
@@ -82,7 +130,7 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
       frames: A.lanes.map((x, i) => ({ id: i, x, real: i === real }))
     };
     swap = null;
-    setPose('throw', 0.5);
+    setPose('reveal', 0.5); // presenta el cuadro verdadero
     evs.push({ type: 'pickStage', stage: 'show' });
     evs.push({ type: 'voice', event: 'pick' });
   }
@@ -134,7 +182,7 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
   function enterPhase(p, evs) {
     state.phase = p;
     state.mode = 'transition';
-    state.cars.length = 0;
+    state.cars.length = 0; state.blobs.length = 0; pendingFrames = null;
     state.pick = null;
     swap = null;
     timer = 1.45;
@@ -151,7 +199,7 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
     evs.push({ type: 'bossHit', dmg, source, hp: state.hp });
     if (state.hp <= 0) {
       state.phase = 'ko'; state.mode = 'ko'; state.pose = 'ko';
-      state.cars.length = 0; state.pick = null; state.margotReady = false;
+      state.cars.length = 0; state.blobs.length = 0; state.pick = null; state.margotReady = false; pendingFrames = null;
       evs.push({ type: 'ko' });
       evs.push({ type: 'voice', event: 'ko' });
       return;
@@ -163,15 +211,21 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
   function update(dt, hero) {
     const evs = [];
     state.t += dt;
+    state.windup = 0;
     if (poseT > 0) poseT = Math.max(0, poseT - dt);
     if (hitLock > 0) hitLock = Math.max(0, hitLock - dt);
     if (state.margotT > 0) state.margotT = Math.max(0, state.margotT - dt);
+    // los charcos se secan solos
+    for (let i = state.puddles.length - 1; i >= 0; i--) {
+      state.puddles[i].life -= dt;
+      if (state.puddles[i].life <= 0) state.puddles.splice(i, 1);
+    }
     if (state.phase === 'ko') { state.pose = 'ko'; return evs; }
 
     if (state.mode === 'reveal') {
       state.pose = 'reveal';
       timer -= dt;
-      if (timer <= 0) { state.mode = 'wave'; wavesLeft = 2; timer = 0.4; }
+      if (timer <= 0) startSeries();
       return evs;
     }
 
@@ -181,7 +235,7 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
         afterPhase = null;
         if (state.phase === 2) startPick(evs);
         else {
-          state.mode = 'wave'; wavesLeft = 2; timer = 0.45;
+          startSeries();
           evs.push({ type: 'margotReady' });
         }
       }
@@ -190,32 +244,73 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
 
     if (state.mode === 'pick') {
       updatePick(dt, evs);
-      if (poseT > 0) state.pose = poseName; else state.pose = 'charge';
+      if (poseT > 0) state.pose = poseName; else state.pose = 'paint';
       return evs;
     }
 
     if (state.mode === 'charge') {
+      state.bossX += (A.easelStandX - state.bossX) * Math.min(1, dt * 4); // va hasta su atril
       timer -= dt;
       if (timer <= 0) {
-        state.mode = 'wave'; wavesLeft = 2; timer = 0.45;
+        startSeries();
         if (state.phase === 3 && !state.margotReady) { state.margotReady = true; evs.push({ type: 'margotReady' }); }
       }
     } else if (state.mode === 'wave') {
-      state.bossX = Math.sin(state.t * 1.2) * 2.2;
+      const busy = state.blobs.length > 0 || state.cars.length > 0 || pendingFrames;
+      // se pasea por la galería, pero se planta para apuntar/levantar el cuadro (el tiro sale de su mano)
+      if (!busy) state.bossX += (Math.sin(state.t * 1.2) * 2.2 - state.bossX) * Math.min(1, dt * 3);
       timer -= dt;
-      if (wavesLeft <= 0 && state.cars.length === 0 && timer <= 0) {
-        state.mode = 'charge'; state.bossX = 0; timer = 3.0;
-        setPose('charge', 3.0);
+      if (wavesLeft <= 0 && !busy && timer <= 0) {
+        state.mode = 'charge'; timer = state.phase === 3 ? 2.4 : 3.0;
+        setPose('paint', timer);
         evs.push({ type: 'charging' });
         evs.push({ type: 'voice', event: 'taunt' });
-      } else if (wavesLeft > 0 && timer <= 0 && state.cars.length === 0) {
-        spawnFrameWave(state.phase >= 3 ? 2 : 1, evs);
+      } else if (wavesLeft > 0 && timer <= 0 && !busy) {
+        if (state.phase >= 3 && frameNext) liftFrames(evs);
+        else aimBlobs(hero, evs);
+        frameNext = !frameNext;
         wavesLeft--;
-        timer = wavesLeft <= 0 ? 0.75 : (state.phase === 3 ? 0.8 : 0.9);
+        timer = wavesLeft <= 0 ? 0.6 : (state.phase === 3 ? 0.35 : 0.5);
       }
     }
 
-    const speed = A.carSpeed * (state.phase === 3 ? 1.18 : 1);
+    // Cuadro levantado: anticipación y después sale volando
+    if (pendingFrames) {
+      pendingFrames.t += dt;
+      state.windup = Math.min(1, pendingFrames.t / A.frameWindup);
+      if (pendingFrames.t >= A.frameWindup) { spawnFrameWave(pendingFrames.lanes, evs); pendingFrames = null; }
+    }
+
+    // Pincelazos
+    for (let i = state.blobs.length - 1; i >= 0; i--) {
+      const bl = state.blobs[i];
+      bl.t += dt;
+      if (bl.stage === 'aim') {
+        state.windup = Math.max(state.windup, Math.min(1, bl.t / bl.dur));
+        if (bl.t >= bl.dur) {
+          bl.stage = 'fly'; bl.t = 0; bl.x0 = state.bossX;
+          setPose('throw', 0.45);
+          evs.push({ type: 'blobGo', x: bl.x0 });
+        }
+      } else if (bl.t >= A.blobFly) {
+        state.blobs.splice(i, 1);
+        state.puddles.push({ id: bl.id, x: bl.tx, z: bl.tz, life: A.puddleLife, color: bl.color });
+        evs.push({ type: 'splat', x: bl.tx, z: bl.tz, color: bl.color });
+        const hit = Math.hypot(hero.x - bl.tx, hero.z - bl.tz) < A.splashR && (hero.y || 0) < 1.2;
+        if (hit) {
+          if (hero.dodging) evs.push({ type: 'dodge', x: hero.x, z: hero.z });
+          else if (!hero.inv) {
+            evs.push({ type: 'hurt', source: 'paint', penalty: A.points.paintPenalty });
+            evs.push({ type: 'voice', event: 'taunt' });
+          }
+        } else if (Math.hypot(hero.x - bl.tx, hero.z - bl.tz) < A.splashR + 1.1) {
+          evs.push({ type: 'dodge', x: hero.x, z: hero.z });
+        }
+      }
+    }
+
+    // Cuadros revoleados (fase 3)
+    const speed = A.carSpeed;
     for (let i = state.cars.length - 1; i >= 0; i--) {
       const c = state.cars[i];
       c.t += dt;
@@ -223,7 +318,7 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
         if (c.t >= A.warnTime) { c.stage = 'drive'; c.t = 0; evs.push({ type: 'carGo', lane: c.lane }); }
       } else {
         c.z += speed * dt;
-        if (!c.hit && Math.abs(c.z - hero.z) < 1.15 && Math.abs(c.x - hero.x) < A.laneHalfW) {
+        if (!c.hit && Math.abs(c.z - hero.z) < 1.15 && Math.abs(c.x - hero.x) < A.laneHalfW && (hero.y || 0) < 1.0) {
           if (hero.dodging) { c.hit = true; evs.push({ type: 'dodge', x: hero.x, z: hero.z }); }
           else if (!hero.inv) {
             c.hit = true;
@@ -236,9 +331,15 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
     }
 
     if (poseT > 0) state.pose = poseName;
-    else if (state.mode === 'charge') state.pose = 'charge';
-    else state.pose = state.angry ? 'throw' : 'reveal';
+    else if (state.mode === 'charge') state.pose = 'paint';
+    else state.pose = 'idle';
     return evs;
+  }
+
+  // ¿El héroe está pisando pintura? (la vista lo frena)
+  function inPaint(x, z) {
+    for (const p of state.puddles) if (Math.hypot(x - p.x, z - p.z) < A.puddleR) return true;
+    return false;
   }
 
   function punch(area) {
@@ -283,18 +384,18 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
     return evs;
   }
 
-  // Remate de Margot en la fase 3: su llanto ablanda a Facu y le saca mucho
+  // Remate de Margot en la fase 3: garabatea el cuadro de Facu con crayones y él se derrite
   function triggerMargot() {
     const evs = [];
     if (!state.margotReady || state.phase === 'ko') return evs;
     state.margotReady = false;
-    state.margotT = 2.0;
-    state.cars.length = 0;
+    state.margotT = 2.2;
+    state.cars.length = 0; state.blobs.length = 0; pendingFrames = null;
     state.mode = 'charge';
-    timer = 2.6;
-    setPose('hurt', 0.8);
-    evs.push({ type: 'margotCry' });
-    evs.push({ type: 'voice', event: 'hurt' });
+    timer = 2.8;
+    setPose('love', 1.6);
+    evs.push({ type: 'margotArt' });
+    evs.push({ type: 'voice', event: 'margot' });
     damage(6, 'margot', evs);
     return evs;
   }
@@ -303,7 +404,7 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
     const evs = [];
     if (state.phase === 'ko' || state.mode === 'reveal' || state.mode === 'transition') return evs;
     const inPick = state.mode === 'pick';
-    state.cars.length = 0;
+    state.cars.length = 0; state.blobs.length = 0; pendingFrames = null;
     state.pick = null; swap = null;
     state.mode = 'charge';
     timer = 2.0;
@@ -318,13 +419,13 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
 
   function _setHp(hp) {
     state.hp = Math.max(0, Math.min(A.hpMax, hp));
-    state.cars.length = 0; state.pick = null; swap = null;
+    state.cars.length = 0; state.blobs.length = 0; state.puddles.length = 0; state.pick = null; swap = null; pendingFrames = null;
     state.margotT = 0;
     state.angry = false;
     if (state.hp <= 0) {
       state.phase = 'ko'; state.mode = 'ko'; state.pose = 'ko'; state.margotReady = false;
     } else if (state.hp <= A.p3At) {
-      state.phase = 3; state.mode = 'wave'; wavesLeft = 2; timer = 0.5; state.margotReady = true; state.angry = true;
+      state.phase = 3; startSeries(); timer = 0.5; state.margotReady = true; state.angry = true;
     } else if (state.hp <= A.p2At) {
       state.phase = 2; state.margotReady = false;
       startPick([]);
@@ -333,5 +434,5 @@ export function createFacuArenaLogic({ rand = Math.random } = {}) {
     }
   }
 
-  return { state, update, punch, power, triggerMargot, _setHp };
+  return { state, update, punch, power, triggerMargot, inPaint, _setHp };
 }

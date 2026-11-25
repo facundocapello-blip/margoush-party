@@ -25,6 +25,7 @@ export const CEPI_ARENA = {
   meleeZ: -6.3,    // cerca de la red para pegarle de frente o voltear cartones
   meleeX: 2.2,
   lanes: [-2.65, 0, 2.65],
+  windup: 0.42,    // anticipación (paleta arriba) antes de cada saque
   duel: { hide: 1.05, tell: 1.75, tellFast: 1.45, result: 1.05 },
   points: { returned: 300, normalReturn: 120, melee: 180, duel: 250, cardboard: 100, dodge: 100 }
 };
@@ -38,6 +39,7 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
     mode: 'attack',   // 'attack' | 'tired' | 'stun' | 'transition' | 'duel' | 'ko'
     pose: 'idle',     // idle | smash | block | tired | stun | back | point | ko
     bossX: 0,
+    windup: 0,        // 0..1 anticipación antes del saque (la vista hace el gesto)
     bossLane: 1,      // 0 | 1 | 2 (en fase 3)
     pointDir: 0,      // -1 izquierda | +1 derecha (en fase 2)
     duel: null,       // { stage: 'hide'|'tell'|'result', t, dir, round, won, last }
@@ -198,6 +200,7 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
   function update(dt, hero) {
     const evs = [];
     state.t += dt;
+    state.windup = 0;
     if (poseT > 0) poseT = Math.max(0, poseT - dt);
     if (hitLock > 0) hitLock = Math.max(0, hitLock - dt);
     if (state.phase === 'ko') {
@@ -245,10 +248,11 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
       }
     } else if (state.mode === 'attack') {
       // En fase 1 Cepi se mueve suave de lado a lado; en fase 3 se queda en su carril con los cartones
-      if (state.phase === 1) {
+      if (state.phase === 1 && timer > A.windup) {
         state.bossX = Math.sin(state.t * 1.15) * 2.6;
       }
       timer -= dt;
+      state.windup = timer > 0 && timer < A.windup ? 1 - timer / A.windup : 0; // levanta la paleta antes del saque
       if (timer <= 0) {
         const isLast = seriesLeft <= 1;
         const gold = isLast;
