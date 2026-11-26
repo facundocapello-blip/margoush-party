@@ -692,3 +692,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/i18n.js`, `node tools/stamp_versions.mjs`, `npm test` 95/96 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi-duelo
 - Rollback: `git revert <commit [H-3]>` en `feat-3d` y push (base previa: `fba5d61`).
+
+## 2026-11-26 · H-4: sin masculinos dirigidos a Marine + salto de línea en frases flotantes `.pop` (hecho por Gemini)
+- Qué cambió: `3d/js/bonus.js` (`¡Es eléctrico, papá!` → `¡Es eléctrico, che!`), `3d/js/enemies.js` (`¿Te lo cuido, jefe?` / `¡Son 2 lucas, maestro!` → `¿Te lo cuido?` / `¡Son 2 lucas!`), `3d/js/ui.js` (`¡Sé el primero!` → `¡El primer lugar te espera!`), `3d/js/i18n.js` (claves actualizadas en FR), `3d/css/game.css` (`.pop` con `width: max-content; max-width: min(90vw, 420px); white-space: normal; text-align: center; line-height: 1.15`), `3d/js/pop_layout.js` (acotado horizontal de `.pop` para que no se recorte contra los bordes en 430 px), `3d/index.html` (sellado con `stamp_versions.mjs`) y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check`, `node tools/stamp_versions.mjs`, `npm test` 95/96 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); prueba en Chrome headless (`430×932`) con la frase más larga de Pinky (`¡Bueno, bueno! Hoy no se cobra… ¡pero mirá, el cheque lo firmó Facu!`): ancho ≤ 90 % de 430 px (sin desbordar), `0` errores. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=pinky
+- Rollback: `git revert <commit [H-4]>` en `feat-3d` y push (base previa: `aec059c`).

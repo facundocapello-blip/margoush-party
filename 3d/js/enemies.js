@@ -31,7 +31,7 @@ export const PATOVICA = { warn: 0.95, speed: 9, run: 7 };
 const WAIT = { min: 2.8, spread: 1.6, settle: 0.6, gap: 0.4 }; // anillo de espera alrededor del héroe
 const TAUNTS = ['¡Vení!', '¡Dale!', '¡Jaja!'];
 export const CEPI_TAUNTS = ['¡Me tenés podrido!', '¡Tomá, pelotazo!', '¡Dale que es fácil, che!', '¡Andá a jugar a la bolita!', '¡Te voy a acusar con mamá!'];
-export const PINKY_TAUNTS = ['¿Te lo cuido, jefe?', '¡Son 2 lucas, maestro!', '¡Dale que te lo lavo!', '¡Acá se paga por adelantado!', '¡Aguante Boca!'];
+export const PINKY_TAUNTS = ['¿Te lo cuido?', '¡Son 2 lucas!', '¡Dale que te lo lavo!', '¡Acá se paga por adelantado!', '¡Aguante Boca!'];
 // tired: el jefe, después de cada tanda de pelotazos, se queda sin aire y se le puede pegar (ventana de castigo)
 export const CEPI = { every: 2.6, windup: 0.45, keep: 6.5, keepBoss: 4.5, spread: 1.4, tired: 1.6 };
 const MELEE_BUSY = ['windup', 'strike', 'ring', 'charge'];

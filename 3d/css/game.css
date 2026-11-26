@@ -56,7 +56,7 @@ body.portrait #hud-score { font-size: 22px; background: rgba(16, 10, 30, 0.84); 
 .off-arrow[data-side="r"] { right: calc(6px + var(--safe-r)); border-left: 26px solid #ff5a4f; transform-origin: right center; }
 @keyframes off-pulse { to { opacity: 0.55; } }
 body.has-screen #offscreen, body.chasing #offscreen { visibility: hidden; }
-.pop { position: absolute; transform: translate(-50%, -50%); font-family: Fredoka, sans-serif; font-weight: 700; font-size: 20px; white-space: nowrap; text-shadow: 0 2px 0 #000, 0 0 10px #000a; }
+.pop { position: absolute; transform: translate(-50%, -50%); width: max-content; max-width: min(90vw, 420px); font-family: Fredoka, sans-serif; font-weight: 700; font-size: 20px; white-space: normal; text-align: center; line-height: 1.15; overflow-wrap: break-word; text-shadow: 0 2px 0 #000, 0 0 10px #000a; }
 .tag-name { position: absolute; transform: translate(-50%, -100%); font-weight: 900; font-size: 12px; color: #9ed8ff; text-shadow: 0 1px 2px #000; white-space: nowrap; }
 .speech { position: absolute; transform: translate(-50%, -100%); background: #fff; color: #1a1433; font-weight: 900; font-size: 13px; padding: 6px 10px; border-radius: 12px; max-width: 220px; text-align: center; box-shadow: 0 4px 12px #0006; }
 .speech::after { content: ''; position: absolute; left: 50%; bottom: -7px; border: 7px solid transparent; border-bottom: 0; border-top-color: #fff; transform: translateX(-50%); }

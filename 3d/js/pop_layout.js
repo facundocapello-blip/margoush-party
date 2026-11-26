@@ -61,7 +61,9 @@ export function placePops(list, dt = 1 / 60) {
   list.forEach((it, i) => {
     const target = boxes[i].y - it.y;
     it.o._dy = it.o._dy === undefined ? target : it.o._dy + (target - it.o._dy) * k;
-    it.el.style.left = it.x + 'px';
+    const half = Math.min(it.o._w / 2, innerWidth * 0.46);
+    const lx = Math.max(half + 6, Math.min(innerWidth - half - 6, it.x));
+    it.el.style.left = lx + 'px';
     it.el.style.top = (it.y + it.o._dy) + 'px';
   });
 }
