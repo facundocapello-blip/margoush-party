@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { buildTrack, CHASE, OBST } from '../3d/js/chase.js';
 import { WAVES } from '../3d/js/level.js';
 
@@ -21,4 +22,14 @@ test('the chase track always leaves a free lane, allows jumping tables, and incl
 
 test('the chase is no longer in the boulevard: it opens level 1 (no wave triggers it)', () => {
   assert.equal(WAVES.some(w => w.chase), false);
+});
+
+test('mozo projectiles do not use undefined global origin and arenas use valid sfx names', () => {
+  const enemiesSrc = fs.readFileSync('3d/js/enemies.js', 'utf8');
+  const mozoBlock = enemiesSrc.slice(enemiesSrc.indexOf('function mozo('), enemiesSrc.indexOf('function lale('));
+  assert.equal(/\borigin\s*\|\|/.test(mozoBlock), false, 'mozo() no debe leer window.origin');
+  for (const file of ['3d/js/arena_pinky.js', '3d/js/arena_facu.js']) {
+    const src = fs.readFileSync(file, 'utf8');
+    assert.equal(src.includes("sfx('honk')"), false, `${file} no debe llamar a sfx('honk') inexistente`);
+  }
 });

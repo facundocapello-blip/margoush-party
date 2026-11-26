@@ -409,7 +409,7 @@ export function createEnemies(ctx) {
       const target = new THREE.Vector3(hp.x, 0, hp.z);
       const mark = makeWarning(scene, target.x, target.z, MOZO.hitRadius);
       const s = new THREE.Sprite(croissantMat); s.scale.set(0.8, 0.8, 1);
-      const from = origin || e.pos.clone().setY(1.7);
+      const from = e.pos.clone().setY(1.7);
       s.position.copy(from);
       scene.add(s);
       shots.push({ from, target, t: 0, sprite: s, mark, owner: e });
