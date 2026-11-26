@@ -728,3 +728,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/audio.js 3d/js/i18n.js`, `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max (incluyendo alarma/Siri con el juego abierto).
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=chaky
 - Rollback: `git revert <commit [D-8]>` en `feat-3d` y push (base previa: `cf71f8b`).
+
+## 2026-11-26 · H-5: voces de jefes con balbuceo sintetizado Web Audio + `duck()` a 0,78 (hecho por Gemini)
+- Qué cambió: `3d/js/voice.js` (perfiles de timbre propio para los 5 jefes — Chaky grave/lento, Cepi rápido/nasal, Lale gordito/redondo, Pinky chillón de cancha, Facu canchero — y función pura `bossBabblePlan()`), `3d/js/audio.js` (implementado `audio.bossLine()` con oscilador + formante bandpass + envolvente respetando silencio, exportado `MUSIC_VOL = 0.78` y corregido `duck()` para devolver la música a `0.78` en lugar de `1`), `tests/voice.test.mjs`, `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check 3d/js/voice.js 3d/js/audio.js`, `node tools/stamp_versions.mjs`, `npm test` 97/98 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows), incluyendo tests nuevos de timbres distintos para los 5 jefes, silencio en 0 osciladores y retorno de `duck()` a `0.78`. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu (y `chaky`, `cepi`, `lale`, `pinky`)
+- Rollback: `git revert <commit [H-5]>` en `feat-3d` y push (base previa: `e8303ed`).

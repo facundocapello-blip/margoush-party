@@ -1,6 +1,8 @@
 import { makeThemes } from './music.js';
+import { bossBabblePlan } from './voice.js';
 // Música sintetizada (music.js) y efectos sintetizados vía Web Audio.
 const MUTE_KEY = 'margoush3d_muted';
+export const MUSIC_VOL = 0.78;
 
 function noiseBurst(ac, out, noise, t, dur, vol, type, freq, q = 1, attack = 0.002) {
   const s = ac.createBufferSource(); s.buffer = noise;
@@ -286,7 +288,7 @@ export function createAudio(assets) {
         stopAll();
         current = name;
         paused = false;
-        if (musicBus) { const g = musicBus.gain, t0 = ac.currentTime; g.cancelScheduledValues(t0); g.setValueAtTime(0.0001, t0); g.linearRampToValueAtTime(0.78, t0 + 0.35); }
+        if (musicBus) { const g = musicBus.gain, t0 = ac.currentTime; g.cancelScheduledValues(t0); g.setValueAtTime(0.0001, t0); g.linearRampToValueAtTime(MUSIC_VOL, t0 + 0.35); }
         if (!name || !SYNTH[name]) return;
         if (!ensure()) return;
         synthStep = 0; synthNext = ac.currentTime + 0.1;
@@ -337,18 +339,41 @@ export function createAudio(assets) {
       }
       speechSynthesis.speak(u);
     },
-    // Baja la música mientras alguien habla (k = volumen relativo) y la sube sola después de `secs`
+    // Baja la música mientras alguien habla (k = factor relativo sobre MUSIC_VOL) y la devuelve al volumen normal (0.78)
     duck(secs, k = 0.55) {
       if (!musicBus || !ac) return;
       const g = musicBus.gain, t0 = ac.currentTime;
+      const low = Math.max(0.05, Math.min(MUSIC_VOL, MUSIC_VOL * k));
       g.cancelScheduledValues(t0); g.setValueAtTime(g.value, t0);
-      g.linearRampToValueAtTime(k, t0 + 0.12);
-      g.setValueAtTime(k, t0 + secs);
-      g.linearRampToValueAtTime(1, t0 + secs + 0.4);
+      g.linearRampToValueAtTime(low, t0 + 0.12);
+      g.setValueAtTime(low, t0 + secs);
+      g.linearRampToValueAtTime(MUSIC_VOL, t0 + secs + 0.4);
     },
-    // Audio hablado desactivado para personajes que no son héroes (los jefes/NPCs solo muestran texto + SFX arcade).
-    // Las voces habladas quedan reservadas exclusivamente para los héroes (Douge «¡Diuuushbag!» y Marine «¡Messi Goku!»).
-    bossLine() {},
+    // H-5: balbuceo sintetizado por formantes Web Audio, con un timbre distinto por jefe (sin archivos ni TTS).
+    bossLine(text, prof, dur = 1.2) {
+      if (muted || !text || !ensure()) return 0;
+      const plan = bossBabblePlan(text, prof, Math.min(1.5, Math.max(0.45, dur || 1.1)));
+      if (!plan.length) return 0;
+      const baseT = ac.currentTime + 0.015;
+      for (const n of plan) {
+        const t0 = baseT + n.delay;
+        const o = ac.createOscillator();
+        const f = ac.createBiquadFilter();
+        const g = ac.createGain();
+        o.type = n.wave;
+        o.frequency.setValueAtTime(n.freq0, t0);
+        o.frequency.exponentialRampToValueAtTime(Math.max(40, n.freq1), t0 + n.dur);
+        f.type = 'bandpass'; f.frequency.setValueAtTime(n.formant, t0); f.Q.value = n.q;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(n.vol, t0 + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + n.dur);
+        o.connect(f); f.connect(g); g.connect(master);
+        o.start(t0); o.stop(t0 + n.dur + 0.02);
+      }
+      const last = plan[plan.length - 1];
+      this.duck(last.delay + last.dur + 0.08, 0.58);
+      return plan.length;
+    },
     // Marine dice «¡Messi Goku!» como un «merci beaucoup» encantador
     messiGoku() {
       this.sfx('messigoku');
