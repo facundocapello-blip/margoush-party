@@ -1406,5 +1406,32 @@
   "cols": 1,
   "rows": 1,
   "v": "928dbc1c"
+ },
+ "arena_margot_pacifier": {
+  "file": "arena_margot_pacifier.webp",
+  "w": 374,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "1df4a670"
+ },
+ "arena_margot_papilla": {
+  "file": "arena_margot_papilla.webp",
+  "w": 340,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "7848b4d0"
+ },
+ "arena_margot_crayons": {
+  "file": "arena_margot_crayons.webp",
+  "w": 334,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "b1d34157"
  }
 }

@@ -437,9 +437,9 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       setHero(swing ? 'punch' : (movedX > 0.004 || moving) ? 'run' + (Math.floor(stepT) % 4) : 'idle');
       P.position.set(x, 0, HERO_Z);
       heroSh.position.set(x, 0.03, HERO_Z);
-      // Margot a salvo afuera mirando la escena (festeja cuando cae el BYD)
+      // Margot a salvo afuera mirando la escena (nunca llora: despierta con chupete y festeja cuando cae el BYD)
       if (margotM) {
-        setMargot(S.wrecked ? 3 : S.charged ? 2 : 1);
+        setMargot(S.wrecked ? 3 : 1);
         const mb = S.wrecked ? Math.abs(Math.sin(t * 7)) * 0.28 : Math.abs(Math.sin(t * 3.2)) * 0.05;
         margotM.position.set(margotX, mb, CAR_Z + 0.85);
       }

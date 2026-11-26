@@ -6,19 +6,31 @@
 // Sólo vista (Three.js); la lógica de cada arena decide cuándo y cuánto daño hace.
 
 export function createMargotFinish({ T, scene, assets, keep, unit, L, kind = 'papilla' }) {
-  // Margot contenta: arena_margot_cheer (brazos arriba) o la celda «feliz» de margot_sheet
-  let map = null, mw = 1, mh = 1;
+  // Margot contenta en reposo: arena_margot_cheer (brazos arriba) o la celda «feliz» de margot_sheet;
+  // durante el remate cambia a su pose gag dedicada: arena_margot_papilla o arena_margot_crayons.
+  let idleMap = null, idleAsp = 1;
   if (assets.has('arena_margot_cheer')) {
-    const m = assets.meta('arena_margot_cheer'); map = assets.texture('arena_margot_cheer'); mw = m.w; mh = m.h;
+    const m = assets.meta('arena_margot_cheer'); idleMap = assets.texture('arena_margot_cheer'); idleAsp = m.w / m.h;
   } else if (assets.has('margot_sheet')) {
     const m = assets.meta('margot_sheet');
     const tx = keep(assets.texture('margot_sheet').clone());
     tx.needsUpdate = true; tx.repeat.set(0.5, 0.5); tx.offset.set(0.5, 0); // celda 3: feliz con los brazos arriba
-    map = tx; mw = m.w / 2; mh = m.h / 2;
+    idleMap = tx; idleAsp = (m.w / 2) / (m.h / 2);
   }
-  const mesh = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map, alphaTest: 0.4, side: T.DoubleSide })));
+  const gagKey = kind === 'papilla' ? 'arena_margot_papilla' : 'arena_margot_crayons';
+  const gagMap = assets.has(gagKey) ? assets.texture(gagKey) : idleMap;
+  const gagAsp = assets.has(gagKey) ? (assets.meta(gagKey).w / assets.meta(gagKey).h) : idleAsp;
+  const mesh = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ map: idleMap, alphaTest: 0.4, side: T.DoubleSide })));
   mesh.visible = false; scene.add(mesh);
-  const aspect = mw / mh;
+  let usingGag = false;
+  let aspect = idleAsp;
+  const setPose = (gag) => {
+    if (usingGag === gag) return;
+    usingGag = gag;
+    mesh.material.map = gag ? gagMap : idleMap;
+    mesh.material.needsUpdate = true;
+    aspect = gag ? gagAsp : idleAsp;
+  };
 
   const tex = (w, h, draw) => {
     const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
@@ -62,6 +74,7 @@ export function createMargotFinish({ T, scene, assets, keep, unit, L, kind = 'pa
   // boss: { x, z, h } · idle: { x, z } dónde espera Margot · easel: { x, y, z } (crayones)
   function draw(dt, t, mT, dur, boss, idle, easel) {
     const active = mT > 0;
+    setPose(active);
     const p = active ? 1 - mT / dur : 0; // 0 → 1
     if (!active) {
       mesh.visible = true;
