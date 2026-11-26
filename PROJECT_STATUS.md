@@ -686,3 +686,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/i18n.js`, `node tools/stamp_versions.mjs`, `npm test` 93/94 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: revisión nativa de Marine y Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=lale
 - Rollback: `git revert <commit [H-2]>` en `feat-3d` y push (base previa: `f76928e`).
+
+## 2026-11-26 · H-3: sin claves repetidas en `i18n.js` + test automático (hecho por Gemini)
+- Qué cambió: `3d/js/i18n.js` (eliminadas las 6 claves duplicadas en `TEXTOS`: `⚡ ¡PODER LISTO!`, `NIVEL 1 · BUENOS AIRES`, `¡PIQUETE!`, `CAMINO A LE BLÉ`, `¡PELOTAZO!`, `¡BIG CHAKY SE LLEVÓ A MARGOT!`; sin cambios en lo que se ve en español), `tests/i18n.test.mjs` (nuevo test que verifica 0 duplicados en `TEXTOS`, 0 en `DICHOS` y 0 solapamiento entre ambos, además de reglas H-1/H-2), `3d/index.html` (sellado con `stamp_versions.mjs`) y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check 3d/js/i18n.js`, `node tools/stamp_versions.mjs`, `npm test` 95/96 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi-duelo
+- Rollback: `git revert <commit [H-3]>` en `feat-3d` y push (base previa: `fba5d61`).
