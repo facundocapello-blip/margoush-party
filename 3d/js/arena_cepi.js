@@ -200,13 +200,19 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     // Lale mirando el partido desde las gradas (rincón derecho, atrás): después se lleva a Margot en el jet de Chaky.
     // Se crea al primer cuadro en que su imagen ya está cargada (la arena se arma antes de la precarga).
     let LS = null, lsTried = false;
-    const LS_X = CEPI_ARENA.xMax + 2.3, LS_Z = CEPI_ARENA.bossZ + 1.4, LS_Y = 1.1;
+    const LS_X = CEPI_ARENA.xMax + 1.45, LS_Z = CEPI_ARENA.bossZ + 1.35, LS_Y = 0.95;
     function makeLale() {
       if (LS || !assets.has('arena_lale_idle')) return;
-      LS = sprite('arena_lale_idle', 3.0, 0);
-      const stand = new T.Mesh(keep(new T.BoxGeometry(2.8, LS_Y, 1.8)), keep(new T.MeshBasicMaterial({ color: L('#6b4a2e') })));
-      stand.position.set(LS_X, LS_Y / 2, LS_Z);
-      scene.add(stand);
+      LS = sprite('arena_lale_idle', 3.45, 0);
+      const woodM = keep(new T.MeshLambertMaterial({ color: L('#7a5130') }));
+      const trimM = keep(new T.MeshLambertMaterial({ color: L('#a67548') }));
+      const base = new T.Mesh(keep(new T.BoxGeometry(2.5, LS_Y * 0.52, 1.75)), woodM);
+      base.position.set(LS_X, LS_Y * 0.26, LS_Z);
+      const top = new T.Mesh(keep(new T.BoxGeometry(2.35, LS_Y * 0.48, 1.4)), trimM);
+      top.position.set(LS_X, LS_Y * 0.76, LS_Z - 0.12);
+      const rail = new T.Mesh(keep(new T.BoxGeometry(2.45, 0.1, 0.1)), trimM);
+      rail.position.set(LS_X, LS_Y + 0.05, LS_Z + 0.56);
+      scene.add(base, top, rail);
     }
     // 2 señuelos de cartón reutilizables para fase 3
     const decoyMeshes = [0, 1].map(() => {

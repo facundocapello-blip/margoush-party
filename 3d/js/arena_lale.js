@@ -59,10 +59,10 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
         g.strokeStyle = 'rgba(110,75,45,.25)'; g.lineWidth = 3;
         g.strokeRect(c * s + 1, r * s + 1, s - 2, s - 2);
       }
-    }, 10, 8);
-    const outer = mk(new T.PlaneGeometry(70, 44), new T.MeshLambertMaterial({ color: L('#4a2f1d') }));
+    }, 19, 8);
+    const outer = mk(new T.PlaneGeometry(76, 44), new T.MeshLambertMaterial({ color: L('#4a2f1d') }));
     outer.rotation.x = -Math.PI / 2; outer.position.set(0, -0.02, -6);
-    const floor = mk(new T.PlaneGeometry(34, 26), new T.MeshLambertMaterial({ map: tileTex }));
+    const floor = mk(new T.PlaneGeometry(64, 26), new T.MeshLambertMaterial({ map: tileTex }));
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -7);
     // Molduras cálidas de madera marcando los límites jugables del obrador
     const railM = keep(new T.MeshLambertMaterial({ color: L('#7b4822') }));

@@ -235,7 +235,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       const c = M.userData.cols, r = M.userData.rows;
       M.material.map.offset.set((cell % c) / c, (r - 1 - Math.floor(cell / c)) / r);
     };
-    setMargot(2);
+    setMargot(1);
     let mX = 4.45, mZ = STAGE_Z - 1.25, mH = MARGOT_H;
 
     // Interfaz del Duelo de Baile (5 carriles con botones receptores ABAJO y flechas que BAJAN)
@@ -850,12 +850,11 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
         if (dt === 0 || phase === 'intro' && phaseT < 0.05) { mX = tx; mZ = tz; mH = th; }
         else { mX += (tx - mX) * kk; mZ += (tz - mZ) * kk; mH += (th - mH) * kk; }
         if (S.phase === 'ko' || feverOn) setMargot(3);
-        else if (phase === 'down' || (phase === 'intro' && phaseT < INTRO.reveal)) setMargot(2);
-        else if (phase !== 'intro') setMargot(1);
+        else setMargot(1);
         const mb = margotCell === 3 ? Math.abs(Math.sin(t * 7)) * 0.3 : beatBounce * 0.06;
         M.scale.set(mH, mH, 1);
         place(M, mX, TARIMA_H + mb, mZ);
-        M.rotation.z = margotCell === 2 ? Math.sin(t * 9) * 0.03 : 0;
+        M.rotation.z = phase === 'down' ? Math.sin(t * 9) * 0.03 : 0;
       }
 
       if (phase !== 'intro' && S.phase !== 'ko') piuDraw();

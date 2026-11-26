@@ -81,8 +81,9 @@ body.has-screen #offscreen, body.chasing #offscreen { visibility: hidden; }
 .act.pressed { transform: scale(0.92); }
 #act-attack { width: 98px; height: 98px; right: 0; bottom: 0; font-size: 42px; background: rgba(255, 124, 143, 0.66); }
 #act-attack .ico { line-height: 1; }
-#act-jump { width: 74px; height: 74px; right: 110px; bottom: 4px; background: rgba(126, 224, 195, 0.62); color: #10241e; }
-#act-dodge { width: 74px; height: 74px; right: 12px; bottom: 110px; background: rgba(150, 190, 255, 0.6); color: #10183a; }
+#act-jump { width: 76px; height: 76px; right: 110px; bottom: 4px; background: rgba(126, 224, 195, 0.62); color: #10241e; }
+#act-dodge { width: 76px; height: 76px; right: 10px; bottom: 110px; background: rgba(150, 190, 255, 0.6); color: #10183a; }
+#act-dodge small { font-size: 11px; letter-spacing: 0; }
 /* Anillo de poder alrededor del 👊: se llena pegando; lleno, late y dice "mantené" */
 #act-attack .ring { position: absolute; inset: -7px; border-radius: 50%; pointer-events: none;
   background: conic-gradient(var(--gold) calc(var(--pw, 0) * 360deg), rgba(255, 255, 255, 0.14) 0);
@@ -918,6 +919,13 @@ body.chaky-intro-on #arena-ui .piu { opacity: .25; transition: opacity .4s; }
   #arena-ui .boss-intro { padding-top: calc(48px + var(--safe-t)); }
   #arena-ui .boss-intro .l1 { padding: 6px 12px; font-size: 16px; }
   #arena-ui .boss-intro .l2 { margin-top: 6px; font-size: 24px; }
+  body:not(.chaky-dance) #arena-ui .phase-card {
+    padding: 7px 16px; border-radius: 14px; max-width: min(74vw, 420px); min-width: 0;
+    background: rgba(20, 12, 42, 0.96); z-index: 6;
+  }
+  body:not(.chaky-dance) #arena-ui .phase-card small { font-size: 11px; letter-spacing: 2px; }
+  body:not(.chaky-dance) #arena-ui .phase-card b { font-size: 18px; line-height: 1.1; }
+  body:not(.chaky-dance) #arena-ui .phase-card span { font-size: 13px; margin-top: 2px; }
 }
 /* Arena de Cepi — Duelo de la flechita (Fase 2) */
 body.cepi-duel-on #touch { display: none; }

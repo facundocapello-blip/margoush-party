@@ -776,3 +776,17 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/cine.js 3d/js/world.js`, `node tools/stamp_versions.mjs`, `npm test` 99/100 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); E2E en Chrome headless recorriendo las 8 mini-escenas en orden, `setIntroMode(true/false)`, `resumeAt({ id: 'facu' })` → `arena-facu`, y `onBossDown()` con `CREW = [pinky, lale, cepi, chaky, facu]` (`0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=calle (y `?probar=final`)
 - Rollback: `git revert <commit [H-6]>` en `feat-3d` y push (base previa: `091c043`).
+
+## 2026-11-26 · A-7: auditoría visual (`margoush-visual`) y pulido seguro de las 5 arenas en 430×932 y 932×430 (hecho por Gemini)
+- **Auditoría visual de las 5 arenas (10 capturas en `430×932` y `932×430`) — hallazgos resueltos sin cambiar historia ni diseño de peleas:**
+  1. **Cepi (`3d/js/arena_cepi.js`)**: Lale en las gradas quedaba cortada al borde derecho en vertical (`430×932`) y parada sobre un cubo marrón plano (`#6b4a2e`). Corregido: corrida hacia adentro (`LS_X = xMax + 1.45`), agrandada (`3.0 → 3.45`) y montada sobre una grada escalonada de madera de dos niveles con borde superior.
+  2. **Big Chaky (`3d/js/arena.js`)**: Margot en su cochecito arrancaba en `cell 2` (llorando) en intro/derrota. Corregido a `cell 1` (despierta con chupete, sin llorar) y `cell 3` (festejando en Modo Disco / KO), respetando la regla de que Margot nunca llora.
+  3. **Lale y Facu en horizontal (`3d/js/arena_lale.js`, `3d/js/arena_facu.js`)**: los pisos de baldosas y parquet (`width = 34`) dejaban triángulos oscuros en los bordes laterales de `932×430`. Ensanchados a `64` con `repeat` proporcional (`19×8` y `11×6`) para cubrir de borde a borde.
+  4. **Botón `ESQUIVE` (`3d/css/game.css`)**: el texto tocaba los bordes del círculo (`74×74`). Ajustado a `76×76` con `font-size: 11px; letter-spacing: 0` en `#act-dodge small` (respira bien también en francés `ESQUIVER`).
+  5. **Tarjeta `.phase-card` en horizontal (`3d/css/game.css`)**: en `932×430` tapaba a Pinky/Facu y transparentaba el texto flotante de atrás. Compactada en `@media (orientation: landscape) and (max-height: 500px)` con fondo opaco `rgba(20, 12, 42, 0.96)` y `z-index: 6`.
+- **Pendiente para Facu / Claude (arte nuevo o retoque de sprites existentes, fuera de A-7):**
+  - `arena_pinky_idle` / `arena_pinky_reveal`: tiene un par de huequitos semitransparentes en los pantalones oscuros del recorte croma original (P2 para `margoush-art`).
+  - Tareas opcionales de arte nuevo: **A-2** (poses `power` y `defeat` de espaldas para Douge y Marine), **A-3** (`arena_lale_windup` y aturdido dedicado de Pinky) y **A-4** (3 poses gag de Margot: chupete, papilla, crayones).
+- Verificación: `node --check`, `node tools/stamp_versions.mjs`, `npm test` 99/100 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows) e inspección visual de capturas antes/después en `430×932` y `932×430` (`0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi (y `chaky-baile`, `lale`, `pinky`, `facu`)
+- Rollback: `git revert <commit [A-7]>` en `feat-3d` y push (base previa: `62af99f`).
