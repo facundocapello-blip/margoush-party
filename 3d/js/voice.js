@@ -11,14 +11,50 @@
 
 export const PROVISORIO = true;
 
-// Tono y velocidad de cada jefe (voz del sistema)
+// Tono, velocidad y timbre de balbuceo Web Audio de cada jefe (H-5: sin archivos ni TTS)
 export const PROFILES = {
-  chaky: { lang: 'es-AR', pitch: 0.35, rate: 0.82 }, // grave, torpe, explosivo
-  cepi: { lang: 'es-AR', pitch: 1.1, rate: 1.18 },   // canchero, rápido, burlón
-  lale: { lang: 'es-AR', pitch: 1.3, rate: 0.72 },   // meloso, se estira como manteca
-  pinky: { lang: 'es-AR', pitch: 1.0, rate: 1.38 },  // trapito, a mil por hora
-  facu: { lang: 'es-AR', pitch: 0.85, rate: 1.0 }    // el cerebro: calmo, canchero, de galerista
+  chaky: { id: 'chaky', lang: 'es-AR', pitch: 0.35, rate: 0.82, baseHz: 96,  wave: 'sawtooth', formant: 520,  q: 3.5, step: 0.135, vol: 0.18 }, // grave y lento
+  cepi:  { id: 'cepi',  lang: 'es-AR', pitch: 1.1,  rate: 1.18, baseHz: 255, wave: 'sawtooth', formant: 1650, q: 7.5, step: 0.072, vol: 0.14 }, // rápido y nasal
+  lale:  { id: 'lale',  lang: 'es-AR', pitch: 1.3,  rate: 0.72, baseHz: 155, wave: 'triangle', formant: 680,  q: 2.2, step: 0.118, vol: 0.20 }, // gordito y redondo
+  pinky: { id: 'pinky', lang: 'es-AR', pitch: 1.0,  rate: 1.38, baseHz: 335, wave: 'square',   formant: 2150, q: 5.5, step: 0.064, vol: 0.12 }, // chillón de cancha
+  facu:  { id: 'facu',  lang: 'es-AR', pitch: 0.85, rate: 1.0,  baseHz: 188, wave: 'sawtooth', formant: 1120, q: 4.2, step: 0.095, vol: 0.16 }  // canchero de galería
 };
+
+const VOWEL_FORMANT = { a: 1.0, e: 1.25, i: 1.48, o: 0.82, u: 0.68 };
+
+// Convierte una frase en 3..9 sílabas cortas sintetizadas con el timbre del jefe (lógica pura, testeable)
+export function bossBabblePlan(text, prof = PROFILES.chaky, maxDur = 1.4) {
+  if (!text || typeof text !== 'string') return [];
+  const p = prof?.baseHz ? prof : (PROFILES[prof?.id] || PROFILES.chaky);
+  const clean = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const vowels = [...clean.matchAll(/[aeiou]/g)].map(m => m[0]);
+  const count = Math.max(3, Math.min(9, vowels.length || Math.ceil(clean.length / 4)));
+  const isQ = text.includes('?'), isExc = text.includes('!');
+  const step = p.step || 0.095;
+  const notes = [];
+  let delay = 0;
+  for (let i = 0; i < count; i++) {
+    if (delay > maxDur) break;
+    const v = vowels[i % Math.max(1, vowels.length)] || 'a';
+    const hash = ((clean.charCodeAt((i * 5 + 1) % clean.length) || 65) % 7) - 3; // -3..+3
+    const endLift = i === count - 1 ? (isQ ? 1.24 : isExc ? 1.12 : 0.9) : 1;
+    const f0 = p.baseHz * (1 + hash * 0.045) * (isExc && i === 0 ? 1.08 : 1);
+    const f1 = f0 * (i === count - 1 && isQ ? 1.22 : (hash >= 0 ? 1.06 : 0.93)) * endLift;
+    const dur = Math.max(0.04, step * 0.72);
+    notes.push({
+      delay,
+      dur,
+      freq0: Math.round(f0 * 10) / 10,
+      freq1: Math.round(f1 * 10) / 10,
+      formant: Math.round(p.formant * (VOWEL_FORMANT[v] || 1)),
+      wave: p.wave,
+      q: p.q,
+      vol: p.vol
+    });
+    delay += step;
+  }
+  return notes;
+}
 
 export const PRIO = { ko: 3, phase: 3, intro: 3, dice: 3, hurt: 2, special: 2, stuck: 2, returned: 2, attack: 1, taunt: 1, good: 1, bad: 1, count: 2, pick: 2, margot: 3 };
 export const COOLDOWN = { taunt: 6, attack: 2.5, hurt: 1.2, returned: 1.5, good: 0.5, bad: 0.5, count: 0.5 }; // s
