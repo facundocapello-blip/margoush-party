@@ -1,7 +1,6 @@
 import { makeThemes } from './music.js';
-// Música (temas del 2D + uno sintetizado para el jefe) y efectos sintetizados.
+// Música sintetizada (music.js) y efectos sintetizados vía Web Audio.
 const MUTE_KEY = 'margoush3d_muted';
-export const MUSIC_GAIN = 0.42; // la música por debajo de golpes y voces
 
 function noiseBurst(ac, out, noise, t, dur, vol, type, freq, q = 1, attack = 0.002) {
   const s = ac.createBufferSource(); s.buffer = noise;
@@ -124,8 +123,6 @@ export function createAudio(assets) {
   try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (_) {}
   let ac = null, master = null, noise = null;
   let heroId = 'douge';
-  // Temas musicales: todos sintetizados vía Web Audio (music.js); themes queda disponible si se agregan pistas <audio>.
-  const themes = {};
   let current = null; // 'menu' | 'intro' | 'chase' | 'byd' | 'ba' | 'francia' | 'boss' | 'rescate' | 'street' | null
   let musicBus = null, out = null; // out: adónde van los tonos (efectos → master, temas sintetizados → musicBus)
   let fadeTimer = null;
@@ -145,16 +142,16 @@ export function createAudio(assets) {
       noise = ac.createBuffer(1, len, ac.sampleRate);
       const d = noise.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-      // iOS no deja cambiar el volumen de un <audio>: la música pasa por la mezcla de Web Audio
-      // con su propio volumen (y el botón de silencio la apaga junto con los efectos)
-      for (const t of Object.values(themes)) {
-        try {
-          const src = ac.createMediaElementSource(t);
-          const g = ac.createGain(); g.gain.value = MUSIC_GAIN;
-          src.connect(g); g.connect(musicBus);
-          t.volume = 1; t.routed = true;
-        } catch (_) {}
-      }
+      // iOS Safari: tras alarma, llamada o Siri el AudioContext pasa por 'interrupted' y vuelve a 'running'
+      ac.onstatechange = () => {
+        if (!ac) return;
+        if (ac.state === 'running' && current && SYNTH[current] && !paused && !synthTimer) {
+          synthNext = ac.currentTime + 0.1;
+          synthTimer = setInterval(synthTick, 90);
+        } else if (ac.state === 'interrupted' && synthTimer) {
+          clearInterval(synthTimer); synthTimer = null;
+        }
+      };
     }
     if (ac.state !== 'running') ac.resume().catch(() => {});
     return true;
@@ -263,7 +260,6 @@ export function createAudio(assets) {
   }
 
   function stopAll() {
-    for (const t of Object.values(themes)) t.pause();
     if (synthTimer) { clearInterval(synthTimer); synthTimer = null; }
   }
 
@@ -274,7 +270,6 @@ export function createAudio(assets) {
       muted = !muted;
       try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (_) {}
       if (master) master.gain.value = muted ? 0 : 0.8;
-      for (const t of Object.values(themes)) t.muted = muted && !t.routed;
       if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
       return muted;
     },
@@ -292,19 +287,10 @@ export function createAudio(assets) {
         current = name;
         paused = false;
         if (musicBus) { const g = musicBus.gain, t0 = ac.currentTime; g.cancelScheduledValues(t0); g.setValueAtTime(0.0001, t0); g.linearRampToValueAtTime(0.78, t0 + 0.35); }
-        if (!name) return;
-        if (SYNTH[name]) {
-          if (!ensure()) return;
-          synthStep = 0; synthNext = ac.currentTime + 0.1;
-          synthTimer = setInterval(synthTick, 90);
-          return;
-        }
-        ensure();
-        const t = themes[name];
-        if (!t) return;
-        t.muted = muted && !t.routed;
-        try { t.currentTime = 0; } catch (_) {}
-        t.play().catch(() => {});
+        if (!name || !SYNTH[name]) return;
+        if (!ensure()) return;
+        synthStep = 0; synthNext = ac.currentTime + 0.1;
+        synthTimer = setInterval(synthTick, 90);
       };
       const playing = current && !paused && musicBus && ac;
       if (!playing || fade <= 0) return begin();
@@ -315,13 +301,8 @@ export function createAudio(assets) {
     },
     // 0..1: qué tan apurado va el tema (mini nivel del BYD: la carga de la batería)
     setIntensity(x) { musicCtx.intensity = Math.max(0, Math.min(1, x || 0)); },
-    // Estira o acelera la música de fondo (hongo venenoso); 1 = normal
-    warp(rate) {
-      for (const t of Object.values(themes)) { try { t.preservesPitch = false; t.playbackRate = rate; } catch (_) {} }
-    },
     pauseMusic() {
       paused = true;
-      for (const t of Object.values(themes)) t.pause();
       if (synthTimer) { clearInterval(synthTimer); synthTimer = null; }
       if (ac && ac.state === 'running') ac.suspend().catch(() => {});
       if ('speechSynthesis' in window) speechSynthesis.cancel();
@@ -333,7 +314,6 @@ export function createAudio(assets) {
         synthNext = ac.currentTime + 0.1;
         synthTimer = setInterval(synthTick, 90);
       }
-      if (current && themes[current]) themes[current].play().catch(() => {});
     },
     // iOS: la voz solo funciona si se arrancó una vez dentro de un toque
     primeSpeech() {
