@@ -12,6 +12,7 @@ import { attachBossIntro } from './boss_intro.js';
 import { createMargotFinish } from './margot_finish.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
+import { createShake, flashAlpha } from './feedback.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -324,7 +325,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
     let flashTimer = 0;
     const flash = (col, op = 0.42) => {
-      flashE.style.background = col; flashE.style.opacity = String(op);
+      flashE.style.background = col; flashE.style.opacity = String(flashAlpha(op));
       clearTimeout(flashTimer); flashTimer = setTimeout(() => { flashE.style.opacity = '0'; }, 120);
     };
 
@@ -332,12 +333,13 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     let phase = 'entrance', phaseT = 0, closing = false, disposed = false;
     let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
-    let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'facu';
+    let freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'facu';
+    const shaker = createShake({ decay: 2.4, maxX: 0.4, maxY: 0.26 });
     let lastSpeech = null, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
     const delayed = [];
     const after = (secs, fn) => delayed.push({ left: secs, fn });
     renderLife();
-    const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
+    const shake = (a) => { shaker.set(Math.min(1, a * 1.6)); };
     const addPts = (n, px, py, pz) => {
       const before = game.score.total;
       game.score.addFlat(n);
@@ -389,7 +391,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
           case 'meleeHit':
             addPts(FACU_ARENA.points.melee, e.x, 2.8, FACU_ARENA.bossZ); charge(POWER.hit);
             sfx('hit'); shake(0.28, 0.18); freezeT = 0.05;
-            burst(e.x, 2.3, FACU_ARENA.bossZ + 0.4, '#ffd36e', 10, true);
+            burst(e.x, 2.3, FACU_ARENA.bossZ + 0.4, '#ffd36e', 10, false);
             break;
           case 'dodge':
             addPts(FACU_ARENA.points.dodge, x, 2.8, z); charge(POWER.dodge * 1.4); sfx('pickup');
@@ -417,7 +419,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
           case 'pickRight':
             addPts(FACU_ARENA.points.pick, e.x, 3.2, FACU_ARENA.pickZ); charge(POWER.hit * 1.5);
             sfx('hit'); shake(0.3, 0.2); freezeT = 0.06;
-            burst(e.x, 2.6, FACU_ARENA.pickZ + 0.4, '#ffd36e', 12, true);
+            burst(e.x, 2.6, FACU_ARENA.pickZ + 0.4, '#ffd36e', 12, false);
             pop(e.x, 4.0, FACU_ARENA.pickZ, '¡ESE ERA! 🖼️💥', '#9bf7c4', 24, 1.3);
             break;
           case 'pickWrong':
@@ -428,10 +430,10 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
           case 'pickTimeout':
             sfx('tick'); pop(0, 4.2, FACU_ARENA.pickZ, '¡TARDE!', '#ffb3a0', 22, 1.0);
             break;
-          case 'bossHit': bossFlash = 0.22; setBar(); sfx('hit'); shake(0.28, 0.2); break;
+          case 'bossHit': bossFlash = 0.22; setBar(); break;
           case 'hurt':
             hero.hp = Math.max(0, hero.hp - 1); hurtT = HURT_POSE; inv = INV;
-            if (e.penalty) { game.score.addPenalty(e.penalty); pop(x, 2.6, z, '-$' + e.penalty, '#ff8080', 22); }
+            if (e.penalty) { game.score.addPenalty(e.penalty); pop(x, 2.6, z, '-' + e.penalty, '#ff8080', 22); }
             game.score.takeDamage(); game.combo?.reset?.();
             sfx('hurt'); flash('#ff3b52', 0.45); shake(0.38, 0.3);
             if (hero.hp <= 0 && !extraLifeUsed && phase === 'fight') {
@@ -450,7 +452,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
             phase = 'ko'; phaseT = 0; setBar(); setBarName(); freezeT = 0.11;
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.6); shake(0.55, 0.5);
-            burst(logic.state.bossX, 2.6, FACU_ARENA.bossZ + 0.4, '#ffd36e', 18, true);
+            burst(logic.state.bossX, 2.6, FACU_ARENA.bossZ + 0.4, '#ffd36e', 18, false);
             pop(logic.state.bossX, BOSS_H * 0.7, FACU_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.6);
             pop(logic.state.bossX, BOSS_H * 0.45, FACU_ARENA.bossZ, '¡FACU SE RINDE ANTE EL ARTE!', '#9fe4ff', 22, 2.4);
             break;
@@ -561,11 +563,10 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
         lastBarHp = S.hp; lastBarPhase = S.phase; setBar(); setBarName();
       }
-      shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
-      const sh = shakeA * Math.min(1, shakeT * 4);
+      const sh = shaker.step(dt || 1 / 60);
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
-      // Entrada propia de Pinky: contrapicado dramático desde el piso mirando hacia arriba al jefe final
-      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + (Math.random() - 0.5) * sh, CAM.y - e * 3.8 + (Math.random() - 0.5) * sh, z + CAM.back - e * 3.2);
+      // Entrada propia de Facu: contrapicado dramático desde el piso mirando hacia arriba al jefe final
+      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + sh.x, CAM.y - e * 3.8 + sh.y, z + CAM.back - e * 3.2);
       cam.lookAt(0, CAM.lookY + e * 1.6, FACU_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 

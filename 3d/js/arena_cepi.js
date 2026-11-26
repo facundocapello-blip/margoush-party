@@ -9,6 +9,7 @@ import { fillText, tr } from './i18n.js';
 import { attachBossIntro } from './boss_intro.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
+import { createShake, flashAlpha } from './feedback.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -289,7 +290,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
     let flashTimer = 0;
     const flash = (col, op = 0.42) => {
-      flashE.style.background = col; flashE.style.opacity = String(op);
+      flashE.style.background = col; flashE.style.opacity = String(flashAlpha(op));
       clearTimeout(flashTimer); flashTimer = setTimeout(() => { flashE.style.opacity = '0'; }, 120);
     };
 
@@ -297,12 +298,13 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     let phase = 'entrance', phaseT = 0, ended = false, closing = false, disposed = false;
     let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
-    let bossHurtT = 0, shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_cepi_idle';
+    let bossHurtT = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_cepi_idle';
+    const shaker = createShake({ decay: 2.4, maxX: 0.4, maxY: 0.26 });
     let lastSpeech = null, duelOn = false, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
     const delayed = [];
     const after = (secs, fn) => delayed.push({ left: secs, fn });
     renderLife();
-    const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
+    const shake = (a) => { shaker.set(Math.min(1, a * 1.6)); };
     const addPts = (n, px, py, pz) => {
       const before = game.score.total;
       game.score.addFlat(n);
@@ -404,7 +406,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             }
             break;
           case 'bossHit':
-            bossFlash = 0.22; bossHurtT = 0.45; setBar(); sfx('hit'); shake(0.28, 0.22);
+            bossFlash = 0.22; bossHurtT = 0.45; setBar();
             break;
           case 'hurt':
             hero.hp = Math.max(0, hero.hp - 1); hurtT = HURT_POSE; inv = INV;
@@ -548,11 +550,10 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
         lastBarHp = S.hp; lastBarPhase = S.phase; setBar(); setBarName();
       }
-      shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
-      const sh = shakeA * Math.min(1, shakeT * 4);
+      const sh = shaker.step(dt || 1 / 60);
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
       // Entrada propia de Cepi: barrido lateral rasante cruzando sobre la red de pádel
-      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) - e * 6.8 + (Math.random() - 0.5) * sh, CAM.y - e * 2.6 + (Math.random() - 0.5) * sh, z + CAM.back - e * 3.0);
+      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) - e * 6.8 + sh.x, CAM.y - e * 2.6 + sh.y, z + CAM.back - e * 3.0);
       cam.lookAt(-e * 1.2, CAM.lookY + e * 0.3, CEPI_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
       if (M) {
