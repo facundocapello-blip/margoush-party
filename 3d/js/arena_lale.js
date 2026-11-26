@@ -574,7 +574,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       const hasDodge = assets.has(heroPre + 'dodge');
       const movedD = Math.hypot(x - P.position.x, z - P.position.z);
       const reallyMoving = moving && movedD > 0.003;
-      heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : dashT > 0 && hasDodge ? 'dodge' : reallyMoving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
+      heroPose = phase === 'down' && assets.has(heroPre + 'ko') ? 'ko' : hurtT > 0 || phase === 'down' ? 'hurt' : powT > 0 && assets.has(heroPre + 'power') ? 'power' : swing || powT > 0 ? 'punch' : dashT > 0 && hasDodge ? 'dodge' : reallyMoving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
       let bob = 0, lean = 0, key = heroPre + heroPose, hsx = 1;
       if (heroPose === 'dodge') { bob = 0.18; hsx = dashX < 0 ? -1 : 1; }
       else if (heroPose === 'run') {
