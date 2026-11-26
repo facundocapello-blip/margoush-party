@@ -716,3 +716,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/main.js`, `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). **Qué NO se pudo probar:** Safari físico en iPhone 15 Pro Max — este arreglo **solo se puede confirmar escuchándolo en iPhone físico** al elegir a Douge.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/
 - Rollback: `git revert <commit [D-6]>` en `feat-3d` y push (base previa: `7cb551a`).
+
+## 2026-11-26 · D-7: botones táctiles y paneles respetan `safe-area-inset-*` (isla del iPhone en horizontal) (hecho por Gemini)
+- Qué cambió: `3d/css/game.css` (`#stick-zone`, `#joystick`, `#actions` con margen explícito sobre `var(--safe-l)`/`var(--safe-r)`/`var(--safe-b)` en horizontal, `#act-jump`/`#act-dodge` a `74×74` para que `ESQUIVE` respire, y `calc(8px + var(--safe-l/r))` en `#arena-ui .piu` y `#arena-ui .cepi-btns`), `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); verificado en Chrome headless en `932×430` (simulando isla de 59 px en `--safe-r`/`--safe-l` y 21 px en `--safe-b`) y `430×932`: 👊 / SALTO / ESQUIVE y joystick quedan dentro de la zona segura (`right <= 932 - 59 - 18`, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max en horizontal (ambas orientaciones de la Dynamic Island).
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu
+- Rollback: `git revert <commit [D-7]>` en `feat-3d` y push (base previa: `eb2750c`).
