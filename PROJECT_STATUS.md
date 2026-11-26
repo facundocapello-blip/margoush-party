@@ -633,3 +633,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `npm test` 90/91 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); tarea solo documental sin cambios en `3d/`. Qué NO se pudo probar: Safari físico (no aplica).
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu
 - Rollback: `git revert <commit [A-0]>` en `feat-3d` y push (base previa: `d0521a9`).
+
+## 2026-11-26 · R-1: modo diagnóstico `?debug=1` (hecho por Gemini)
+- Qué cambió: `3d/js/main.js`, `3d/css/game.css`, `3d/index.html` (sellado con `stamp_versions.mjs`), `tests/e2e/debug.e2e.mjs` y `docs/PLAN_TRABAJO.md`. Con `?debug=1` se muestra la cajita `#debug-hud` arriba a la izquierda con FPS, ms/cuadro, `perf.level`, DPR, `renderer.info.render.calls`, `geometries`, `textures`, estado/héroe, `frameErrors`, último error (incluyendo `error`/`unhandledrejection`) y aviso rojo ante `webglcontextlost`. Sin `?debug=1` no se crea ningún nodo ni corre lógica extra.
+- Verificación: `node --check 3d/js/main.js`, `node tools/stamp_versions.mjs`, `npm test` 90/91 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); `node tests/e2e/debug.e2e.mjs` OK en Chrome headless móvil (`430×932`) abriendo `?probar=cepi-duelo&debug=1` con Marine y verificando ausencia sin `debug=1` (0 errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max (incluye reproducir pantalla negra en duelo de la flechita con Marine).
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi-duelo&debug=1
+- Rollback: `git revert <commit [R-1]>` en `feat-3d` y push (base previa: `4a81aac`).
