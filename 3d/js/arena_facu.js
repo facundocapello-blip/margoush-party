@@ -545,6 +545,12 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       updateHud(dt);
     }
 
+    const blobIds = new Set();
+    const pudIds = new Set();
+    const warned = new Set();
+    const carIds = new Set();
+    const lay = [];
+
     function draw(dt) {
       const S = logic.state;
       if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
@@ -608,7 +614,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       canvasMesh.rotation.z = margotOn ? Math.sin(t * 20) * 0.03 : 0;
 
       // Pincelazos: mira que late en el piso → gota en parábola desde la mano de Facu
-      const blobIds = new Set();
+      blobIds.clear();
       for (const bl of S.blobs) {
         blobIds.add(bl.id);
         let o = liveBlobs.get(bl.id);
@@ -630,7 +636,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
         }
       }
       for (const [id, o] of liveBlobs) if (!blobIds.has(id)) { scene.remove(o.ring); scene.remove(o.ball); liveBlobs.delete(id); }
-      const pudIds = new Set();
+      pudIds.clear();
       for (const pd of S.puddles) {
         pudIds.add(pd.id);
         let m = livePuddles.get(pd.id);
@@ -651,8 +657,8 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       margotFx.draw(dt, t, S.margotT, 2.2, { x: S.bossX, z: FACU_ARENA.bossZ, h: BOSS_H }, { x: -FACU_ARENA.xMax + 0.5, z: FACU_ARENA.bossZ + 1.5 }, EASEL);
 
       // Avisos en los 3 cajones + autos asomando cola con luces de reversa parpadeando en `warn`
-      const warned = new Set();
-      const carIds = new Set();
+      warned.clear();
+      carIds.clear();
       const blinkOn = Math.floor(t * 14) % 2 === 0;
       for (const c of S.cars) {
         carIds.add(c.id);
@@ -728,7 +734,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       }
 
       // Textos flotantes
-      const lay = [];
+      lay.length = 0;
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt;
         if (q.t >= q.life) { q.e.remove(); pops.splice(i, 1); if (q === lastSpeech) lastSpeech = null; continue; }

@@ -1132,9 +1132,11 @@ const offV = new THREE.Vector3();
 function updateOffscreen() {
   const layer = document.getElementById('offscreen');
   if (!layer) return;
-  const list = game.state === 'playing' ? (game.enemies?.list || []).filter(e => e.hp > 0 && !e.dead) : [];
+  const list = game.state === 'playing' ? (game.enemies?.list || null) : null;
   let n = 0;
-  for (const e of list) {
+  if (list) for (let i = 0; i < list.length; i++) {
+    const e = list[i];
+    if (e.hp <= 0 || e.dead) continue;
     offV.copy(e.pos); offV.y += 1.1; offV.project(camera);
     const sx = (offV.x + 1) / 2;
     if (sx >= -0.02 && sx <= 1.02) continue;

@@ -4,25 +4,36 @@
 // hasta no tocar a ninguno. Además nunca quedan debajo del HUD de arriba.
 
 // Pura (se prueba en node): boxes = [{ x, y, w, h }] centradas, en orden de prioridad (la primera no se mueve).
+const _placed = [];
+const _boxPool = [];
+const _boxes = [];
+
 export function resolveOverlaps(boxes, { gap = 4, top = 0, bottom = Infinity } = {}) {
-  const placed = [];
-  const hits = (b, p) => Math.abs(b.x - p.x) < (b.w + p.w) / 2 + gap && Math.abs(b.y - p.y) < (b.h + p.h) / 2 + gap;
-  const fits = (b) => b.y - b.h / 2 >= top && b.y + b.h / 2 <= bottom && !placed.some(p => hits(b, p));
-  for (const b of boxes) {
+  _placed.length = 0;
+  function fits(b) {
+    if (b.y - b.h / 2 < top || b.y + b.h / 2 > bottom) return false;
+    for (let i = 0; i < _placed.length; i++) {
+      const p = _placed[i];
+      if (Math.abs(b.x - p.x) < (b.w + p.w) / 2 + gap && Math.abs(b.y - p.y) < (b.h + p.h) / 2 + gap) return false;
+    }
+    return true;
+  }
+  for (let i = 0; i < boxes.length; i++) {
+    const b = boxes[i];
     b.y = Math.min(bottom - b.h / 2, Math.max(top + b.h / 2, b.y));
     if (!fits(b)) {
       // Probar escalones hacia arriba y hacia abajo, alternando, y quedarse con el más cercano libre
       const step = b.h + gap, y0 = b.y;
       let best = null;
       for (let k = 1; k <= 8 && best === null; k++) {
-        for (const dir of [-1, 1]) {
+        for (let dir = -1; dir <= 1; dir += 2) {
           b.y = y0 + dir * step * k;
           if (fits(b)) { best = b.y; break; }
         }
       }
       b.y = best ?? y0; // sin lugar: se queda (mejor encimado que fuera de pantalla)
     }
-    placed.push(b);
+    _placed.push(b);
   }
   return boxes;
 }
@@ -51,19 +62,25 @@ function topLimit() {
 export function placePops(list, dt = 1 / 60) {
   const top = topLimit();
   if (!list.length) return;
-  const boxes = list.map(it => {
+  _boxes.length = 0;
+  for (let i = 0; i < list.length; i++) {
+    const it = list[i];
     it.o._w ??= it.el.offsetWidth || 60;
     it.o._h ??= it.el.offsetHeight || 24;
-    return { x: it.x, y: it.y, w: it.o._w, h: it.o._h };
-  });
-  resolveOverlaps(boxes, { top, bottom: innerHeight - 8 });
+    let box = _boxPool[i];
+    if (!box) box = _boxPool[i] = { x: 0, y: 0, w: 0, h: 0 };
+    box.x = it.x; box.y = it.y; box.w = it.o._w; box.h = it.o._h;
+    _boxes.push(box);
+  }
+  resolveOverlaps(_boxes, { top, bottom: innerHeight - 8 });
   const k = Math.min(1, dt * 14);
-  list.forEach((it, i) => {
-    const target = boxes[i].y - it.y;
+  for (let i = 0; i < list.length; i++) {
+    const it = list[i];
+    const target = _boxes[i].y - it.y;
     it.o._dy = it.o._dy === undefined ? target : it.o._dy + (target - it.o._dy) * k;
     const half = Math.min(it.o._w / 2, innerWidth * 0.46);
     const lx = Math.max(half + 6, Math.min(innerWidth - half - 6, it.x));
     it.el.style.left = lx + 'px';
     it.el.style.top = (it.y + it.o._dy) + 'px';
-  });
+  }
 }

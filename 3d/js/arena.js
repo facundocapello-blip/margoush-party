@@ -91,6 +91,8 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
     tarimaTrim.position.set(0, TARIMA_H - 0.04, TARIMA_FRONT + 0.02);
 
     // Baldosas LED luminosas sobre el escenario que laten al ritmo
+    const TILE_COLS = TILE_COLORS.map(L);
+    const lay = [];
     const discoTiles = [];
     const tileG = keep(new T.PlaneGeometry(1.55, 1.35));
     tileG.rotateX(-Math.PI / 2);
@@ -723,8 +725,8 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
         const tile = discoTiles[i];
         tile.mat.opacity += (((feverOn ? 0.45 : 0.32) + 0.42 * Math.abs(Math.sin(beatPhase + i * 0.7))) - tile.mat.opacity) * Math.min(1, dt * 8);
         if (feverOn) {
-          const ci = (i + Math.floor(t * 7)) % TILE_COLORS.length;
-          tile.mat.color.lerp(L(TILE_COLORS[ci]), Math.min(1, dt * 8));
+          const ci = (i + Math.floor(t * 7)) % TILE_COLS.length;
+          tile.mat.color.lerp(TILE_COLS[ci], Math.min(1, dt * 8));
         } else {
           tile.mat.color.lerp(tile.baseCol, Math.min(1, dt * 5));
         }
@@ -859,7 +861,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       if (phase !== 'intro' && S.phase !== 'ko') piuDraw();
 
       // Textos flotantes de puntaje y vida
-      const lay = [];
+      lay.length = 0;
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i];
         q.t += dt;

@@ -17,6 +17,7 @@ export function poseImpulseKind(poseName) {
   return 0;
 }
 
+const _blendOut = { w: 0, h: 0, ghostOpacity: 0 };
 export function poseScaleBlend(prevW, prevH, targetW, targetH, fadeT, impT = 0, impSign = 0, landT = 0) {
   const f = Math.max(0, Math.min(1, fadeT / CROSSFADE));
   const u = 1 - f;
@@ -25,11 +26,10 @@ export function poseScaleBlend(prevW, prevH, targetW, targetH, fadeT, impT = 0, 
   const bh = prevH > 0 ? prevH + (targetH - prevH) * e : targetH;
   const imp = impSign * Math.sin(Math.max(0, Math.min(1, impT)) * Math.PI) * 0.065;
   const land = Math.sin(Math.max(0, Math.min(1, landT)) * Math.PI) * 0.11;
-  return {
-    w: bw * (1 + land - imp * 0.5),
-    h: bh * (1 - land + imp),
-    ghostOpacity: f * 0.78
-  };
+  _blendOut.w = bw * (1 + land - imp * 0.5);
+  _blendOut.h = bh * (1 - land + imp);
+  _blendOut.ghostOpacity = f * 0.78;
+  return _blendOut;
 }
 
 // Fundido cruzado (~80 ms) + squash & stretch para sprites planos de las arenas (sin costo cuando no cambian)

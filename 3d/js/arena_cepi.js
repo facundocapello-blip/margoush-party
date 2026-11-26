@@ -526,6 +526,9 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     const retRingGoldM = keep(new T.MeshBasicMaterial({ color: L('#ffe066'), transparent: true, opacity: 0.92, side: T.DoubleSide, depthWrite: false }));
     const retRingNormM = keep(new T.MeshBasicMaterial({ color: L('#8cffb8'), transparent: true, opacity: 0.72, side: T.DoubleSide, depthWrite: false }));
 
+    const activeIds = new Set();
+    const lay = [];
+
     function draw(dt) {
       const S = logic.state;
       if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
@@ -649,7 +652,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       P.userData.sh.visible = true; P.userData.sh.scale.set(1.55 * (1 - Math.min(0.5, y * 0.2)), 1, 0.75);
 
       // Pelotas de pádel (con aro brillante en el piso cuando entran en rango de devolución)
-      const activeIds = new Set();
+      activeIds.clear();
       for (const s of S.shots) {
         activeIds.add(s.id);
         let obj = liveBalls.get(s.id);
@@ -694,7 +697,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       }
 
       // Textos flotantes proyectados a pantalla
-      const lay = [];
+      lay.length = 0;
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt;
         if (q.t >= q.life) { q.e.remove(); pops.splice(i, 1); if (q === lastSpeech) lastSpeech = null; continue; }

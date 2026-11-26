@@ -482,6 +482,11 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       updateHud(dt);
     }
 
+    const shotIds = new Set();
+    const pudIds = new Set();
+    const bagIds = new Set();
+    const lay = [];
+
     function draw(dt) {
       const S = logic.state;
       if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
@@ -588,7 +593,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       P.rotation.z = dashT > 0 && !hasDodge ? -dashX * 0.25 : lean;
 
       // Barras de manteca volando
-      const shotIds = new Set();
+      shotIds.clear();
       for (const s of S.shots) {
         shotIds.add(s.id);
         let obj = liveShots.get(s.id);
@@ -608,7 +613,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       }
 
       // Charcos de manteca
-      const pudIds = new Set();
+      pudIds.clear();
       for (const p of S.puddles) {
         pudIds.add(p.id);
         let m = livePuddles.get(p.id);
@@ -622,7 +627,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       }
 
       // Bolsas de harina ilustradas («HARINA · 👊 ¡PEGALE!») con anillo blanco pulsante
-      const bagIds = new Set();
+      bagIds.clear();
       for (const b of S.bags) {
         if (!b.alive) continue;
         bagIds.add(b.id);
@@ -657,7 +662,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       }
 
       // Textos flotantes
-      const lay = [];
+      lay.length = 0;
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt;
         if (q.t >= q.life) { q.e.remove(); pops.splice(i, 1); if (q === lastSpeech) lastSpeech = null; continue; }
