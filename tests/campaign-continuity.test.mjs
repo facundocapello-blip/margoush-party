@@ -185,4 +185,46 @@ test('señales de Margot en fuga/Pinky y claridad de objetivo en ¡Rompé el BYD
   }
 });
 
+test('H-6: continuidad de los 5 actos, Margot en cada traspaso, checkpoint facu, CREW completo y Ezeiza al fin del Acto 1', () => {
+  const cine = readFileSync(new URL('../3d/js/cine.js', import.meta.url), 'utf8');
+  const story = readFileSync(new URL('../3d/js/story.js', import.meta.url), 'utf8');
+  const world = readFileSync(new URL('../3d/js/world.js', import.meta.url), 'utf8');
+
+  // 1) Las 8 mini-escenas de los 5 actos en orden exacto en endIntro()
+  const order = ['pre_chaky', 'post_chaky', 'pre_cepi', 'post_cepi', 'pre_lale', 'post_lale', 'pre_pinky', 'post_pinky'];
+  const endIntroSrc = main.slice(main.indexOf('function endIntro()'), main.indexOf('function startChaseRun()'));
+  let prevIdx = -1;
+  for (const kind of order) {
+    const idx = endIntroSrc.indexOf(`'${kind}'`);
+    assert.ok(idx > prevIdx, `endIntro() debe despachar ${kind} en orden`);
+    prevIdx = idx;
+  }
+
+  // 2) Cada escena de traspaso en cine.js muestra a Margot (stroller) en pantalla
+  const fns = ['preChaky', 'postChaky', 'preCepi', 'postCepi', 'preLale', 'postLale', 'prePinky', 'postPinky'];
+  for (let i = 0; i < fns.length; i++) {
+    const start = cine.indexOf(`function ${fns[i]}(`);
+    const end = i + 1 < fns.length ? cine.indexOf(`function ${fns[i + 1]}(`) : cine.indexOf('return {', start);
+    assert.ok(start > 0 && end > start, `falta ${fns[i]} en cine.js`);
+    const body = cine.slice(start, end);
+    assert.match(body, /const stroller = actor\(strollerPoses/, `${fns[i]} debe mostrar a Margot (stroller) en pantalla`);
+  }
+
+  // 3) Checkpoint facu definido y soportado en resumeAt()
+  assert.match(main, /facu:\s*\{\s*label:\s*'ACTO 5/);
+  const resumeSrc = main.slice(main.indexOf('function resumeAt('), main.indexOf('game.resumeAt ='));
+  assert.match(resumeSrc, /if \(id === 'facu'\)[\s\S]*?spawnFacu\(\)/);
+
+  // 4) La foto final (CREW) incluye a toda la banda: Pinky, Lale, Cepi, Chaky y Facu
+  const crewSrc = story.slice(story.indexOf('const CREW = ['), story.indexOf('];', story.indexOf('const CREW = [')));
+  for (const id of ['pinky', 'lale', 'cepi', 'chaky', 'facu']) {
+    assert.match(crewSrc, new RegExp(`id:\\s*'${id}'`), `CREW final debe incluir a ${id}`);
+  }
+
+  // 5) Fin del Acto 1 muestra Ezeiza Hangar VIP en juego y Le Concept solo en la intro
+  assert.match(world, /ezeizaTerminal/);
+  assert.match(world, /leConcept\.visible = !!on;/);
+  assert.match(world, /ezeizaTerminal\.visible = !on;/);
+});
+
 
