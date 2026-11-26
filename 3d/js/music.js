@@ -148,5 +148,41 @@ export function makeThemes(tone, hiss) {
     else melodyAt(CUNA_MEL, bar, i, (m, len) => bando(m - 12, len * step * 0.95, 0.025, d));
   } };
 
-  return { menu, intro, chase, byd, ba, francia, boss, rescate };
+  // ---------- Duelo de baile (BIG CHAKY): disco funk sincronizado a la negra de cada ronda (0.58 / 0.52 / 0.46 s) ----------
+  const DISCO_CH = [[45, [69, 72, 76]], [41, [65, 69, 72]], [38, [62, 65, 69]], [40, [64, 68, 71]]];
+  const DISCO_MEL = {
+    0: [[0, 76, 2], [4, 79, 2], [8, 81, 4], [12, 79, 2], [14, 76, 2]],
+    1: [[0, 77, 2], [4, 81, 2], [8, 84, 4], [12, 81, 4]],
+    2: [[0, 74, 2], [4, 77, 2], [8, 81, 4], [12, 77, 2], [14, 74, 2]],
+    3: [[0, 76, 4], [4, 79, 4], [8, 83, 4], [12, 80, 4]]
+  };
+  const disco = {
+    step: 0.58 / 4,
+    stepFor: (ctx) => Math.max(0.08, Math.min(0.22, (ctx?.beat || 0.58) / 4)),
+    play(n, d, ctx) {
+      const step = Math.max(0.08, Math.min(0.22, (ctx?.beat || 0.58) / 4));
+      const i = n % 16, bar = Math.floor(n / 16) % 4, round = Math.floor(n / 64) % 2;
+      const [root, triad] = DISCO_CH[bar];
+      // Four-on-the-floor: bombo exacto en cada negra (i = 0, 4, 8, 12) alineado con cada flecha
+      if (i % 4 === 0) kick(d, 0.52);
+      if (i === 4 || i === 12) snare(d, 0.24); // palmas / redoblante en 2 y 4
+      if (i % 4 === 2) hiss(0.06, 0.09, 7600, 1.8, d); // hi-hat abierto disco en el contratiempo
+      else if (i % 2 === 1) hat(d, 0.035);
+      // Bajo disco en octavas (pulso bailable)
+      if (i % 2 === 0) {
+        const oct = (i % 4 === 2) ? 12 : 0;
+        const f = m2f(root - 12 + oct);
+        tone('sawtooth', f, f, step * 1.4, 0.085, d);
+      }
+      // Guitarra/teclado disco «chic» en contratiempos
+      if (i === 2 || i === 6 || i === 10 || i === 14) {
+        for (const m of triad) tone('triangle', m2f(m), m2f(m), step * 0.7, 0.022, d);
+      }
+      // Cuerdas / sinte brillante arriba
+      if (i === 0) for (const m of triad) tone('sine', m2f(m + 12), m2f(m + 12), step * 7, 0.015, d);
+      if (round === 1 || i < 12) melodyAt(DISCO_MEL, bar, i, (m, len) => lead(m, len * step * 0.85, 0.042, d));
+    }
+  };
+
+  return { menu, intro, chase, byd, ba, francia, boss, disco, rescate };
 }

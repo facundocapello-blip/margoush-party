@@ -248,7 +248,7 @@ export function createAudio(assets) {
 
   // Temas sintetizados (uno por momento del juego): ver music.js
   const SYNTH = makeThemes(tone, hiss);
-  const musicCtx = { intensity: 0 };
+  const musicCtx = { intensity: 0, beat: 0.58 };
   let synthTimer = null, synthStep = 0, synthNext = 0;
   function synthTick() {
     const theme = SYNTH[current];
@@ -303,6 +303,15 @@ export function createAudio(assets) {
     },
     // 0..1: qué tan apurado va el tema (mini nivel del BYD: la carga de la batería)
     setIntensity(x) { musicCtx.intensity = Math.max(0, Math.min(1, x || 0)); },
+    // Duración de una negra en segundos (duelo de baile de Chaky: 0.58 / 0.52 / 0.46 s)
+    setBeat(secs) { if (secs > 0.25 && secs < 1.2) musicCtx.beat = secs; },
+    // Alinea el tiempo 1 del sintetizador con la llegada de la primera flecha (±5 ms)
+    alignBeat(delaySec = 0) {
+      if (!ac || paused || !SYNTH[current]) return;
+      synthStep = 0;
+      synthNext = ac.currentTime + Math.max(0.005, delaySec);
+      if (synthTimer) synthTick();
+    },
     pauseMusic() {
       paused = true;
       if (synthTimer) { clearInterval(synthTimer); synthTimer = null; }
