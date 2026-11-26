@@ -505,6 +505,10 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       updateHud(dt);
     }
 
+    const warned = new Set();
+    const carIds = new Set();
+    const lay = [];
+
     function draw(dt) {
       const S = logic.state;
       if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
@@ -569,8 +573,8 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       margotFx.draw(dt, t, S.margotT, 2.0, { x: S.bossX, z: PINKY_ARENA.bossZ, h: BOSS_H }, { x: PINKY_ARENA.xMax - 0.5, z: PINKY_ARENA.bossZ + 0.5 });
 
       // Avisos en los 3 cajones + autos asomando cola con luces de reversa parpadeando en `warn`
-      const warned = new Set();
-      const carIds = new Set();
+      warned.clear();
+      carIds.clear();
       const blinkOn = Math.floor(t * 14) % 2 === 0;
       for (const c of S.cars) {
         carIds.add(c.id);
@@ -631,7 +635,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       }
 
       // Textos flotantes
-      const lay = [];
+      lay.length = 0;
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt;
         if (q.t >= q.life) { q.e.remove(); pops.splice(i, 1); if (q === lastSpeech) lastSpeech = null; continue; }

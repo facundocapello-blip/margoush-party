@@ -752,3 +752,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/main.js`, `node tools/stamp_versions.mjs`, `npm test` 98/99 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows), `node tests/e2e/leaks.e2e.mjs` OK: las 7 escenas y `cine.js` liberan el 100 % de sus recursos propios (`geo 12 → 12`, `tex 31 → 31`, ratio `1.000`, `leaks: []`, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu&debug=1
 - Rollback: `git revert <commit [R-2]>` en `feat-3d` y push (base previa: `22e489e`).
+
+## 2026-11-26 · R-3: eliminación de asignaciones por cuadro en bucles de juego y arenas (hecho por Gemini)
+- Qué cambió: reutilización de temporales (`Vector3`, `Color`, `Set`, arrays `lay`/`_boxes`/`_placed` y objeto `_blendOut`) en `3d/js/fx.js`, `3d/js/pop_layout.js`, `3d/js/chase.js`, `3d/js/arena.js`, `3d/js/arena_cepi.js`, `3d/js/arena_lale.js`, `3d/js/arena_pinky.js`, `3d/js/arena_facu.js`, `3d/js/enemies.js`, `3d/js/poses.js`, `3d/js/sprites.js` y `3d/js/main.js` (`updateOffscreen` sin `.filter()`), más `3d/index.html` y `docs/PLAN_TRABAJO.md`. Sin cambios de comportamiento.
+- Verificación: `node --check` en los 12 JS modificados, `node tools/stamp_versions.mjs`, `npm test` 98/99 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); en Chrome headless (`plaza`, 15 cuadros): `logicMs = 0,82 ms` por cuadro (`0` errores). En `tests/e2e/perf.e2e.mjs` con `CPU ×4` sobre WebGL por software (SwiftShader), solo rinde 12 cuadros en 20 s (`logicMs 8,98 ms` incluyendo el pico de spawn inicial). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=calle&debug=1
+- Rollback: `git revert <commit [R-3]>` en `feat-3d` y push (base previa: `7900619`).

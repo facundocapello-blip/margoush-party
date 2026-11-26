@@ -304,6 +304,8 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       if (won) onCaught(); else onDown();
     }
 
+    const proj = new T.Vector3();
+
     function update(dt) {
       if (input.consume('pause')) { pause(); return; }
       t += dt; phaseT += dt;
@@ -488,7 +490,7 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       for (const p of picks) if (!p.got) { place(p.m, p.x, p.y + Math.sin(t * 4 + p.s) * 0.15, -p.s); p.m.rotation.y = Math.sin(t * 3 + p.s) * 0.6; }
       for (let i = pops.length - 1; i >= 0; i--) {
         const q = pops[i]; q.t += dt; q.v.y += dt * 0.9;
-        const sp = q.v.clone().project(cam);
+        const sp = proj.copy(q.v).project(cam);
         q.e.style.left = (sp.x + 1) / 2 * innerWidth + 'px'; q.e.style.top = (1 - sp.y) / 2 * innerHeight + 'px';
         q.e.style.opacity = String(Math.max(0, 1 - q.t / 1.1));
         if (q.t > 1.1) { q.e.remove(); pops.splice(i, 1); }

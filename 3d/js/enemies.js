@@ -54,6 +54,7 @@ export function createEnemies(ctx) {
   const { scene, assets, world, fx, game } = ctx;
   const list = [];
   const shots = []; // croissants en el aire
+  const tmp = new THREE.Vector3();
 
   // Telegrafías compartidas
   const dangerMat = new THREE.MeshBasicMaterial({ color: 0xff5a3c, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide });
@@ -175,7 +176,7 @@ export function createEnemies(ctx) {
     return !world.gates.some(g => !g.open && (g.x - hx) * side > 0 && Math.abs(g.x - hx) < dist + 0.3);
   }
 
-  function hideTells(e) { for (const m of [e.zone, e.ring, e.lane]) if (m) m.visible = false; }
+  function hideTells(e) { if (e.zone) e.zone.visible = false; if (e.ring) e.ring.visible = false; if (e.lane) e.lane.visible = false; }
 
   function damage(e, dmg, knockDir, knock, strength) {
     e.hp -= dmg;
@@ -190,14 +191,14 @@ export function createEnemies(ctx) {
       if (e.kind === 'lale' && e.hp > 0 && Math.random() < LALE.slipChance) {
         e.state = 'slipped'; e.t = LALE.slip;
         e.actor.lean = 1.2; e.actor.lift = 0; e.actor.setPose('hurt');
-        fx.popup(e.pos.clone().setY(2.9), '¡PLAF!', '#ffd23a', { size: 26, life: 0.8 });
+        fx.popup(tmp.copy(e.pos).setY(2.9), '¡PLAF!', '#ffd23a', { size: 26, life: 0.8 });
       }
     }
     e.actor.hit();
     e.actor.flash(0.12);
-    const at = e.pos.clone().setY(1.4);
-    fx.hit(at, strength);
-    fx.popup(at.clone().setY(2.6), String(dmg * 10), strength > 1.2 ? '#ffd36e' : '#fff', { size: strength > 1.2 ? 26 : 20, life: 0.6 });
+    tmp.copy(e.pos).setY(1.4);
+    fx.hit(tmp, strength);
+    fx.popup(tmp.setY(2.6), String(dmg * 10), strength > 1.2 ? '#ffd36e' : '#fff', { size: strength > 1.2 ? 26 : 20, life: 0.6 });
     game.score.addHit();
     game.combo.add(1);
     ctx.audio?.sfx(strength > 1.2 ? 'hitHeavy' : 'hit');
@@ -208,7 +209,7 @@ export function createEnemies(ctx) {
       e.kx = knockDir * Math.max(knock, 7);
       const pts = game.score.killValue(e.k.points);
       game.score.addKill(e.k.points);
-      fx.popup(e.pos.clone().setY(3.1), '+' + pts, '#7ee0c3', { size: 22, life: 0.9 });
+      fx.popup(tmp.copy(e.pos).setY(3.1), '+' + pts, '#7ee0c3', { size: 22, life: 0.9 });
       ctx.audio?.sfx('ko');
     }
   }
@@ -222,7 +223,7 @@ export function createEnemies(ctx) {
       e.t -= dt;
       a.lean = 0.18; // toma impulso
       a.material.color.setHex(Math.floor(e.t * 20) % 2 ? 0xff8080 : 0xffffff);
-      if (e.t <= 0) { e.state = 'strike'; e.t = 0.15; a.lean = -0.12; a.material.color.setHex(0xffffff); fx.slash(e.pos.clone().setY(1.25), a.facing, 'enemy'); }
+      if (e.t <= 0) { e.state = 'strike'; e.t = 0.15; a.lean = -0.12; a.material.color.setHex(0xffffff); fx.slash(tmp.copy(e.pos).setY(1.25), a.facing, 'enemy'); }
     } else if (e.state === 'strike') {
       e.t -= dt;
       const ex = (hp.x - e.pos.x) * a.facing;
@@ -234,7 +235,7 @@ export function createEnemies(ctx) {
           // El trapito te cobra el estacionamiento
           if (e.k.fee) {
             game.score.addPenalty(e.k.fee);
-            fx.popup(hp.clone().setY(3.1), '-$' + e.k.fee + ' ¡ESTACIONAMIENTO!', '#ffb347', { size: 22, life: 1.2 });
+            fx.popup(tmp.copy(hp).setY(3.1), '-$' + e.k.fee + ' ¡ESTACIONAMIENTO!', '#ffb347', { size: 22, life: 1.2 });
             ctx.audio?.sfx('coin');
           }
         }
@@ -263,7 +264,7 @@ export function createEnemies(ctx) {
       // Patovica: si te tiene en su carril a media distancia, embiste
       if (e.kind === 'patovica' && e.cd <= 0 && Math.abs(dz) < 0.8 && Math.abs(dx) >= 4 && Math.abs(dx) <= 8) {
         e.state = 'ring'; e.t = PATOVICA.warn; e.dir = Math.sign(dx);
-        fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.6), '¡AHÍ VOY!', '#ffe08a', { size: 22, life: 0.8, rise: 0.3 });
+        fx.popup(tmp.copy(e.pos).setY(2.25 * e.k.scale + 0.6), '¡AHÍ VOY!', '#ffe08a', { size: 22, life: 0.8, rise: 0.3 });
         return;
       }
       const near = e.kind === 'patovica' ? 1.7 : e.feint === 1 ? 1.0 : e.feint === 2 ? 2.5 : 1.35;
@@ -274,7 +275,7 @@ export function createEnemies(ctx) {
       if (!e.feint && e.cd <= 0 && d < 0.45 && Math.abs(dx) < near + 0.15 && Math.abs(dz) < 0.5) {
         e.state = 'windup';
         e.t = e.k.windup;
-        fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.6), '!', '#ffe08a', { size: 30, life: 0.5, rise: 0.4 });
+        fx.popup(tmp.copy(e.pos).setY(2.25 * e.k.scale + 0.6), '!', '#ffe08a', { size: 30, life: 0.5, rise: 0.4 });
       }
     }
   }
@@ -285,7 +286,7 @@ export function createEnemies(ctx) {
     if (e.taunt > 0) return;
     e.taunt = 3.2 + Math.random() * 1.5;
     const line = lines[Math.floor(Math.random() * lines.length)];
-    fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.7), line, color, { size: 19, life: 1.4, rise: 0.25 });
+    fx.popup(tmp.copy(e.pos).setY(2.25 * e.k.scale + 0.7), line, color, { size: 19, life: 1.4, rise: 0.25 });
   }
   function miniBossBar(e) {
     const bar = document.querySelector('#boss-bar'), fill = document.querySelector('#boss-fill');
@@ -314,7 +315,7 @@ export function createEnemies(ctx) {
     e.taunt -= dt;
     if (e.taunt <= 0) {
       e.taunt = 3 + Math.random() * 2;
-      fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.5), TAUNTS[(Math.random() * TAUNTS.length) | 0], '#ffffff', { size: 18, life: 0.7, rise: 0.3 });
+      fx.popup(tmp.copy(e.pos).setY(2.25 * e.k.scale + 0.5), TAUNTS[(Math.random() * TAUNTS.length) | 0], '#ffffff', { size: 18, life: 0.7, rise: 0.3 });
     }
   }
 
@@ -375,7 +376,7 @@ export function createEnemies(ctx) {
       a.lift = Math.abs(Math.sin(e.t * 22)) * 0.1;
       if (e.t >= BOMBO.windup) {
         hideTells(e);
-        fx.popup(e.pos.clone().setY(2.9), '¡BOM!', '#ffd36e', { size: 30, life: 0.7 });
+        fx.popup(tmp.copy(e.pos).setY(2.9), '¡BOM!', '#ffd36e', { size: 30, life: 0.7 });
         fx.shake(0.15);
         ctx.audio?.sfx('bom');
         const d = Math.hypot(hp.x - e.pos.x, hp.z - e.pos.z);
@@ -463,7 +464,7 @@ export function createEnemies(ctx) {
         ctx.audio?.sfx('swing');
         if (e.k.miniBoss) {
           e.tiredT = CEPI.tired;
-          fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.5), '¡Uf, uf…!', '#ffd36e', { size: 24, life: 1.2, rise: 0.25 });
+          fx.popup(tmp.copy(e.pos).setY(2.25 * e.k.scale + 0.5), '¡Uf, uf…!', '#ffd36e', { size: 24, life: 1.2, rise: 0.25 });
         }
       }
       return;
@@ -486,7 +487,7 @@ export function createEnemies(ctx) {
     if (e.cd <= 0 && Math.abs(dx) < 11 && (e.k.miniBoss || rangedFree())) {
       e.state = 'throw'; e.t = CEPI.windup;
       e.throwX = hp.x; e.throwZ = hp.z;
-      fx.popup(e.pos.clone().setY(2.25 * e.k.scale + 0.4), '🎾', '#fff', { size: 26, life: 0.5, rise: 0.3 });
+      fx.popup(tmp.copy(e.pos).setY(2.25 * e.k.scale + 0.4), '🎾', '#fff', { size: 26, life: 0.5, rise: 0.3 });
     }
   }
 
@@ -543,7 +544,7 @@ export function createEnemies(ctx) {
       }
       if (e.ran >= DELIVERY.run || moved < DELIVERY.speed * dt * 0.3) {
         e.state = 'dizzy'; e.t = DELIVERY.dizzy;
-        fx.popup(e.pos.clone().setY(2.9), '💫', '#fff', { size: 26, life: DELIVERY.dizzy, rise: 0.1 });
+        fx.popup(tmp.copy(e.pos).setY(2.9), '💫', '#fff', { size: 26, life: DELIVERY.dizzy, rise: 0.1 });
       }
       return;
     }
@@ -563,7 +564,7 @@ export function createEnemies(ctx) {
     a.setFacing(dx >= 0 ? 1 : -1);
     if (e.cd <= 0 && Math.abs(dz) < 0.8 && Math.abs(dx) > 4 && Math.abs(dx) < 12 && rangedFree()) {
       e.state = 'ring'; e.t = DELIVERY.warn; e.dir = Math.sign(dx);
-      fx.popup(e.pos.clone().setY(2.9), '🔔', '#fff', { size: 30, life: 0.8, rise: 0.3 });
+      fx.popup(tmp.copy(e.pos).setY(2.9), '🔔', '#fff', { size: 30, life: 0.8, rise: 0.3 });
       ctx.audio?.sfx('bell');
     }
   }
@@ -678,7 +679,7 @@ export function createEnemies(ctx) {
           const bikeBob = roll > 0.1 ? Math.abs(Math.sin(e.walk * 2.2)) * 0.035 : 0;
           a.lift = Math.max(a.lift, 0.35 + bikeBob);
           if (e.state === 'charge') a.lean = -0.12;
-          for (const w of e.bike.children.slice(0, 2)) w.rotation.z -= roll * dt / 0.42 * a.facing;
+          for (let wi = 0; wi < 2; wi++) e.bike.children[wi].rotation.z -= roll * dt / 0.42 * a.facing;
         }
         choosePose(e);
         a.update(dt, a.pose === 'walk' ? (e.walkSpeed || 0) : 0);

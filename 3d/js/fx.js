@@ -27,6 +27,8 @@ export function createFx(scene, camera, labelsEl, flashEl) {
   let shakeAmt = 0;
   let stop = 0;
   const offset = new THREE.Vector3();
+  const proj = new THREE.Vector3();
+  const lay = [];
 
   function popup(pos, text, color = '#fff', { size = 20, life = 0.8, rise = 1.4 } = {}) {
     const el = document.createElement('div');
@@ -138,12 +140,12 @@ export function createFx(scene, camera, labelsEl, flashEl) {
         }
       }
       const w = innerWidth, h = innerHeight;
-      const lay = [];
+      lay.length = 0;
       for (let i = pops.length - 1; i >= 0; i--) {
         const p = pops[i];
         p.life -= dt;
         p.pos.y += p.rise * dt;
-        const v = p.pos.clone().project(camera);
+        const v = proj.copy(p.pos).project(camera);
         // que los textos largos no se corten en el borde de la pantalla
         const half = (p.halfW ??= p.el.offsetWidth / 2);
         if (p.life > 0) lay.push({ o: p, el: p.el, x: Math.min(w - half - 6, Math.max(half + 6, ((v.x + 1) / 2) * w)), y: ((1 - v.y) / 2) * h });

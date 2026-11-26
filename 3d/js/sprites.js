@@ -139,19 +139,21 @@ export class SpriteActor {
     if (this.fadeT > 0) this.fadeT = Math.max(0, this.fadeT - dt);
     if (this.impT > 0) this.impT = Math.max(0, this.impT - dt * 6.5);
     if (this.landT > 0) this.landT = Math.max(0, this.landT - dt * 6.2);
-    const bl = (this.fadeT > 0 || this.impT > 0 || this.landT > 0)
-      ? poseScaleBlend(this.prevW || W, this.prevH || H, W, H, this.fadeT, this.impT, this.impSign, this.landT)
-      : { w: W, h: H, ghostOpacity: 0 };
+    let bw = W, bh = H, ghostOp = 0;
+    if (this.fadeT > 0 || this.impT > 0 || this.landT > 0) {
+      const bl = poseScaleBlend(this.prevW || W, this.prevH || H, W, H, this.fadeT, this.impT, this.impSign, this.landT);
+      bw = bl.w; bh = bl.h; ghostOp = bl.ghostOpacity;
+    }
     // golpe recibido: aplastamiento breve
     this.squash = Math.max(0, this.squash - dt * 6);
     const sq = Math.sin(this.squash * Math.PI) * 0.12;
     const st = this.stretch;
-    this.mesh.scale.set(bl.w * this.facing * (1 + sq - st * 0.5), bl.h * (1 - sq + st), 1);
-    this.mesh.position.y = -bl.h * (1 - p.foot) + this.lift;
+    this.mesh.scale.set(bw * this.facing * (1 + sq - st * 0.5), bh * (1 - sq + st), 1);
+    this.mesh.position.y = -bh * (1 - p.foot) + this.lift;
     this.mesh.position.x = this.offsetX * this.facing;
     this.mesh.rotation.z = this.lean * this.facing;
     if (this.fadeT > 0) {
-      this.ghostMat.opacity = bl.ghostOpacity;
+      this.ghostMat.opacity = ghostOp;
       this.ghostMesh.visible = this.mesh.visible;
     } else {
       this.ghostMesh.visible = false;
