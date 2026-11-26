@@ -93,9 +93,9 @@ export function createMargotFinish({ T, scene, assets, keep, unit, L, kind = 'pa
         c.material.rotation = a;
       });
     }
-    // Plasta de papilla pegada en la cara (sigue un rato después del remate)
+    // Plasta de papilla pegada en la cara (si Pinky tiene su sprite 3D arena_pinky_stun, la papilla ya está dibujada en él)
     if (faceT > 0) { faceT += dt; if (faceT > 3.2) faceT = 0; }
-    splat.visible = kind === 'papilla' && faceT > 0;
+    splat.visible = kind === 'papilla' && faceT > 0 && !assets.has('arena_pinky_stun');
     if (splat.visible) {
       const pop = Math.min(1, faceT * 6);
       splat.scale.set(1.8 * pop, 1.8 * pop, 1);
