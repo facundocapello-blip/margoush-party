@@ -332,8 +332,11 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
     };
     setBar();
 
-    // Audio: arranca directamente con el ritmo de baile
-    try { audio.music('byd', { fade: 0.25 }); } catch (_) {}
+    // Audio: tema disco propio sincronizado a la negra de cada ronda (0.58 / 0.52 / 0.46 s)
+    try {
+      audio.setBeat?.(ARENA.dice.beats[0]);
+      audio.music('disco', { fade: 0.25 });
+    } catch (_) {}
 
     let judgeLeft = 0, captionLeft = 0, piuRound = -1;
     let laneHeight = 0, viewportHeight = 0, viewportWidth = 0;
@@ -491,6 +494,10 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
         noteEls.clear();
         piuRound = d.round;
         renderDots();
+        // Alinea la negra del tema disco con el compás y la primera flecha de esta ronda (±20 ms)
+        const b = d.beatDur || ARENA.dice.beats[d.round] || ARENA.dice.beat;
+        const firstIn = d.notes?.[0] ? Math.max(0, d.notes[0].time - d.t) : 0;
+        try { audio.setBeat?.(b); audio.alignBeat?.(firstIn % b); } catch (_) {}
       }
       if (!laneHeight || innerHeight !== viewportHeight || innerWidth !== viewportWidth) {
         viewportHeight = innerHeight;

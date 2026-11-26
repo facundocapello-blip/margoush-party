@@ -734,3 +734,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/voice.js 3d/js/audio.js`, `node tools/stamp_versions.mjs`, `npm test` 97/98 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows), incluyendo tests nuevos de timbres distintos para los 5 jefes, silencio en 0 osciladores y retorno de `duck()` a `0.78`. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu (y `chaky`, `cepi`, `lale`, `pinky`)
 - Rollback: `git revert <commit [H-5]>` en `feat-3d` y push (base previa: `e8303ed`).
+
+## 2026-11-26 · D-4: música disco propia para el duelo de baile alineada a la negra de cada ronda (hecho por Gemini)
+- Qué cambió: `3d/js/music.js` (nuevo tema `disco` sintetizado con four-on-the-floor, bajo en octavas, hi-hat en contratiempo y sinte cuya negra = `ctx.beat`: 0,58 / 0,52 / 0,46 s), `3d/js/audio.js` (agregados `setBeat(secs)` y `alignBeat(delaySec)` para clavar el tiempo 1 con la primera flecha ±5 ms), `3d/js/arena.js` (usa `'disco'` en lugar de `'byd'` y realinea cada ronda con `d.notes[0].time - d.t`), `tests/music.test.mjs`, `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check 3d/js/music.js 3d/js/audio.js 3d/js/arena.js`, `node tools/stamp_versions.mjs`, `npm test` 98/99 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max (percepción rítmica real con parlante/auriculares).
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=chaky-baile
+- Rollback: `git revert <commit [D-4]>` en `feat-3d` y push (base previa: `2b656aa`).
