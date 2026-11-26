@@ -184,7 +184,7 @@ export function createHero(id, ctx) {
       }
       h.knock *= Math.max(0, 1 - dt * 8);
       h.knockZ *= Math.max(0, 1 - dt * 8);
-      const prevX = p.x;
+      const prevX = p.x, prevZ = p.z;
       p.x += (vx + h.knock) * dt;
       p.z += (vz + h.knockZ) * dt;
       // Patinando no se cae al bache ni se mete en el fuego: frena en el borde
@@ -197,7 +197,8 @@ export function createHero(id, ctx) {
         h.lift = Math.max(0, h.lift + h.vy * dt);
         if (h.lift === 0) { h.vy = 0; fx.dust(p); }
       }
-      const speed = Math.hypot(vx, vz);
+      // Velocidad real de desplazamiento (evita que patine contra paredes o portones cerrados)
+      const speed = dt > 0 && h.state === 'free' ? Math.hypot(p.x - prevX, p.z - prevZ) / dt : Math.hypot(vx, vz);
       animate(dt, speed);
       actor.update(dt, speed);
     },

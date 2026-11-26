@@ -692,15 +692,17 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
         o.fr.rotation.z = wrongPicked ? 0.45 : (PK.stage === 'shuffle' ? Math.sin(t * 16 + i) * 0.07 : 0);
       }
 
-      // Héroe de espaldas
+      // Héroe de espaldas (ciclo de corrida sincronizado con el desplazamiento real)
       const hasDodge = assets.has(heroPre + 'dodge');
-      heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : dashT > 0 && hasDodge ? 'dodge' : moving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
+      const movedD = Math.hypot(x - P.position.x, z - P.position.z);
+      const reallyMoving = moving && movedD > 0.003;
+      heroPose = hurtT > 0 || phase === 'down' ? 'hurt' : swing || powT > 0 ? 'punch' : dashT > 0 && hasDodge ? 'dodge' : reallyMoving || y > 0.15 || dashT > 0 ? 'run' : 'idle';
       let bob = 0, lean = 0, key = heroPre + heroPose, hsx = 1;
       if (heroPose === 'dodge') { bob = 0.18; hsx = dashX < 0 ? -1 : 1; }
       else if (heroPose === 'run') {
         if (y > 0.15) key = heroPre + 'jump';
         else {
-          stepT += dt * 2 * Math.PI * 2.6;
+          stepT += movedD * 2.55;
           key = heroPre + 'run' + (Math.floor(stepT / (Math.PI / 2)) % 4);
           bob = Math.abs(Math.sin(stepT * 2)) * 0.05;
           lean = -input.moveX * 0.07;

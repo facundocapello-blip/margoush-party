@@ -452,7 +452,8 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
       back.position.set(0, BH / 2 - 3, pz - 176);
       for (const f of facs) if (f.position.z > pz + 10) f.position.z -= 14 * facW;
       for (const g of deco) if (g.position.z > pz + 10) g.position.z -= 16 * 9;
-      place(P, x, y, pz); P.userData.sh.scale.set(2 * (1 - Math.min(0.5, y * 0.15)), 1, 1.1);
+      const driveBob = y <= 0.01 && v > 1 ? Math.abs(Math.sin(dist * 1.4)) * 0.055 * Math.min(1, v / 20) : 0;
+      place(P, x, y + driveBob, pz); P.userData.sh.scale.set(2 * (1 - Math.min(0.5, y * 0.15)), 1, 1.1);
       // El BYD: rebota con el empedrado, se inclina al doblar y «gira» (se aplasta un toque) cuando Cepi cambia de pose
       turnT = Math.max(0, turnT - dt);
       const lat = dt > 0 ? (cx - cxPrev) / dt : 0; cxPrev = cx;

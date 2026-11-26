@@ -426,9 +426,10 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
         glow.position.set(spotX(S.spot) + car.position.x, spotY(S.spot) + car.position.y, CAR_Z + 0.25);
         glow.scale.set(p * 1.1, p * 1.1, 1);
       }
-      // Héroe (cicla run0..3 al desplazarse para no patinar congelado)
-      if (moving && !swing) stepT += dt * 9; else stepT = 0;
-      setHero(swing ? 'punch' : moving ? 'run' + (Math.floor(stepT) % 4) : 'idle');
+      // Héroe (cicla run0..3 acorde al desplazamiento real para no patinar congelado ni contra bordes)
+      const movedX = Math.abs(x - P.position.x);
+      if (movedX > 0.004 && !swing) stepT += movedX / 0.55; else if (!moving) stepT = 0;
+      setHero(swing ? 'punch' : (movedX > 0.004 || moving) ? 'run' + (Math.floor(stepT) % 4) : 'idle');
       P.position.set(x, 0, HERO_Z);
       heroSh.position.set(x, 0.03, HERO_Z);
       // Margot a salvo afuera mirando la escena (festeja cuando cae el BYD)
