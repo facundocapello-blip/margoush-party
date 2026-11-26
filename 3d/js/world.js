@@ -645,7 +645,48 @@ export function buildStreet(scene, assets) {
   }
   leConcept.add(front, lcSign, lcHalo);
   leConcept.position.set(LE_CONCEPT_X, -lcH * 0.165 * 0, BACK_Z + 0.55);
+  leConcept.visible = false; // en el juego (Acto 1) acá aparece el acceso a Ezeiza; en la intro se muestra Le Concept
   scene.add(leConcept);
+
+  // Acceso al Aeropuerto de Ezeiza (Hangar VIP de Big Chaky): reemplaza a Le Concept al final de la calle del Acto 1
+  const ezeizaTerminal = new THREE.Group();
+  ezeizaTerminal.userData.ezeizaTerminal = true;
+  const ezeFront = new THREE.Mesh(new THREE.PlaneGeometry(lcW, lcH), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 640, (c, w, h) => {
+    const bg = c.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#172b4d'); bg.addColorStop(0.55, '#254270'); bg.addColorStop(1, '#1a2436');
+    c.fillStyle = bg; c.fillRect(0, 0, w, h);
+    // Techo curvo de hangar metálico
+    c.fillStyle = '#334b6e';
+    c.beginPath(); c.moveTo(0, h * 0.24); c.quadraticCurveTo(w * 0.5, h * 0.04, w, h * 0.24); c.lineTo(w, h * 0.30); c.lineTo(0, h * 0.30); c.closePath(); c.fill();
+    c.fillStyle = '#7ec8ff'; c.fillRect(0, h * 0.28, w, 10);
+    // Ventanales vidriados de terminal con reflejo diagonal
+    for (let k = 0; k < 5; k++) {
+      const gx = 48 + k * 190, gy = h * 0.36, gw = 166, gh = h * 0.42;
+      const wg = c.createLinearGradient(gx, gy, gx, gy + gh);
+      wg.addColorStop(0, '#78bce8'); wg.addColorStop(0.6, '#3a6b9e'); wg.addColorStop(1, '#ffe0a6');
+      c.fillStyle = wg; c.fillRect(gx, gy, gw, gh);
+      c.fillStyle = 'rgba(255,255,255,0.22)';
+      c.beginPath(); c.moveTo(gx + 22, gy); c.lineTo(gx + 64, gy); c.lineTo(gx + 34, gy + gh); c.lineTo(gx, gy + gh); c.closePath(); c.fill();
+      c.strokeStyle = '#122038'; c.lineWidth = 8; c.strokeRect(gx, gy, gw, gh);
+    }
+    // Puertas automáticas de acceso al Hangar VIP
+    c.fillStyle = '#0f1a2d'; c.fillRect(w * 0.36, h * 0.64, w * 0.28, h * 0.36);
+    c.fillStyle = '#5bb8ff'; c.fillRect(w * 0.38, h * 0.67, w * 0.11, h * 0.31);
+    c.fillStyle = '#5bb8ff'; c.fillRect(w * 0.51, h * 0.67, w * 0.11, h * 0.31);
+    c.fillStyle = '#1d2d44'; c.fillRect(0, h * 0.94, w, h * 0.06);
+  }), fog: false }));
+  ezeFront.position.set(0, lcH / 2, 0);
+  const ezeSign = new THREE.Mesh(new THREE.PlaneGeometry(7.8, 1.3), new THREE.MeshBasicMaterial({ map: canvasTex(1024, 192, (c, w, h) => {
+    c.fillStyle = '#0f203d'; c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 22); c.fill();
+    c.lineWidth = 9; c.strokeStyle = '#7ec8ff'; c.stroke();
+    c.font = '900 76px Fredoka, "Arial Rounded MT Bold", Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.shadowColor = '#7ec8ff'; c.shadowBlur = 24; c.fillStyle = '#f0f8ff';
+    c.fillText('✈ EZEIZA · HANGAR VIP', w / 2, h / 2 + 4);
+  }), transparent: true, fog: false }));
+  ezeSign.position.set(0, 4.15, 0.35);
+  ezeizaTerminal.add(ezeFront, ezeSign);
+  ezeizaTerminal.position.set(LE_CONCEPT_X, 0, BACK_Z + 0.55);
+  scene.add(ezeizaTerminal);
 
   // Francia: usa únicamente las fachadas pintadas estilo Pixar de street_bg (café parisino con mesas y boutique con toldo a rayas),
   // recortando el adoquín inferior (v0 = 0.165) y ajustando cada hueco libre entre Roland Garros y Ferme LaPadite sin superposiciones.
@@ -1137,12 +1178,14 @@ export function buildStreet(scene, assets) {
   const introHide = [...archParts, welcome, airportSign].filter(Boolean);
   function setIntroMode(on) {
     for (const m of introHide) m.visible = !on;
+    leConcept.visible = !!on;
+    ezeizaTerminal.visible = !on;
     borderBar.setVisible(!on);
     look.intro = on;
     look.update(LEVELS[0].start, true);
   }
 
-  return { treeXs, binXs, bounds: STREET, updateLook: look.update, setIntroMode, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, border: borderBar, leConcept, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
+  return { treeXs, binXs, bounds: STREET, updateLook: look.update, setIntroMode, levelBounds: bounds, zones: ZONES, colliders: [], gates, secret, border: borderBar, leConcept, ezeizaTerminal, clampPosition, setLevelBounds, updateGates, resetGates, galponX: GALPON_X };
 }
 
 // ---------- Look por tramo (luz + bruma) ----------
