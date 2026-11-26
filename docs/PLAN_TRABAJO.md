@@ -113,7 +113,7 @@ Historia vigente (no cambiarla): Chaky agarra el cochecito → duelo de baile en
 
 ## DIVERSIÓN Y PULIDO (D) — jefes justos, música y detalles
 
-- [ ] **D-1 · Chaky no se gana palmeando los 5 carriles** (S). Hoy tocar un carril vacío no penaliza (`arena_logic.js` ~259-263, `grade: 'empty'`): un bot que toca los 5 carriles gana el 100 %. Hacer que el toque en vacío corte el combo y, si se repite muy seguido (p. ej. 3 vacíos en 1 s), cuente como fallo.
+- [x] **D-1 · Chaky no se gana palmeando los 5 carriles** (S). Hoy tocar un carril vacío no penaliza (`arena_logic.js` ~259-263, `grade: 'empty'`): un bot que toca los 5 carriles gana el 100 %. Hacer que el toque en vacío corte el combo y, si se repite muy seguido (p. ej. 3 vacíos en 1 s), cuente como fallo.
   - Criterio (con bots en `tests/arena.test.mjs`): palmear los 5 carriles gana < 20 % y gasta ≥ 2 ⭐; un jugador casual bueno sigue ganando ≥ 95 %.
 - [ ] **D-2 · Cepi: dificultad al revés** (M). Joystick al azar + 👊 gana 87 %, un jugador casual que entendió la regla 62 %, un novato 7 %; la fase 1 es la que más castiga. Ajustar `CEPI_ARENA` (`arena_cepi_logic.js` ~15-30: `ballSpeed`, `returnR`, `ballHitR`, `windup`) y, si hace falta, que pegarle sin estar cerca de la pelota no devuelva.
   - Criterio (bots en `tests/arena_cepi.test.mjs`): casual flojo ≥ machacador, novato ≥ 40 %, golpes recibidos en fase 1 ≤ 1,5. Link `?probar=cepi`.
