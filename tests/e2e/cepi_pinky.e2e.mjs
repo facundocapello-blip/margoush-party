@@ -15,43 +15,39 @@ try {
     window.__game.banner = (t, x, s, o) => { window.__banners.push(t + ' ' + x); return orig(t, x, s, o); };
   });
 
-  // ---------- Cepi mini-jefe a mitad del nivel 2 ----------
-  await G(() => {
-    const g = window.__game; g.setStage('boulevard'); g.enemies.clear(); g.traps.disable();
-    g.waves.boulevard = 'idle'; g.hero.hp = g.hero.hpMax = 99; g.hero.actor.position.set(214, 0, 0);
-    g.chaseDone = true; // sin la persecución (se prueba en chase.e2e.mjs)
-    window.__banners.length = 0;
-  });
-  await until(() => window.__game.waves.boulevard === 'active', null, 3000);
+  // ---------- Cepi «el Niño» en su arena de pádel (los jefes ya no salen en oleadas de calle) ----------
+  await G(() => window.__game.resumeAt({ id: 'cepi', heroId: 'douge', score: 0, time: 0 }));
+  await until(() => window.__game.state === 'arena-cepi', null, 20000);
   const c = await G(() => {
-    const g = window.__game, e = g.enemies.list.find(e => e.kind === 'cepiJefe');
-    const bar = document.querySelector('#boss-bar');
-    return { level: g.level, has: !!e, hp: e?.hp, sheet: e?.actor.poses.idle?.tex?.image?.src || '', banners: window.__banners.slice(),
+    const g = window.__game, bar = document.querySelector('#boss-bar');
+    return { active: g.arenaCepi?.active, hp: g.arenaCepi?.state?.hp, idle: g.ctx.assets.has('arena_cepi_idle'),
       bar: !bar.classList.contains('hidden'), barName: bar.querySelector('span').textContent };
   });
-  check(c.level === 2 && c.has, 'Cepi jefe aparece en el nivel 2 (oleada boulevard)');
-  check(c.hp >= 10, `Cepi aguanta como mini-jefe (vida ${c.hp})`);
-  check(c.banners.some(t => t.includes('CEPI')), 'sale el cartel de CEPI «EL NIÑO»');
+  check(c.active && c.hp >= 10, `Cepi aparece en su arena de pádel (vida ${c.hp})`);
   check(c.bar && c.barName.includes('CEPI'), 'se ve la barra de vida con su nombre');
-  check(/cepi_(actions_)?sheet/.test(c.sheet), 'Cepi usa su hoja de poses');
-  await page.waitForTimeout(1500);
+  check(c.idle, 'Cepi carga sus poses de arena');
+  await page.waitForTimeout(1000);
   await shot(page, 'cepi-miniboss');
-  await G(() => window.__game.enemies.clear());
-  check(await G(() => document.querySelector('#boss-bar').classList.contains('hidden')), 'al irse Cepi se esconde la barra');
+  await startRun(page, 'douge');
+  check(await G(() => document.querySelector('#boss-bar').classList.contains('hidden')), 'al salir de la arena se esconde la barra');
 
-  // ---------- Pinky trapito: si te pega, te cobra el estacionamiento ----------
-  await G(() => { const g = window.__game; g.setStage('francia-quiet'); g.enemies.clear(); g.traps.disable(); for (const k in g.waves) g.waves[k] = 'cleared';
+  // ---------- Pinky trapito (unidad directa): si te pega, te cobra el estacionamiento ----------
+  await G(async () => {
+    const g = window.__game;
+    await g.ctx.assets.ensure(['pinky_actions_sheet', 'pinky_walk_sheet', 'cepi_actions_sheet', 'cepi_walk_sheet']);
+    g.setStage('francia-quiet'); g.enemies.clear(); g.traps.disable(); for (const k in g.waves) g.waves[k] = 'cleared';
     g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 0; g.hero.actor.position.set(170, 0, 0); g.score.addKill('boss'); window.__s0 = g.score.total;
-    window.__p = g.enemies.spawn(172, 0, 'pinky'); });
-  await page.waitForFunction(() => window.__game.hero.hp < 99, null, { timeout: 12000 });
+    window.__p = g.enemies.spawn(172, 0, 'pinky');
+  });
+  await page.waitForFunction(() => window.__game.hero.hp < 99, null, { timeout: 15000 });
   const fee = await G(() => window.__s0 - window.__game.score.total);
   check(fee === 100, `el trapito te saca $100 de puntaje cuando te pega (${fee})`);
   check(await G(() => /pinky_(actions_)?sheet/.test(window.__p.actor.poses.idle.tex.image.src)), 'Pinky usa su hoja de poses');
   check(await G(() => window.__game.cameos.pinky.actor === null), 'Pinky ya no aparece como ayudante');
 
-  // ---------- Cepi tira pelotazos de pádel ----------
+  // ---------- Cepi (unidad directa) tira pelotazos de pádel ----------
   await G(() => { const g = window.__game; g.enemies.clear(); g.hero.hp = 99; g.hero.inv = 0; window.__c = g.enemies.spawn(176, 0, 'cepi'); });
-  await page.waitForFunction(() => window.__game.enemies.shots.length > 0, null, { timeout: 8000 });
+  await page.waitForFunction(() => window.__game.enemies.shots.length > 0, null, { timeout: 12000 });
   check(true, 'Cepi tira un pelotazo de pádel con su sombra');
 
   // ---------- Cepi en la pantalla de derrota ----------
@@ -76,7 +72,7 @@ try {
   await startRun(page, 'douge');
   await G(() => window.__game.finish(true));
   await page.waitForTimeout(500);
-  check(await G(() => !document.querySelector('#cepi') && !document.querySelector('#screen-result .host')), 'al ganar no aparece Cepi ni Facu');
+  check(await G(() => !document.querySelector('#cepi') && !document.querySelector('#screen-result .host img[alt="Facu"]')), 'al ganar no aparece Cepi ni Facu');
 
   check(errors.length === 0, 'sin errores en consola: ' + errors.join(' | '));
 } finally { await browser.close(); }

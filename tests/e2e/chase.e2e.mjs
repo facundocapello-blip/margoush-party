@@ -1,20 +1,20 @@
-// Persecución de Cepi al principio del Nivel 1 (se llevó a Margot): se juega hacia el fondo y termina
+// Persecución de Cepi en el Acto 2 (tras vencer a BIG CHAKY): se juega hacia el fondo y termina
 // en el mini nivel «¡ROMPÉ EL BYD!».
-import { launch, open, startRun, check, shot } from './harness.mjs';
+import { launch, open, check, shot } from './harness.mjs';
 
 const G = (page, fn, arg) => page.evaluate(fn, arg);
 
-async function toBoulevard(page, hero) {
-  await G(page, (h) => window.__game.quickChase(h), hero);
-  await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 8000 });
+async function toChase(page, hero) {
+  await G(page, (h) => window.__game.resumeAt({ id: 'acto2', heroId: h, score: 0, time: 0 }), hero);
+  await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 20000 });
 }
 
 for (const hero of ['douge', 'marine']) {
   const { browser, page, errors } = await launch({ viewport: { width: 844, height: 390 }, mobile: true });
   try {
     await open(page);
-    await toBoulevard(page, hero);
-    check(await G(page, () => window.__game.level) === 1, `${hero}: al empezar la partida arranca la persecución (Nivel 1)`);
+    await toChase(page, hero);
+    check(await G(page, () => window.__game.level) === 1, `${hero}: la persecución corre en Buenos Aires (Nivel 1)`);
     check(await G(page, () => !!document.querySelector('#chase-bat') && !document.querySelector('#hud').classList.contains('hidden')),
       `${hero}: se ve la batería del BYD y el HUD de siempre`);
     await G(page, () => { window.__game.hero.hp = window.__game.hero.hpMax = 99; });
@@ -22,10 +22,12 @@ for (const hero of ['douge', 'marine']) {
     await page.waitForFunction(() => window.__game.chase.state?.dist > 15, null, { timeout: 30000 });
     const s1 = await G(page, () => window.__game.chase.state);
     check(s1.phase === 'run' && s1.dist > 15, `${hero}: corre solo hacia el fondo (${s1.dist.toFixed(0)} m)`);
-    // Cepi maneja mirando adelante y se da vuelta solo para sacar
+    // Cepi maneja mirando adelante y se da vuelta solo para sacar (esperar por tiempo real en GPU por software)
     const poses = new Set([s1.cepi]);
-    for (let i = 0; i < 300 && !(poses.has('windup') && poses.has('throw') && poses.size >= 3); i++) {
-      poses.add(await G(page, () => window.__game.chase.state.cepi)); await page.waitForTimeout(40);
+    const t0 = Date.now();
+    while (Date.now() - t0 < 35000 && !(poses.has('drive') && poses.has('windup') && poses.has('throw'))) {
+      poses.add(await G(page, () => window.__game.chase.state.cepi));
+      await page.waitForTimeout(80);
     }
     check(poses.has('drive') && poses.has('windup') && poses.has('throw'), `${hero}: Cepi alterna manejar / darse vuelta / sacar (${[...poses].join(', ')})`);
 
@@ -40,11 +42,11 @@ for (const hero of ['douge', 'marine']) {
 
     // Controles: saltar y doblar
     await page.keyboard.press('Space');
-    await page.waitForTimeout(150);
+    await page.waitForFunction(() => window.__game.chase.state.y > 0.3, null, { timeout: 5000 }).catch(() => {});
     check((await G(page, () => window.__game.chase.state.y)) > 0.3, `${hero}: SALTO salta`);
     // GPU por software: se espera por posición, no por tiempo
     await page.keyboard.down('ArrowLeft');
-    await page.waitForFunction(() => window.__game.chase.state.x < -1, null, { timeout: 5000 }).catch(() => {});
+    await page.waitForFunction(() => window.__game.chase.state.x < -1, null, { timeout: 10000 }).catch(() => {});
     await page.keyboard.up('ArrowLeft');
     check((await G(page, () => window.__game.chase.state.x)) < -1, `${hero}: el joystick dobla`);
 
@@ -59,7 +61,7 @@ for (const hero of ['douge', 'marine']) {
 
     // Hasta el final (rápido): el BYD se queda sin batería y sigue el mini nivel de romperlo
     await G(page, () => { window.__game.timeScale = 3; });
-    await page.waitForFunction(() => window.__game.state === 'bonus', null, { timeout: 60000 });
+    await page.waitForFunction(() => window.__game.state === 'bonus', null, { timeout: 90000 });
     await G(page, () => { window.__game.timeScale = 1; });
     const after = await G(page, () => {
       const g = window.__game;
@@ -77,7 +79,7 @@ for (const hero of ['douge', 'marine']) {
   const { browser, page, errors } = await launch({ viewport: { width: 960, height: 540 } });
   try {
     await open(page);
-    await toBoulevard(page, 'douge');
+    await toChase(page, 'douge');
     await G(page, () => { window.__game.hero.hp = 1; window.__game.timeScale = 2; });
     await page.waitForTimeout(6000);
     check(await G(page, () => window.__game.state === 'chase' && window.__game.hero.hp === 1), 'con un corazón la persecución sigue: los golpes no te dejan sin vida');
