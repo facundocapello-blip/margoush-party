@@ -73,10 +73,10 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
         g.fillStyle = 'rgba(0,0,0,.32)'; g.fillRect(0, i * 32, w, 2);
         g.fillRect(((i * 97) % w), i * 32, 2, 32);
       }
-    }, 6, 6);
-    const outer = mk(new T.PlaneGeometry(70, 44), new T.MeshLambertMaterial({ color: L('#1d1320') }));
+    }, 11, 6);
+    const outer = mk(new T.PlaneGeometry(76, 44), new T.MeshLambertMaterial({ color: L('#1d1320') }));
     outer.rotation.x = -Math.PI / 2; outer.position.set(0, -0.02, -6);
-    const floor = mk(new T.PlaneGeometry(34, 26), new T.MeshLambertMaterial({ map: parquet }));
+    const floor = mk(new T.PlaneGeometry(64, 26), new T.MeshLambertMaterial({ map: parquet }));
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -7);
     const carpetM = keep(new T.MeshLambertMaterial({ color: L('#7a1f38') }));
     const trimM = keep(new T.MeshBasicMaterial({ color: L('#e8b84a') }));
