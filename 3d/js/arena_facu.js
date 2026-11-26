@@ -11,6 +11,7 @@ import { fillText, tr } from './i18n.js';
 import { attachBossIntro } from './boss_intro.js';
 import { createMargotFinish } from './margot_finish.js';
 import { placePops } from './pop_layout.js';
+import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -138,18 +139,23 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
     const setTex = (m, key, fbPose = null) => {
       if (m.userData.key === key) return;
+      const prevMap = m.material.map, prevW = m.userData.w, prevH = m.userData.hh;
       if (walkTex[key]) {
         const wt = walkTex[key];
         m.material.map = wt.map; m.material.needsUpdate = true; m.userData.key = key;
         const h = m.userData.h * wt.hk;
-        m.userData.w = h * wt.w / wt.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+        m.userData.w = h * wt.w / wt.h; m.userData.hh = h;
+        triggerSpriteBlend(m, prevMap, prevW, prevH, key, unit, keep, scene);
+        m.scale.set(m.userData.w, m.userData.hh, 1);
         return;
       }
       if (assets.has(key)) {
         const meta = assets.meta(key);
         m.material.map = assets.texture(key); m.material.needsUpdate = true; m.userData.key = key;
         const h = m.userData.h * (meta.hk || 1);
-        m.userData.w = h * meta.w / meta.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+        m.userData.w = h * meta.w / meta.h; m.userData.hh = h;
+        triggerSpriteBlend(m, prevMap, prevW, prevH, key, unit, keep, scene);
+        m.scale.set(m.userData.w, m.userData.hh, 1);
         return;
       }
       const fb = fallbackTex[0];
@@ -167,6 +173,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     function place(m, px, py, pz) {
       m.position.set(px, py, pz);
       m.rotation.y = Math.atan2(cam.position.x - px, cam.position.z - pz) * 0.55;
+      stepSpriteBlend(m, py);
       const s = m.userData.sh; if (s) { s.position.set(px, 0.03, pz); s.visible = m.visible; }
     }
 

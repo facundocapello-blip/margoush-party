@@ -698,3 +698,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check`, `node tools/stamp_versions.mjs`, `npm test` 95/96 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); prueba en Chrome headless (`430×932`) con la frase más larga de Pinky (`¡Bueno, bueno! Hoy no se cobra… ¡pero mirá, el cheque lo firmó Facu!`): ancho ≤ 90 % de 430 px (sin desbordar), `0` errores. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=pinky
 - Rollback: `git revert <commit [H-4]>` en `feat-3d` y push (base previa: `aec059c`).
+
+## 2026-11-26 · A-5: transiciones fluidas entre poses (~80 ms + squash & stretch) (hecho por Gemini)
+- Qué cambió: `3d/js/poses.js` (agregados `CROSSFADE = 0.08`, `poseImpulseKind`, `poseScaleBlend`, `triggerSpriteBlend`, `stepSpriteBlend` con plano fantasma que solo se dibuja durante los 80 ms del fundido y se libera con `keep()`), `3d/js/sprites.js` (`SpriteActor` con fundido cruzado de 80 ms, interpolación suave de tamaño sin saltos, squash & stretch al atacar/recibir golpe y rebote al caer de un salto, con `ghostMat.dispose()`), las 5 arenas (`arena.js`, `arena_cepi.js`, `arena_lale.js`, `arena_pinky.js`, `arena_facu.js`), `tests/poses.test.mjs`, `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check` en los 7 JS editados, `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); verificación cuadro a cuadro en Chrome headless (`430×932`) en calle y `?probar=facu` (salto + golpe, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu
+- Rollback: `git revert <commit [A-5]>` en `feat-3d` y push (base previa: `0416883`).

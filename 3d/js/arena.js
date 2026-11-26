@@ -9,6 +9,7 @@ import { createVoice } from './voice.js';
 import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
 import { placePops } from './pop_layout.js';
+import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
 
 const HURT_POSE = 0.45;
 const INV = 0.8;
@@ -162,13 +163,15 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       if (m.userData.key === key) return;
       const c = CUSTOM[key], meta = c || assets.meta(key);
       if (!meta) return;
+      const prevMap = m.material.map, prevW = m.userData.w, prevH = m.userData.hh;
       m.material.map = c ? c.map : assets.texture(key);
       m.material.needsUpdate = true;
       m.userData.key = key;
       const h = m.userData.h * (c ? c.hk : (meta.hk || 1));
       m.userData.w = h * meta.w / meta.h;
       m.userData.hh = h;
-      m.scale.set(m.userData.w, h, 1);
+      triggerSpriteBlend(m, prevMap, prevW, prevH, key, unit, keep, scene);
+      m.scale.set(m.userData.w, m.userData.hh, 1);
     };
 
     function sprite(key, h, shadow = 1) {
@@ -189,6 +192,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
     function place(m, px, py, pz) {
       m.position.set(px, py, pz);
       m.rotation.y = Math.atan2(cam.position.x - px, cam.position.z - pz) * 0.35;
+      stepSpriteBlend(m, py - TARIMA_H);
       const s = m.userData.sh;
       if (s) { s.position.set(px, TARIMA_H + 0.025, pz); s.visible = m.visible; }
     }

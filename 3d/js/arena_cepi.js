@@ -8,6 +8,7 @@ import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
 import { attachBossIntro } from './boss_intro.js';
 import { placePops } from './pop_layout.js';
+import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -134,18 +135,23 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     }
     const setTex = (m, key) => {
       if (m.userData.key === key) return;
+      const prevMap = m.material.map, prevW = m.userData.w, prevH = m.userData.hh;
       const custom = walkTex[key];
       if (custom) {
         m.material.map = custom.map; m.material.needsUpdate = true; m.userData.key = key;
         const h = m.userData.h * custom.hk;
-        m.userData.w = h * custom.w / custom.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+        m.userData.w = h * custom.w / custom.h; m.userData.hh = h;
+        triggerSpriteBlend(m, prevMap, prevW, prevH, key, unit, keep, scene);
+        m.scale.set(m.userData.w, m.userData.hh, 1);
         return;
       }
       const k = assets.has(key) ? key : 'arena_cepi_idle';
       const meta = assets.meta(k);
       m.material.map = assets.texture(k); m.material.needsUpdate = true; m.userData.key = key;
       const h = m.userData.h * (meta.hk || 1);
-      m.userData.w = h * meta.w / meta.h; m.userData.hh = h; m.scale.set(m.userData.w, h, 1);
+      m.userData.w = h * meta.w / meta.h; m.userData.hh = h;
+      triggerSpriteBlend(m, prevMap, prevW, prevH, key, unit, keep, scene);
+      m.scale.set(m.userData.w, m.userData.hh, 1);
     };
     function sprite(key, h, shadow = 1) {
       const m = new T.Mesh(unit, keep(new T.MeshBasicMaterial({ alphaTest: 0.45, side: T.DoubleSide })));
@@ -156,6 +162,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     function place(m, x, y, z) {
       m.position.set(x, y, z);
       m.rotation.y = Math.atan2(cam.position.x - x, cam.position.z - z) * 0.55;
+      stepSpriteBlend(m, y);
       const s = m.userData.sh; if (s) { s.position.set(x, 0.03, z); s.visible = m.visible; }
     }
 
