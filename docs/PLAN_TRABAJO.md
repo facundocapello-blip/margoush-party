@@ -92,7 +92,7 @@ Si Facu reporta algo roto probando, eso va **primero**.
   - Verificación: `npm test` + `tests/e2e/perf.e2e.mjs` (que `logicMs` no suba).
 - [x] **R-4 · Hojas de sprites de más de 2048 px de ancho** (M). `douge_walk_sheet` 3000×512, `cepi_actions_sheet` 2400×512, `pinky_walk_sheet` 2268×512, `chaky_walk_sheet` 2064×512. Reacomodarlas en 2 filas (≤ 2048 de ancho) con un script en `tools/` y adaptar el lector de cuadros (`sprites.js` / `manifest.json`) para que soporte filas si hoy no lo hace. **No regenerar el arte**, solo recortar y reacomodar los mismos cuadros.
   - Verificación: `python3 tests/check_sprites.py` (necesita `numpy`), `tests/e2e/hero_walk.e2e.mjs`, capturas antes/después iguales; peso total de `3d/assets` < 10 MB.
-- [ ] **R-5 · Liberar el acto anterior** (M). Revisar `assets.js`: que se precargue solo lo del acto actual y que al pasar de acto se liberen las texturas del anterior que ya no se usan (las de héroes, Margot y UI se quedan). Medir con `?debug=1` antes/después en una campaña con `?probar=calle` → persecución → chaky.
+- [x] **R-5 · Liberar el acto anterior** (M). Revisar `assets.js`: que se precargue solo lo del acto actual y que al pasar de acto se liberen las texturas del anterior que ya no se usan (las de héroes, Margot y UI se quedan). Medir con `?debug=1` antes/después en una campaña con `?probar=calle` → persecución → chaky.
   - Si no está claro qué se puede liberar sin romper el final (foto con toda la banda), anotarlo y frenar.
 
 ---

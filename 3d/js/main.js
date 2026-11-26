@@ -487,7 +487,10 @@ function startChaseRun() {
   if (game.checkpoint?.id !== 'acto2') saveCheckpoint('acto2');
   game.state = 'curtain';
   audio.music('chase', { fade: 0.3 });
-  curtain(() => game.chase.start(), { label: CHECKPOINTS.acto2.label, wait: assets.ensure(['chase_']) });
+  curtain(() => {
+    assets.unload?.(['arena_chaky_', 'arena_aeropuerto_fondo', 'arena_fondo', 'douge_dance_sheet', 'marine_dance_sheet']);
+    game.chase.start();
+  }, { label: CHECKPOINTS.acto2.label, wait: assets.ensure(['chase_']) });
 }
 // Mini nivel: romper el BYD antes de que Cepi lo cargue (bonus.js)
 function startBydLevel() {
@@ -741,6 +744,7 @@ function spawnCepi({ instant = false, hp = null } = {}) {
   const wait = assets.ensure(['arena_cepi_', 'arena_margot_', 'cepi_walk_sheet', 'arena_lale_idle', heroBack]);
   game.ctx.audio?.music('bossCepi', { fade: instant ? 0 : 0.4 });
   const go = () => {
+    assets.unload?.(['arena_chaky_', 'arena_aeropuerto_fondo', 'arena_fondo', 'douge_dance_sheet', 'marine_dance_sheet', 'chase_']);
     game.arenaCepi.start();
     if (hp != null) { game.arenaCepi.logic._setHp(hp); game.arenaCepi.syncBar?.(); }
   };
@@ -792,6 +796,7 @@ function spawnFacu({ instant = false, hp = null } = {}) {
   const wait = assets.ensure(['facu', 'arena_facu_', 'arena_margot_', 'chaky_', heroBack]);
   game.ctx.audio?.music('bossFacu', { fade: instant ? 0 : 0.4 });
   const go = () => {
+    assets.unload?.(['arena_chaky_', 'arena_aeropuerto_fondo', 'arena_fondo', 'douge_dance_sheet', 'marine_dance_sheet', 'chase_', 'arena_cepi_', 'arena_lale_', 'arena_pinky_']);
     game.arenaFacu.start();
     if (hp != null) { game.arenaFacu.logic._setHp(hp); game.arenaFacu.syncBar?.(); }
   };
@@ -814,7 +819,10 @@ function enterAct3Street() {
   updateCamera(0, true);
   saveCheckpoint('acto3');
   game.state = 'curtain';
-  curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 }); }, { label: CHECKPOINTS.acto3.label });
+  curtain(() => {
+    assets.unload?.(['arena_chaky_', 'arena_aeropuerto_fondo', 'arena_fondo', 'douge_dance_sheet', 'marine_dance_sheet', 'chase_', 'arena_cepi_']);
+    game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 });
+  }, { label: CHECKPOINTS.acto3.label });
 }
 
 function enterAct4Street() {
@@ -831,10 +839,14 @@ function enterAct4Street() {
   updateCamera(0, true);
   saveCheckpoint('acto4');
   game.state = 'curtain';
-  curtain(() => { game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 }); }, { label: '¡LALE FUERA! PINKY SE LA LLEVÓ PASANDO LA FERME LAPADITE' });
+  curtain(() => {
+    assets.unload?.(['chase_', 'arena_cepi_', 'arena_lale_']);
+    game.state = 'playing'; input.reset(); audio.music('francia', { fade: 0.4 });
+  }, { label: '¡LALE FUERA! PINKY SE LA LLEVÓ PASANDO LA FERME LAPADITE' });
 }
 
 game.onBossDown = () => {
+  assets.unload?.(['arena_chaky_', 'arena_aeropuerto_fondo', 'arena_fondo', 'douge_dance_sheet', 'marine_dance_sheet', 'chase_', 'arena_cepi_', 'arena_lale_', 'arena_pinky_', 'arena_facu_']);
   // Si se ganó desde ?probar=pinky*, ubicar al héroe frente a la jaula del Galpón para evitar volar desde Buenos Aires
   if (game.hero && game.hero.actor.position.x < GALPON_X) {
     setLevel(2);

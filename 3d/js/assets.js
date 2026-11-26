@@ -13,6 +13,13 @@ const DEFERRED = [
   'lale_walk_sheet', 'lale_actions_sheet', 'pinky_walk_sheet', 'pinky_actions_sheet'
 ];
 const isDeferred = (name) => DEFERRED.some((p) => name.startsWith(p));
+// Solo texturas exclusivas de una arena o de la persecución se pueden descargar al pasar de acto.
+// Héroes, Margot, calle, UI y la banda de la foto final (`CREW`: facu, chaky/cepi/lale/pinky sheets) nunca se descargan.
+const UNLOADABLE = [
+  'arena_chaky_', 'arena_cepi_', 'arena_lale_', 'arena_pinky_', 'arena_facu_',
+  'arena_fondo', 'arena_aeropuerto_fondo', 'douge_dance_sheet', 'marine_dance_sheet', 'chase_'
+];
+const isUnloadable = (name) => UNLOADABLE.some((p) => name.startsWith(p));
 
 export async function loadAssets(manifestUrl, onProgress = () => {}) {
   // Versión en un solo HTML (tools/build_single.mjs): el manifiesto y los archivos vienen adentro de la página
@@ -55,6 +62,20 @@ export async function loadAssets(manifestUrl, onProgress = () => {}) {
     await Promise.all(names.map((n) => loadOne(n)));
   }
 
+  function unload(prefixes) {
+    if (embed) return 0;
+    const list = Array.isArray(prefixes) ? prefixes : [prefixes];
+    let count = 0;
+    for (const name of Object.keys(textures)) {
+      if (!isUnloadable(name)) continue;
+      if (!list.some((p) => name.startsWith(p))) continue;
+      textures[name]?.dispose?.();
+      delete textures[name];
+      count++;
+    }
+    return count;
+  }
+
   return {
     manifest,
     texture: (name) => textures[name],
@@ -63,6 +84,7 @@ export async function loadAssets(manifestUrl, onProgress = () => {}) {
     exists: (name) => !!manifest[name],
     url: (name) => src(manifest[name].file) + (manifest[name]?.v && !embed ? '?v=' + manifest[name].v : ''),
     ensure,
+    unload,
     // Texturas hechas por código (p. ej. los malos recoloreados)
     add(name, tex, meta) { textures[name] = tex; manifest[name] = meta; }
   };
