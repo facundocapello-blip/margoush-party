@@ -740,3 +740,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/music.js 3d/js/audio.js 3d/js/arena.js`, `node tools/stamp_versions.mjs`, `npm test` 98/99 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max (percepción rítmica real con parlante/auriculares).
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=chaky-baile
 - Rollback: `git revert <commit [D-4]>` en `feat-3d` y push (base previa: `2b656aa`).
+
+## 2026-11-26 · D-5: música sintetizada distinta para cada jefe (Cepi, Lale, Pinky, Facu) (hecho por Gemini)
+- Qué cambió: `3d/js/music.js` (4 temas nuevos: `bossCepi` rock de pádel en Mi menor, `bossLale` vals musette 3/4 rápido en Re menor, `bossPinky` cumbia de cancha en Sol menor, `bossFacu` jazz de galería con swing/contrabajo), `3d/js/main.js` (`spawnBoss` → `disco`, `spawnCepi` → `bossCepi`, `spawnLale` → `bossLale`, `spawnPinky` → `bossPinky`, `spawnFacu` → `bossFacu`), `tests/music.test.mjs` (valida los 13 temas), `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check 3d/js/music.js 3d/js/main.js`, `node tools/stamp_versions.mjs`, `npm test` 98/99 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi (y `lale`, `pinky`, `facu`)
+- Rollback: `git revert <commit [D-5]>` en `feat-3d` y push (base previa: `e5cabf1`).

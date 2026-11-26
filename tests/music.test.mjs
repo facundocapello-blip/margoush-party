@@ -9,7 +9,7 @@ test('every theme plays valid notes for a long time', () => {
   const tone = (type, f0, f1, dur, vol, d) => calls.push({ type, f0, f1, dur, vol, d });
   const hiss = (dur, vol, f, q, d) => calls.push({ hiss: true, dur, vol, f0: f, f1: f, d });
   const T = makeThemes(tone, hiss);
-  assert.deepEqual(Object.keys(T).sort(), ['ba', 'boss', 'byd', 'chase', 'disco', 'francia', 'intro', 'menu', 'rescate']);
+  assert.deepEqual(Object.keys(T).sort(), ['ba', 'boss', 'bossCepi', 'bossFacu', 'bossLale', 'bossPinky', 'byd', 'chase', 'disco', 'francia', 'intro', 'menu', 'rescate']);
   for (const [name, th] of Object.entries(T)) {
     calls.length = 0;
     for (let n = 0; n < 512; n++) th.play(n, 0.01, { intensity: n / 512, beat: 0.52 });
