@@ -710,3 +710,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check` en los 8 JS editados, `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=calle
 - Rollback: `git revert <commit [A-6]>` en `feat-3d` y push (base previa: `c842f16`).
+
+## 2026-11-26 · D-6: «¡DIUSHBAG!» sin atenuación por `primeSpeech()` al elegir a Douge (hecho por Gemini)
+- Qué cambió: `3d/js/main.js` (removido `audio.primeSpeech()` de `startCover` y del clic en la tarjeta de Douge; en `#btn-continue` se llama solo cuando `cp.heroId === 'marine'`; al elegir a Marine `audio.messiGoku()` ya habla dentro del gesto), `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check 3d/js/main.js`, `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). **Qué NO se pudo probar:** Safari físico en iPhone 15 Pro Max — este arreglo **solo se puede confirmar escuchándolo en iPhone físico** al elegir a Douge.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/
+- Rollback: `git revert <commit [D-6]>` en `feat-3d` y push (base previa: `7cb551a`).
