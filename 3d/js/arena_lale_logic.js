@@ -14,17 +14,20 @@ export const LALE_ARENA = {
   zNear: 2.0,
   zFar: -8.5,
   bossZ: -11.5,
-  butterSpeed: 12.5,
-  butterHitR: 0.9,
-  puddleR: 1.35,
-  puddleLife: 6.5,
-  bagHitR: 1.9,
+  butterSpeed: 14.3,
+  butterHitR: 0.96,
+  puddleR: 1.4,
+  puddleLife: 7.0,
+  bagHitR: 1.45,
+  bagCd: 3.0,      // pausa entre bolsas para que Lale alcance a tirar manteca y patinar
+  flouredDur: 2.0, // ventana enharinado: ~2 golpes por bolsa (duración mediana 30–45 s)
+  meleeCd: 0.58,
   meleeZ: -6.5,
-  meleeX: 2.4,
+  meleeX: 2.35,
   skateZ: -3.2,
-  skateSpeed: 8.6,
-  skateWarn: 0.48,
-  windup: 0.4,     // anticipación antes de cada barra de manteca
+  skateSpeed: 10.8,
+  skateWarn: 0.44,
+  windup: 0.36,    // anticipación antes de cada barra de manteca
   points: { flour: 250, melee: 180, dodge: 100, power: 300 }
 };
 
@@ -55,6 +58,7 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
   let poseName = 'idle', poseT = 0;
   let afterPhase = null;
   let hitLock = 0;
+  let bagCd = 0;
 
   function setPose(name, dur) { poseName = name; poseT = dur; state.pose = name; }
 
@@ -112,8 +116,8 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     state.skateWarnZ = targetZ;
     state.bossZ = targetZ;
     timer = A.skateWarn;
-    skatePasses = state.phase === 3 ? 2 : 3;
-    spawnBag(state.phase === 3 ? 2 : 1);
+    skatePasses = 3;
+    if (bagCd <= 0) spawnBag(state.phase === 3 ? 2 : 1);
     setPose('skate', A.skateWarn);
     evs.push({ type: 'skateStart', dir: state.skateDir, z: targetZ });
     evs.push({ type: 'voice', event: 'attack' });
@@ -134,12 +138,13 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     state.mode = 'floured';
     state.bossZ = A.bossZ;
     state.shots.length = 0;
-    timer = 3.0;
+    timer = A.flouredDur;
     hitLock = 0;
-    setPose('floured', 3.0);
+    bagCd = A.bagCd;
+    setPose('floured', A.flouredDur);
     evs.push({ type: 'floured', x: state.bossX });
     evs.push({ type: 'voice', event: 'hurt' });
-    damage(state.phase === 2 ? 4 : 3, 'flour', evs);
+    damage(1, 'flour', evs);
   }
 
   function update(dt, hero) {
@@ -148,6 +153,7 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     state.windup = 0;
     if (poseT > 0) poseT = Math.max(0, poseT - dt);
     if (hitLock > 0) hitLock = Math.max(0, hitLock - dt);
+    if (bagCd > 0) bagCd = Math.max(0, bagCd - dt);
     if (state.phase === 'ko') { state.pose = 'ko'; return evs; }
 
     // Charcos de manteca en el piso
@@ -184,8 +190,7 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
         else {
           state.mode = 'attack';
           throwsLeft = 3;
-          timer = 0.7;
-          spawnBag(state.phase === 3 ? 2 : 1);
+          timer = 0.55;
         }
       }
     } else if (state.mode === 'skateWarn') {
@@ -241,16 +246,16 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
       // se pasea, pero se planta para cargar el tiro (la manteca sale de su mano, con gesto previo)
       if (timer > A.windup) state.bossX = Math.sin(state.t * 1.1) * 2.5;
       state.windup = timer > 0 && timer < A.windup ? 1 - timer / A.windup : 0;
-      if (state.bags.every(b => !b.alive)) spawnBag(state.phase === 3 ? 2 : 1);
+      if (state.bags.every(b => !b.alive) && bagCd <= 0) spawnBag(state.phase === 3 ? 2 : 1);
       timer -= dt;
       if (timer <= 0) {
         throwButter(hero, evs);
         throwsLeft--;
         if (throwsLeft <= 0) {
           if (state.phase >= 2) startSkate(evs, Math.max(-5.5, Math.min(-1.0, hero.z)));
-          else { throwsLeft = 3; timer = 1.4; }
+          else { throwsLeft = 3; timer = 1.0; }
         } else {
-          timer = state.phase === 3 ? 0.65 : 0.85;
+          timer = state.phase === 3 ? 0.52 : 0.66;
         }
       }
     }
@@ -304,7 +309,7 @@ export function createLaleArenaLogic({ rand = Math.random } = {}) {
     const skating = state.mode === 'skate' || state.mode === 'skateWarn';
     const dist = Math.hypot(area.x - state.bossX, area.z - (skating ? state.bossZ : A.meleeZ));
     if (hitLock <= 0 && dist < A.meleeX && (skating || area.z <= A.meleeZ + 1.0)) {
-      hitLock = 0.35;
+      hitLock = A.meleeCd;
       if (state.mode === 'floured') {
         setPose('hurt', 0.35);
         evs.push({ type: 'meleeHit', dmg: 2, x: state.bossX });
