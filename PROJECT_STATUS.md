@@ -790,3 +790,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check`, `node tools/stamp_versions.mjs`, `npm test` 99/100 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows) e inspección visual de capturas antes/después en `430×932` y `932×430` (`0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi (y `chaky-baile`, `lale`, `pinky`, `facu`)
 - Rollback: `git revert <commit [A-7]>` en `feat-3d` y push (base previa: `62af99f`).
+
+## 2026-11-26 · A-2: poses de poder y derrota de espaldas para Douge y Marine (hecho por Gemini)
+- Qué cambió: generadas en Gemini web desde las referencias oficiales, recortadas sin halos (verde `#00FF00` para Douge/Marine KO y magenta `#FF00FF` para la hiedra de Marine) e integradas en `3d/assets/` y `3d/assets/manifest.json`: `arena_douge_back_power.webp` (`hk: 1.04`), `arena_douge_back_ko.webp` (`hk: 0.74`), `arena_marine_back_power.webp` (`hk: 1.68` para que las ramas de hiedra sobresalgan manteniendo la altura real de Marine) y `arena_marine_back_ko.webp` (`hk: 0.74`). Conectadas en `3d/js/arena_cepi.js`, `3d/js/arena_lale.js`, `3d/js/arena_pinky.js` y `3d/js/arena_facu.js` (poder con `powT > 0` y derrota con `phase === 'down'`). Actualizados `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: inspección visual en plancha de recorte (`a2_a3_sheet.png`, cero halos ni huecos), `node --check`, `node tools/stamp_versions.mjs`, `npm test` 99/100 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows; peso total de `3d/assets/` < 10 MB). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu (y `cepi`, `lale`, `pinky`)
+- Rollback: `git revert <commit [A-2]>` en `feat-3d` y push (base previa: `388d9f3`).

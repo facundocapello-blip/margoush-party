@@ -1337,5 +1337,45 @@
   "cols": 1,
   "rows": 1,
   "hk": 0.78
+ },
+ "arena_douge_back_power": {
+  "file": "arena_douge_back_power.webp",
+  "w": 281,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "8245157b",
+  "hk": 1.04
+ },
+ "arena_douge_back_ko": {
+  "file": "arena_douge_back_ko.webp",
+  "w": 290,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "ebdd8ff7",
+  "hk": 0.74
+ },
+ "arena_marine_back_power": {
+  "file": "arena_marine_back_power.webp",
+  "w": 227,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "38557777",
+  "hk": 1.68
+ },
+ "arena_marine_back_ko": {
+  "file": "arena_marine_back_ko.webp",
+  "w": 277,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "24bcd1fd",
+  "hk": 0.74
  }
 }
