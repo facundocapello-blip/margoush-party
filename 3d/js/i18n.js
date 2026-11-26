@@ -234,6 +234,7 @@ export const TEXTOS = {
   'El BYD de Cepi se apaga en el cargador…': 'La BYD de Cepi s’éteint sur la borne…',
   '«¡Es eléctrico, papá!» Cepi se baja con la paleta: sacale la llave.': '« ¡Es eléctrico, papá! » Cepi descend avec sa raquette : prends-lui la clé.',
   '¡ESQUIVE JUSTO!': 'ESQUIVE PARFAITE !',
+  '⚡ ¡TURBO! +{n}': '⚡ TURBO ! +{n}',
   '¡ALCANZASTE A CEPI! +{n}': 'TU AS RATTRAPÉ CEPI ! +{n}',
 
   // ---------- Fin de partida y ranking ----------
@@ -476,6 +477,10 @@ export const TEXTOS = {
 };
 
 export const DICHOS = {
+  // Secuaces (enemies.js)
+  '¡Vení!': 'Viens !',
+  '¡Dale!': 'Allez !',
+  '¡Jaja!': 'Haha !',
   // Cepi
   '¡Me tenés podrido!': 'Tu me saoules !',
   '¡Tomá, pelotazo!': 'Tiens, prends ça !',

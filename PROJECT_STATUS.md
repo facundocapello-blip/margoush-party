@@ -722,3 +722,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); verificado en Chrome headless en `932×430` (simulando isla de 59 px en `--safe-r`/`--safe-l` y 21 px en `--safe-b`) y `430×932`: 👊 / SALTO / ESQUIVE y joystick quedan dentro de la zona segura (`right <= 932 - 59 - 18`, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max en horizontal (ambas orientaciones de la Dynamic Island).
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu
 - Rollback: `git revert <commit [D-7]>` en `feat-3d` y push (base previa: `eb2750c`).
+
+## 2026-11-26 · D-8: pulido chico (HUD ≥ 13 px, «Tocá para empezar» arriba de carriles, audio limpio + `onstatechange`, FR faltantes) (hecho por Gemini)
+- Qué cambió: `3d/css/game.css` (subidos a ≥ 13 px `#hud-power-text`, `#hud-name`, `.chaky-lives`, `#hud-hearts`, `#boss-bar` y `.phase-card.p2` en baile; movido `#arena-ui .chaky-intro .skip` por encima de `--deck-height` para que no pise el carril central en horizontal), `3d/js/audio.js` (eliminado código muerto `MUSIC_GAIN`, `themes = {}` y `warp()`; agregado `ac.onstatechange` para reanudar música tras alarma/Siri en iOS; preservado `audioSession='playback'` sin cambios), `3d/js/i18n.js` (agregados `⚡ ¡TURBO! +{n}`, `¡Vení!`, `¡Dale!`, `¡Jaja!`), `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check 3d/js/audio.js 3d/js/i18n.js`, `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max (incluyendo alarma/Siri con el juego abierto).
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=chaky
+- Rollback: `git revert <commit [D-8]>` en `feat-3d` y push (base previa: `cf71f8b`).
