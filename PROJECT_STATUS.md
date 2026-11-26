@@ -669,3 +669,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/arena_facu.js`, `node tools/stamp_versions.mjs`, `npm test` 93/94 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); inspección visual de hoja de las 9 poses recortadas y capturas en Chrome headless (`430×932` vertical y `932×430` horizontal) en `?probar=facu` (`0` errores de consola). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu
 - Rollback: `git revert <commit [A-1]>` en `feat-3d` y push (base previa: `ece55bb`).
+
+## 2026-11-26 · H-1: cartel de ronda de Chaky (y carteles de UI) solo en francés (hecho por Gemini)
+- Qué cambió: `3d/js/i18n.js`, `3d/index.html` (sellado con `stamp_versions.mjs`) y `docs/PLAN_TRABAJO.md`. Movidas las claves de UI/carteles de ronda y fase (`RONDA 1..3`, `¡DUELO DE BAILE!`, `¡SUBE EL RITMO!`, `¡FINAL A TODO DISCO!`, `Tocá cada botón cuando baja la flecha`, `⭐ ¡VIDA EXTRA!`, carteles de fase de Facu/Chaky) de `DICHOS` a `TEXTOS` para que `fillText()` muestre solo francés sin duplicar altura con subtítulo bilingüe.
+- Verificación: `node --check 3d/js/i18n.js`, `node tools/stamp_versions.mjs`, `npm test` 93/94 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); prueba en Chrome headless (`430×932`) en `?probar=chaky-baile`: altura de `.phase-card` en ES = `68 px`, en FR = `68 px` (`diff = 0.0 %`, `0` subtítulos `small.sub`, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=chaky-baile
+- Rollback: `git revert <commit [H-1]>` en `feat-3d` y push (base previa: `db48f53`).
