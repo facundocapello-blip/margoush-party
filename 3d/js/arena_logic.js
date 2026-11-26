@@ -30,7 +30,9 @@ export const ARENA = {
     hurtAt: 1,
     start: 1.15,
     feverAt: 4,
-    feverMult: 1.35
+    feverMult: 1.35,
+    emptyWindow: 1.0,
+    emptyLimit: 3
   },
   transition: 0.9,
   points: { stepPerfect: 120, stepGood: 70, dice: 250, returned: 300, returnedWhite: 120, hand: 50, dodge: 100 }
@@ -117,7 +119,8 @@ export function createArenaLogic({ rand = Math.random } = {}) {
       step: null,
       stepT: 0,
       heroStep: null,
-      heroStepT: 0
+      heroStepT: 0,
+      emptyTaps: []
     };
   }
 
@@ -258,7 +261,19 @@ export function createArenaLogic({ rand = Math.random } = {}) {
     if (!best) {
       d.heroStep = lane;
       d.heroStepT = d.t;
-      evs.push({ type: 'danceStep', ok: false, grade: 'empty', lane, combo: d.combo, fever: d.fever });
+      d.combo = 0;
+      d.fever = false;
+      const win = D.emptyWindow ?? 1.0;
+      const lim = D.emptyLimit ?? 3;
+      d.emptyTaps = d.emptyTaps.filter(ts => d.t - ts <= win);
+      d.emptyTaps.push(d.t);
+      if (d.emptyTaps.length >= lim) {
+        d.emptyTaps.length = 0;
+        evs.push({ type: 'danceStep', ok: false, grade: 'miss', lane, combo: 0, fever: false });
+        evs.push({ type: 'hurt', by: 'dice' });
+      } else {
+        evs.push({ type: 'danceStep', ok: false, grade: 'empty', lane, combo: 0, fever: false });
+      }
       return evs;
     }
     const grade = Math.abs(best.time - d.t) <= D.perfect ? 'perfect' : 'good';

@@ -639,3 +639,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/main.js`, `node tools/stamp_versions.mjs`, `npm test` 90/91 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); `node tests/e2e/debug.e2e.mjs` OK en Chrome headless móvil (`430×932`) abriendo `?probar=cepi-duelo&debug=1` con Marine y verificando ausencia sin `debug=1` (0 errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max (incluye reproducir pantalla negra en duelo de la flechita con Marine).
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi-duelo&debug=1
 - Rollback: `git revert <commit [R-1]>` en `feat-3d` y push (base previa: `4a81aac`).
+
+## 2026-11-26 · D-1: Chaky no se gana palmeando los 5 carriles (hecho por Gemini)
+- Qué cambió: `3d/js/arena_logic.js`, `tests/arena.test.mjs`, `3d/index.html` (sellado con `stamp_versions.mjs`) y `docs/PLAN_TRABAJO.md`. Tocar un carril vacío en el duelo de baile ahora corta el combo/Modo Disco sin sacar corazón al primer desliz, y al acumular 3 toques vacíos dentro de 1,0 s (`emptyWindow: 1.0`, `emptyLimit: 3`) cuenta como fallo (`grade: 'miss'` + `hurt`).
+- Verificación: `node --check 3d/js/arena_logic.js`, `node tools/stamp_versions.mjs`, `npm test` 91/92 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows), incluyendo simulación de bots en 20 semillas en `tests/arena.test.mjs`: palmear los 5 carriles gana < 20 % y gasta ≥ 2 ⭐; jugador casual bueno gana ≥ 95 %. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=chaky-baile
+- Rollback: `git revert <commit [D-1]>` en `feat-3d` y push (base previa: `b25f403`).

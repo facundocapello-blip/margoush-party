@@ -180,3 +180,78 @@ test('4 aciertos seguidos activan Modo Disco (fever) con daño extra y un fallo 
   assert.equal(l.state.dice.combo, 0);
 });
 
+test('D-1: un toque vacío corta combo; 3 vacíos en 1 s cuentan como fallo; palmear los 5 carriles pierde y un casual bueno gana', () => {
+  // 1) Toque vacío corta combo/fever sin dañar de inmediato; al 3.º en 1 s daña
+  const l = mk(), hero = safeHero();
+  for (let i = 0; i < 4; i++) {
+    const n = l.state.dice.notes[i];
+    runUntil(l, hero, () => Math.abs(l.state.dice.t - n.time) <= 0.02, 10);
+    l.tap(n.lane);
+  }
+  assert.equal(l.state.dice.fever, true);
+  const wrongLane = (l.state.dice.notes[4].lane + 1) % DANCE_LANES;
+  const e1 = l.tap(wrongLane);
+  assert.equal(ofType(e1, 'danceStep')[0].grade, 'empty');
+  assert.equal(ofType(e1, 'hurt').length, 0);
+  assert.equal(l.state.dice.combo, 0);
+  assert.equal(l.state.dice.fever, false);
+  const e2 = l.tap(wrongLane);
+  assert.equal(ofType(e2, 'hurt').length, 0);
+  const e3 = l.tap(wrongLane);
+  assert.equal(ofType(e3, 'danceStep')[0].grade, 'miss');
+  assert.equal(ofType(e3, 'hurt').length, 1);
+
+  // 2) Simulación de bots (20 semillas): palmear 5 carriles vs jugador casual bueno
+  function sim(bot) {
+    let wins = 0, livesSpent = 0;
+    const TRIALS = 20;
+    for (let s = 1; s <= TRIALS; s++) {
+      let seed = s * 7919;
+      const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+      const lg = createArenaLogic({ rand: rnd });
+      let hp = 5, mashCd = 0;
+      const reacted = new Set();
+      for (let f = 0; f < 120 * 60 && lg.state.phase !== 'ko' && hp > 0; f++) {
+        const d = lg.state.dice;
+        const evs = [];
+        if (d && d.stage === 'play') {
+          if (bot === 'mash') {
+            mashCd -= FPS;
+            if (mashCd <= 0) {
+              mashCd = 0.28;
+              for (let lane = 0; lane < DANCE_LANES; lane++) evs.push(...lg.tap(lane));
+            }
+          } else {
+            for (const n of d.notes) {
+              if (!n.judged && !reacted.has(n) && d.t >= n.time - 0.04) {
+                reacted.add(n);
+                if (rnd() < 0.88) evs.push(...lg.tap(n.lane));
+                else if (rnd() < 0.3) evs.push(...lg.tap((n.lane + 1) % DANCE_LANES));
+              }
+            }
+          }
+        }
+        evs.push(...lg.update(FPS, hero));
+        for (const e of evs) {
+          if (e.type === 'heal') hp = Math.min(5, hp + 1);
+          if (e.type === 'hurt') {
+            hp--;
+            if (hp <= 0) {
+              if (lg.useLife()) { hp = 5; livesSpent++; reacted.clear(); }
+              else break;
+            }
+          }
+        }
+      }
+      if (lg.state.phase === 'ko' && hp > 0) wins++;
+    }
+    return { winRate: wins / TRIALS, avgLives: livesSpent / TRIALS };
+  }
+
+  const mash = sim('mash');
+  const casual = sim('casual');
+  assert.ok(mash.winRate < 0.2, `palmear los 5 carriles debe ganar < 20 % (ganó ${Math.round(mash.winRate * 100)} %)`);
+  assert.ok(mash.avgLives >= 2, `palmear los 5 carriles debe gastar ≥ 2 estrellas (gastó ${mash.avgLives.toFixed(2)})`);
+  assert.ok(casual.winRate >= 0.95, `jugador casual bueno debe ganar ≥ 95 % (ganó ${Math.round(casual.winRate * 100)} %)`);
+});
+
