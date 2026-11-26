@@ -627,3 +627,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `npm test` 90/91 en verde (0 fallos; 1 omitido: `check_sprites.py` porque `-I` aísla `numpy` de user site-packages en Windows); E2E en Chrome headless `cine.e2e.mjs`, `cepi_pinky.e2e.mjs` y `chase.e2e.mjs` todos en verde con 0 errores de consola. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=persecucion
 - Rollback: `git revert <commit [T-0]>` en `feat-3d` y push (base previa: `ed53fc4`).
+
+## 2026-11-26 · A-0: inventario de arte (hecho por Gemini)
+- Qué cambió: creado `docs/ARTE_FALTANTE.md` con tablas completas por personaje (Douge, Marine, Margot, Big Chaky, Cepi, Lale, Pinky, Facu y los 5 secuaces) relevadas contra `3d/assets/manifest.json` y los módulos de `3d/js/`; priorización ajustada para A-1 (10 imágenes de Facu galerista), A-2 (poder/derrota de espaldas de héroes), A-3 (`windup` de Lale/Cepi y `stun` de Pinky) y A-4 (3 gags de Margot sin llanto), además del registro de `arena_margot_hero` sin uso y las 4 hojas > 2048 px para R-4. Actualizado `docs/PLAN_TRABAJO.md`.
+- Verificación: `npm test` 90/91 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); tarea solo documental sin cambios en `3d/`. Qué NO se pudo probar: Safari físico (no aplica).
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu
+- Rollback: `git revert <commit [A-0]>` en `feat-3d` y push (base previa: `d0521a9`).
