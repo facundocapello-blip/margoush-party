@@ -123,13 +123,16 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         fallbackTex[i] = { map: tx, w: m.w / cols, h: m.h };
       }
     }
-    const walkCols = assets.has('pinky_walk_sheet') ? (assets.meta('pinky_walk_sheet').cols || 6) : 0;
-    if (walkCols) {
+    const walkFrames = assets.has('pinky_walk_sheet') ? (assets.meta('pinky_walk_sheet').frames || assets.meta('pinky_walk_sheet').cols || 6) : 0;
+    if (walkFrames) {
       const wm = assets.meta('pinky_walk_sheet');
-      for (let i = 0; i < walkCols; i++) {
+      const wc = wm.cols || walkFrames, wr = wm.rows || 1;
+      for (let i = 0; i < walkFrames; i++) {
         const tx = keep(assets.texture('pinky_walk_sheet').clone());
-        tx.needsUpdate = true; tx.repeat.set(1 / walkCols, 1); tx.offset.set(i / walkCols, 0);
-        walkTex['arena_pinky_walk' + i] = { map: tx, w: wm.w / walkCols, h: wm.h, hk: 1 };
+        tx.needsUpdate = true;
+        tx.repeat.set(1 / wc, 1 / wr);
+        tx.offset.set((i % wc) / wc, 1 - (Math.floor(i / wc) + 1) / wr);
+        walkTex['arena_pinky_walk' + i] = { map: tx, w: wm.w / wc, h: wm.h / wr, hk: 1 };
       }
     }
 
@@ -525,11 +528,11 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       // Pinky (camina en 6 cuadros reales al desplazarse y usa arena_pinky_wave al pararse a hacer señas + reveal/charge/hurt/ko)
       const bvx = dt > 0 ? (S.bossX - (B.userData.prevX ?? S.bossX)) / dt : 0;
       B.userData.prevX = S.bossX;
-      const wavingWalk = S.pose === 'wave' && walkCols > 0 && (Math.abs(bvx) > 0.35 || !assets.has('arena_pinky_wave'));
+      const wavingWalk = S.pose === 'wave' && walkFrames > 0 && (Math.abs(bvx) > 0.35 || !assets.has('arena_pinky_wave'));
       let sx = 1, sy = 1, by = 0, rz = 0;
       if (wavingWalk) {
         B.userData.stepT = (B.userData.stepT || 0) + dt * 11;
-        bossKey = 'arena_pinky_walk' + (Math.floor(B.userData.stepT) % walkCols);
+        bossKey = 'arena_pinky_walk' + (Math.floor(B.userData.stepT) % walkFrames);
         sx = Math.abs(bvx) > 0.2 ? (bvx < 0 ? -1 : 1) : (B.userData.lastDir || 1);
         B.userData.lastDir = sx;
         by = Math.abs(Math.sin(B.userData.stepT * Math.PI)) * 0.16;

@@ -34,11 +34,13 @@ test('assets weigh less than 10.0 MB in total', () => {
   assert.ok(total < 10_000_000, `total ${total}`);
 });
 
-test('sheet metadata', () => {
+test('sheet metadata and max texture width <= 2048 px', () => {
   const m = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
   assert.equal(m.douge_run.frames, 6);
   assert.equal(m.margot_sheet.cols, 2);
   assert.equal(m.margot_sheet.rows, 2);
+  const tooWide = Object.entries(m).filter(([, v]) => v.w > 2048).map(([k, v]) => `${k} (${v.w}x${v.h})`);
+  assert.deepEqual(tooWide, [], `sprites > 2048px de ancho: ${tooWide.join(', ')}`);
 });
 
 test('run strips are clean, feet aligned and head sizes recorded', async (t) => {

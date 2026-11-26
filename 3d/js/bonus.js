@@ -171,13 +171,18 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     cableAt(cableTo);
     const cepiHas = assets.has('cepi_actions_sheet');
     const cepiTex = cepiHas ? keep(assets.texture('cepi_actions_sheet').clone()) : null;
-    if (cepiTex) { cepiTex.needsUpdate = true; cepiTex.repeat.set(1 / 4, 1); }
+    const cm = cepiHas ? assets.meta('cepi_actions_sheet') : { w: 4, h: 1, cols: 4, rows: 1 };
+    const cepiCols = cm.cols || 4, cepiRows = cm.rows || 1;
+    if (cepiTex) { cepiTex.needsUpdate = true; cepiTex.repeat.set(1 / cepiCols, 1 / cepiRows); }
     const cepiMat = keep(new T.MeshBasicMaterial({ map: cepiTex, alphaTest: 0.45, transparent: true, side: T.DoubleSide, visible: cepiHas }));
     const cepiM = new T.Mesh(unit, cepiMat); scene.add(cepiM);
-    const cm = cepiHas ? assets.meta('cepi_actions_sheet') : { w: 4, h: 1 };
-    const cepiAsp = (cm.w / 4) / cm.h;
+    const cepiAsp = (cm.w / cepiCols) / (cm.h / cepiRows);
     let cepiCell = -1;
-    const setCepi = (cell) => { if (cell === cepiCell || !cepiTex) return; cepiCell = cell; cepiTex.offset.set(cell / 4, 0); };
+    const setCepi = (cell) => {
+      if (cell === cepiCell || !cepiTex) return;
+      cepiCell = cell;
+      cepiTex.offset.set((cell % cepiCols) / cepiCols, 1 - (Math.floor(cell / cepiCols) + 1) / cepiRows);
+    };
     setCepi(0);
     // Sombra del auto y del héroe
     const shTex = canvasTex(64, 64, (g) => { const r = g.createRadialGradient(32, 32, 1, 32, 32, 32); r.addColorStop(0, 'rgba(10,6,20,.6)'); r.addColorStop(1, 'rgba(10,6,20,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); });

@@ -124,13 +124,15 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     const unit = keep(new T.PlaneGeometry(1, 1)); unit.translate(0, 0.5, 0);
     // Cuadros de carrera lateral de Cepi (cepi_walk_sheet, 6 cuadros)
     const walkTex = {};
-    const walkCols = assets.has('cepi_walk_sheet') ? (assets.meta('cepi_walk_sheet').cols || 6) : 0;
+    const walkCols = assets.has('cepi_walk_sheet') ? (assets.meta('cepi_walk_sheet').frames || assets.meta('cepi_walk_sheet').cols || 6) : 0;
     if (walkCols) {
       const wm = assets.meta('cepi_walk_sheet');
+      const wc = wm.cols || walkCols, wr = wm.rows || 1;
       for (let i = 0; i < walkCols; i++) {
         const tx = keep(assets.texture('cepi_walk_sheet').clone());
-        tx.needsUpdate = true; tx.repeat.set(1 / walkCols, 1); tx.offset.set(i / walkCols, 0);
-        walkTex['arena_cepi_walk' + i] = { map: tx, w: wm.w / walkCols, h: wm.h, hk: 1 };
+        tx.needsUpdate = true; tx.repeat.set(1 / wc, 1 / wr);
+        tx.offset.set((i % wc) / wc, 1 - (Math.floor(i / wc) + 1) / wr);
+        walkTex['arena_cepi_walk' + i] = { map: tx, w: wm.w / wc, h: wm.h / wr, hk: 1 };
       }
     }
     const setTex = (m, key) => {

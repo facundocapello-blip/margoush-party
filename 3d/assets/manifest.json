@@ -176,13 +176,14 @@
  },
  "cepi_actions_sheet": {
   "file": "cepi_actions_sheet.webp",
-  "w": 2400,
-  "h": 512,
+  "w": 1200,
+  "h": 1024,
   "frames": 4,
-  "cols": 4,
-  "rows": 1,
+  "cols": 2,
+  "rows": 2,
   "skull": 205,
-  "foot": 0.988
+  "foot": 0.988,
+  "v": "38ed55ff"
  },
  "cepi_walk_sheet": {
   "file": "cepi_walk_sheet.webp",
@@ -206,13 +207,14 @@
  },
  "chaky_walk_sheet": {
   "file": "chaky_walk_sheet.webp",
-  "w": 2064,
-  "h": 512,
+  "w": 1032,
+  "h": 1024,
   "frames": 6,
-  "cols": 6,
-  "rows": 1,
+  "cols": 3,
+  "rows": 2,
   "skull": 129.5,
-  "foot": 0.988
+  "foot": 0.988,
+  "v": "e95d16cf"
  },
  "douge_actions_sheet": {
   "file": "douge_actions_sheet.webp",
@@ -331,13 +333,14 @@
  },
  "pinky_walk_sheet": {
   "file": "pinky_walk_sheet.webp",
-  "w": 2268,
-  "h": 512,
+  "w": 1134,
+  "h": 1024,
   "frames": 6,
-  "cols": 6,
-  "rows": 1,
+  "cols": 3,
+  "rows": 2,
   "skull": 154,
-  "foot": 0.988
+  "foot": 0.988,
+  "v": "6951a620"
  },
  "punto_de_oro": {
   "file": "punto_de_oro.webp",
@@ -616,13 +619,14 @@
  },
  "douge_walk_sheet": {
   "file": "douge_walk_sheet.webp",
-  "w": 3000,
-  "h": 512,
+  "w": 1500,
+  "h": 1024,
   "frames": 10,
-  "cols": 10,
-  "rows": 1,
+  "cols": 5,
+  "rows": 2,
   "skull": 141,
-  "foot": 0.996
+  "foot": 0.996,
+  "v": "4505b936"
  },
  "marine_walk_sheet": {
   "file": "marine_walk_sheet.webp",
