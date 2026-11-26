@@ -675,3 +675,14 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/i18n.js`, `node tools/stamp_versions.mjs`, `npm test` 93/94 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); prueba en Chrome headless (`430×932`) en `?probar=chaky-baile`: altura de `.phase-card` en ES = `68 px`, en FR = `68 px` (`diff = 0.0 %`, `0` subtítulos `small.sub`, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=chaky-baile
 - Rollback: `git revert <commit [H-1]>` en `feat-3d` y push (base previa: `db48f53`).
+
+## 2026-11-26 · H-2: correcciones de francés para revisión de Marine (hecho por Gemini)
+- Qué cambió: `3d/js/i18n.js`, `3d/index.html` (sellado con `stamp_versions.mjs`) y `docs/PLAN_TRABAJO.md`. Lista de frases cambiadas para que **Marine las revise**:
+  - `LALE «MANTECOSO»`: `LALE « LE BEURRÉ »` → `LALE « MANTECOSO »` (y en `JEFE 3 · LALE «MANTECOSO»`).
+  - `Untadito, untadito…`: `Bien beurré, bien beurré…` → `Bien tartiné, bien tartiné…` (evita argot «borracho»).
+  - `à Le Blé` / `de Le Blé` (6 frases): pasadas a `chez Le Blé` / `la maison mère de chez Le Blé` (`ENFIN CHEZ LE BLÉ (MAISON MÈRE) !`, `Serveurs et livreurs gardent la maison mère de chez Le Blé.`, `La maison mère de chez Le Blé ! Quelle odeur de beurre !`, `Entre, c'est la maison mère de chez Le Blé. J'ai du beurre pour tout le monde !`, `…j'emmène Margot chez Le Blé, à Paris !`, `…il s'est enfui dans le jet de Chaky chez Le Blé, à Paris !`, `Suis Lale jusqu'à la maison mère de chez Le Blé !`).
+  - Masculinos dirigidos al jugador (neutros para Douge y Marine): `TU ES ARRIVÉ AU HANGAR VIP !` → `ARRIVÉE AU HANGAR VIP !`; `La bande t'a suivi jusqu'en France !` → `La bande te poursuit jusqu'en France !`; `Sois le premier !` → `Prends la première place !`; `TOUCHÉ !` (`¡TE AGARRÓ!`) → `AÏE !`; `Ha ! Tu es tombé dans le piège !` → `Ha ! En plein dans le piège !`; `Tiens, il sait danser !` → `Tiens, ça sait danser !`; `Je la paie en 48 fois, mec !` → `Je la paie en 48 fois !`; `mon pote !` → `chef !`.
+  - Anglicismo: `Dernier round pour gagner le duel !` → `Dernière manche pour gagner le duel !`.
+- Verificación: `node --check 3d/js/i18n.js`, `node tools/stamp_versions.mjs`, `npm test` 93/94 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: revisión nativa de Marine y Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=lale
+- Rollback: `git revert <commit [H-2]>` en `feat-3d` y push (base previa: `f76928e`).
