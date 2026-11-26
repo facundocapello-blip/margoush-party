@@ -535,8 +535,13 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       // Gesto previo: se planta, levanta la manteca y se echa para atrás antes de revolearla
       if (S.windup > 0 && S.pose === 'idle') {
         const w = S.windup, e = w * w * (3 - 2 * w), dir = x < S.bossX ? -1 : 1;
-        if (assets.has('arena_lale_throw')) bossKey = 'arena_lale_throw';
-        sx = dir; rz = dir * 0.2 * e + (w > 0.75 ? Math.sin(t * 60) * 0.025 : 0); sy = 1 + 0.06 * e; by = 0.1 * e;
+        const ownW = assets.has('arena_lale_windup');
+        if (ownW) bossKey = 'arena_lale_windup';
+        else if (assets.has('arena_lale_throw')) bossKey = 'arena_lale_throw';
+        sx = dir;
+        rz = dir * (ownW ? 0.08 : 0.2) * e + (w > 0.75 ? Math.sin(t * 60) * 0.025 : 0);
+        sy = 1 + (ownW ? 0.03 : 0.06) * e;
+        by = (ownW ? 0.05 : 0.1) * e;
       }
       setTex(B, bossKey, S.pose);
       place(B, S.bossX, by, S.bossZ);

@@ -796,3 +796,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: inspección visual en plancha de recorte (`a2_a3_sheet.png`, cero halos ni huecos), `node --check`, `node tools/stamp_versions.mjs`, `npm test` 99/100 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows; peso total de `3d/assets/` < 10 MB). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu (y `cepi`, `lale`, `pinky`)
 - Rollback: `git revert <commit [A-2]>` en `feat-3d` y push (base previa: `388d9f3`).
+
+## 2026-11-26 · A-3: poses de anticipación (`windup`) de Lale y Cepi + aturdido con papilla de Pinky (hecho por Gemini)
+- Qué cambió: generadas en Gemini web desde las referencias oficiales, recortadas sin halos sobre croma `#00FF00` e integradas en `3d/assets/` y `3d/assets/manifest.json`: `arena_lale_windup.webp` (`hk: 1.04`, levantando barra de manteca), `arena_cepi_windup.webp` (`hk: 1.05`, cargando remate de pádel) y `arena_pinky_stun.webp` (ciego con papilla de zapallo en los anteojos). Conectadas en `3d/js/arena_lale.js`, `3d/js/arena_cepi.js`, `3d/js/arena_pinky.js` y `3d/js/margot_finish.js` (oculta la plasta 2D plana cuando Pinky ya usa su sprite 3D `arena_pinky_stun`). Actualizados `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: inspección visual en plancha de recorte (`a2_a3_sheet.png`, cero halos ni huecos), `node --check`, `node tools/stamp_versions.mjs`, `npm test` 99/100 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows; peso total de `3d/assets/` < 10 MB). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=pinky-margot (y `?probar=lale`, `?probar=cepi`)
+- Rollback: `git revert <commit [A-3]>` en `feat-3d` y push (base previa: `36346e8`).

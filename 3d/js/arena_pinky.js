@@ -552,8 +552,11 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         const dir = warnCar.x - S.bossX > 0.3 ? 1 : warnCar.x - S.bossX < -0.3 ? -1 : (sx || 1);
         sx = dir; rz = -dir * (0.14 + Math.abs(Math.sin(t * 14)) * 0.08); by += 0.08;
       }
-      // Con la papilla en los anteojos se tambalea a ciegas
-      if (margotFx.blind && S.pose !== 'ko') { rz += Math.sin(t * 7) * 0.14; by += Math.abs(Math.sin(t * 3.5)) * 0.06; }
+      // Con la papilla en los anteojos se tambalea a ciegas (usa su pose dedicada arena_pinky_stun si existe)
+      if (margotFx.blind && S.pose !== 'ko') {
+        if (assets.has('arena_pinky_stun')) bossKey = 'arena_pinky_stun';
+        rz += Math.sin(t * 7) * 0.12; by += Math.abs(Math.sin(t * 3.5)) * 0.06;
+      }
       setTex(B, bossKey, S.pose);
       place(B, S.bossX, by, PINKY_ARENA.bossZ);
       B.scale.set(B.userData.w * sx, B.userData.hh * sy, 1); B.rotation.z = rz;

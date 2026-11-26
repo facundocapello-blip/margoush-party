@@ -1377,5 +1377,34 @@
   "rows": 1,
   "v": "24bcd1fd",
   "hk": 0.74
+ },
+ "arena_lale_windup": {
+  "file": "arena_lale_windup.webp",
+  "w": 269,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "94eb35a0",
+  "hk": 1.04
+ },
+ "arena_cepi_windup": {
+  "file": "arena_cepi_windup.webp",
+  "w": 238,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "b9d8ad5f",
+  "hk": 1.05
+ },
+ "arena_pinky_stun": {
+  "file": "arena_pinky_stun.webp",
+  "w": 313,
+  "h": 512,
+  "frames": 1,
+  "cols": 1,
+  "rows": 1,
+  "v": "928dbc1c"
  }
 }
