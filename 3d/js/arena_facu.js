@@ -170,14 +170,14 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       const s = m.userData.sh; if (s) { s.position.set(px, 0.03, pz); s.visible = m.visible; }
     }
 
-    const B = sprite('facu', BOSS_H, 0.9);
+    const B = sprite(assets.has('arena_facu_idle') ? 'arena_facu_idle' : 'facu', BOSS_H, 0.9);
     const P = sprite(heroPre + 'idle', HERO_H, 0.9);
 
     // Margot (remate de Fase 3): gatea hasta el atril y garabatea el cuadro con crayones (ya no llora)
     const margotFx = createMargotFinish({ T, scene, assets, keep, unit, L, kind: 'crayons' });
 
     // Atril con el lienzo donde Facu pinta en vivo (se pinta de a poco; Margot le hace garabatos encima)
-    const EASEL = { x: 2.0, z: FACU_ARENA.bossZ + 0.9, y: 2.5 };
+    const EASEL = { x: 2.45, z: FACU_ARENA.bossZ + 0.9, y: 2.5 };
     const lienzo = document.createElement('canvas'); lienzo.width = 256; lienzo.height = 200;
     const lg = lienzo.getContext('2d');
     const lienzoTex = keep(new T.CanvasTexture(lienzo)); lienzoTex.encoding = T.sRGBEncoding;
@@ -567,7 +567,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       } else if (S.pose === 'throw') { sx = toward; rz = -toward * 0.2; sy = 0.93; sx *= 1.06; by = 0.05; }
       else if (S.pose === 'paint') {
         // de espaldas al público, pinceleando en el atril
-        sx = -1; rz = Math.sin(t * 9) * 0.06; by = Math.abs(Math.sin(t * 9)) * 0.06;
+        sx = own ? 1 : -1; rz = Math.sin(t * 9) * 0.06; by = Math.abs(Math.sin(t * 9)) * 0.06;
       }
       else if (S.pose === 'hurt') { rz = 0.2; sy = 0.9; sx = 1.06; by = 0.08; }
       else if (S.pose === 'love') { by = 0.25 + Math.abs(Math.sin(t * 6)) * 0.25; rz = Math.sin(t * 4) * 0.12; sy = 1 + Math.sin(t * 8) * 0.05; }
