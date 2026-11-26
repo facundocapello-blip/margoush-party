@@ -115,7 +115,7 @@ Historia vigente (no cambiarla): Chaky agarra el cochecito → duelo de baile en
 
 - [x] **D-1 · Chaky no se gana palmeando los 5 carriles** (S). Hoy tocar un carril vacío no penaliza (`arena_logic.js` ~259-263, `grade: 'empty'`): un bot que toca los 5 carriles gana el 100 %. Hacer que el toque en vacío corte el combo y, si se repite muy seguido (p. ej. 3 vacíos en 1 s), cuente como fallo.
   - Criterio (con bots en `tests/arena.test.mjs`): palmear los 5 carriles gana < 20 % y gasta ≥ 2 ⭐; un jugador casual bueno sigue ganando ≥ 95 %.
-- [ ] **D-2 · Cepi: dificultad al revés** (M). Joystick al azar + 👊 gana 87 %, un jugador casual que entendió la regla 62 %, un novato 7 %; la fase 1 es la que más castiga. Ajustar `CEPI_ARENA` (`arena_cepi_logic.js` ~15-30: `ballSpeed`, `returnR`, `ballHitR`, `windup`) y, si hace falta, que pegarle sin estar cerca de la pelota no devuelva.
+- [x] **D-2 · Cepi: dificultad al revés** (M). Joystick al azar + 👊 gana 87 %, un jugador casual que entendió la regla 62 %, un novato 7 %; la fase 1 es la que más castiga. Ajustar `CEPI_ARENA` (`arena_cepi_logic.js` ~15-30: `ballSpeed`, `returnR`, `ballHitR`, `windup`) y, si hace falta, que pegarle sin estar cerca de la pelota no devuelva.
   - Criterio (bots en `tests/arena_cepi.test.mjs`): casual flojo ≥ machacador, novato ≥ 40 %, golpes recibidos en fase 1 ≤ 1,5. Link `?probar=cepi`.
 - [ ] **D-3 · Lale demasiado fácil** (S). Casual flojo gana 100 % recibiendo 0,1 golpes en 16 s. Ajustar `LALE_ARENA` (`arena_lale_logic.js` ~5-28).
   - Criterio: casual flojo gana 70–90 %, recibe ≥ 1,5 golpes, duración mediana 30–45 s; machacar gana < 15 %. Link `?probar=lale`.

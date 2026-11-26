@@ -130,3 +130,114 @@ test('cepi arena: a returned ball that changes phase or KOs while other balls fl
     assert.ok(evs.some(e => e.type === 'phase' || e.type === 'ko'), 'debe llegar el evento phase/ko');
   }
 });
+
+test('D-2: balance de Cepi (casual flojo >= machacador, novato >= 40 %, fase 1 <= 1.5 golpes)', () => {
+  // Pegarle al aire activa recovery breve para que machacar no devuelva pelotas gratis
+  const chk = createCepiArenaLogic({ rand: () => 0.5 });
+  chk.punch({ x: 3.5, z: 1.5, reach: 2, dmg: 1 }); // golpe al aire
+  chk.state.shots.push({ id: 99, x: 0, z: -1, vx: 0, vz: 8, gold: true, glass: false, bounced: false, returning: false });
+  assert.equal(chk.punch({ x: 0, z: -1, reach: 2, dmg: 1 }).some(e => e.type === 'returned'), false, 'machacar al aire bloquea devolución inmediata');
+
+  function sim(profile) {
+    const TRIALS = 30;
+    const DT = 1 / 30;
+    let wins = 0, p1HitsTotal = 0;
+    for (let s = 1; s <= TRIALS; s++) {
+      let seed = s * 104729 + (profile.length * 997);
+      const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+      const l = createCepiArenaLogic({ rand: rnd });
+      let x = 0, z = -1.2, hp = 5, extraUsed = false, inv = 0, hurtT = 0, punchCd = 0, duelPickedRound = 0;
+      let driftX = 0, driftZ = 0, driftT = 0;
+      for (let step = 0; step < 110 * 30 && l.state.phase !== 'ko' && hp > 0; step++) {
+        inv = Math.max(0, inv - DT);
+        hurtT = Math.max(0, hurtT - DT);
+        punchCd = Math.max(0, punchCd - DT);
+        const S = l.state;
+        const evs = [];
+        if (hurtT <= 0) {
+          if (profile === 'masher') {
+            driftT -= DT;
+            if (driftT <= 0) { driftT = 0.6 + rnd() * 0.6; driftX = (rnd() - 0.5) * 2; driftZ = (rnd() - 0.5) * 2; }
+            const len = Math.hypot(driftX, driftZ) || 1;
+            x = Math.max(-CEPI_ARENA.xMax + 0.45, Math.min(CEPI_ARENA.xMax - 0.45, x + (driftX / len) * 6.4 * DT));
+            z = Math.max(CEPI_ARENA.zFar, Math.min(CEPI_ARENA.zNear, z + (driftZ / len) * 6.4 * DT));
+            if (S.mode === 'duel' && S.duel?.stage === 'tell' && duelPickedRound !== S.duel.round) {
+              duelPickedRound = S.duel.round;
+              l.pickSide(rnd() < 0.5 ? -1 : 1);
+            } else if (punchCd <= 0) {
+              punchCd = 0.28;
+              evs.push(...l.punch({ x, z, reach: 1.9, dmg: 1 }));
+            }
+          } else {
+            const isNovice = profile === 'novice';
+            const moveSpd = isNovice ? 5.2 : 6.0;
+            const duelAcc = isNovice ? 0.68 : 0.85;
+            const returnAcc = isNovice ? 0.42 : 0.72;
+            let tx = x, tz = -1.0;
+            if (S.mode === 'duel' && S.duel?.stage === 'tell' && duelPickedRound !== S.duel.round && S.duel.t > (isNovice ? 0.55 : 0.35)) {
+              duelPickedRound = S.duel.round;
+              const pick = rnd() < duelAcc ? -S.duel.dir : S.duel.dir;
+              l.pickSide(pick);
+              x = pick * 2.8;
+            } else if (S.mode === 'tired' || S.mode === 'stun') {
+              tx = S.bossX; tz = CEPI_ARENA.meleeZ - 0.3;
+              if (Math.abs(x - S.bossX) < CEPI_ARENA.meleeX - 0.3 && z <= CEPI_ARENA.meleeZ && punchCd <= 0) {
+                punchCd = isNovice ? 0.55 : 0.4;
+                evs.push(...l.punch({ x, z, reach: 1.9, dmg: 1 }));
+              }
+            } else {
+              // Esquivar pelotas entrantes o alinearse para devolver la dorada
+              const incoming = S.shots.filter(b => !b.returning && b.z < z + 1.0).sort((a, b) => b.z - a.z)[0];
+              if (incoming) {
+                if (incoming.gold && rnd() < returnAcc) {
+                  tx = incoming.x; tz = -1.0;
+                  const dz = incoming.z - z;
+                  if (Math.abs(incoming.x - x) < CEPI_ARENA.returnR * 0.85 && dz >= CEPI_ARENA.returnZMin && dz <= CEPI_ARENA.returnZMax && punchCd <= 0) {
+                    punchCd = 0.45;
+                    evs.push(...l.punch({ x, z, reach: 1.9, dmg: 1 }));
+                  }
+                } else {
+                  const away = incoming.x >= 0 ? -2.8 : 2.8;
+                  tx = away; tz = -0.6;
+                }
+              } else if (S.phase === 3) {
+                const decoy = S.decoys.find(d => d.alive);
+                if (decoy) {
+                  tx = decoy.x; tz = CEPI_ARENA.meleeZ - 0.3;
+                  if (Math.abs(x - decoy.x) < CEPI_ARENA.meleeX - 0.3 && z <= CEPI_ARENA.meleeZ && punchCd <= 0) {
+                    punchCd = 0.45;
+                    evs.push(...l.punch({ x, z, reach: 1.9, dmg: 1 }));
+                  }
+                }
+              }
+            }
+            const dx = tx - x, dz = tz - z, d = Math.hypot(dx, dz);
+            if (d > 0.1) {
+              x = Math.max(-CEPI_ARENA.xMax + 0.45, Math.min(CEPI_ARENA.xMax - 0.45, x + (dx / d) * Math.min(d, moveSpd * DT)));
+              z = Math.max(CEPI_ARENA.zFar, Math.min(CEPI_ARENA.zNear, z + (dz / d) * Math.min(d, moveSpd * DT)));
+            }
+          }
+        }
+        evs.push(...l.update(DT, { x, z, y: 0, dodging: false, inv: inv > 0 }));
+        for (const e of evs) {
+          if (e.type === 'hurt') {
+            if (S.phase === 1) p1HitsTotal++;
+            hp = Math.max(0, hp - 1);
+            hurtT = 0.5; inv = 1.3;
+            if (hp <= 0 && !extraUsed) { extraUsed = true; hp = 3; inv = 1.8; l.state.shots.length = 0; }
+          }
+        }
+      }
+      if (l.state.phase === 'ko' && hp > 0) wins++;
+    }
+    return { winRate: wins / TRIALS, p1Hits: p1HitsTotal / TRIALS };
+  }
+
+  const masher = sim('masher');
+  const novice = sim('novice');
+  const casual = sim('casual');
+  assert.ok(casual.winRate >= masher.winRate, `casual flojo (${Math.round(casual.winRate * 100)} %) debe superar o igualar a machacador (${Math.round(masher.winRate * 100)} %)`);
+  assert.ok(novice.winRate >= 0.4, `novato debe ganar >= 40 % (ganó ${Math.round(novice.winRate * 100)} %)`);
+  assert.ok(casual.p1Hits <= 1.5, `golpes recibidos por casual en fase 1 <= 1.5 (recibió ${casual.p1Hits.toFixed(2)})`);
+  assert.ok(novice.p1Hits <= 1.5, `golpes recibidos por novato en fase 1 <= 1.5 (recibió ${novice.p1Hits.toFixed(2)})`);
+});

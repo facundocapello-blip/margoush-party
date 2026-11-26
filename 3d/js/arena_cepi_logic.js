@@ -17,15 +17,16 @@ export const CEPI_ARENA = {
   zFar: -8.0,      // frente a la red (la red está en z = -8.6)
   netZ: -8.6,
   bossZ: -12.6,
-  ballSpeed: 10.5, // ~1 s de vuelo: legible y divertido para jugador casual en iPhone
-  ballHitR: 0.9,
-  returnR: 2.15,
-  returnZMin: -2.8,
-  returnZMax: 1.8,
+  ballSpeed: 8.8,  // ~1.25 s de vuelo: legible en fase 1 para novatos y casuales
+  ballHitR: 0.72,
+  returnR: 1.35,   // hay que alinearse con la pelota (no devuelve desde media cancha al azar)
+  returnZMin: -1.6,
+  returnZMax: 1.1,
+  returnWhiffCd: 0.55, // golpear al aire bloquea brevemente la devolución para desalentar machacar 👊
   meleeZ: -6.3,    // cerca de la red para pegarle de frente o voltear cartones
   meleeX: 2.2,
   lanes: [-2.65, 0, 2.65],
-  windup: 0.42,    // anticipación (paleta arriba) antes de cada saque
+  windup: 0.55,    // anticipación clara (paleta arriba) antes de cada saque
   duel: { hide: 1.05, tell: 1.75, tellFast: 1.45, result: 1.05 },
   points: { returned: 300, normalReturn: 120, melee: 180, duel: 250, cardboard: 100, dodge: 100 }
 };
@@ -54,6 +55,7 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
   let poseName = 'idle', poseT = 0;
   let afterPhase = null;
   let hitLock = 0;
+  let returnCd = 0;
 
   function setPose(name, dur) { poseName = name; poseT = dur; state.pose = name; }
 
@@ -135,7 +137,7 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
       const distZ = Math.max(4, hero.z - A.bossZ);
       vx = (hero.x - fromX) / (distZ / A.ballSpeed);
     }
-    const maxVx = glass ? 9.5 : 5.5;
+    const maxVx = glass ? 7.5 : 5.0;
     vx = Math.max(-maxVx, Math.min(maxVx, vx));
     state.shots.push({
       id: nextId++,
@@ -203,6 +205,7 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
     state.windup = 0;
     if (poseT > 0) poseT = Math.max(0, poseT - dt);
     if (hitLock > 0) hitLock = Math.max(0, hitLock - dt);
+    if (returnCd > 0) returnCd = Math.max(0, returnCd - dt);
     if (state.phase === 'ko') {
       state.pose = 'ko';
       return evs;
@@ -261,10 +264,10 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
         seriesLeft--;
         if (seriesLeft <= 0) {
           state.mode = 'tired';
-          timer = state.phase === 3 ? 3.4 : 3.2;
+          timer = state.phase === 3 ? 3.5 : 3.6;
           evs.push({ type: 'tired' });
         } else {
-          timer = state.phase === 3 ? 1.0 : 1.15;
+          timer = state.phase === 3 ? 1.1 : 1.35;
         }
       }
     }
@@ -338,18 +341,20 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
     const evs = [];
     if (state.phase === 'ko' || state.mode === 'duel' || state.mode === 'transition') return evs;
 
-    // 1. Devolver una pelota en la ventana (la dorada hace 4 HP y aturde; la normal hace 1 HP sin aturdir)
-    for (const s of state.shots) {
-      if (s.returning) continue;
-      const dz = s.z - area.z;
-      if (Math.abs(s.x - area.x) < A.returnR && dz >= A.returnZMin && dz <= A.returnZMax) {
-        s.returning = true;
-        const distZ = Math.max(2, s.z - A.bossZ);
-        const speed = 26;
-        s.vz = -speed;
-        s.vx = (state.bossX - s.x) / (distZ / speed);
-        evs.push({ type: 'returned', gold: s.gold, x: s.x, z: s.z });
-        return evs;
+    // 1. Devolver una pelota en la ventana (solo si está cerca y no venía machacando al aire)
+    if (returnCd <= 0) {
+      for (const s of state.shots) {
+        if (s.returning) continue;
+        const dz = s.z - area.z;
+        if (Math.abs(s.x - area.x) < A.returnR && dz >= A.returnZMin && dz <= A.returnZMax) {
+          s.returning = true;
+          const distZ = Math.max(2, s.z - A.bossZ);
+          const speed = 26;
+          s.vz = -speed;
+          s.vx = (state.bossX - s.x) / (distZ / speed);
+          evs.push({ type: 'returned', gold: s.gold, x: s.x, z: s.z });
+          return evs;
+        }
       }
     }
 
@@ -396,6 +401,7 @@ export function createCepiArenaLogic({ rand = Math.random } = {}) {
         }
       }
     }
+    if (!evs.length) returnCd = A.returnWhiffCd;
     return evs;
   }
 
