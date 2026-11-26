@@ -657,3 +657,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/arena_cepi_logic.js`, `node tools/stamp_versions.mjs`, `npm test` 92/93 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Simulación de bots (40 semillas): machacador 10 %, novato 98 %, casual 100 %, golpes recibidos en fase 1 ≤ 1,5. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi
 - Rollback: `git revert <commit [D-2]>` en `feat-3d` y push (base previa: `6174c12`).
+
+## 2026-11-26 · D-3: balance de Lale (duración y desafío justos) (hecho por Gemini)
+- Qué cambió: `3d/js/arena_lale_logic.js`, `tests/arena_lale.test.mjs`, `3d/index.html` (sellado con `stamp_versions.mjs`) y `docs/PLAN_TRABAJO.md`. Ajustados `butterSpeed` (`12.5 → 14.3`), `butterHitR` (`0.9 → 0.96`), `bagHitR` (`1.9 → 1.45`), pausa entre bolsas (`bagCd: 3.0`), ventana enharinado (`flouredDur: 2.0`, `meleeCd: 0.58`, daño directo de bolsa `3/4 → 1` para priorizar golpes cuerpo a cuerpo), `skateSpeed` (`8.6 → 10.8`) y 3 pasadas en fase 3. Se preservan `hpMax: 30, p2At: 20, p3At: 10` para `?probar=lale-patin` / `lale-horno`.
+- Verificación: `node --check 3d/js/arena_lale_logic.js`, `node tools/stamp_versions.mjs`, `npm test` 93/94 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Simulación de bots (40 semillas en `tests/arena_lale.test.mjs`): machacar `< 15 %`, casual flojo `70–90 %` recibiendo `≥ 1,5` golpes con duración mediana `30–45 s`. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=lale
+- Rollback: `git revert <commit [D-3]>` en `feat-3d` y push (base previa: `09ddc33`).
