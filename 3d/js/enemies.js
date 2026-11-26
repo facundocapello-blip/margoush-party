@@ -671,11 +671,13 @@ export function createEnemies(ctx) {
         e.pos.x += e.kx * dt;
         world.clampPosition(e.pos, 0.2, prevX);
         if (e.bike) {
-          // va sentado en la bici
+          // va sentado en la bici con vibración de rodado acorde a la velocidad
           e.bike.position.set(e.pos.x, 0, e.pos.z);
           e.bike.scale.x = a.facing;
-          a.lift = Math.max(a.lift, 0.35);
           const roll = e.state === 'charge' ? DELIVERY.speed : e.state === 'walk' ? e.k.speed : 0;
+          const bikeBob = roll > 0.1 ? Math.abs(Math.sin(e.walk * 2.2)) * 0.035 : 0;
+          a.lift = Math.max(a.lift, 0.35 + bikeBob);
+          if (e.state === 'charge') a.lean = -0.12;
           for (const w of e.bike.children.slice(0, 2)) w.rotation.z -= roll * dt / 0.42 * a.facing;
         }
         choosePose(e);

@@ -704,3 +704,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check` en los 7 JS editados, `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); verificación cuadro a cuadro en Chrome headless (`430×932`) en calle y `?probar=facu` (salto + golpe, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu
 - Rollback: `git revert <commit [A-5]>` en `feat-3d` y push (base previa: `0416883`).
+
+## 2026-11-26 · A-6: caminar y correr acoplados al desplazamiento real (sin patinar) (hecho por Gemini)
+- Qué cambió: `3d/js/hero.js` (velocidad del ciclo walk/run calculada desde desplazamiento real `Math.hypot(p.x - prevX, p.z - prevZ) / dt` tras `clampPosition`, evitando que patine contra portones o bordes), `3d/js/enemies.js` (vibración de rodado e inclinación de embestida en `delivery` sobre la bici), `3d/js/chase.js` (rebote sobre empedrado acoplado a `dist` en el vehículo del héroe), `3d/js/bonus.js` y las 4 arenas con desplazamiento (`arena_cepi.js`, `arena_lale.js`, `arena_pinky.js`, `arena_facu.js`: `stepT` avanza por metros recorridos reales en lugar de reloj fijo, evitando patinar al caminar lento, sobre pintura/manteca o contra bordes), `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check` en los 8 JS editados, `node tools/stamp_versions.mjs`, `npm test` 96/97 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=calle
+- Rollback: `git revert <commit [A-6]>` en `feat-3d` y push (base previa: `c842f16`).
