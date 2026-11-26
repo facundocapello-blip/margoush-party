@@ -65,11 +65,15 @@ body.has-screen #offscreen, body.chasing #offscreen { visibility: hidden; }
 
 /* Controles táctiles: joystick flotante a la izquierda; 3 botones en arco alrededor del pulgar derecho */
 #touch { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
-#stick-zone { position: absolute; left: 0; top: calc(64px + var(--safe-t)); bottom: 0; width: 46%; pointer-events: auto; touch-action: none; }
+#stick-zone { position: absolute; left: var(--safe-l); top: calc(64px + var(--safe-t)); bottom: var(--safe-b); width: 46%; pointer-events: auto; touch-action: none; }
 #joystick { position: absolute; left: calc(26px + var(--safe-l)); bottom: calc(24px + var(--safe-b)); width: 118px; height: 118px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(255, 255, 255, 0.28); pointer-events: auto; touch-action: none; opacity: 0.75; transition: opacity 0.15s; }
 #joystick.floating { opacity: 1; transition: none; }
 #knob { position: absolute; left: 34px; top: 34px; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #b9a8e8); box-shadow: 0 3px 10px #0007; pointer-events: none; }
-#actions { position: absolute; right: calc(14px + var(--safe-r)); bottom: calc(14px + var(--safe-b)); width: 210px; height: 190px; pointer-events: none; }
+#actions { position: absolute; right: calc(18px + var(--safe-r)); bottom: calc(16px + var(--safe-b)); width: 214px; height: 194px; pointer-events: none; }
+@media (orientation: landscape) and (max-height: 500px) {
+  #joystick { left: max(26px, calc(18px + var(--safe-l))); bottom: calc(18px + var(--safe-b)); }
+  #actions { right: max(22px, calc(18px + var(--safe-r))); bottom: calc(14px + var(--safe-b)); }
+}
 .act { position: absolute; display: grid; place-items: center; align-content: center; gap: 1px; pointer-events: auto; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.55); background: rgba(40, 30, 80, 0.72); color: #fff; font-weight: 900; box-shadow: 0 4px 10px #0007; transition: transform 0.08s ease-out; }
 .act small { font-size: 12px; letter-spacing: 0.5px; line-height: 1; }
 .act svg.ico { width: 26px; height: 26px; fill: currentColor; stroke: currentColor; stroke-width: 0; }
@@ -77,8 +81,8 @@ body.has-screen #offscreen, body.chasing #offscreen { visibility: hidden; }
 .act.pressed { transform: scale(0.92); }
 #act-attack { width: 98px; height: 98px; right: 0; bottom: 0; font-size: 42px; background: rgba(255, 124, 143, 0.66); }
 #act-attack .ico { line-height: 1; }
-#act-jump { width: 70px; height: 70px; right: 108px; bottom: 4px; background: rgba(126, 224, 195, 0.62); color: #10241e; }
-#act-dodge { width: 70px; height: 70px; right: 14px; bottom: 108px; background: rgba(150, 190, 255, 0.6); color: #10183a; }
+#act-jump { width: 74px; height: 74px; right: 110px; bottom: 4px; background: rgba(126, 224, 195, 0.62); color: #10241e; }
+#act-dodge { width: 74px; height: 74px; right: 12px; bottom: 110px; background: rgba(150, 190, 255, 0.6); color: #10183a; }
 /* Anillo de poder alrededor del 👊: se llena pegando; lleno, late y dice "mantené" */
 #act-attack .ring { position: absolute; inset: -7px; border-radius: 50%; pointer-events: none;
   background: conic-gradient(var(--gold) calc(var(--pw, 0) * 360deg), rgba(255, 255, 255, 0.14) 0);
@@ -746,7 +750,7 @@ body.chaky-dance #boss-fill { background: linear-gradient(90deg, #fb7185, #e879f
 body.chaky-dance .hud-right { gap: 4px; }
 body.chaky-dance.has-screen #arena-ui { visibility: hidden; }
 #arena-ui .piu {
-  position: absolute; bottom: var(--safe-b); left: max(8px, var(--safe-l)); right: max(8px, var(--safe-r));
+  position: absolute; bottom: var(--safe-b); left: calc(8px + var(--safe-l)); right: calc(8px + var(--safe-r));
   max-width: 500px; margin: auto; height: var(--deck-height); padding: 0 6px 6px;
   display: grid; grid-template-rows: 26px 1fr; border: 1.5px solid rgba(192, 132, 252, 0.45); border-radius: 14px;
   background: rgba(18, 12, 34, 0.92); box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.55); pointer-events: auto; touch-action: none;
@@ -923,7 +927,7 @@ body.cepi-duel-on #touch { display: none; }
 #arena-ui .cepi-tell.alert { border-color: #ff4d5e; background: rgba(96, 12, 24, .94); color: #ffe066; animation: pulse-center .28s ease-in-out infinite alternate; }
 #arena-ui .cepi-tell.ok { border-color: #6dff8a; color: #9bf7c4; }
 #arena-ui .cepi-tell.bad { border-color: #ff4d5e; color: #ff9b9b; }
-#arena-ui .cepi-btns { position: absolute; left: 16px; right: 16px; bottom: calc(24px + var(--safe-b)); display: grid; grid-template-columns: 1fr 1fr; gap: 14px; pointer-events: auto; max-width: 520px; margin: 0 auto; }
+#arena-ui .cepi-btns { position: absolute; left: calc(16px + var(--safe-l)); right: calc(16px + var(--safe-r)); bottom: calc(24px + var(--safe-b)); display: grid; grid-template-columns: 1fr 1fr; gap: 14px; pointer-events: auto; max-width: 520px; margin: 0 auto; }
 #arena-ui .cepi-btns button { min-height: 76px; border-radius: 20px; border: 3px solid #9fe4ff; background: rgba(16, 46, 98, .88); color: #fff; font: 700 26px Fredoka, sans-serif; box-shadow: 0 6px 0 #091c3e; touch-action: none; transition: background .12s, border-color .12s, box-shadow .12s; }
 #arena-ui .cepi-btns button.safe { border-color: #6dff8a; background: rgba(18, 96, 56, .92); box-shadow: 0 6px 0 #0b3d22, 0 0 24px #6dff8a99; }
 #arena-ui .cepi-btns button.picked, #arena-ui .cepi-btns button:active { background: #2f8cff; border-color: #ffe066; transform: translateY(3px); box-shadow: 0 3px 0 #091c3e; }
