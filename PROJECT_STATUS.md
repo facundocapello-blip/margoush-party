@@ -645,3 +645,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/arena_logic.js`, `node tools/stamp_versions.mjs`, `npm test` 91/92 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows), incluyendo simulación de bots en 20 semillas en `tests/arena.test.mjs`: palmear los 5 carriles gana < 20 % y gasta ≥ 2 ⭐; jugador casual bueno gana ≥ 95 %. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=chaky-baile
 - Rollback: `git revert <commit [D-1]>` en `feat-3d` y push (base previa: `b25f403`).
+
+## 2026-11-26 · A-1 (parcial): fondo galería HENRIS aprobado (`arena_facu_fondo`) (hecho por Gemini)
+- Qué cambió: `3d/assets/arena_facu_fondo.webp` (`1280×714`, 112,7 KB, total `3d/assets/`: 8,68 MB < 10 MB), `3d/assets/manifest.json`, `3d/js/assets.js` (agregado `arena_facu_` a carga diferida `DEFERRED`), `3d/js/arena_facu.js` (recorte UV superior `repeat(1, 0.67)` / `offset(0, 0.33)` sobre `BW=74, BH=29` para alinear el zócalo con el parquet 3D sin doble piso ni franjas en horizontal), `3d/index.html` (sellado con `stamp_versions.mjs`) y `docs/PLAN_TRABAJO.md`. Aprobado previamente por Facu (Regla 7); quedan pendientes las 9 poses de Facu del kit ZIP `A-1_facu_galerista.zip`.
+- Verificación: `node --check 3d/js/assets.js 3d/js/arena_facu.js`, `node tools/stamp_versions.mjs`, `npm test` 91/92 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); capturas visuales verificadas en Chrome headless `430×932` (vertical) y `932×430` (horizontal) en `?probar=facu` (`hasBg=true`, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu
+- Rollback: `git revert <commit [A-1 fondo]>` en `feat-3d` y push (base previa: `07d2401`).

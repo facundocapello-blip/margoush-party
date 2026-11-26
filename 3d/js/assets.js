@@ -4,7 +4,7 @@
 // `arena_pinky_*`, `arena_barril`, `arena_cajon`, `arena_fondo`) se cargan bajo demanda en su cortina
 // con `assets.ensure(prefixes)` para acelerar el inicio y ahorrar memoria GPU en Safari iPhone.
 const DEFERRED = [
-  'arena_chaky_', 'arena_cepi_', 'arena_lale_', 'arena_pinky_',
+  'arena_chaky_', 'arena_cepi_', 'arena_lale_', 'arena_pinky_', 'arena_facu_',
   'arena_douge_back_', 'arena_marine_back_',
   'arena_fondo', 'arena_aeropuerto_fondo', 'arena_margot_',
   'arena_douge_victory', 'arena_marine_victory', 'arena_familia_festejo',

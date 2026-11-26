@@ -106,8 +106,9 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     const chargeRing = new T.Mesh(keep(new T.RingGeometry(1.5, 2.05, 28)), keep(new T.MeshBasicMaterial({ color: L('#6dff8a'), transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false })));
     chargeRing.rotation.x = -Math.PI / 2; chargeRing.visible = false; scene.add(chargeRing);
 
-    // Pared del fondo (o `arena_facu_fondo` si algún día llega la imagen pintada)
-    const wallTex = assets.has('arena_facu_fondo') ? assets.texture('arena_facu_fondo') : canvasTex(1400, 560, (g, w, h) => {
+    // Pared del fondo: recorte UV superior de `arena_facu_fondo` para alinear zócalo, cuadros y cartel HENRIS con el parquet 3D
+    const hasBg = assets.has('arena_facu_fondo');
+    let wallTex = hasBg ? keep(assets.texture('arena_facu_fondo').clone()) : canvasTex(1400, 560, (g, w, h) => {
       const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#2d1d2e'); gr.addColorStop(1, '#4a2e3a');
       g.fillStyle = gr; g.fillRect(0, 0, w, h);
       g.fillStyle = '#5b3a2a'; g.fillRect(0, h * 0.8, w, h * 0.2);          // zócalo
@@ -125,9 +126,10 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
         cx += pw + 60;
       });
     });
-    const BW = 70, BH = 28;
+    if (hasBg) { wallTex.needsUpdate = true; wallTex.repeat.set(1, 0.67); wallTex.offset.set(0, 0.33); }
+    const BW = 74, BH = 29;
     const back = mk(new T.PlaneGeometry(BW, BH), new T.MeshBasicMaterial({ map: wallTex, fog: false }));
-    back.position.set(0, BH * 0.43, FACU_ARENA.bossZ - 3.5);
+    back.position.set(0, BH * 0.44, FACU_ARENA.bossZ - 3.5);
 
     const fallbackTex = {}, walkTex = {}, walkCols = 0;
 
