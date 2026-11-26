@@ -8,6 +8,7 @@
 // (los golpes SWINGS llegan de hero.js por parámetro: así la lógica se prueba en node sin Three.js)
 import { fillText, tr } from './i18n.js';
 import { bydCanvasWithMargot } from './byd_margot.js';
+import { createShake, flashAlpha } from './feedback.js';
 
 export const BONUS = {
   charge: 16,          // s que tarda en cargarse del todo si nadie lo molesta
@@ -225,7 +226,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     };
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
     let flashTimer = 0;
-    const flash = (col, op = 0.4) => { flashE.style.background = col; flashE.style.opacity = String(op); clearTimeout(flashTimer); flashTimer = setTimeout(() => { flashE.style.opacity = '0'; }, 90); };
+    const flash = (col, op = 0.4) => { flashE.style.background = col; flashE.style.opacity = String(flashAlpha(op)); clearTimeout(flashTimer); flashTimer = setTimeout(() => { flashE.style.opacity = '0'; }, 90); };
 
     // ---- daños dibujados sobre el auto ----
     const toPx = (wx, wy) => ({ x: (wx / carW + 0.5) * meta.w, y: (1 - wy / CAR_H) * meta.h });
@@ -265,7 +266,8 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
 
     let x = 0, t = 0, phase = 'intro', phaseT = 0, ended = false, closing = false;
     let swing = null, swingT = 0, swingHit = false, combo = 0, comboWindow = 0, buffer = 0, holdT = 0;
-    let shakeT = 0, carKick = 0, carTilt = 0, lineCd = 1.5, moving = false, wreckT = 0, cepiHurtT = 0, cepiTalk = 2.5;
+    let freezeT = 0, carKick = 0, carTilt = 0, lineCd = 1.5, moving = false, wreckT = 0, cepiHurtT = 0, cepiTalk = 2.5;
+    const shaker = createShake({ decay: 2.6, maxX: 0.36, maxY: 0.24 });
     const result = { points: 0, wrecked: false };
     game.state = 'bonus';
 
@@ -284,7 +286,8 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
           if (Math.random() < 0.5 || onSpot) dent(p.x, p.y, onSpot ? 20 : 13);
           carTex.needsUpdate = true;
           carKick = Math.min(0.35, carKick + (onSpot ? 0.25 : 0.12)); carTilt = (Math.random() - 0.5) * (onSpot ? 0.08 : 0.04);
-          shakeT = onSpot || e.power ? 0.2 : 0.08;
+          shaker.set(onSpot || e.power ? 0.48 : 0.22);
+          if (onSpot || e.power) freezeT = 0.045;
           addPts(e.power ? 300 : onSpot ? BONUS.points.spot : BONUS.points.hit, hx, hy + 0.6, CAR_Z + 0.3, onSpot || e.power);
           pop(hx + (Math.random() - 0.5) * 0.6, hy + 0.2, CAR_Z + 0.3, onSpot ? '💥' : ['🔩', '💥', '⚡'][Math.random() * 3 | 0], '#fff', onSpot ? 34 : 24, 0.6);
           if (onSpot) { flash('#fff2c4', 0.3); sfx('hitHeavy'); } else sfx('hit');
@@ -296,7 +299,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
           result.wrecked = true;
           const bonus = BONUS.points.wreck + Math.round(e.batLeft) * BONUS.points.perPercent;
           addPts(bonus, 0, CAR_H * 0.55, CAR_Z + 0.5, true);
-          flash('#ffffff', 0.6); sfx('ko'); sfx('crowd'); shakeT = 0.5;
+          flash('#ffffff', 0.6); sfx('ko'); sfx('crowd'); shaker.set(0.85); freezeT = 0.09;
           if (deadTex) { carMat.map = deadTex; carMat.needsUpdate = true; car.scale.set(CAR_H * 1.05 * deadMeta.w / deadMeta.h, CAR_H * 1.05, 1); }
           pop(cepiX, CEPI_H + 0.5, CAR_Z, '¡MI BYD! ¡Me llevo a Margot igual!', '#ffffff', 20, 2.4);
           setCepi(2);
@@ -308,7 +311,7 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
           phase = 'end'; phaseT = 0; glow.visible = false;
         } else if (e.type === 'cepi') {
           setCepi(2); cepiHurtT = 0.5;
-          shakeT = 0.12; sfx('hitHeavy'); flash('#ffffff', 0.25);
+          shaker.set(0.32); sfx('hitHeavy'); flash('#ffffff', 0.25);
           addPts(BONUS.points.cepi, cepiX, CEPI_H, CAR_Z + 0.4, true);
           if (e.unplugged) pop(cepiX, CEPI_H + 0.6, CAR_Z, ['¡AY! ¡Me desenchufaste!', '¡El cable no!', '¡Mamááá!'][Math.random() * 3 | 0], '#ff9b8a', 20, 1.4);
           setBar();
@@ -341,7 +344,9 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
     function update(dt) {
       if (ended) return;
       if (input.consume('pause')) { pause(); return; }
-      t += dt; phaseT += dt;
+      t += dt;
+      if (freezeT > 0) { freezeT -= dt; draw(0); return; }
+      phaseT += dt;
       comboWindow = Math.max(0, comboWindow - dt); buffer = Math.max(0, buffer - dt);
       moving = false;
       input.consume('jump'); input.consume('dodge');
@@ -410,15 +415,14 @@ export function createBonus({ game, input, audio, assets, renderer, updateHud, p
       cepiM.position.set(cepiX + (cepiHurtT > 0 ? Math.sin(t * 50) * 0.05 : 0), 0, CAR_Z + 0.55);
       cableAt(S.cepiStun > 0 || S.wrecked ? new T.Vector3(cepiX - 0.3, 0.06, CAR_Z + 0.9) : cableTo);
       if (phase === 'play' && S.cepiStun <= 0) { cepiTalk -= dt; if (cepiTalk <= 0) { cepiTalk = 3.5 + Math.random() * 2; pop(cepiX, CEPI_H + 0.6, CAR_Z, LINES[Math.random() * LINES.length | 0], '#ff9b8a', 18, 1.4); } }
-      shakeT = Math.max(0, shakeT - dt);
-      const sh = shakeT > 0 ? 0.12 : 0;
+      const sh = shaker.step(dt || 1 / 60);
       cam.aspect = innerWidth / innerHeight;
       cam.fov = cam.aspect < 0.9 ? 64 : 46;
       cam.updateProjectionMatrix();
       const intro = phase === 'intro' ? Math.max(0, 1 - phaseT / 0.9) : 0;
       // El cuadro abarca el auto y el cargador con Cepi; con el celu parado sigue más al héroe
       const mid = cepiX * 0.3, follow = cam.aspect < 0.9 ? 0.6 : 0.25, cxm = mid + (x - mid) * follow;
-      cam.position.set(cxm + (Math.random() - 0.5) * sh, 4.8 + intro * 3, HERO_Z + 6.4 + (cam.aspect < 0.9 ? 1.2 : 0) + intro * 5 + (Math.random() - 0.5) * sh);
+      cam.position.set(cxm + sh.x, 4.8 + intro * 3 + sh.y, HERO_Z + 6.4 + (cam.aspect < 0.9 ? 1.2 : 0) + intro * 5);
       cam.lookAt(cxm, 1.7, CAR_Z);
       // Auto: rebota hacia atrás con cada golpe y vuelve
       carKick = Math.max(0, carKick - dt * 1.8);

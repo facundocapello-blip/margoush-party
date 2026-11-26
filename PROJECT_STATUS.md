@@ -821,3 +821,17 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Verificación:** `node --check` sin errores en los 8 JS editados, `node tools/stamp_versions.mjs`, `npm test` **100/101 en verde** (0 fallos, 1 omitido: `check_sprites.py` por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - **Prueba:** `https://facundocapello-blip.github.io/margoush-party/3d/?probar=francia` (y `persecucion`, `pinky`, `facu`).
 - **Rollback:** `git revert <hash de este commit>` en `feat-3d` (base previa: `22a53b0`).
+
+## 2026-11-26 · Fases 3 y 4: Game Feel + Gráficos y coherencia visual (hecho por Antigravity)
+- **Fase 3 (Game Feel y accesibilidad):**
+  - Nuevo `3d/js/feedback.js`: sacudida de cámara por `trauma²` con senos sumados (sin `Math.random()`), decaimiento durante *hit-stop* y soporte de `prefers-reduced-motion` + botón `✨ Efectos: normales / suaves` en Pausa (`3d/index.html`, `3d/js/main.js`, `3d/js/i18n.js`).
+  - Conectado en `3d/js/fx.js` (además de clonar `sparkMat` por partícula para evitar parpadeos de opacidad), `3d/js/arena.js` (quitado flash de pantalla completa en cada flecha `bossHit`), `3d/js/arena_cepi.js`, `3d/js/arena_lale.js`, `3d/js/arena_pinky.js`, `3d/js/arena_facu.js` (eliminado `sfx('hit')` y `shake` duplicado en `bossHit`) y `3d/js/bonus.js` (agregado *hit-stop* en punto brillante `×3` y `wreck`).
+- **Fase 4 (Gráficos y coherencia visual):**
+  - `3d/js/cover.js` y `3d/js/i18n.js`: corregido `Margoth` → `Margot` en la portada principal y frases; agregadas traducciones `Facu (Final)`, `🎨 ¡A HENRIS!` y `✨ Efectos: ...`.
+  - `3d/js/powers.js`: disco de suelo de Marine «Hiedra» pasado de naranja fuego (`0xff6a1a`) a verde botánico (`0x28c76f`) con `sfx('whoosh')`.
+  - `3d/js/arena_facu.js`: quitados los billetes rectangulares (`isBill = false`) y el signo `$` en `-$100` (remanentes de Pinky).
+  - `3d/js/arena_pinky.js`: ensanchado el piso de `34` a `64` (`repeat(15, 8)`) para eliminar triángulos oscuros en horizontal.
+  - `3d/js/story.js`: Margot inicia el rescate `awake` (celda 1) en lugar de `crying` (celda 2).
+- **Verificación:** `node --check` en todos los JS editados, `node tools/stamp_versions.mjs`, `npm test` **103/104 en verde** (`0` fallos, `1` omitido: `check_sprites.py` por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- **Prueba:** `https://facundocapello-blip.github.io/margoush-party/3d/` (y `?probar=byd`, `?probar=pinky`, `?probar=facu`).
+- **Rollback:** `git revert <hash de este commit>` en `feat-3d` (base previa: `02256cb`).

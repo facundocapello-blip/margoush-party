@@ -27,6 +27,7 @@ import { createRanking } from './ranking.js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { LEVELS, WAVES, SECRET_X, GALPON_X, BORDER_X } from './level.js';
 import { tr, fillText, translateDom, setLang, getLang, onLangChange } from './i18n.js';
+import { isReducedMotion, setReducedMotion } from './feedback.js';
 import { createMargot } from './margot.js';
 import { SpriteActor } from './sprites.js';
 
@@ -1347,11 +1348,15 @@ async function boot() {
   const paintMute = () => { muteBtn.textContent = audio.muted ? '🔇' : '♪'; };
   paintMute();
   muteBtn.addEventListener('click', () => { audio.toggleMute(); paintMute(); muteBtn.blur(); });
+  const fxBtn = $('#btn-reduce-fx');
+  const paintFx = () => { if (fxBtn) fxBtn.textContent = tr(isReducedMotion() ? '✨ Efectos: suaves' : '✨ Efectos: normales'); };
+  paintFx();
+  fxBtn?.addEventListener('click', () => { setReducedMotion(!isReducedMotion()); paintFx(); fxBtn.blur(); });
   // Idioma: banderitas en la portada (español / francés). Se recuerda en el celular.
   const langBtns = [...document.querySelectorAll('#lang-pick [data-lang]')];
   const paintLang = () => langBtns.forEach(b => b.classList.toggle('on', b.dataset.lang === getLang()));
   langBtns.forEach(b => b.addEventListener('click', (ev) => { ev.stopPropagation(); setLang(b.dataset.lang); b.blur(); }));
-  onLangChange(() => { translateDom(); paintLang(); paintContinue(); paintPodium(); });
+  onLangChange(() => { translateDom(); paintLang(); paintContinue(); paintPodium(); paintFx(); });
   document.documentElement.lang = getLang();
   translateDom();
   paintLang();

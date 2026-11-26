@@ -1,6 +1,7 @@
 // Efectos de golpe: chispas, anillos, sacudón, congelado y textos flotantes.
 import { fillText } from './i18n.js';
 import { placePops } from './pop_layout.js';
+import { createShake, flashAlpha } from './feedback.js';
 export function createFx(scene, camera, labelsEl, flashEl) {
   const sparkTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -24,9 +25,8 @@ export function createFx(scene, camera, labelsEl, flashEl) {
   const arcGeos = {};
   const lineGeo = new THREE.PlaneGeometry(1.3, 0.07);
   const pops = [];
-  let shakeAmt = 0;
+  const shaker = createShake({ decay: 2.2, maxX: 0.45, maxY: 0.3 });
   let stop = 0;
-  const offset = new THREE.Vector3();
   const proj = new THREE.Vector3();
   const lay = [];
 
@@ -44,7 +44,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
     hit(pos, strength = 1) {
       const n = Math.round(5 + strength * 5);
       for (let i = 0; i < n; i++) {
-        const s = new THREE.Sprite(sparkMat);
+        const s = new THREE.Sprite(sparkMat.clone());
         const size = 0.35 + Math.random() * 0.35 * strength;
         s.scale.set(size, size, 1);
         s.position.copy(pos);
@@ -83,8 +83,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
     count(kind) { return parts.filter(p => p.kind === kind).length; },
     dust(pos) {
       for (let i = 0; i < 3; i++) {
-        const s = new THREE.Sprite(sparkMat);
-        s.material = sparkMat;
+        const s = new THREE.Sprite(sparkMat.clone());
         s.scale.set(0.5, 0.5, 1);
         s.position.copy(pos);
         s.position.y = 0.2;
@@ -92,12 +91,12 @@ export function createFx(scene, camera, labelsEl, flashEl) {
         parts.push({ obj: s, v: new THREE.Vector3((Math.random() - 0.5) * 2, 0.6, (Math.random() - 0.5)), life: 0.25, max: 0.25, kind: 'spark' });
       }
     },
-    shake(amount) { shakeAmt = Math.max(shakeAmt, amount); },
+    shake(amount) { shaker.set(amount); },
     hitstop(seconds) { stop = Math.max(stop, seconds); },
     flash(color = '#ff4d5e', opacity = 0.35) {
       flashEl.style.transition = 'none';
       flashEl.style.background = color;
-      flashEl.style.opacity = opacity;
+      flashEl.style.opacity = flashAlpha(opacity);
       void flashEl.offsetWidth;
       flashEl.style.transition = 'opacity 0.35s ease-out';
       flashEl.style.opacity = 0;
@@ -109,9 +108,9 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       return false;
     },
     applyShake(dt) {
-      shakeAmt = Math.max(0, shakeAmt - dt * 2.2);
-      offset.set((Math.random() - 0.5) * shakeAmt, (Math.random() - 0.5) * shakeAmt, 0);
-      camera.position.add(offset);
+      const s = shaker.step(dt);
+      camera.position.x += s.x;
+      camera.position.y += s.y;
     },
     update(dt) {
       for (let i = parts.length - 1; i >= 0; i--) {
@@ -135,7 +134,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
         }
         if (p.life <= 0) {
           scene.remove(p.obj);
-          if (p.kind !== 'spark') p.obj.material.dispose();
+          p.obj.material.dispose();
           parts.splice(i, 1);
         }
       }
@@ -155,11 +154,11 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       placePops(lay.reverse(), dt);
     },
     clear() {
-      for (const p of parts) { scene.remove(p.obj); if (p.kind !== 'spark') p.obj.material.dispose(); }
+      for (const p of parts) { scene.remove(p.obj); p.obj.material.dispose(); }
       parts.length = 0;
       for (const p of pops) p.el.remove();
       pops.length = 0;
-      shakeAmt = 0; stop = 0;
+      shaker.reset(); stop = 0;
     }
   };
 }

@@ -36,7 +36,7 @@ export function createStory(ctx) {
   cage.add(base, bars);
   cage.position.set(cageX, 0, -1.6);
   scene.add(cage);
-  const margot = new SpriteActor(scene, assets, { poses: { crying: { tex: 'margot_sheet', cell: 2 }, happy: { tex: 'margot_sheet', cell: 3 } }, heightM: 1.7, shadow: 0.5 });
+  const margot = new SpriteActor(scene, assets, { poses: { awake: { tex: 'margot_sheet', cell: 1 }, happy: { tex: 'margot_sheet', cell: 3 } }, heightM: 1.7, shadow: 0.5 });
   margot.position.set(cageX, 0.25, -1.6);
   margot.setFacing(-1);
   margot.update(0, 0);
@@ -93,7 +93,7 @@ export function createStory(ctx) {
         game.banner('🎉 ¡MARGOT ESTÁ A SALVO!', '¡Un aplauso para ' + r.heroName + '!', 3.6);
         ctx.audio?.sfx('clear');
       }
-      margot.setPose(t > RESCUE.bars + 0.3 ? 'happy' : 'crying');
+      margot.setPose(t > RESCUE.bars + 0.3 ? 'happy' : 'awake');
       if (r.picked && ha.poses.carry) {
         margot.position.set(cageX, -20, -1.6); // ya está en brazos en el dibujo del rescate
       } else if (r.picked) {
@@ -142,7 +142,7 @@ export function createStory(ctx) {
       clearRescue();
       margot.position.set(cageX, 0.25, -1.6);
       bars.position.y = 0;
-      margot.setPose('crying');
+      margot.setPose('awake');
       margot.lift = 0;
       margot.update(0, 0);
     },

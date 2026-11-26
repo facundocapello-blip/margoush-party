@@ -11,6 +11,7 @@ import { attachBossIntro } from './boss_intro.js';
 import { createMargotFinish } from './margot_finish.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
+import { createShake, flashAlpha } from './feedback.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -66,10 +67,10 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         const x0 = rnd() * w, y0 = rnd() * h;
         g.moveTo(x0, y0); g.lineTo(x0 + (rnd() - 0.5) * 60, y0 + (rnd() - 0.5) * 60); g.stroke();
       }
-    }, 8, 8);
-    const outer = mk(new T.PlaneGeometry(70, 44), new T.MeshLambertMaterial({ color: L('#23262e') }));
+    }, 15, 8);
+    const outer = mk(new T.PlaneGeometry(76, 44), new T.MeshLambertMaterial({ color: L('#23262e') }));
     outer.rotation.x = -Math.PI / 2; outer.position.set(0, -0.02, -6);
-    const floor = mk(new T.PlaneGeometry(34, 26), new T.MeshLambertMaterial({ map: concTex }));
+    const floor = mk(new T.PlaneGeometry(64, 26), new T.MeshLambertMaterial({ map: concTex }));
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -7);
 
     // Líneas amarillas de los 3 cajones + topes laterales de estacionamiento
@@ -314,7 +315,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const sfx = (n) => { try { audio.sfx(n); } catch (_) {} };
     let flashTimer = 0;
     const flash = (col, op = 0.42) => {
-      flashE.style.background = col; flashE.style.opacity = String(op);
+      flashE.style.background = col; flashE.style.opacity = String(flashAlpha(op));
       clearTimeout(flashTimer); flashTimer = setTimeout(() => { flashE.style.opacity = '0'; }, 120);
     };
 
@@ -322,12 +323,13 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     let phase = 'entrance', phaseT = 0, closing = false, disposed = false;
     let dashT = 0, dashCd = 0, dashX = 1, dashZ = 0, hurtT = 0, inv = 0, powT = 0, holdT = 0;
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
-    let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_pinky_reveal';
+    let freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_pinky_reveal';
+    const shaker = createShake({ decay: 2.4, maxX: 0.4, maxY: 0.26 });
     let lastSpeech = null, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
     const delayed = [];
     const after = (secs, fn) => delayed.push({ left: secs, fn });
     renderLife();
-    const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
+    const shake = (a) => { shaker.set(Math.min(1, a * 1.6)); };
     const addPts = (n, px, py, pz) => {
       const before = game.score.total;
       game.score.addFlat(n);
@@ -392,7 +394,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
               pop(logic.state.bossX, BOSS_H + 0.9, PINKY_ARENA.bossZ, '¡SPLASH! 🥣😎', '#ffb347', 30, 1.5);
             });
             break;
-          case 'bossHit': bossFlash = 0.22; setBar(); sfx('hit'); shake(0.28, 0.2); break;
+          case 'bossHit': bossFlash = 0.22; setBar(); break;
           case 'hurt':
             hero.hp = Math.max(0, hero.hp - 1); hurtT = HURT_POSE; inv = INV;
             if (e.penalty) { game.score.addPenalty(e.penalty); pop(x, 2.6, z, '-$' + e.penalty, '#ff8080', 22); }
@@ -522,11 +524,10 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       if (S.hp !== lastBarHp || S.phase !== lastBarPhase) {
         lastBarHp = S.hp; lastBarPhase = S.phase; setBar(); setBarName();
       }
-      shakeT = Math.max(0, shakeT - dt); if (shakeT <= 0) shakeA = 0;
-      const sh = shakeA * Math.min(1, shakeT * 4);
+      const sh = shaker.step(dt || 1 / 60);
       const k = phase === 'entrance' ? Math.max(0, 1 - phaseT / ENTRANCE) : 0, e = k * k * (3 - 2 * k);
       // Entrada propia de Pinky: contrapicado dramático desde el piso mirando hacia arriba al jefe final
-      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + (Math.random() - 0.5) * sh, CAM.y - e * 3.8 + (Math.random() - 0.5) * sh, z + CAM.back - e * 3.2);
+      cam.position.set(x * (innerWidth < innerHeight * 0.9 ? 0.55 : 0.3) + sh.x, CAM.y - e * 3.8 + sh.y, z + CAM.back - e * 3.2);
       cam.lookAt(0, CAM.lookY + e * 1.6, PINKY_ARENA.bossZ);
       cam.aspect = innerWidth / innerHeight; cam.fov = cam.aspect < 0.9 ? CAM.fovPortrait : CAM.fov; cam.updateProjectionMatrix();
 

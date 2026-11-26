@@ -10,6 +10,7 @@ import { CHASE } from './chase.js';
 import { fillText, tr } from './i18n.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
+import { createShake, flashAlpha } from './feedback.js';
 
 const HURT_POSE = 0.45;
 const INV = 0.8;
@@ -425,7 +426,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
     let flashTimer = 0;
     const flash = (col, op = 0.38) => {
       flashE.style.background = col;
-      flashE.style.opacity = String(op);
+      flashE.style.opacity = String(flashAlpha(op));
       clearTimeout(flashTimer);
       flashTimer = setTimeout(() => { flashE.style.opacity = '0'; }, 110);
     };
@@ -433,11 +434,12 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
     // Estado del escenario y los bailarines
     let x = logic.state.heroX, z = STAGE_Z + 0.25, y = 0, vy = 0, t = 0;
     let phase = 'intro', phaseT = 0, ended = false, closing = false;
-    let hurtT = 0, inv = 0, shakeT = 0, shakeA = 0, bossFlash = 0;
+    let hurtT = 0, inv = 0, bossFlash = 0;
+    const shaker = createShake({ decay: 2.4, maxX: 0.38, maxY: 0.24 });
     let heroPose = 'dance_idle', bossKey = initialBossKey, prevPose = 'dance_idle', poseT = 0, danceStep = 0;
     game.state = 'arena';
 
-    const shake = (a, s = 0.25) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, s); };
+    const shake = (a) => { shaker.set(Math.min(1, a * 1.5)); };
     function addPts(n, px, py, pz) {
       const before = game.score.total;
       game.score.addFlat(n);
@@ -568,7 +570,6 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
           case 'bossHit':
             setBar();
             bossFlash = 0.16;
-            flash('#fff2c4', 0.16);
             break;
           case 'phase':
             setBar();
@@ -692,9 +693,7 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       const S = logic.state;
       setBar();
       renderLives();
-      shakeT = Math.max(0, shakeT - dt);
-      if (shakeT <= 0) shakeA = 0;
-      const sh = shakeA * Math.min(1, shakeT * 4);
+      const sh = shaker.step(dt || 1 / 60);
       // Intro: primer plano de BIG CHAKY con Margot; luego la cámara se abre al escenario completo
       const rv = phase === 'intro' ? Math.max(0, Math.min(1, (phaseT - INTRO.reveal) / (INTRO.end - INTRO.reveal))) : 1;
       const e = 1 - rv * rv * (3 - 2 * rv);
@@ -703,8 +702,8 @@ export function createArena({ game, input, audio, assets, renderer, updateHud, p
       // Cámara frontal enfocando a los dos bailarines bien separados sobre el escenario
       const extraZ = innerHeight < 420 ? 0.8 : 0;
       cam.position.set(
-        focusX + (Math.random() - 0.5) * sh,
-        STAGE_CAM.y - e * 0.9 + (Math.random() - 0.5) * sh,
+        focusX + sh.x,
+        STAGE_CAM.y - e * 0.9 + sh.y,
         STAGE_CAM.z + extraZ - e * 6.5
       );
       cam.lookAt(focusX, STAGE_CAM.lookY + e * 0.7, STAGE_Z);

@@ -87,8 +87,8 @@ export function createPowers(ctx) {
       // aturde y quema a los de alrededor
       game.enemies.stunAround(x, z, P.radius, P.stun, 0);
       hitAround(x, z, P.radius, P.depth, P.dmg, 3, 1.2);
-      // fuego en el piso (no lastima a Marine)
-      const disc = new THREE.Mesh(fireDisc, new THREE.MeshBasicMaterial({ color: 0xff6a1a, transparent: true, opacity: 0.4, depthWrite: false }));
+      // enredaderas en el piso (no lastiman a Marine)
+      const disc = new THREE.Mesh(fireDisc, new THREE.MeshBasicMaterial({ color: 0x28c76f, transparent: true, opacity: 0.35, depthWrite: false }));
       disc.rotation.x = -Math.PI / 2; disc.scale.set(F.radius, F.depth, 1); disc.position.set(x, 0.04, z); scene.add(disc);
       const flames = [], meshes = [disc];
       for (let k = 0; k < 8; k++) {
@@ -97,11 +97,11 @@ export function createPowers(ctx) {
         flames.push(fl); meshes.push(fl);
       }
       fires.push({ x, z, t: F.life, tick: F.tick, meshes, flames, disc });
-      // el croissant salta del fuego y le cae en la mano: +1 corazón
+      // la flor salta de la hiedra y le cae en la mano: +1 corazón
       const c = sprite(croissantMat, 1.1, x, 1.2, z);
       treats.push({ t: 0, x, z, hero, meshes: [c], c, healed: false });
       fx.hit(new THREE.Vector3(x, 0.8, z), 1.6);
-      ctx.audio?.sfx('fire');
+      ctx.audio?.sfx('whoosh');
     },
 
     update(dt) {
