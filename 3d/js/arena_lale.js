@@ -292,6 +292,8 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_lale_idle';
     let lastSpeech = null, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
+    const delayed = [];
+    const after = (secs, fn) => delayed.push({ left: secs, fn });
     renderLife();
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
     const addPts = (n, px, py, pz) => {
@@ -470,7 +472,11 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       if (phase === 'entrance' && bossIntro.update(phaseT)) {
         phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.22, 0.25);
         phaseCard(logic.state.phase === 'ko' ? 3 : logic.state.phase, 2.0);
-        setTimeout(() => { if (!disposed) speak('intro'); }, 1900);
+        after(1.9, () => speak('intro'));
+      }
+      for (let i = delayed.length - 1; i >= 0; i--) {
+        delayed[i].left -= dt;
+        if (delayed[i].left <= 0) { const fn = delayed[i].fn; delayed.splice(i, 1); fn(); }
       }
       if (phase === 'fight') handle(logic.update(dt, { x, z, y, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
       if (phase === 'fight' && hero.hp <= 0) { phase = 'down'; phaseT = 0; }

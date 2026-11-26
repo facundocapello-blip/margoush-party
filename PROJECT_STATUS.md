@@ -808,3 +808,16 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: inspección visual en plancha de recorte (`a4_margot_sheet.png`, cero halos ni huecos), `node --check`, `node tools/stamp_versions.mjs`, `npm test` 99/100 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows; peso total de `3d/assets/` < 10 MB). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=pinky-margot (y `?probar=facu-enojado`, `?probar=calle`)
 - Rollback: `git revert <commit [A-4]>` en `feat-3d` y push (base previa: `c474fbd`).
+
+## 2026-11-26 · Auditoría QA + Fases 1 y 2 de Jugabilidad (hecho por Antigravity)
+- **Fase 1 (fixes críticos P0 de jugabilidad):**
+  - `3d/js/enemies.js` (`mozo`): eliminado uso accidental del global `origin` (`window.origin`) al lanzar croissants en Francia, que producía coordenadas `NaN` (proyectiles invisibles que igual hacían daño).
+  - `3d/js/arena_pinky.js` y `3d/js/arena_facu.js`: corregido `sfx('honk')` inexistente → `sfx('horn')` en los autos de Pinky y `sfx('whoosh')` en los cuadros de Facu.
+  - `3d/js/chase.js`: la persecución del BYD ahora permite perder (`hero.hp = Math.max(0, hero.hp - 1)` → reintento en checkpoint `acto2`) y se eliminó el aviso falso `⚡ ¡PODER LISTO!` ya que el poder está deshabilitado durante la persecución.
+- **Fase 2 (progresión, pausa limpia y GPU en trampas):**
+  - `3d/js/score.js` y `tests/score.test.mjs`: recalibrados los cortes `RANKS` (`S: 27800, A: 21550, B: 13900`) para la campaña completa de 5 actos (~34.740 pts en recorrido impecable).
+  - `3d/js/arena_cepi.js`, `3d/js/arena_lale.js`, `3d/js/arena_pinky.js`, `3d/js/arena_facu.js`: reemplazados los `setTimeout` de intros y remates por una cola `after(secs, fn)` ligada al `dt` de cada arena para respetar la pausa.
+  - `3d/js/traps.js`: liberadas geometrías y materiales de `trottinette` y `boletas` en `finish(a)`.
+- **Verificación:** `node --check` sin errores en los 8 JS editados, `node tools/stamp_versions.mjs`, `npm test` **100/101 en verde** (0 fallos, 1 omitido: `check_sprites.py` por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- **Prueba:** `https://facundocapello-blip.github.io/margoush-party/3d/?probar=francia` (y `persecucion`, `pinky`, `facu`).
+- **Rollback:** `git revert <hash de este commit>` en `feat-3d` (base previa: `22a53b0`).

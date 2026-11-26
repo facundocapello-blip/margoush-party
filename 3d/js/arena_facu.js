@@ -334,6 +334,8 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'facu';
     let lastSpeech = null, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
+    const delayed = [];
+    const after = (secs, fn) => delayed.push({ left: secs, fn });
     renderLife();
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
     const addPts = (n, px, py, pz) => {
@@ -369,7 +371,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       for (const e of evs) {
         switch (e.type) {
           case 'carWarn': sfx('tick'); break;
-          case 'carGo': sfx('honk'); break;
+          case 'carGo': sfx('whoosh'); break;
           case 'charging':
             pop(0, BOSS_H + 0.2, FACU_ARENA.bossZ, '🎨 ¡SE PUSO A PINTAR! ¡PEGALE!', '#9bf7c4', 20, 1.4);
             break;
@@ -401,11 +403,10 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
             addPts(FACU_ARENA.points.margot, 0, 3.5, -5);
             sfx('power'); flash('#ffd400', 0.32); shake(0.3, 0.3);
             pop(EASEL.x, 3.4, EASEL.z, '👶🖍️ ¡GARABATOS!', '#ffd400', 26, 1.0);
-            setTimeout(() => {
-              if (disposed) return;
+            after(1.1, () => {
               sfx('fanfare');
               pop(logic.state.bossX, BOSS_H + 0.9, FACU_ARENA.bossZ, '😍 ¡ES UNA OBRA MAESTRA!', '#ff8fc8', 30, 1.8);
-            }, 1100);
+            });
             break;
           case 'pickStage': {
             sfx('tick');
@@ -533,7 +534,11 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
         phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.26, 0.3);
         speak('intro');
         const curPhase = logic.state.phase === 'ko' ? 3 : logic.state.phase;
-        setTimeout(() => { if (!disposed) phaseCard(curPhase, 1.9); }, 1100);
+        after(1.1, () => phaseCard(curPhase, 1.9));
+      }
+      for (let i = delayed.length - 1; i >= 0; i--) {
+        delayed[i].left -= dt;
+        if (delayed[i].left <= 0) { const fn = delayed[i].fn; delayed.splice(i, 1); fn(); }
       }
       if (phase === 'fight') handle(logic.update(dt, { x, z, y, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
       if (phase === 'fight' && hero.hp <= 0) { phase = 'down'; phaseT = 0; }

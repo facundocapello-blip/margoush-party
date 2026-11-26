@@ -258,16 +258,15 @@ export function createChase({ game, input, audio, assets, renderer, banner, upda
 
     function hurt(txt) {
       if (inv > 0 || dashT > 0 || powT > 0) return;
-      // En la persecución no se pierde la partida: como mucho quedás con un corazón (después se cura al llegar a la calle)
-      hero.hp = Math.max(1, hero.hp - 1); game.score.takeDamage(); game.combo?.reset?.();
+      hero.hp = Math.max(0, hero.hp - 1); game.score.takeDamage(); game.combo?.reset?.();
       hurtT = 0.75; inv = 1.6; v *= 0.55; setTex(P, pre + '_hit'); sfx('hurt');
       pop(x, 2.8, -dist, txt, '#ff7c8f', 24);
       flash.style.opacity = '.45'; setTimeout(() => { flash.style.opacity = '0'; }, 120);
       if (hero.hp <= 0) { phase = 'down'; phaseT = 0; }
     }
     function charge(a) {
-      const was = hero.power >= 1; hero.power = Math.min(1, hero.power + a);
-      if (!was && hero.power >= 1) { pop(x, 3.2, -dist, '⚡ ¡PODER LISTO!'); sfx('pickup'); }
+      // En la persecución se carga la barra para la siguiente pelea, sin activar poder acá
+      hero.power = Math.min(1, hero.power + a);
     }
     function usePower() {
       hero.power = 0; holdT = 0; powT = 1.3; setTex(P, pre + '_power'); sfx('power');

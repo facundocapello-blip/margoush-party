@@ -324,6 +324,8 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     let swing = null, swingT = 0, swingHit = false, comboStep = 0, comboWindow = 0, buffer = 0, stepT = 0;
     let shakeT = 0, shakeA = 0, freezeT = 0, bossFlash = 0, moving = false, heroPose = 'idle', bossKey = 'arena_pinky_reveal';
     let lastSpeech = null, lastBarHp = -1, lastBarPhase = null, extraLifeUsed = false;
+    const delayed = [];
+    const after = (secs, fn) => delayed.push({ left: secs, fn });
     renderLife();
     const shake = (a, dur) => { shakeA = Math.max(shakeA, a); shakeT = Math.max(shakeT, dur); };
     const addPts = (n, px, py, pz) => {
@@ -359,7 +361,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       for (const e of evs) {
         switch (e.type) {
           case 'carWarn': sfx('tick'); break;
-          case 'carGo': sfx('honk'); break;
+          case 'carGo': sfx('horn'); break;
           case 'charging':
             pop(0, BOSS_H + 0.2, PINKY_ARENA.bossZ, '¡ESTÁ COBRANDO! ¡PEGALE!', '#9bf7c4', 20, 1.4);
             break;
@@ -384,12 +386,11 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             addPts(PINKY_ARENA.points.margot, 0, 3.5, -5);
             sfx('power'); flash('#ffb347', 0.4); shake(0.4, 0.35); freezeT = 0.06;
             pop(0, 3.4, -5, '👶 ¡AHÍ VA LA PAPILLA! 🥣', '#ffb347', 26, 0.75);
-            setTimeout(() => {
-              if (disposed) return;
+            after(0.65, () => {
               sfx('hit'); shake(0.5, 0.4);
               burst(logic.state.bossX, BOSS_H * 0.8, PINKY_ARENA.bossZ + 0.6, '#ffa53a', 16, false);
               pop(logic.state.bossX, BOSS_H + 0.9, PINKY_ARENA.bossZ, '¡SPLASH! 🥣😎', '#ffb347', 30, 1.5);
-            }, 650);
+            });
             break;
           case 'bossHit': bossFlash = 0.22; setBar(); sfx('hit'); shake(0.28, 0.2); break;
           case 'hurt':
@@ -496,7 +497,11 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
         phase = 'fight'; phaseT = 0; sfx('roar'); shake(0.26, 0.3);
         speak('intro');
         const curPhase = logic.state.phase === 'ko' ? 3 : logic.state.phase;
-        setTimeout(() => { if (!disposed) phaseCard(curPhase, 1.9); }, 1100);
+        after(1.1, () => phaseCard(curPhase, 1.9));
+      }
+      for (let i = delayed.length - 1; i >= 0; i--) {
+        delayed[i].left -= dt;
+        if (delayed[i].left <= 0) { const fn = delayed[i].fn; delayed.splice(i, 1); fn(); }
       }
       if (phase === 'fight') handle(logic.update(dt, { x, z, y, dodging: dashT > 0, inv: inv > 0 || powT > 0 }));
       if (phase === 'fight' && hero.hp <= 0) { phase = 'down'; phaseT = 0; }

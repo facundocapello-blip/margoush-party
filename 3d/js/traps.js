@@ -305,11 +305,13 @@ export function createTraps(ctx) {
     if (a.stripe) { scene.remove(a.stripe); a.stripe.geometry.dispose(); a.stripe.material.map?.dispose(); a.stripe.material.dispose(); }
     if (a.mesh) {
       scene.remove(a.mesh);
-      if (a.kind === 'colectivo') a.mesh.traverse((o) => { if (o.isMesh || o.isSprite) { o.geometry?.dispose(); [].concat(o.material).forEach(m => m.dispose()); } });
+      if (a.kind === 'colectivo' || a.kind === 'trottinette') {
+        a.mesh.traverse((o) => { if (o.isMesh || o.isSprite) { o.geometry?.dispose(); [].concat(o.material).forEach(m => m.dispose()); } });
+      }
     }
     a.rider?.dispose();
-    if (a.shadow) { scene.remove(a.shadow); a.shadow.geometry.dispose(); }
-    if (a.paper) scene.remove(a.paper);
+    if (a.shadow) { scene.remove(a.shadow); a.shadow.geometry.dispose(); a.shadow.material?.dispose(); }
+    if (a.paper) { scene.remove(a.paper); a.paper.geometry?.dispose(); a.paper.material?.dispose(); }
     for (const b of a.birds || []) scene.remove(b);
     for (const p of a.people || []) p.actor.dispose();
   }
