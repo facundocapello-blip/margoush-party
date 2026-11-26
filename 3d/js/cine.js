@@ -56,6 +56,7 @@ export function createCine(ctx) {
     return a;
   };
   const strollerPoses = { sleep: { tex: 'margot_sheet', cell: 0 }, awake: { tex: 'margot_sheet', cell: 1 }, cry: { tex: 'margot_sheet', cell: 2 }, happy: { tex: 'margot_sheet', cell: 3 } };
+  if (assets.has?.('arena_margot_pacifier')) strollerPoses.pacifier = { tex: 'arena_margot_pacifier' };
   const chakyPoses = () => ({ ...sheetPoses(assets, 'chaky', 'chaky_run'), arms: { tex: 'kidnap_sheet', cell: 0 }, push: { tex: 'kidnap_sheet', cell: 2 }, scared: { tex: 'kidnap_sheet', cell: 3 } });
   const say = (a, text, color = '#fff', size = 19, y = 3.3) => fx.popup(a.position.clone().setY(y), text, color, { size, life: 1.1, rise: 0.15 });
 
@@ -74,7 +75,7 @@ export function createCine(ctx) {
   }
   function margotGag(stroller, target, heroId) {
     ui.sub('MARGOT', margotLine(heroId));
-    stroller.setPose('happy');
+    stroller.setPose(stroller.poses.pacifier ? 'pacifier' : 'happy');
     if (!target) return;
     const m = chupeteMesh(); chupeteMade++;
     const from = stroller.position.clone().setY(1.0);

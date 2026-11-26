@@ -12,7 +12,7 @@ const DEFERRED = [
   'chase_', 'cepi_walk_sheet', 'cepi_actions_sheet',
   'lale_walk_sheet', 'lale_actions_sheet', 'pinky_walk_sheet', 'pinky_actions_sheet'
 ];
-const isDeferred = (name) => DEFERRED.some((p) => name.startsWith(p));
+const isDeferred = (name) => name !== 'arena_margot_pacifier' && DEFERRED.some((p) => name.startsWith(p));
 // Solo texturas exclusivas de una arena o de la persecución se pueden descargar al pasar de acto.
 // Héroes, Margot, calle, UI y la banda de la foto final (`CREW`: facu, chaky/cepi/lale/pinky sheets) nunca se descargan.
 const UNLOADABLE = [
