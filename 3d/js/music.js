@@ -184,5 +184,104 @@ export function makeThemes(tone, hiss) {
     }
   };
 
-  return { menu, intro, chase, byd, ba, francia, boss, disco, rescate };
+  // ---------- Jefe Cepi: rock de pádel en Mi menor (rápido, enérgico, guitarras en corcheas) ----------
+  const CEPI_CH = [[40, [64, 67, 71]], [36, [60, 64, 67]], [38, [62, 66, 69]], [35, [59, 63, 66]]];
+  const CEPI_MEL = {
+    0: [[0, 76, 2], [2, 79, 2], [4, 76, 2], [6, 74, 2], [8, 76, 4], [12, 79, 4]],
+    1: [[0, 79, 2], [2, 81, 2], [4, 79, 2], [6, 76, 2], [8, 72, 4], [12, 76, 4]],
+    2: [[0, 74, 2], [2, 76, 2], [4, 78, 4], [8, 81, 4], [12, 78, 4]],
+    3: [[0, 79, 4], [4, 78, 4], [8, 75, 4], [12, 71, 4]]
+  };
+  const bossCepi = { step: 0.105, play(n, d) {
+    const step = 0.105, i = n % 16, bar = Math.floor(n / 16) % 4, round = Math.floor(n / 64) % 2;
+    const [root, triad] = CEPI_CH[bar];
+    if (i === 0 || i === 6 || i === 8) kick(d, 0.48);
+    if (i === 4 || i === 12) snare(d, 0.25);
+    if (i % 2 === 0) hat(d, 0.055);
+    // power-chords secos en corcheas
+    if (i % 2 === 0) for (const iv of [0, 7]) { const f = m2f(root + iv); tone('sawtooth', f, f, step * 1.15, 0.045, d); }
+    if (i === 0 || i === 8) tone('triangle', m2f(root - 12), m2f(root - 12), step * 2.5, 0.11, d);
+    if (round === 1 || i % 4 === 0) melodyAt(CEPI_MEL, bar, i, (m, len) => lead(m, len * step * 0.85, 0.046, d));
+    else if (i === 14) for (const m of triad) tone('square', m2f(m), m2f(m), step * 0.8, 0.016, d);
+  } };
+
+  // ---------- Jefe Lale: vals musette francés de jefe (3/4 rápido con acordeón virtuoso, Re menor) ----------
+  const LALE_CH = [[38, [62, 65, 69]], [43, [62, 67, 70]], [33, [61, 64, 69]], [38, [62, 65, 69]]];
+  const LALE_MEL = {
+    0: [[0, 74, 2], [2, 77, 2], [4, 81, 2], [6, 79, 2], [8, 77, 2], [10, 76, 2]],
+    1: [[0, 79, 2], [2, 82, 2], [4, 81, 2], [6, 79, 2], [8, 77, 2], [10, 74, 2]],
+    2: [[0, 73, 2], [2, 76, 2], [4, 79, 2], [6, 81, 2], [8, 79, 2], [10, 76, 2]],
+    3: [[0, 74, 4], [4, 77, 4], [8, 81, 4]]
+  };
+  const bossLale = { step: 0.095, play(n, d) {
+    const step = 0.095, i = n % 12, bar = Math.floor(n / 12) % 4;
+    const [root, triad] = LALE_CH[bar];
+    if (i === 0) { kick(d, 0.36); const f = m2f(root - 12); tone('triangle', f, f, step * 2.8, 0.18, d); }
+    if (i === 4 || i === 8) {
+      snare(d, 0.12);
+      for (const m of triad) bando(m - 12, step * 1.3, 0.018, d);
+    }
+    if (i % 2 === 1) hat(d, 0.03);
+    melodyAt(LALE_MEL, bar, i, (m, len) => bando(m, len * step * 0.92, 0.044, d));
+  } };
+
+  // ---------- Jefe Pinky: cumbia de cancha en Sol menor (bombo + güiro + bronces tribuna) ----------
+  const PINKY_CH = [[43, [67, 70, 74]], [41, [65, 69, 72]], [39, [63, 67, 70]], [38, [62, 66, 69]]];
+  const PINKY_MEL = {
+    0: [[0, 74, 2], [2, 74, 2], [4, 77, 2], [6, 74, 2], [8, 70, 4], [12, 74, 4]],
+    1: [[0, 72, 2], [2, 72, 2], [4, 75, 2], [6, 72, 2], [8, 69, 4], [12, 72, 4]],
+    2: [[0, 70, 2], [2, 72, 2], [4, 74, 4], [8, 75, 4], [12, 74, 4]],
+    3: [[0, 74, 4], [4, 72, 4], [8, 69, 4], [12, 74, 4]]
+  };
+  const bossPinky = { step: 0.11, play(n, d) {
+    const step = 0.11, i = n % 16, bar = Math.floor(n / 16) % 4;
+    const [root, triad] = PINKY_CH[bar];
+    // bombo de cancha con platillo y güiro bien marcado
+    if (i === 0 || i === 6 || i === 8 || i === 14) tone('sine', 120, 46, 0.18, 0.46, d);
+    if (i === 4 || i === 12) snare(d, 0.22);
+    if (i % 2 === 0) hiss(0.055, i % 4 === 2 ? 0.11 : 0.05, 5600, 1.5, d);
+    for (const [at, iv] of [[0, 0], [6, 7], [8, 12], [12, 7]]) if (i === at) {
+      const f = m2f(root - 12 + iv); tone('sawtooth', f, f, step * 1.7, 0.085, d);
+    }
+    if (i % 4 === 2) for (const m of triad) tone('square', m2f(m - 12), m2f(m - 12), step * 0.75, 0.017, d);
+    melodyAt(PINKY_MEL, bar, i, (m, len) => lead(m, len * step * 0.88, 0.048, d));
+  } };
+
+  // ---------- Jefe Facu: jazz de galería (swing en Sol menor / Re7, contrabajo + platillo + teclado cálido) ----------
+  const FACU_WALK = [
+    [43, 46, 48, 49], [48, 50, 51, 53], [45, 48, 50, 51], [38, 41, 42, 45]
+  ];
+  const FACU_CH = [[62, 65, 69, 70], [60, 63, 67, 70], [60, 63, 66, 69], [60, 62, 66, 69]];
+  const FACU_MEL = {
+    0: [[0, 74, 3], [3, 77, 3], [6, 79, 3], [9, 77, 3]],
+    1: [[0, 75, 4], [4, 79, 2], [6, 82, 4], [10, 79, 2]],
+    2: [[0, 78, 3], [3, 75, 3], [6, 74, 3], [9, 72, 3]],
+    3: [[0, 74, 6], [6, 70, 3], [9, 69, 3]]
+  };
+  const bossFacu = { step: 0.125, play(n, d) {
+    const step = 0.125, i = n % 12, bar = Math.floor(n / 12) % 4, round = Math.floor(n / 48) % 2;
+    // Ride cymbal en patrón swing (tresillos: 0, 3, 5, 6, 9, 11)
+    if (i === 0 || i === 3 || i === 6 || i === 9) hiss(0.06, 0.055, 7200, 1.6, d);
+    if (i === 5 || i === 11) hiss(0.035, 0.04, 8400, 2.2, d);
+    if (i === 3 || i === 9) snare(d, 0.1); // escobilla suave en 2 y 4
+    // Contrabajo caminando en negras (0, 3, 6, 9)
+    if (i % 3 === 0) {
+      const f = m2f(FACU_WALK[bar][i / 3]);
+      tone('triangle', f, f * 0.995, step * 2.6, 0.2, d);
+    }
+    // Acordes Rhodes suaves sincopados
+    if (i === 0 || i === 5 || i === 9) {
+      for (const m of FACU_CH[bar]) tone('sine', m2f(m), m2f(m), step * 2.2, 0.022, d);
+    }
+    // Melodía jazz canchera
+    if (round === 1 || bar % 2 === 0) {
+      melodyAt(FACU_MEL, bar, i, (m, len) => {
+        const f = m2f(m);
+        tone('triangle', f, f, len * step * 0.85, 0.05, d);
+        tone('sine', f * 2, f * 2, len * step * 0.6, 0.015, d);
+      });
+    }
+  } };
+
+  return { menu, intro, chase, byd, ba, francia, boss, disco, bossCepi, bossLale, bossPinky, bossFacu, rescate };
 }

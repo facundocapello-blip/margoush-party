@@ -726,7 +726,7 @@ function spawnBoss({ instant = false } = {}) {
     assets.ensure(['arena_chaky_dance_', 'arena_fondo', 'margot_sheet']), // solo el traje violeta de baile (sin sprites naranjas)
     Promise.allSettled(['arena_aeropuerto_fondo', 'douge_dance_sheet', 'marine_dance_sheet'].map(name => assets.ensure(name)))
   ]);
-  game.ctx.audio?.music('byd', { fade: instant ? 0 : 0.3 });
+  game.ctx.audio?.music('disco', { fade: instant ? 0 : 0.3 });
   if (!game.checkpoint || game.checkpoint.id !== 'chaky') saveCheckpoint('chaky');
   if (instant) { game.state = 'curtain'; continueTransition(wait, () => game.arena.start()); return; }
   game.state = 'curtain';
@@ -738,7 +738,7 @@ function spawnCepi({ instant = false, hp = null } = {}) {
   healBeforeBoss(instant);
   const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
   const wait = assets.ensure(['arena_cepi_', 'arena_margot_', 'cepi_walk_sheet', 'arena_lale_idle', heroBack]);
-  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  game.ctx.audio?.music('bossCepi', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaCepi.start();
     if (hp != null) { game.arenaCepi.logic._setHp(hp); game.arenaCepi.syncBar?.(); }
@@ -754,7 +754,7 @@ function spawnLale({ instant = false, hp = null } = {}) {
   healBeforeBoss(instant);
   const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
   const wait = assets.ensure(['arena_lale_', 'arena_margot_', 'lale_walk_sheet', 'lale_actions_sheet', heroBack]);
-  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  game.ctx.audio?.music('bossLale', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaLale.start();
     if (hp != null) { game.arenaLale.logic._setHp(hp); game.arenaLale.syncBar?.(); }
@@ -771,7 +771,7 @@ function spawnPinky({ instant = false, hp = null } = {}) {
   healBeforeBoss(instant);
   const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
   const wait = assets.ensure(['arena_pinky_', 'arena_margot_', 'pinky_walk_sheet', 'pinky_actions_sheet', heroBack]);
-  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  game.ctx.audio?.music('bossPinky', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaPinky.start();
     if (hp != null) { game.arenaPinky.logic._setHp(hp); game.arenaPinky.syncBar?.(); }
@@ -789,7 +789,7 @@ function spawnFacu({ instant = false, hp = null } = {}) {
   const heroBack = 'arena_' + (game.heroId === 'marine' ? 'marine' : 'douge') + '_back_';
   // Facu y la banda de la foto final (Chaky) se cargan acá, no al arrancar
   const wait = assets.ensure(['facu', 'arena_facu_', 'arena_margot_', 'chaky_', heroBack]);
-  game.ctx.audio?.music('boss', { fade: instant ? 0 : 0.4 });
+  game.ctx.audio?.music('bossFacu', { fade: instant ? 0 : 0.4 });
   const go = () => {
     game.arenaFacu.start();
     if (hp != null) { game.arenaFacu.logic._setHp(hp); game.arenaFacu.syncBar?.(); }
