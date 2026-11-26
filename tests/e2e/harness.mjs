@@ -1,10 +1,31 @@
 // Arnés de pruebas: sirve el repo desde disco en http://game.local/ dentro de Chrome sin pantalla.
-import { chromium } from '/opt/npm-tools/node_modules/playwright/index.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const ROOT = path.resolve(new URL('../../', import.meta.url).pathname);
-const THREE_LOCAL = '/home/claude/tools/node_modules/three/build/three.min.js';
+const ROOT = path.resolve(fileURLToPath(new URL('../../', import.meta.url)));
+const THREE_LOCAL = [
+  '/home/claude/tools/node_modules/three/build/three.min.js',
+  path.join(ROOT, 'node_modules/three/build/three.min.js')
+].find(p => fs.existsSync(p));
+const CHROME_PATH = [
+  process.env.CHROME_PATH,
+  '/usr/bin/google-chrome',
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
+].find(p => p && fs.existsSync(p));
+async function loadChromium() {
+  for (const p of ['/opt/npm-tools/node_modules/playwright/index.mjs']) {
+    if (fs.existsSync(p)) return (await import(pathToFileURL(p).href)).chromium;
+  }
+  for (const pkg of ['playwright', 'playwright-core']) {
+    try { return (await import(pkg)).chromium; } catch (_) {}
+  }
+  throw new Error('Playwright no encontrado (instalar playwright o playwright-core)');
+}
+const chromium = await loadChromium();
 const TYPES = { '.html': 'text/html', '.js': 'application/javascript', '.mjs': 'application/javascript', '.css': 'text/css',
   '.json': 'application/json', '.webp': 'image/webp', '.png': 'image/png', '.mp3': 'audio/mpeg', '.svg': 'image/svg+xml' };
 export const OUT = path.join(ROOT, 'tests/e2e/out');
@@ -12,7 +33,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 export async function launch({ viewport = { width: 960, height: 540 }, mobile = false, routes = [] } = {}) {
   const browser = await chromium.launch({
-    executablePath: '/usr/bin/google-chrome',
+    ...(CHROME_PATH ? { executablePath: CHROME_PATH } : {}),
     args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox', '--autoplay-policy=no-user-gesture-required']
   });
   const context = await browser.newContext(mobile ? { viewport, hasTouch: true, isMobile: true, deviceScaleFactor: 2 } : { viewport });

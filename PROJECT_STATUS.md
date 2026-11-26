@@ -621,3 +621,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Pruebas: `npm test` 91/91 (3 nuevas en `tests/pop_layout.test.mjs`). E2E nuevo `tests/e2e/etapa_d.e2e.mjs` OK (430×932): 4 textos en el mismo punto sin pisarse, cartel debajo del HUD y terminando al 31 % de la altura, chupete en `pre_cepi` y `pre_pinky`, sin errores JS. `facu_galerista` y `arena` OK.
 - Ya fallaban antes de este cambio (probado sobre `5bc3271`, no son de esta etapa): `cine.e2e` (espera la persecución después de SALTAR), `cepi_pinky.e2e` y `chase.e2e` (timeouts). Revisar aparte.
 - Pendiente: Safari físico; imágenes de Facu galerista; resto de la Etapa D (arenas y personajes, cuando lleguen las imágenes).
+
+## 2026-11-26 · T-0: plan de trabajo + e2e viejos (hecho por Gemini)
+- Qué cambió: `docs/PLAN_TRABAJO.md` (plan incorporado al repo), `tests/e2e/harness.mjs` (rutas compatibles con Linux y Windows/local `node_modules`), `tests/e2e/cine.e2e.mjs` (actualizado al flujo actual: SALTAR lleva a Acto 1 calle porteña + escena `post_cepi` hacia Acto 3), `tests/e2e/cepi_pinky.e2e.mjs` (Cepi en su arena en vez de oleada borrada `boulevard`, `assets.ensure` para hojas diferidas de Pinky/Cepi y chequeo de victoria sin Cepi ni Facu) y `tests/e2e/chase.e2e.mjs` (entrada por `resumeAt({ id: 'acto2' })` y esperas por tiempo real para GPU por software). No se modificó código del juego en `3d/`.
+- Verificación: `npm test` 90/91 en verde (0 fallos; 1 omitido: `check_sprites.py` porque `-I` aísla `numpy` de user site-packages en Windows); E2E en Chrome headless `cine.e2e.mjs`, `cepi_pinky.e2e.mjs` y `chase.e2e.mjs` todos en verde con 0 errores de consola. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=persecucion
+- Rollback: `git revert <commit [T-0]>` en `feat-3d` y push (base previa: `ed53fc4`).
