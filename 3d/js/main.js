@@ -915,7 +915,10 @@ const QUICK_TESTS = {
   francia: { stage: 'francia' }
 };
 const PROBAR = (() => { try { const v = (new URLSearchParams(location.search).get('probar') || '').toLowerCase(); return QUICK_TESTS[v] ? v : null; } catch (_) { return null; } })();
+const DEBUG = (() => { try { return new URLSearchParams(location.search).get('debug') === '1'; } catch (_) { return false; } })();
 game.probar = PROBAR;
+game.debug = DEBUG;
+game.contextLost = false;
 function quickTest(heroId, id) {
   const q = QUICK_TESTS[id];
   startRun(heroId, false, { street: true });
@@ -982,6 +985,54 @@ game.resume = resume;
 
 let last = 0;
 let frameErrors = 0;
+let debugBox = null;
+const dbg = { lastNow: 0, accMs: 0, frames: 0, fps: 0, ms: 0, paintAt: 0 };
+function initDebugBox() {
+  if (!DEBUG || debugBox) return;
+  debugBox = document.createElement('pre');
+  debugBox.id = 'debug-hud';
+  debugBox.setAttribute('aria-live', 'off');
+  document.body.append(debugBox);
+  addEventListener('error', (ev) => {
+    const msg = ev?.message || String(ev?.error || 'error');
+    if (!game.lastError) game.lastError = msg;
+    paintDebugBox(performance.now(), true);
+  });
+  addEventListener('unhandledrejection', (ev) => {
+    const r = ev?.reason;
+    game.lastError = String(r && r.stack || r || 'unhandledrejection');
+    paintDebugBox(performance.now(), true);
+  });
+}
+function paintDebugBox(now, force = false) {
+  if (!debugBox) return;
+  if (dbg.lastNow) {
+    const d = now - dbg.lastNow;
+    if (d > 0 && d < 2000) { dbg.accMs += d; dbg.frames++; }
+  }
+  dbg.lastNow = now;
+  if (!force && now - dbg.paintAt < 250) return;
+  if (dbg.frames > 0) {
+    dbg.ms = dbg.accMs / dbg.frames;
+    dbg.fps = dbg.ms > 0 ? 1000 / dbg.ms : 0;
+    dbg.accMs = 0;
+    dbg.frames = 0;
+  }
+  dbg.paintAt = now;
+  const info = renderer?.info;
+  const calls = info?.render?.calls ?? 0;
+  const geo = info?.memory?.geometries ?? 0;
+  const tex = info?.memory?.textures ?? 0;
+  const dpr = renderer ? renderer.getPixelRatio() : (devicePixelRatio || 1);
+  const lines = [
+    `FPS ${dbg.fps.toFixed(0)} (${dbg.ms.toFixed(1)}ms) Q:${game.perf.level} DPR:${dpr.toFixed(2)}`,
+    `calls:${calls} geo:${geo} tex:${tex} | ${game.state}/${game.heroId}`,
+    `err:${frameErrors}${game.contextLost ? ' ⚠ WEBGL CONTEXT LOST' : ''}`
+  ];
+  if (game.lastError) lines.push(String(game.lastError).split('\n')[0].slice(0, 96));
+  debugBox.textContent = lines.join('\n');
+  debugBox.classList.toggle('has-err', frameErrors > 0 || game.contextLost || !!game.lastError);
+}
 function frame(now) {
   try { frameStep(now); } catch (e) {
     frameErrors++;
@@ -990,6 +1041,7 @@ function frame(now) {
     if (game.state === 'intro') { try { endIntro(); } catch (_) {} }
     requestAnimationFrame(frame);
   }
+  if (debugBox) paintDebugBox(now);
 }
 game.frameErrors = () => frameErrors;
 function frameStep(now) {
@@ -1100,10 +1152,13 @@ function updateOffscreen() {
 }
 
 async function boot() {
+  initDebugBox();
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.outputEncoding = THREE.sRGBEncoding;
   canvas.addEventListener('webglcontextlost', event => {
     event.preventDefault();
+    game.contextLost = true;
+    paintDebugBox(performance.now(), true);
     showLoadError('Se interrumpieron los gráficos 3D. Recargá para volver a jugar.');
   });
   resize();

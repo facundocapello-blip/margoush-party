@@ -943,3 +943,13 @@ body.cepi-duel-on #touch { display: none; }
 }
 /* Pantalla de victoria — arte de Grupo E cuando exista */
 .host.victory img { max-height: 240px; width: auto; object-fit: contain; filter: drop-shadow(0 10px 18px #0006); }
+/* Modo diagnóstico (?debug=1): cajita compacta arriba a la izquierda, sin tocar controles */
+#debug-hud {
+  position: fixed; top: calc(6px + var(--safe-t)); left: calc(6px + var(--safe-l)); z-index: 9999;
+  margin: 0; padding: 5px 8px; border-radius: 8px; border: 1px solid rgba(126, 224, 195, 0.55);
+  background: rgba(8, 10, 20, 0.82); color: #bfffe9;
+  font: 700 11px/1.28 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  pointer-events: none; max-width: min(320px, 88vw); white-space: pre-wrap; word-break: break-word;
+  text-shadow: 0 1px 2px #000;
+}
+#debug-hud.has-err { border-color: #ff4d5e; color: #ffd4d8; background: rgba(58, 10, 18, 0.9); }

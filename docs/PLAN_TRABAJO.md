@@ -83,7 +83,7 @@ Si Facu reporta algo roto probando, eso va **primero**.
 
 ## RENDIMIENTO (R) — que vaya fluido en iPhone
 
-- [ ] **R-1 · Modo diagnóstico `?debug=1`** (S–M). En `3d/js/main.js`: con `?debug=1` mostrar una cajita chica arriba a la izquierda con FPS, ms por cuadro, `perf.level`, DPR, `frameErrors` (ya existe, `main.js` ~984), el último mensaje de error y un aviso si llegó `webglcontextlost` (~1105). Sumar `renderer.info.render.calls`, `renderer.info.memory.geometries` y `.textures`. Sin `?debug=1` no cambia nada.
+- [x] **R-1 · Modo diagnóstico `?debug=1`** (S–M). En `3d/js/main.js`: con `?debug=1` mostrar una cajita chica arriba a la izquierda con FPS, ms por cuadro, `perf.level`, DPR, `frameErrors` (ya existe, `main.js` ~984), el último mensaje de error y un aviso si llegó `webglcontextlost` (~1105). Sumar `renderer.info.render.calls`, `renderer.info.memory.geometries` y `.textures`. Sin `?debug=1` no cambia nada.
   - También sirve para el bug de **pantalla negra con Marine en el duelo de la flechita** (no reproducido en Chrome).
   - Verificación: e2e corto que abra `?probar=cepi-duelo&debug=1` y lea la cajita; sin `debug` la cajita no existe. Link: `?probar=cepi-duelo&debug=1`.
 - [ ] **R-2 · Fugas de memoria al salir de arenas** (M). Escribir `tests/e2e/leaks.e2e.mjs`: anotar `renderer.info.memory` (geometrías y texturas) en la calle, entrar y salir de cada arena (chaky, cepi, lale, pinky, facu) y de la persecución, y volver a medir. Si algo no vuelve a ±10 % del valor inicial, buscar qué no se libera en el `dispose()` de esa arena (`arena*.js`, `chase.js`, `bonus.js`, `cine.js`) y arreglarlo. Una arena por commit si hay varias.
