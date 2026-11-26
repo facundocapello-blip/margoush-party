@@ -651,3 +651,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/assets.js 3d/js/arena_facu.js`, `node tools/stamp_versions.mjs`, `npm test` 91/92 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows); capturas visuales verificadas en Chrome headless `430×932` (vertical) y `932×430` (horizontal) en `?probar=facu` (`hasBg=true`, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu
 - Rollback: `git revert <commit [A-1 fondo]>` en `feat-3d` y push (base previa: `07d2401`).
+
+## 2026-11-26 · D-2: balance de Cepi (devolución justa y fase 1 legible) (hecho por Gemini)
+- Qué cambió: `3d/js/arena_cepi_logic.js`, `tests/arena_cepi.test.mjs`, `3d/index.html` (sellado con `stamp_versions.mjs`) y `docs/PLAN_TRABAJO.md`. Ajustados `ballSpeed` (`10.5 → 8.8`), `ballHitR` (`0.9 → 0.72`), `windup` (`0.42 → 0.55`), `maxVx` en vidrio (`9.5 → 7.5`), ventana de devolución más precisa (`returnR: 1.35`, `returnZMin: -1.6 .. 1.1`) y recuperación corta al golpear al aire (`returnWhiffCd: 0.55`) para que machacar 👊 lejos de la pelota no devuelva gratis.
+- Verificación: `node --check 3d/js/arena_cepi_logic.js`, `node tools/stamp_versions.mjs`, `npm test` 92/93 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Simulación de bots (40 semillas): machacador 10 %, novato 98 %, casual 100 %, golpes recibidos en fase 1 ≤ 1,5. Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi
+- Rollback: `git revert <commit [D-2]>` en `feat-3d` y push (base previa: `6174c12`).
