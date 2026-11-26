@@ -2,7 +2,7 @@
 // Cada pose: { tex, frames?, cols?, rows?, cell?, h, foot } donde
 //   h    = alto de la imagen relativo a heightM (las tiras de correr traen margen),
 //   foot = fracción del alto donde apoyan los pies (1 = borde inferior).
-import { poseHeight } from './poses.js';
+import { poseHeight, CROSSFADE, poseImpulseKind, poseScaleBlend } from './poses.js';
 
 const TILT = -0.32; // inclina la figura hacia la cámara (estilo Paper Mario)
 const shadowGeo = new THREE.CircleGeometry(1, 20);
@@ -20,6 +20,13 @@ export class SpriteActor {
     this.dist = 0;
     this.flashT = 0;
     this.squash = 0;
+    this.fadeT = 0;
+    this.prevW = 0;
+    this.prevH = 0;
+    this.impT = 0;
+    this.impSign = 0;
+    this.landT = 0;
+    this.wasAir = false;
     this.lift = 0; // altura sobre el piso (saltos)
     this.lean = 0; // inclinación (radianes, + = hacia atrás del personaje)
     this.offsetX = 0; // corrimiento hacia adelante del personaje (m)
@@ -37,9 +44,13 @@ export class SpriteActor {
     this.pivot.rotation.x = TILT;
     this.root.add(this.pivot);
 
+    const planeGeo = new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0);
     this.material = new THREE.MeshBasicMaterial({ color: tint, alphaTest: 0.45, side: THREE.DoubleSide });
-    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0), this.material);
-    this.pivot.add(this.mesh);
+    this.mesh = new THREE.Mesh(planeGeo, this.material);
+    this.ghostMat = new THREE.MeshBasicMaterial({ color: tint, transparent: true, opacity: 0, alphaTest: 0.05, depthWrite: false, side: THREE.DoubleSide });
+    this.ghostMesh = new THREE.Mesh(planeGeo, this.ghostMat);
+    this.ghostMesh.visible = false;
+    this.pivot.add(this.ghostMesh, this.mesh);
 
     for (const [name, p] of Object.entries(poses)) {
       const meta = assets.meta(p.tex);
@@ -65,6 +76,23 @@ export class SpriteActor {
 
   setPose(name) {
     if (this.pose === name || !this.poses[name]) return;
+    if (this.pose && this.poses[this.pose]) {
+      const prev = this.poses[this.pose];
+      const prevH = this.heightM * prev.h;
+      this.prevW = prevH * prev.aspect;
+      this.prevH = prevH;
+      this.fadeT = CROSSFADE;
+      const kind = poseImpulseKind(name);
+      if (kind !== 0) { this.impT = 1; this.impSign = kind; }
+      this.ghostMat.map = this.material.map;
+      this.ghostMat.opacity = 0.78;
+      this.ghostMat.needsUpdate = true;
+      this.ghostMesh.scale.copy(this.mesh.scale);
+      this.ghostMesh.position.copy(this.mesh.position);
+      this.ghostMesh.position.z = -0.012;
+      this.ghostMesh.rotation.copy(this.mesh.rotation);
+      this.ghostMesh.visible = true;
+    }
     this.pose = name;
     this.frame = 0;
     this.dist = 0;
@@ -104,14 +132,30 @@ export class SpriteActor {
     }
     const H = this.heightM * p.h;
     const W = H * p.aspect;
+    // Transición suave (~80 ms) + rebote al caer de un salto + squash & stretch
+    const inAir = this.lift > 0.08;
+    if (this.wasAir && !inAir) this.landT = 1;
+    this.wasAir = inAir;
+    if (this.fadeT > 0) this.fadeT = Math.max(0, this.fadeT - dt);
+    if (this.impT > 0) this.impT = Math.max(0, this.impT - dt * 6.5);
+    if (this.landT > 0) this.landT = Math.max(0, this.landT - dt * 6.2);
+    const bl = (this.fadeT > 0 || this.impT > 0 || this.landT > 0)
+      ? poseScaleBlend(this.prevW || W, this.prevH || H, W, H, this.fadeT, this.impT, this.impSign, this.landT)
+      : { w: W, h: H, ghostOpacity: 0 };
     // golpe recibido: aplastamiento breve
     this.squash = Math.max(0, this.squash - dt * 6);
     const sq = Math.sin(this.squash * Math.PI) * 0.12;
     const st = this.stretch;
-    this.mesh.scale.set(W * this.facing * (1 + sq - st * 0.5), H * (1 - sq + st), 1);
-    this.mesh.position.y = -H * (1 - p.foot) + this.lift;
+    this.mesh.scale.set(bl.w * this.facing * (1 + sq - st * 0.5), bl.h * (1 - sq + st), 1);
+    this.mesh.position.y = -bl.h * (1 - p.foot) + this.lift;
     this.mesh.position.x = this.offsetX * this.facing;
     this.mesh.rotation.z = this.lean * this.facing;
+    if (this.fadeT > 0) {
+      this.ghostMat.opacity = bl.ghostOpacity;
+      this.ghostMesh.visible = this.mesh.visible;
+    } else {
+      this.ghostMesh.visible = false;
+    }
     this.shadow.scale.x = this.heightM * 0.3 * (1 - Math.min(0.5, this.lift * 0.2));
     if (this.flashT > 0) {
       this.flashT -= dt;
@@ -125,6 +169,7 @@ export class SpriteActor {
     this.scene.remove(this.root);
     this.mesh.geometry.dispose();
     this.material.dispose();
+    this.ghostMat.dispose();
     for (const p of Object.values(this.poses)) p.tex.dispose();
   }
 }
