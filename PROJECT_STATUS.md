@@ -746,3 +746,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: `node --check 3d/js/music.js 3d/js/main.js`, `node tools/stamp_versions.mjs`, `npm test` 98/99 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=cepi (y `lale`, `pinky`, `facu`)
 - Rollback: `git revert <commit [D-5]>` en `feat-3d` y push (base previa: `e5cabf1`).
+
+## 2026-11-26 · R-2: auditoría y test E2E de fugas de memoria WebGL al salir de arenas (hecho por Gemini)
+- Qué cambió: `3d/js/main.js` (expuesto `game.memory()` leyendo `renderer.info.memory`), `tests/e2e/leaks.e2e.mjs` (recorre `chaky`, `cepi`, `lale`, `pinky`, `facu`, `chase`, `byd` y las 5 cinemáticas de `cine.js`, renderiza cuadros en GPU, llama a `dispose()` y valida que geometrías y texturas vuelvan a ≤ 110 %), `3d/index.html` y `docs/PLAN_TRABAJO.md`.
+- Verificación: `node --check 3d/js/main.js`, `node tools/stamp_versions.mjs`, `npm test` 98/99 en verde (0 fallos, 1 omitido por `-I` sin `numpy` en Windows), `node tests/e2e/leaks.e2e.mjs` OK: las 7 escenas y `cine.js` liberan el 100 % de sus recursos propios (`geo 12 → 12`, `tex 31 → 31`, ratio `1.000`, `leaks: []`, `0` errores). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
+- Prueba: https://facundocapello-blip.github.io/margoush-party/3d/?probar=facu&debug=1
+- Rollback: `git revert <commit [R-2]>` en `feat-3d` y push (base previa: `22e489e`).

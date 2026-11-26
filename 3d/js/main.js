@@ -84,6 +84,7 @@ game.perf = (() => {
   };
 })();
 game.pixelRatio = () => renderer.getPixelRatio();
+game.memory = () => renderer ? { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures } : null;
 let bannerTimer = 0;
 
 // ---------- combo visible ----------
