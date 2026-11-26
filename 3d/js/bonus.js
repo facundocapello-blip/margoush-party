@@ -24,7 +24,7 @@ export const BONUS = {
 // Puntos del dibujo (px de chase_cepi_drive, 396×384): farol izquierdo, rayo, farol derecho
 const SPOTS = [{ u: 100, v: 182 }, { u: 222, v: 210 }, { u: 334, v: 182 }];
 const CAR_H = 3.6, HERO_H = 2.0, CAR_Z = -1.6, HERO_Z = 1.5, CEPI_H = 2.3;
-const LINES = ['¡Mi BYD no!', '¡Lo tengo en cuotas!', '¡Es eléctrico, papá!', '¡Ya casi carga!', '¡Te voy a acusar con mamá!', '¡Ni lo terminé de pagar!', '¡Cargá, cargá, cargá!'];
+const LINES = ['¡Mi BYD no!', '¡Lo tengo en cuotas!', '¡Es eléctrico, che!', '¡Ya casi carga!', '¡Te voy a acusar con mamá!', '¡Ni lo terminé de pagar!', '¡Cargá, cargá, cargá!'];
 
 // Lógica pura (sin Three.js ni DOM): se prueba con node --test
 // bat: % de carga del BYD (0 → 100). cepiStun: s que le quedan a Cepi desenchufado.

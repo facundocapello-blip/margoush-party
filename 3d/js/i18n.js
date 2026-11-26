@@ -273,7 +273,7 @@ export const TEXTOS = {
   'Héroe': 'Héros',
   'Puntaje': 'Score',
   'Fecha': 'Date',
-  'Todavía no hay puntajes. ¡Sé el primero!': 'Pas encore de scores. Prends la première place !',
+  'Todavía no hay puntajes. ¡El primer lugar te espera!': 'Pas encore de scores. La première place t’attend !',
   'Ranking en línea': 'Classement en ligne',
   // ---------- Nivel 1: Cepi se lleva a Margot, persecución y mini nivel del BYD ----------
   '¡CEPI SE LLEVÓ A MARGOT!': 'CEPI A ENLEVÉ MARGOT !',
@@ -498,6 +498,7 @@ export const DICHOS = {
   '¡Cepi prepara el saque!': 'Cepi prépare son service !',
   // Pinky
   '¿Te lo cuido?': 'Je te la surveille ?',
+  '¡Son 2 lucas!': "C'est 2 000 pesos !",
   '¡Son 2 lucas, maestro!': "C'est 2 000 pesos, chef !",
   '¡Dale que te lo lavo!': 'Allez, je vous la lave !',
   '¡Acá se paga por adelantado!': "Ici, on paie d'avance !",

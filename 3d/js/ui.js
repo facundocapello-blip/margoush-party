@@ -171,7 +171,7 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
         if (lastSaved && r.nickname === lastSaved.nickname && r.score === lastSaved.score) tr.className = 'me';
         body.append(tr);
       });
-      if (!res.rows.length) body.append(el('tr', {}, el('td', { colspan: '5', class: 'empty', text: 'Todavía no hay puntajes. ¡Sé el primero!' })));
+      if (!res.rows.length) body.append(el('tr', {}, el('td', { colspan: '5', class: 'empty', text: 'Todavía no hay puntajes. ¡El primer lugar te espera!' })));
       status.textContent = tr(res.online ? 'Ranking en línea' : OFFLINE_LIST);
       status.classList.toggle('off', !res.online);
     };
