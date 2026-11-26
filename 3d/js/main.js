@@ -1278,7 +1278,6 @@ async function boot() {
     game.coverStarted = true;
     game.coverStartedAt = performance.now();
     $('#screen-menu').classList.add('started');
-    audio.primeSpeech();
     audio.music('menu');
   };
   // En click (no en pointerdown): así el mismo toque no cae sobre ¡JUGAR! cuando aparece
@@ -1295,7 +1294,6 @@ async function boot() {
     if (card.dataset.hero === 'marine') {
       audio.messiGoku();
     } else {
-      audio.primeSpeech();
       audio.sfx('diushbag');
     }
     audio.sfx('coin');
@@ -1326,7 +1324,7 @@ async function boot() {
     if (justStarted()) return;
     const cp = storedCheckpoint();
     if (!cp) return paintContinue();
-    audio.primeSpeech();
+    if (cp.heroId === 'marine') audio.primeSpeech();
     resumeAt(cp);
   });
   $('#btn-ranking').addEventListener('click', () => { if (!justStarted()) ui.showRanking('screen-menu'); });
