@@ -1246,5 +1246,14 @@
     "rows": 1,
     "frames": 1,
     "skull": 229.5
+  },
+  "arena_facu_fondo": {
+    "file": "arena_facu_fondo.webp",
+    "w": 1280,
+    "h": 714,
+    "frames": 1,
+    "cols": 1,
+    "rows": 1,
+    "v": "2b2d362c"
   }
 }
