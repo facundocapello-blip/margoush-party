@@ -11,6 +11,7 @@ import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
 import { createShake, flashAlpha } from './feedback.js';
 import { createSkillFxPool } from './skill_fx_three.js';
+import { FX, heroPowerFx, createBurst, stepSparks } from './arena_fx.js';
 
 const MOVE = 6.3;
 const DASH_SPEED = 11.5;
@@ -38,7 +39,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 250);
     const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6 }));
-    skillFx.preload([isM ? 'marine_ivy_whirl' : 'douge_truth_slam', 'lale_oven_flare']);
+    skillFx.preload([isM ? FX.IVY : FX.TRUTH, FX.LALE_FLARE]);
     scene.background = L('#3a2518');
     scene.fog = new T.Fog(L('#3a2518'), 26, 75);
     scene.add(new T.HemisphereLight(0xffe7c2, 0x5c361d, 0.95));
@@ -329,18 +330,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
 
     const sparkG = keep(new T.BoxGeometry(0.2, 0.2, 0.2));
     const sparks = [];
-    const burstMats = {};
-    function burst(px, py, pz, hex, count = 8) {
-      const m = burstMats[hex] || (burstMats[hex] = keep(new T.MeshBasicMaterial({ color: L(hex) })));
-      for (let i = 0; i < count; i++) {
-        const p = new T.Mesh(sparkG, m);
-        p.position.set(px, py, pz);
-        const ang = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-        const spd = 2.6 + Math.random() * 4.0;
-        scene.add(p);
-        sparks.push({ p, vx: Math.cos(ang) * spd, vy: 2.4 + Math.random() * 3.4, vz: Math.sin(ang) * spd, t: 0, life: 0.45 + Math.random() * 0.2 });
-      }
-    }
+    const burst = createBurst(T, scene, keep, L, sparks, { geo: sparkG, spd: [2.6, 4.0], vy: [2.4, 3.4], life: [0.45, 0.2] });
 
     function handle(evs) {
       for (const e of evs) {
@@ -389,7 +379,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
             break;
           case 'phase':
             setBarName(); phaseCard(e.phase, 2.1); shake(0.32, 0.3); sfx('roar');
-            if (e.phase === 3) skillFx.play('lale_oven_flare', { x: logic.state.bossX, y: 2.8, z: LALE_ARENA.bossZ + 0.6 }, { worldSize: 5.2 });
+            if (e.phase === 3) skillFx.play(FX.LALE_FLARE, { x: logic.state.bossX, y: 2.8, z: LALE_ARENA.bossZ + 0.6 }, { worldSize: 5.2 });
             break;
           case 'voice': speak(e.event); break;
           case 'ko': {
@@ -397,7 +387,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.55); shake(0.48, 0.45);
             burst(logic.state.bossX, 2.6, LALE_ARENA.bossZ + 0.4, '#ffe169', 16);
-            skillFx.play('lale_oven_flare', { x: logic.state.bossX, y: 2.6, z: LALE_ARENA.bossZ + 0.6 }, { worldSize: 5.2 });
+            skillFx.play(FX.LALE_FLARE, { x: logic.state.bossX, y: 2.6, z: LALE_ARENA.bossZ + 0.6 }, { worldSize: 5.2 });
             pop(logic.state.bossX, BOSS_H * 0.7, LALE_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.5);
             break;
           }
@@ -414,7 +404,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     function usePower() {
       hero.power = 0; powT = 0.55; holdT = 0; freezeT = Math.max(freezeT, 0.085);
       sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.4, 0.3);
-      skillFx.play(isM ? 'marine_ivy_whirl' : 'douge_truth_slam', { x, y: 1.6, z: z + 0.4 }, { worldSize: 4.6 });
+      heroPowerFx(skillFx, isM, { x, z });
       pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);
       handle(logic.power());
     }
@@ -674,14 +664,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       }
 
       // Partículas de harina y manteca al impactar
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const q = sparks[i]; q.t += dt;
-        if (q.t >= q.life) { scene.remove(q.p); sparks.splice(i, 1); continue; }
-        q.vy -= 13 * dt;
-        q.p.position.x += q.vx * dt; q.p.position.y = Math.max(0.08, q.p.position.y + q.vy * dt); q.p.position.z += q.vz * dt;
-        q.p.rotation.x += dt * 9; q.p.rotation.y += dt * 7;
-        q.p.scale.setScalar(Math.max(0.01, 1 - q.t / q.life));
-      }
+      stepSparks(scene, sparks, dt, 0, [9, 7]);
 
       // Textos flotantes
       lay.length = 0;
