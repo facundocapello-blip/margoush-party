@@ -64,6 +64,7 @@ const TEMPLATES = {
       <i class="pa-marine"></i>
     </div>
     <div class="pa-top">${LANG('pa-lang')}</div>
+    <button id="btn-mute-menu" class="icon-btn pa-mute" aria-label="Silenciar">♪</button>
     <div class="pa-title"><h1 class="pa-logo">MARGOUSH</h1><p class="pa-tag">¡El rescate de Margot!</p></div>
     <div class="pa-actions">
       ${PODIUM('pa-record')}

@@ -1345,9 +1345,12 @@ async function boot() {
   });
   $('#btn-ranking').addEventListener('click', () => { if (!justStarted()) ui.showRanking('screen-menu'); });
   const muteBtn = $('#btn-mute');
-  const paintMute = () => { muteBtn.textContent = audio.muted ? '🔇' : '♪'; };
+  const muteMenuBtn = $('#btn-mute-menu');
+  const paintMute = () => { const t = audio.muted ? '🔇' : '♪'; muteBtn.textContent = t; if (muteMenuBtn) muteMenuBtn.textContent = t; };
   paintMute();
-  muteBtn.addEventListener('click', () => { audio.toggleMute(); paintMute(); muteBtn.blur(); });
+  const onMute = (b) => () => { audio.toggleMute(); paintMute(); b.blur(); };
+  muteBtn.addEventListener('click', onMute(muteBtn));
+  muteMenuBtn?.addEventListener('click', (ev) => { ev.stopPropagation(); onMute(muteMenuBtn)(); });
   const fxBtn = $('#btn-reduce-fx');
   const paintFx = () => { if (fxBtn) fxBtn.textContent = tr(isReducedMotion() ? '✨ Efectos: suaves' : '✨ Efectos: normales'); };
   paintFx();

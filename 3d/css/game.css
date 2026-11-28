@@ -539,6 +539,7 @@ body.cine-on #hud, body.cine-on #touch, body.cine-on #boss-bar { opacity: 0; poi
 .pa-family .pa-douge { left: max(-2%, calc(50% - 210px)); aspect-ratio: 194 / 420; background-image: url(../assets/douge_idle.webp); }
 .pa-family .pa-marine { right: max(-2%, calc(50% - 210px)); aspect-ratio: 168 / 420; background-image: url(../assets/marine_idle.webp); }
 .pa-top { position: absolute; z-index: 4; top: calc(12px + var(--safe-t)); left: 50%; transform: translateX(-50%); }
+.pa-mute { position: absolute; z-index: 4; top: calc(12px + var(--safe-t)); left: calc(12px + var(--safe-l)); width: 48px; height: 48px; font-size: 20px; }
 .pa-title { position: absolute; z-index: 3; left: 0; right: 0; top: calc(74px + 1.5vh + var(--safe-t)); display: flex; flex-direction: column; align-items: center; }
 .pa-logo { margin: 0; font: 400 clamp(54px, min(16vw, 11.5vh), 124px) / 0.9 'Lilita One', Fredoka, sans-serif; letter-spacing: 0.01em; color: #fff4d6; transform: rotate(-3deg);
   text-shadow: 0 3px 0 #ffa142, 0 6px 0 #d64527, 0 10px 0 #5a1840, 0 18px 24px rgba(0, 0, 0, 0.48); animation: logo-drop 0.8s cubic-bezier(.2, 1.4, .4, 1) both; }
@@ -561,6 +562,7 @@ body.cine-on #hud, body.cine-on #touch, body.cine-on #boss-bar { opacity: 0; poi
   .pa-bg { background-position: 50% 45%; }
   .pa-bg::after { background: linear-gradient(90deg, rgba(20, 11, 36, 0.92) 0%, rgba(20, 11, 36, 0.72) 42%, rgba(20, 11, 36, 0.12) 72%), linear-gradient(0deg, rgba(20, 11, 36, 0.7), rgba(20, 11, 36, 0) 40%); }
   .pa-top { left: auto; right: calc(16px + var(--safe-r)); transform: none; }
+  .pa-mute { left: auto; right: calc(16px + var(--safe-r) + 182px); top: calc(13px + var(--safe-t)); }
   .pa-title { left: calc(5vw + var(--safe-l)); right: auto; top: calc(8vh + var(--safe-t)); width: min(46vw, 500px); }
   .pa-logo { font-size: clamp(50px, min(8.5vw, 19vh), 120px); }
   .pa-actions { left: calc(5vw + var(--safe-l)); transform: none; width: min(46vw, 500px); max-width: 410px; bottom: calc(4vh + var(--safe-b)); gap: 7px; }
