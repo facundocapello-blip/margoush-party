@@ -32,3 +32,23 @@ test('Fase 4: portada sin Margoth y piso ancho en Pinky', () => {
   assert.equal(fs.readFileSync('3d/js/cover.js', 'utf8').includes('Margoth'), false);
   assert.equal(fs.readFileSync('3d/js/arena_pinky.js', 'utf8').includes('PlaneGeometry(64, 26)'), true);
 });
+
+test('createHitShake: arranca en el máximo, 3 patrones distintos y se apaga en su duración', async () => {
+  const { createHitShake, HIT_SHAKE, hitShakeTier } = await import('../3d/js/feedback.js');
+  setReducedMotion(false);
+  assert.equal(hitShakeTier(0.03), HIT_SHAKE.tiny);
+  assert.equal(hitShakeTier(0.12), HIT_SHAKE.small);
+  assert.equal(hitShakeTier(0.25), HIT_SHAKE.mid);
+  assert.equal(hitShakeTier(0.5), HIT_SHAKE.big);
+  assert.equal(HIT_SHAKE.small.x, 0, 'la chica es solo vertical');
+  const s = createHitShake();
+  s.set(0.25);
+  const first = s.step(1 / 60);
+  assert.ok(Math.abs(first.x) === HIT_SHAKE.mid.x && Math.abs(first.y) === HIT_SHAKE.mid.y, 'cuadro 1 al máximo');
+  for (let i = 0; i < 10; i++) s.step(1 / 60);
+  assert.equal(s.active, false);
+  assert.equal(s.step(1 / 60).x, 0);
+  // una sacudida chica no pisa una grande en curso
+  s.set(0.5); s.step(1 / 60); s.set(0.12);
+  assert.ok(Math.abs(s.step(1 / 60).x) > 0.1);
+});

@@ -90,6 +90,7 @@ export function createEnemies(ctx) {
     if (typeof kind === 'number') kind = LEGACY[kind] || 'secuaz';
     const k = KINDS[kind];
     const actor = new SpriteActor(scene, assets, { poses: sheetPoses(assets, k.sheet || kind, k.tex), heightM: 2.25 * k.scale });
+    actor.snapHit = true;
     actor.position.set(x, 0, z);
     const e = { actor, pos: actor.position, kind, k, hp: k.hp, maxHp: k.hp, state: 'walk', t: 0, cd: 0.6 + Math.random(), stun: 0, kx: 0,
       slotZ: (Math.random() - 0.5) * 1.6, seed: Math.random() * 10, dead: 0, extras: [],
@@ -196,6 +197,12 @@ export function createEnemies(ctx) {
     }
     e.actor.hit();
     e.actor.flash(0.12);
+    // El golpe deja al malo ladeado hacia atrás en el cuadro del impacto (queda visible en el hit-stop) y se endereza
+    if (e.state === 'hitstun') {
+      const big = strength > 1.2;
+      e.actor.lean = big ? 0.45 : 0.25;
+      e.actor.offsetX = big ? -0.2 : -0.12;
+    }
     tmp.copy(e.pos).setY(1.4);
     fx.hit(tmp, strength);
     fx.popup(tmp.setY(2.6), String(dmg * 10), strength > 1.2 ? '#ffd36e' : '#fff', { size: strength > 1.2 ? 26 : 20, life: 0.6 });
@@ -656,7 +663,8 @@ export function createEnemies(ctx) {
           a.lean = Math.sin(performance.now() / 90 + e.seed) * 0.08;
         } else if (e.state === 'hitstun') {
           e.t -= dt;
-          if (e.t <= 0) { e.state = 'walk'; e.cd = Math.max(e.cd, 0.5); }
+          a.lean *= Math.max(0, 1 - dt * 9); a.offsetX *= Math.max(0, 1 - dt * 9);
+          if (e.t <= 0) { e.state = 'walk'; e.cd = Math.max(e.cd, 0.5); a.lean = 0; a.offsetX = 0; }
         } else if (e.state === 'slipped') {
           e.t -= dt;
           a.lift = 0;

@@ -1,4 +1,5 @@
 import { SpriteActor } from './sprites.js';
+import { HITSTOP } from './feedback.js';
 
 // Las alturas de correr y pegar salen del manifiesto (misma cabeza en todas las poses)
 export const HERO_CFG = {
@@ -48,6 +49,7 @@ export function createHero(id, ctx) {
   // Caminata de 10 cuadros: se usa yendo despacio; rápido sigue la de correr (misma altura visual)
   if (A.has?.(id + '_walk_sheet')) poses.walk = { tex: id + '_walk_sheet', stride: WALK.stride, h: ph.walk };
   const actor = new SpriteActor(ctx.scene, ctx.assets, { poses, heightM: cfg.heightM, scaleRef: cfg.scaleRef });
+  actor.snapHit = true;
   const has = (n) => !!actor.poses[n];
 
   const h = {
@@ -111,8 +113,13 @@ export function createHero(id, ctx) {
       game.combo.reset();
       fx.flash('#ff4d5e', 0.3);
       fx.shake(0.25);
+      fx.hitstop(HITSTOP.hurt);
       ctx.audio?.sfx('hurt');
-      if (h.hp <= 0) game.onHeroDown();
+      if (h.hp <= 0) {
+        // última vida: congelado largo + flash blanco y sacudida grande (#003: «やられる瞬間にも止め＋フラッシュ»)
+        fx.hitstop(HITSTOP.down); fx.flash('#ffffff', 0.4); fx.shake(0.5);
+        game.onHeroDown();
+      }
       return true;
     },
 
@@ -224,12 +231,14 @@ export function createHero(id, ctx) {
         actor.offsetX = -0.18 * k;
         actor.stretch = -0.05 * k;
       } else {
-        const k = Math.min(1, (h.t - s.hitAt) / 0.08);
+        // La pose del golpe queda congelada durante el hit-stop: tiene que estar ya en su punto máximo en el
+        // cuadro del impacto (k = 1 de entrada, sin subir en 5 cuadros) y bajar después con el seguimiento.
         const settle = Math.max(0, 1 - (h.t - s.hitAt) / (s.dur - s.hitAt));
+        const fin = h.combo === 2;
         actor.setPose(has('attack' + (h.combo + 1)) ? 'attack' + (h.combo + 1) : 'attack');
-        actor.lean = -0.1 * settle;
-        actor.offsetX = (0.25 * k) * settle;
-        actor.stretch = 0.06 * settle;
+        actor.lean = (fin ? -0.2 : -0.14) * settle;
+        actor.offsetX = (fin ? 0.4 : 0.3) * settle;
+        actor.stretch = (fin ? 0.1 : 0.08) * settle;
         // el remate sale con un saltito
         if (h.combo === 2) hop = Math.sin(Math.min(1, (h.t - s.hitAt) / (s.dur - s.hitAt)) * Math.PI) * 0.45;
       }
@@ -314,8 +323,12 @@ export function createHero(id, ctx) {
       h.charge(s.strength > 1.2 ? POWER.finisher : POWER.hit);
       const ko = Math.max(0, alive0 - game.enemies.alive());
       if (ko) h.charge(POWER.kill * ko);
-      fx.hitstop(s.strength > 1.2 ? 0.08 : 0.03);
-    }
+      // Hit-stop escalado (#047): base por golpe + 1F por malo extra (tope +2F) + 3F si hay KO; el último malo, 16F
+      let f = HITSTOP.swing[h.combo] + Math.min(2, foes - 1) / 60;
+      if (ko) f += HITSTOP.ko;
+      if (ko && game.enemies.alive() === 0) f = Math.max(f, HITSTOP.last);
+      fx.hitstop(f);
+    } else if (hits > 0) fx.hitstop(HITSTOP.prop);
     if (hits > 0 && s.strength > 1.2) fx.shake(0.28);
   }
 
