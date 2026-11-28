@@ -2,6 +2,7 @@
 // Cada pose: { tex, frames?, cols?, rows?, cell?, h, foot } donde
 //   h    = alto de la imagen relativo a heightM (las tiras de correr traen margen),
 //   foot = fracción del alto donde apoyan los pies (1 = borde inferior).
+import { vibeOffset } from './feedback.js';
 import { poseHeight, CROSSFADE, poseImpulseKind, poseScaleBlend } from './poses.js';
 
 const TILT = -0.32; // inclina la figura hacia la cámara (estilo Paper Mario)
@@ -22,6 +23,9 @@ export class SpriteActor {
     this.squash = 0;
     this.snapHit = false; // calle: golpe recibido con aplastamiento máximo desde el 1.er cuadro y sin fundido a «hurt»
     this.fadeT = 0;
+    this.flashGrace = 0; // al principio del parpadeo se queda visible (que se vea la pose «hurt»)
+    this.flashTotal = 0;
+    this.vibT = 0; this.vibTotal = 0; this.vibAmp = 0; this.vibStamp = 0;
     this.prevW = 0;
     this.prevH = 0;
     this.impT = 0;
@@ -112,7 +116,21 @@ export class SpriteActor {
     this._applyFrame();
   }
 
-  flash(seconds) { this.flashT = seconds; }
+  // grace: segundos iniciales SIN parpadeo (si no, el parpadeo esconde la pose de golpe justo cuando importa)
+  flash(seconds, grace = 0) { this.flashT = seconds; this.flashTotal = seconds; this.flashGrace = grace; }
+
+  // Vibración del dibujo durante el hit-stop (la lógica y la hitbox no se mueven). La arranca el golpe y la
+  // avanza `vibeStep` solo mientras el juego está congelado.
+  vibrate(seconds, amp = 0.07) {
+    this.vibT = seconds; this.vibTotal = seconds; this.vibAmp = amp; this.vibStamp = performance.now();
+  }
+  vibeStep(dt) {
+    if (this.vibT <= 0 || performance.now() - this.vibStamp > 600) { this.vibT = 0; return; }
+    this.vibT = Math.max(0, this.vibT - dt);
+    const dx = vibeOffset(this.vibTotal - this.vibT, this.vibTotal, this.vibAmp);
+    this.mesh.position.x = this.offsetX * this.facing + dx;
+    if (this.ghostMesh.visible) this.ghostMesh.position.x = this.mesh.position.x; // el fantasma del fundido acompaña
+  }
 
   hit() { this.squash = 1; }
 
@@ -163,7 +181,8 @@ export class SpriteActor {
     this.shadow.scale.x = this.heightM * 0.3 * (1 - Math.min(0.5, this.lift * 0.2));
     if (this.flashT > 0) {
       this.flashT -= dt;
-      this.mesh.visible = Math.floor(this.flashT * 18) % 2 === 0;
+      const blinking = this.flashTotal - this.flashT >= this.flashGrace;
+      this.mesh.visible = !blinking || Math.floor(this.flashT * 18) % 2 === 0;
     } else {
       this.mesh.visible = true;
     }

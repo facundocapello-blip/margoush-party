@@ -1,5 +1,5 @@
 import { SpriteActor } from './sprites.js';
-import { HITSTOP } from './feedback.js';
+import { HITSTOP, anticipationK, followThrough } from './feedback.js';
 
 // Las alturas de correr y pegar salen del manifiesto (misma cabeza en todas las poses)
 export const HERO_CFG = {
@@ -107,8 +107,9 @@ export function createHero(id, ctx) {
       h.damageLog.push(Math.round(game.time * 1000) / 1000);
       h.knock = (actor.position.x >= fromX ? 1 : -1) * 6;
       h.state = 'free';
-      actor.flash(INVULN);
+      actor.flash(INVULN, 0.3); // sin parpadeo mientras se ve la pose «hurt» (0,3 s)
       actor.hit();
+      actor.vibrate(HITSTOP.hurt, 0.09);
       game.score.takeDamage();
       game.combo.reset();
       fx.flash('#ff4d5e', 0.3);
@@ -225,7 +226,7 @@ export function createHero(id, ctx) {
       const s = h.swing;
       if (h.t < s.hitAt) {
         // anticipación: se echa para atrás con la pose de reposo
-        const k = h.t / s.hitAt;
+        const k = anticipationK(h.t, s.hitAt); // ya al 55 % en el 1.er cuadro
         actor.setPose('idle');
         actor.lean = 0.16 * k;
         actor.offsetX = -0.18 * k;
@@ -233,7 +234,7 @@ export function createHero(id, ctx) {
       } else {
         // La pose del golpe queda congelada durante el hit-stop: tiene que estar ya en su punto máximo en el
         // cuadro del impacto (k = 1 de entrada, sin subir en 5 cuadros) y bajar después con el seguimiento.
-        const settle = Math.max(0, 1 - (h.t - s.hitAt) / (s.dur - s.hitAt));
+        const settle = followThrough(h.t, s.hitAt, s.dur); // se sostiene ~40 % y recién baja
         const fin = h.combo === 2;
         actor.setPose(has('attack' + (h.combo + 1)) ? 'attack' + (h.combo + 1) : 'attack');
         actor.lean = (fin ? -0.2 : -0.14) * settle;
@@ -327,7 +328,7 @@ export function createHero(id, ctx) {
       // Hit-stop escalado (#047): base por golpe + 1F por malo extra (tope +2F) + 3F si hay KO; el último malo, 16F
       let f = HITSTOP.swing[h.combo] + Math.min(2, foes - 1) / 60;
       if (ko) f += HITSTOP.ko;
-      if (ko && game.enemies.alive() === 0) f = Math.max(f, HITSTOP.last);
+      if (ko && game.enemies.alive() === 0) { f = Math.max(f, HITSTOP.last); fx.flash('#ffffff', 0.38); }
       // Anti-encadenado: con varios malos el combo congelaba ~1/3 del tiempo y se sentía como lag
       const now = performance.now();
       if (!ko && now - lastStopAt < 350) f = Math.max(3 / 60, f * 0.6);

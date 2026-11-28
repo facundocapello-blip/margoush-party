@@ -85,5 +85,27 @@ export function createHitShake() {
   };
 }
 
+// Curvas del golpe (Sakurai P1), puras para poder probarlas.
+// Anticipación (#motion «構えは瞬時に極端に»): ya al 55 % en el 1.er cuadro, en vez de subir desde 0 hasta el impacto.
+export function anticipationK(t, hitAt) {
+  return hitAt > 0 ? Math.min(1, 0.55 + 0.45 * (t / hitAt)) : 1;
+}
+// Seguimiento (#motion «フォロースルーは一番長く見える»): la pose del impacto se sostiene ~40 % del tiempo restante y
+// recién ahí baja (antes bajaba lineal desde el primer cuadro y el golpe casi no se veía).
+export const FOLLOW_HOLD = 0.4;
+export function followThrough(t, hitAt, dur) {
+  const span = dur - hitAt;
+  if (span <= 0) return 0;
+  const u = Math.min(1, Math.max(0, (t - hitAt) / span));
+  if (u <= FOLLOW_HOLD) return 1;
+  const v = (u - FOLLOW_HOLD) / (1 - FOLLOW_HOLD);
+  return 1 - v * v * (3 - 2 * v);
+}
+// Vibración de la víctima durante el hit-stop (#047): solo lo dibujado, alterna de signo cada 2F y decae.
+export function vibeOffset(elapsed, total, amp) {
+  if (total <= 0 || elapsed >= total) return 0;
+  return amp * (1 - elapsed / total) * (Math.floor(elapsed * 30) % 2 ? -1 : 1);
+}
+
 // Hit-stop en segundos (60 Hz): golpes 1 y 2 = 4F y 5F, remate = 9F; ver auditoría Sakurai (P0-1)
 export const HITSTOP = { swing: [4 / 60, 5 / 60, 9 / 60], ko: 3 / 60, last: 16 / 60, prop: 3 / 60, hurt: 5 / 60, down: 20 / 60 };

@@ -935,3 +935,15 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Nuevo `tests/e2e/golpe_feel.e2e.mjs`: pelea con 5 malos a la vez en los dos perfiles; mide cortes de cuadro, captura pantalla y revisa errores. Sin errores de consola en ambos.
 - Comparación en las mismas condiciones (SwiftShader, GL por software, ~17 cuadros/s; no es un iPhone): sin P0, con el P0 original y con el ajuste anti-lag dan lo mismo (prom 50–61 ms, cortes >100 ms: 1 en Chrome, 5–6 en celu). El costo de dibujar no cambió con el P0; lo que se sintió como lag son las pausas del juego, que este test no mide. La prueba en Safari físico sigue pendiente.
 - Rollback: `git revert <hash de este commit>` (base previa: `a31cc63`).
+
+## 2026-11-28 · Auditoría Sakurai de la calle, P1: anticipación, seguimiento, parpadeo, KO, marcas oscuras y vibración
+- **Qué cambió** (solo la calle; las arenas no cambian):
+  - **Anticipación en el 1.er cuadro** (`feedback.js` `anticipationK`, usado en `hero.js`): la pose de preparación arranca al 55 % y sube a 100 % hasta el impacto (antes subía desde 0).
+  - **Seguimiento sostenido** (`followThrough`): la pose del impacto se mantiene ~40 % del tiempo restante y recién después baja (antes bajaba lineal desde el primer cuadro).
+  - **El parpadeo ya no esconde `hurt`**: `SpriteActor.flash(seconds, grace)`; el héroe no parpadea los primeros 0,3 s (lo que dura la pose `hurt`) y los malos golpeados no parpadean (antes se ocultaban ~3F justo tras el hit-stop).
+  - **Flash de KO**: destello blanco 0,22 en cada KO y 0,38 si cae el último malo (respeta efectos suaves).
+  - **Contraste oscuro de las marcas** (`fx.js` `hit`): aro oscuro detrás del aro blanco/dorado del impacto, para que se vea sobre asfalto y veredas claras.
+  - **Vibración de la víctima** (`SpriteActor.vibrate/vibeStep`, `vibeOffset`): el malo golpeado (y el héroe al recibir) vibra solo el dibujo durante el hit-stop, alterna de signo cada 2F y decae; la hitbox no se mueve. Se avanza en `main.js` mientras el juego está congelado.
+- **Verificación:** `node --check`, `node tools/stamp_versions.mjs`, `npm test` 124/125 (falla solo `check_sprites.py`: no hay `scipy` en el contenedor) con una prueba nueva en `tests/feedback.test.mjs`. e2e en Chromium: `golpe_feel` (Chrome 1280×720 y celu 430×932 táctil, sin errores de consola), `attackfx` y `combat` OK; capturas de impacto en ambos perfiles. Tiempos de cuadro iguales a la base en este contenedor (SwiftShader, ruido de ±15 %). No es Safari físico ni se midió la sensación jugando.
+- **Pendiente:** P2–P3 de la auditoría; probar en iPhone.
+- **Rollback:** `git revert <hash de este commit>` (base previa: `fba45c8`).
