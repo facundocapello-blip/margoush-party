@@ -20,6 +20,7 @@ export class SpriteActor {
     this.dist = 0;
     this.flashT = 0;
     this.squash = 0;
+    this.snapHit = false; // calle: golpe recibido con aplastamiento máximo desde el 1.er cuadro y sin fundido a «hurt»
     this.fadeT = 0;
     this.prevW = 0;
     this.prevH = 0;
@@ -76,7 +77,7 @@ export class SpriteActor {
 
   setPose(name) {
     if (this.pose === name || !this.poses[name]) return;
-    if (this.pose && this.poses[this.pose]) {
+    if (this.pose && this.poses[this.pose] && !(this.snapHit && name === 'hurt')) {
       const prev = this.poses[this.pose];
       const prevH = this.heightM * prev.h;
       this.prevW = prevH * prev.aspect;
@@ -92,7 +93,7 @@ export class SpriteActor {
       this.ghostMesh.position.z = -0.012;
       this.ghostMesh.rotation.copy(this.mesh.rotation);
       this.ghostMesh.visible = true;
-    }
+    } else if (this.snapHit && name === 'hurt') this.fadeT = 0;
     this.pose = name;
     this.frame = 0;
     this.dist = 0;
@@ -146,7 +147,8 @@ export class SpriteActor {
     }
     // golpe recibido: aplastamiento breve
     this.squash = Math.max(0, this.squash - dt * 6);
-    const sq = Math.sin(this.squash * Math.PI) * 0.12;
+    // snapHit: máximo en el cuadro del golpe (queda visible durante el hit-stop) y decae en ~10F
+    const sq = this.snapHit ? this.squash * 0.14 : Math.sin(this.squash * Math.PI) * 0.12;
     const st = this.stretch;
     this.mesh.scale.set(bw * this.facing * (1 + sq - st * 0.5), bh * (1 - sq + st), 1);
     this.mesh.position.y = -bh * (1 - p.foot) + this.lift;

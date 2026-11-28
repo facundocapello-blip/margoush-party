@@ -1,7 +1,7 @@
 // Efectos de golpe: chispas, anillos, sacudón, congelado y textos flotantes.
 import { fillText } from './i18n.js';
 import { placePops } from './pop_layout.js';
-import { createShake, flashAlpha, isReducedMotion } from './feedback.js';
+import { createHitShake, flashAlpha, isReducedMotion } from './feedback.js';
 import { createSkillFxPool } from './skill_fx_three.js';
 export function createFx(scene, camera, labelsEl, flashEl) {
   // Este pool NO tiene dispose() a propósito: createFx se llama una sola vez al arrancar (main.js) y vive toda
@@ -33,7 +33,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
   const arcGeos = {};
   const lineGeo = new THREE.PlaneGeometry(1.3, 0.07);
   const pops = [];
-  const shaker = createShake({ decay: 2.2, maxX: 0.45, maxY: 0.3 });
+  const shaker = createHitShake();
   let stop = 0;
   const proj = new THREE.Vector3();
   const lay = [];
