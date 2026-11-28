@@ -113,7 +113,7 @@ export function createHero(id, ctx) {
       game.combo.reset();
       fx.flash('#ff4d5e', 0.3);
       fx.shake(0.25);
-      fx.hitstop(HITSTOP.hurt);
+      if (performance.now() - lastStopAt > 350) fx.hitstop(HITSTOP.hurt);
       ctx.audio?.sfx('hurt');
       if (h.hp <= 0) {
         // última vida: congelado largo + flash blanco y sacudida grande (#003: «やられる瞬間にも止め＋フラッシュ»)
@@ -312,6 +312,7 @@ export function createHero(id, ctx) {
     p.z += Math.sign(dz) * Math.min(Math.abs(dz), AIM.snapZ);
   }
 
+  let lastStopAt = -1e9;
   function landSwing() {
     const s = h.swing;
     const area = { x: actor.position.x, z: actor.position.z, facing: actor.facing, reach: s.reach, depth: 0.75, dmg: s.dmg, knock: s.knock, strength: s.strength, airborne: h.lift > 0.5 };
@@ -327,6 +328,10 @@ export function createHero(id, ctx) {
       let f = HITSTOP.swing[h.combo] + Math.min(2, foes - 1) / 60;
       if (ko) f += HITSTOP.ko;
       if (ko && game.enemies.alive() === 0) f = Math.max(f, HITSTOP.last);
+      // Anti-encadenado: con varios malos el combo congelaba ~1/3 del tiempo y se sentía como lag
+      const now = performance.now();
+      if (!ko && now - lastStopAt < 350) f = Math.max(3 / 60, f * 0.6);
+      lastStopAt = now;
       fx.hitstop(f);
     } else if (hits > 0) fx.hitstop(HITSTOP.prop);
     if (hits > 0 && s.strength > 1.2) fx.shake(0.28);

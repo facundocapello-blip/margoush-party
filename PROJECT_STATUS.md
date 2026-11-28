@@ -922,3 +922,10 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Verificación:** `node --check`, `node tools/stamp_versions.mjs`, `npm test` 123/124 (la que falla es `check_sprites.py`: no hay `scipy` en este contenedor; no es del cambio) con 2 pruebas nuevas (`tests/hitstop.test.mjs`, `tests/feedback.test.mjs`). e2e en Chromium: `attackfx` y `combat` OK. `enemies.e2e` ya fallaba antes (`setStage`, mismo error sin estos cambios). No se probó en Safari físico ni se midió la sensación jugando.
 - **Pendiente:** P1–P3 de la auditoría (anticipación en el 1.er cuadro, seguimiento sostenido, parpadeo que no esconde `hurt`, flash de KO, contraste oscuro de las marcas, vibración de la víctima). Probar en iPhone.
 - **Rollback:** `git revert <hash de este commit>` (base previa: `8688145`).
+
+## 2026-11-28 · Ajuste del P0 Sakurai: lag con varios malos
+- **Problema reportado:** «algo de lag» al pelear con varios malos a la vez (iPhone).
+- **Causa probable** (leída en el código, no medida): el hit-stop del combo se encadenaba, con 4 a 9F cada 0,26 s, más el de los golpes recibidos, y el juego pasaba cerca de 1/3 del tiempo congelado. Además cada malo golpeado crea ~10 chispas con material propio.
+- **Qué cambió:** `hero.js`: si hubo un hit-stop hace menos de 350 ms, el siguiente vale 60 % (mínimo 3F); KO y último malo no se recortan; el congelado por recibir un golpe tampoco se suma a uno reciente. `fx.js`: con más de 36 partículas vivas, `hit()` saca 3 chispas en vez de 5–10.
+- **Verificación:** `npm test` 123/124 (falla solo `check_sprites.py`, sin `scipy` en el contenedor), e2e `attackfx` y `combat` OK. No se midió en Safari físico: si sigue con lag, hay que medir con `game.perf`.
+- **Rollback:** `git revert <hash de este commit>` en feat-3d (base previa: `60b861f`).
