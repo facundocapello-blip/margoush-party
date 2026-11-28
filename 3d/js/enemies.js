@@ -196,7 +196,8 @@ export function createEnemies(ctx) {
       }
     }
     e.actor.hit();
-    e.actor.flash(0.12);
+    e.actor.flash(0.12, 0.12); // sin parpadeo: el cuadro «hurt» no se esconde
+    e.actor.vibrate(Math.min(0.16, 0.07 + strength * 0.03), strength > 1.2 ? 0.14 : 0.09); // vibra durante el hit-stop
     // El golpe deja al malo ladeado hacia atrás en el cuadro del impacto (queda visible en el hit-stop) y se endereza
     if (e.state === 'hitstun') {
       const big = strength > 1.2;
@@ -218,6 +219,7 @@ export function createEnemies(ctx) {
       game.score.addKill(e.k.points);
       fx.popup(tmp.copy(e.pos).setY(3.1), '+' + pts, '#7ee0c3', { size: 22, life: 0.9 });
       ctx.audio?.sfx('ko');
+      fx.flash('#ffffff', 0.22); // destello de KO (el último malo lo refuerza en hero.js)
     }
   }
 
@@ -604,6 +606,8 @@ export function createEnemies(ctx) {
     spawn,
     attacking,
     alive() { return list.filter(e => e.hp > 0).length; },
+    // Mientras el juego está congelado por el hit-stop, los golpeados siguen vibrando
+    vibe(dt) { for (const e of list) e.actor.vibeStep(dt); },
 
     // Golpe a un malo en particular (puños, fuego)
     hitEnemy(e, facing, dmg, knock, strength) {

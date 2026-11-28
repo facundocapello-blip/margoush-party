@@ -67,6 +67,13 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       ring.lookAt(camera.position);
       scene.add(ring);
       parts.push({ obj: ring, v: null, life: 0.2, max: 0.2, kind: 'ring', r: 0.6 + strength * 0.5 });
+      // Aro oscuro detrás (#effects «暗い色も混ぜる»): el blanco/dorado se pierde sobre asfalto claro y veredas
+      const rim = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x3a1020, transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide }));
+      rim.position.copy(pos);
+      rim.lookAt(camera.position);
+      rim.translateZ(-0.02);
+      scene.add(rim);
+      parts.push({ obj: rim, v: null, life: 0.24, max: 0.24, kind: 'ring', r: 0.75 + strength * 0.55, op: 0.7 });
     },
     slash(pos, facing, kind = 'short') {
       const k = SLASH[kind];
@@ -145,7 +152,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
           p.obj.material.opacity = k * 0.8;
         } else {
           p.obj.scale.setScalar(p.r * (1.6 - k));
-          p.obj.material.opacity = k;
+          p.obj.material.opacity = k * (p.op ?? 1);
         }
         if (p.life <= 0) {
           scene.remove(p.obj);

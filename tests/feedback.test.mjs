@@ -52,3 +52,18 @@ test('createHitShake: arranca en el máximo, 3 patrones distintos y se apaga en 
   s.set(0.5); s.step(1 / 60); s.set(0.12);
   assert.ok(Math.abs(s.step(1 / 60).x) > 0.1);
 });
+
+test('P1 Sakurai: anticipación al 55 % en el 1.er cuadro, seguimiento sostenido y vibración que decae', async () => {
+  const { anticipationK, followThrough, vibeOffset, FOLLOW_HOLD } = await import('../3d/js/feedback.js');
+  assert.ok(anticipationK(0, 0.1) >= 0.55 - 1e-9, 'el 1.er cuadro ya tiene la pose a medias');
+  assert.equal(anticipationK(0.1, 0.1), 1);
+  assert.equal(anticipationK(0, 0), 1);
+  assert.equal(followThrough(0.1, 0.1, 0.3), 1, 'máximo en el cuadro del impacto');
+  const holdEnd = 0.1 + 0.2 * FOLLOW_HOLD;
+  assert.equal(followThrough(holdEnd, 0.1, 0.3), 1, 'se sostiene durante el tramo de seguimiento');
+  assert.ok(followThrough(0.2, 0.1, 0.3) < 1 && followThrough(0.2, 0.1, 0.3) > 0);
+  assert.ok(Math.abs(followThrough(0.3, 0.1, 0.3)) < 1e-9, 'termina en 0');
+  const a = vibeOffset(0, 0.1, 0.1), b = vibeOffset(2 / 60, 0.1, 0.1);
+  assert.ok(Math.abs(a) > Math.abs(b) && Math.sign(a) !== Math.sign(b), 'alterna de signo y decae');
+  assert.equal(vibeOffset(0.2, 0.1, 0.1), 0);
+});

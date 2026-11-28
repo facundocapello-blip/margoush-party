@@ -1093,7 +1093,9 @@ function frameStep(now) {
   }
   if (game.state === 'playing') {
     const t0 = performance.now();
-    if (!fx.frozen(dt)) {
+    if (fx.frozen(dt)) {
+      game.enemies.vibe(dt); game.hero.actor.vibeStep(dt);
+    } else {
       game.time += dt;
       game.hero.update(dt);
       game.enemies.update(dt);
