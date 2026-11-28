@@ -28,7 +28,8 @@ export const AIM = { reach: 2.8, depth: 1.3, snapZ: 0.45 };
 // Normalización exacta de altura visible entre hojas (idle, walk, run, combo y acciones)
 // para que Douge y Marine mantengan siempre el mismo tamaño al correr, saltar o pegar.
 const POSE_H = {
-  douge: { idle: 0.96, walk: 0.98, run: 1.11, combo: 0.99, actions: 1.06 },
+  // Misma cabeza en idle/walk/run/golpes (douge_idle skull/ch=0.314, walk=0.275, run=0.357, combo=0.365, actions=0.367)
+  douge: { idle: 0.96, walk: 1.06, run: 0.85, combo: 0.86, actions: 0.86 },
   marine: { idle: 0.96, walk: 0.99, run: 1.26, combo: 1.05, actions: 1.14 }
 };
 

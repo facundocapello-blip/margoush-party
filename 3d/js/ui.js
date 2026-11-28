@@ -34,16 +34,19 @@ export function createUi({ ranking, assets, showScreen, onPlayAgain, onMenu, aud
   // retry: { label, onRetry } si hay un checkpoint para volver a intentar ese tramo
   function showResult(result, heroId, retry = null) {
     resultEl.replaceChildren();
-    const cepiSheet = assets.has?.('cepi_sheet');
+    const cepiHd = assets.exists?.('arena_cepi_smash');
+    const cepiSheet = !cepiHd && assets.has?.('cepi_sheet');
     const winKey = 'arena_' + (heroId === 'marine' ? 'marine' : 'douge') + '_victory';
     const host = result.won
       ? (assets.exists?.(winKey)
         ? el('div', { class: 'host victory' }, [el('img', { src: assets.url(winKey), alt: 'Victoria' })])
         : null)
-      : el('div', { id: 'cepi', class: 'host cepi' + (cepiSheet ? '' : ' no-sheet') }, [
-        cepiSheet
-          ? el('div', { class: 'cepi-sprite', role: 'img', 'aria-label': 'Cepi, enojado', style: `background-image:url("${assets.url('cepi_sheet')}")` })
-          : el('img', { src: assets.url('courier'), alt: 'Cepi, enojado' }),
+      : el('div', { id: 'cepi', class: 'host cepi' + (cepiHd || cepiSheet ? '' : ' no-sheet') }, [
+        cepiHd
+          ? el('div', { class: 'cepi-sprite cepi-hd', role: 'img', 'aria-label': 'Cepi, enojado', style: `background-image:url("${assets.url('arena_cepi_smash')}")` })
+          : cepiSheet
+            ? el('div', { class: 'cepi-sprite', role: 'img', 'aria-label': 'Cepi, enojado', style: `background-image:url("${assets.url('cepi_sheet')}")` })
+            : el('img', { src: assets.url('courier'), alt: 'Cepi, enojado' }),
         el('div', { class: 'host-bubble', text: CEPI_LINES[Math.floor(Math.random() * CEPI_LINES.length)] })
       ]);
     if (!result.won) audio?.sfx('boo');

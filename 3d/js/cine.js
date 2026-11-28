@@ -258,7 +258,7 @@ export function createCine(ctx) {
   function postChaky(hero, heroId) {
     const X = LE_CONCEPT_X + 2, H = hero.actor;
     H.position.set(X - 3.2, 0, 0.5); H.setFacing(1); H.setPose('idle');
-    const chaky = actor(chakyPoses(), 2.5, X + 1.2, -0.2, -1, 'scared');
+    const chaky = actor(chakyPoses(), 2.5, X + 1.2, -0.2, -1, 'hurt');
     const stroller = actor(strollerPoses, 1.7, X + 3.2, 0.9, -1, 'happy');
     const cepi = actor(sheetPoses(assets, 'cepi', 'courier_cepi'), 2.25, X + 10.5, 0.3, -1, 'walk');
     const S = {
@@ -274,7 +274,14 @@ export function createCine(ctx) {
     ];
     const frame = (t, dt) => {
       cam(S.a, S.b, Math.min(1, t / 3.4));
-      chaky.update(dt, 0);
+      if (t < 1.5) {
+        chaky.lean = Math.sin(t * 24) * 0.08;
+        chaky.lift = Math.abs(Math.sin(t * 10)) * 0.06;
+        chaky.update(dt, 0);
+      } else {
+        chaky.lean = 0; chaky.lift = 0;
+        walk(chaky, X + 26, 9.5, dt, 'walk');
+      }
       if (!grabbed) {
         if (walk(cepi, stroller.position.x + 0.9, 10.5, dt, 'walk')) {
           grabbed = true;
