@@ -93,7 +93,7 @@ body.has-screen #offscreen, body.chasing #offscreen { visibility: hidden; }
 /* Salto y esquive: oscuros como el HUD, con el color de la acción en el borde y el ícono */
 #act-jump { width: 76px; height: 76px; right: 110px; bottom: 4px; --btn-rim: #7ee0c3; --btn-ink: #9ff2d6; }
 #act-dodge { width: 76px; height: 76px; right: 10px; bottom: 110px; --btn-rim: #8fc1ff; --btn-ink: #b5d6ff; }
-#act-dodge small { font-size: 11px; letter-spacing: 0; }
+#act-dodge small { font-size: 12px; letter-spacing: 0; }
 /* Anillo de poder alrededor del 👊: se llena pegando; lleno, late y dice "mantené" */
 #act-attack .ring { position: absolute; inset: -7px; border-radius: 50%; pointer-events: none;
   background: conic-gradient(var(--gold) calc(var(--pw, 0) * 360deg), rgba(255, 255, 255, 0.14) 0);
@@ -931,7 +931,7 @@ body.chaky-intro-on #arena-ui .piu { opacity: .25; transition: opacity .4s; }
     padding: 7px 16px; border-radius: 14px; max-width: min(74vw, 420px); min-width: 0;
     background: rgba(20, 12, 42, 0.96); z-index: 6;
   }
-  body:not(.chaky-dance) #arena-ui .phase-card small { font-size: 11px; letter-spacing: 2px; }
+  body:not(.chaky-dance) #arena-ui .phase-card small { font-size: 12px; letter-spacing: 2px; }
   body:not(.chaky-dance) #arena-ui .phase-card b { font-size: 18px; line-height: 1.1; }
   body:not(.chaky-dance) #arena-ui .phase-card span { font-size: 13px; margin-top: 2px; }
 }
