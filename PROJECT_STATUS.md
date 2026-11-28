@@ -1004,3 +1004,12 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Pendiente:** prueba física en Safari de iPhone 15 Pro Max (encuadre del baile, audio y feeling de la calle).
 - **Rollback:** `git revert <hash de este commit>` (base previa en `main`: `3055a31`).
 
+## 2026-11-28 · Regeneración de `douge_run.webp` con la misma proporción cabeza/cuerpo que `douge_idle` y `douge_walk_sheet`
+- **Causa raíz:** el sprite anterior `douge_run.webp` tenía una proporción de dibujo distinta (`skull/vis_h = 0,410` contra `0,314` en `douge_idle` y `0,280` en `douge_walk_sheet`), por lo que escalarlo por código solo intercambiaba cabeza grande por cuerpo chico.
+- **Qué cambió:**
+  - Regenerada la tira completa de 6 cuadros de carrera de Douge (`3d/assets/douge_run.webp`, `1680×400`, `77,3 KB`, `v=f8bff87f`, pies alineados en `foot: 0.985`, sin halos verdes ni restos sueltos) usando `douge_idle.webp` y `douge_walk_sheet.webp` como referencia directa (`skull/vis_h ≈ 0,31`).
+  - Actualizado `3d/assets/manifest.json`, `POSE_H.douge` en `3d/js/hero.js` (`idle: 0.96, walk: 0.99, run: 1.00`) y sellado `3d/index.html`. Peso total de `3d/assets/`: `9,2 MB` (`< 10 MB`).
+- **Verificación:** `node --check 3d/js/hero.js`, `node tools/stamp_versions.mjs`, `npm test` **125/125 en verde** (1 omitido: `check_sprites.py` sin `numpy`/`scipy`). Doble prueba en **Chromium emulado (no Safari físico)**: escritorio `1280×720` y celular `430×932` táctil comparando `idle` vs `run` (`0` errores de consola, misma cabeza y mismo cuerpo).
+- **Rollback:** `git revert <hash de este commit>` (base previa en `main`: `01e1efd`).
+
+
