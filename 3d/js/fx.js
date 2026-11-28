@@ -20,6 +20,19 @@ export function createFx(scene, camera, labelsEl, flashEl) {
     return t;
   })();
   const sparkMat = new THREE.SpriteMaterial({ map: sparkTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
+  // Pool de materiales de chispa: cada una necesita su propia opacidad, pero crear/destruir un material por chispa
+  // (hasta 10 por golpe) generaba basura y recompilaciones; se reciclan al apagarse.
+  const matPool = [];
+  function sparkMaterial() {
+    const m = matPool.pop() || sparkMat.clone();
+    m.color.setHex(0xffffff); m.blending = THREE.AdditiveBlending; m.opacity = 1;
+    return m;
+  }
+  function release(p) {
+    scene.remove(p.obj);
+    if (p.kind === 'spark') { if (matPool.length < 64) matPool.push(p.obj.material); else p.obj.material.dispose(); }
+    else p.obj.material.dispose();
+  }
   const ringGeo = new THREE.RingGeometry(0.75, 1, 32);
   const parts = [];
   // Estelas de ataque: arcos brillantes en el aire. `made` cuenta cuántas se dibujaron (para las pruebas)
@@ -57,7 +70,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       if (!armored && combo === 1 && n > 3) n += 2;
       if (armored) n = Math.min(n, 4);
       for (let i = 0; i < n; i++) {
-        const mat = sparkMat.clone();
+        const mat = sparkMaterial();
         if (armored) { mat.color.setHex(0x9aa0a8); mat.blending = THREE.NormalBlending; }
         const s = new THREE.Sprite(mat);
         const size = 0.35 + Math.random() * 0.35 * strength;
@@ -114,7 +127,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
     count(kind) { return parts.filter(p => p.kind === kind).length; },
     dust(pos) {
       for (let i = 0; i < 3; i++) {
-        const s = new THREE.Sprite(sparkMat.clone());
+        const s = new THREE.Sprite(sparkMaterial());
         s.scale.set(0.5, 0.5, 1);
         s.position.copy(pos);
         s.position.y = 0.2;
@@ -122,7 +135,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
         parts.push({ obj: s, v: new THREE.Vector3((Math.random() - 0.5) * 2, 0.6, (Math.random() - 0.5)), life: 0.25, max: 0.25, kind: 'spark' });
       }
     },
-    shake(amount) { shaker.set(amount); },
+    shake(amount, seconds) { shaker.set(amount, seconds); },
     hitstop(seconds) { stop = Math.max(stop, seconds); },
     flash(color = '#ff4d5e', opacity = 0.35) {
       flashEl.style.transition = 'none';
@@ -165,8 +178,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
           p.obj.material.opacity = k * (p.op ?? 1);
         }
         if (p.life <= 0) {
-          scene.remove(p.obj);
-          p.obj.material.dispose();
+          release(p);
           parts.splice(i, 1);
         }
       }
@@ -187,7 +199,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
     },
     clear() {
       skillPool.clear();
-      for (const p of parts) { scene.remove(p.obj); p.obj.material.dispose(); }
+      for (const p of parts) release(p);
       parts.length = 0;
       for (const p of pops) p.el.remove();
       pops.length = 0;

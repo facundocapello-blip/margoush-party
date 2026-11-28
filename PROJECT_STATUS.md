@@ -960,9 +960,18 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Pendiente:** P3 (shake de pasos del patovica, 2.º argumento de `fx.shake`, `sparkMat.clone()` por chispa) y probar P0 + P1 + P2 en iPhone.
 - **Rollback:** `git revert <hash de este commit>` (base previa: `8c6a920`).
 
+## 2026-11-28 · Auditoría Sakurai de la calle, P3: pasos del patovica, duración del shake y pool de chispas (hecho por Claude)
+- **Qué cambió** (solo la calle; las arenas no cambian):
+  1. **Pasos del patovica** (`feedback.js` `HIT_SHAKE.tiny`): la sacudida chica pasa de 0,01 m a 0,02 m vertical, 3F (era imperceptible). Solo la usan esos pasos (`enemies.js`, `fx.shake(0.04)`).
+  2. **2.º argumento de `fx.shake`** (`fx.js` → `createHitShake.set(amount, seconds)`): `cine.js` ya lo pasaba (0,15–0,3 s) y se ignoraba; ahora fija la duración del patrón. Las cinemáticas sacuden un poco más de tiempo que antes.
+  3. **`sparkMat.clone()` por chispa** (`fx.js`): pool de materiales de chispa (tope 64), se reciclan al apagarse y en `clear()`; menos basura por golpe.
+- **Verificación:** `node tools/stamp_versions.mjs`, `npm test` 125/126 (falla solo `check_sprites.py`: sin `scipy`), prueba nueva en `tests/feedback.test.mjs`. e2e en Chromium: `golpe_feel` (Chrome 1280×720 y celu 430×932 táctil, sin errores de consola), `p2_calle`, `attackfx`, `leaks`, `skill_fx`, `combat`. No es Safari físico y no se midió la sensación jugando.
+- **Con esto queda cerrada la auditoría de la calle en el código.** Pendiente: probar P0–P3 en iPhone físico y decidir si se siente bien.
+- **Rollback:** `git revert <hash de este commit>` (base previa: `0161594`).
+
 ## Para retomar en un chat nuevo (Sakurai, calle)
 - Hecho y publicado en `feat-3d` (`fca543d`): P0, ajuste anti-lag, P1 y P2 de la auditoría.
-- Falta: (1) probar P0+P1+P2 en iPhone físico y decidir si se siente bien; (2) P3: `fx.shake(0.04)` de los pasos del patovica (`enemies.js` ~152, imperceptible: sacarlo o pasarlo a vertical 0,02 m / 3F), `cine.js` llama `fx.shake(a, b)` pero `fx.js` ignora el 2.º argumento, y `sparkMat.clone()` por chispa en `fx.js` (le toca a `margoush-perf`).
+- (P3 hecho, ver la entrada anterior.) Falta: (1) probar P0+P1+P2+P3 en iPhone físico y decidir si se siente bien; (2) P3: `fx.shake(0.04)` de los pasos del patovica (`enemies.js` ~152, imperceptible: sacarlo o pasarlo a vertical 0,02 m / 3F), `cine.js` llama `fx.shake(a, b)` pero `fx.js` ignora el 2.º argumento, y `sparkMat.clone()` por chispa en `fx.js` (le toca a `margoush-perf`).
 - Otros pendientes sueltos: poses de héroes (golpe de poder y 2.º golpe), hojas > 2048 px a medir en iPhone, regenerar `arena_lale_throw` en Gemini, y los e2e viejos `enemies.e2e` (`setStage`) y `cover.e2e` (línea 39).
 - El documento de la auditoría no está en el repo: está en el chat «Auditoría de impacto en Sakurai» (mensaje largo del 28/11 ~11:30). Si hace falta, pedirlo al usuario.
 - Para correr los e2e en este tipo de contenedor: Playwright global en `/opt/node22/lib/node_modules/playwright` (enlazarlo en `node_modules/playwright`) y `node_modules/three/build/three.min.js` (three r128; ojo: `npm install` borra el enlace de Playwright, enlazarlo después). `node_modules/` está en `.gitignore`.
