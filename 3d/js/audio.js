@@ -21,12 +21,18 @@ export function punch(ac, out, noise, t, power = 1) {
   const o = ac.createOscillator(), g = ac.createGain();
   o.type = 'sine';
   o.frequency.setValueAtTime(170 * p, t);
-  o.frequency.exponentialRampToValueAtTime(40 * p, t + 0.1 + 0.08 * power);
+  o.frequency.exponentialRampToValueAtTime(45 * p, t + 0.07 + 0.05 * power);
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.5 + 0.2 * power, t + 0.004);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14 + 0.12 * power);
+  g.gain.exponentialRampToValueAtTime(0.5 + 0.2 * power, t + 0.003);
+  // la cola termina dentro del hit-stop (4F=0,07 s … remate 9F=0,15 s): ataque fuerte, poca resonancia
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09 + 0.05 * power);
   o.connect(g); g.connect(out);
-  o.start(t); o.stop(t + 0.4);
+  o.start(t); o.stop(t + 0.3);
+  // click agudo: es lo que se oye en el altavoz del celu, que corta los graves
+  const c = ac.createOscillator(), cg = ac.createGain();
+  c.type = 'square'; c.frequency.setValueAtTime(3200 * p, t); c.frequency.exponentialRampToValueAtTime(900, t + 0.02);
+  cg.gain.setValueAtTime(0.0001, t); cg.gain.exponentialRampToValueAtTime(0.22 + 0.06 * power, t + 0.001); cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+  c.connect(cg); cg.connect(out); c.start(t); c.stop(t + 0.05);
   noiseBurst(ac, out, noise, t, 0.025, 0.4, 'highpass', 2600 * p, 0.7, 0.001);
   noiseBurst(ac, out, noise, t, 0.07 + 0.06 * power, 0.25 + 0.12 * power, 'bandpass', 750 * p, 1.1);
   if (power > 1.2) noiseBurst(ac, out, noise, t + 0.01, 0.22, 0.25, 'lowpass', 260, 0.8, 0.01);
@@ -202,6 +208,8 @@ export function createAudio(assets) {
   const SFX = {
     swing: () => hiss(0.12, 0.25, 1800, 0.8),
     hit: () => punch(ac, master, noise, ac.currentTime, 1),
+    // golpe blando (manteca de Lale, carne): sin click agudo ni cola de graves
+    hitSoft: () => { tone('triangle', 260, 110, 0.09, 0.32); noiseBurst(ac, master, noise, ac.currentTime, 0.05, 0.28, 'bandpass', 500, 0.9); },
     thud: () => tone('sine', 120, 55, 0.14, 0.3),
     hitHeavy: () => { punch(ac, master, noise, ac.currentTime, 1.6); maybeVoice(0.1, 0.1); },
     hurt: () => { tone('sawtooth', 220, 90, 0.22, 0.3); hiss(0.1, 0.25, 500); },

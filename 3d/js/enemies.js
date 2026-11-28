@@ -213,7 +213,7 @@ export function createEnemies(ctx) {
     fx.popup(tmp.setY(2.6), String(dmg * 10), strength > 1.2 ? '#ffd36e' : '#fff', { size: strength > 1.2 ? 26 : 20, life: 0.6 });
     game.score.addHit();
     game.combo.add(1);
-    ctx.audio?.sfx(armored ? 'thud' : strength > 1.2 ? 'hitHeavy' : 'hit');
+    ctx.audio?.sfx(armored ? 'thud' : e.kind === 'lale' && strength <= 1.2 ? 'hitSoft' : strength > 1.2 ? 'hitHeavy' : 'hit');
     if (e.k.miniBoss) miniBossBar(e);
     if (e.hp <= 0) {
       e.state = 'dead';
@@ -223,7 +223,8 @@ export function createEnemies(ctx) {
       game.score.addKill(e.k.points);
       fx.popup(tmp.copy(e.pos).setY(3.1), '+' + pts, '#7ee0c3', { size: 22, life: 0.9 });
       ctx.audio?.sfx('ko');
-      fx.flash('#ffffff', 0.22); // destello de KO (el último malo lo refuerza en hero.js)
+      // destello de KO: blanco y enseguida oscuro (#221), así se nota también sobre calle clara
+      fx.flash('#ffffff', 0.22); setTimeout(() => fx.flash('#1a0a14', 0.2), 70);
     }
   }
 

@@ -976,3 +976,11 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - El documento de la auditoría no está en el repo: está en el chat «Auditoría de impacto en Sakurai» (mensaje largo del 28/11 ~11:30). Si hace falta, pedirlo al usuario.
 - Para correr los e2e en este tipo de contenedor: Playwright global en `/opt/node22/lib/node_modules/playwright` (enlazarlo en `node_modules/playwright`) y `node_modules/three/build/three.min.js` (three r128; ojo: `npm install` borra el enlace de Playwright, enlazarlo después). `node_modules/` está en `.gitignore`.
 - `check_sprites.py` falla sin `scipy` (no es un bug del juego).
+
+## 2026-11-28 · Feeling del golpe (auditoría Sakurai, segunda pasada)
+- Hit-stop local: durante el congelado el héroe y el golpeado se paran; el resto de los malos sigue a 0,12× (`FREEZE_WORLD` en `main.js`). Antes se paraba todo el mundo.
+- Sonido: cola del golpe acortada para terminar dentro del hit-stop, click agudo para el altavoz del celu, `hitSoft` para Lale (manteca). Flash de KO blanco y luego oscuro.
+- Esquive: cooldown 0,7 → 0,55 s y se resetea con «¡JUSTO!». Joystick: zona muerta de profundidad 0,25.
+- Inercia corta del héroe (~4F arrancar, ~3F frenar).
+- Verificado: `npm test` 125/126 (falla `assets` por falta de `scipy`, ya fallaba); e2e `golpe_feel` y `combat` OK en Chromium emulado (SwiftShader: los ms de cuadro no sirven como medida). `controls`, `enemies`, `gates`, `mobile` fallan igual sin mis cambios. No probado en Safari físico.
+- Rollback: `git revert` del commit de esta entrada.
