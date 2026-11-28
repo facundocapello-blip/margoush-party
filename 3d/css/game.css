@@ -992,3 +992,16 @@ body.cepi-duel-on #touch { display: none; }
 .boss-jump-row button:active { transform: translateY(2px); box-shadow: 0 1px 0 #0008; }
 .boss-jump-row button:focus-visible { outline: 3px solid #fff6d0; outline-offset: 2px; }
 .pa-actions .pa-link { padding: 0 8px; }
+
+/* Candado de la pelea con Facu */
+.pass-gate { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(10, 6, 22, 0.78); backdrop-filter: blur(3px); }
+.pass-box { width: min(340px, 100%); display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 20px 18px 18px; border-radius: 22px; background: linear-gradient(180deg, #2a1846, #160c2a); border: 2px solid rgba(255, 211, 110, 0.75); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55); text-align: center; color: #fff6d0; }
+.pass-box h2 { margin: 0; font: 400 28px 'Lilita One', Fredoka, sans-serif; color: var(--gold, #ffd36e); }
+.pass-sub { margin: 0; font: 700 14px Nunito, sans-serif; opacity: .85; }
+#pass-input { height: 48px; padding: 0 14px; border-radius: 14px; border: 2px solid rgba(255, 211, 110, 0.6); background: #0e0820; color: #fff; font: 700 20px Fredoka, sans-serif; text-align: center; letter-spacing: .12em; }
+#pass-input:focus { outline: 3px solid #fff6d0; outline-offset: 1px; }
+.pass-error { margin: 0; font: 900 14px Nunito, sans-serif; color: #ff7a8a; }
+.pass-error.shake { animation: pass-shake .35s; }
+@keyframes pass-shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+.pass-row { display: flex; gap: 8px; }
+.pass-row .ghost-btn, .pass-row .big-btn { flex: 1 1 0; min-width: 0; padding: 10px 12px; font-size: 18px; }

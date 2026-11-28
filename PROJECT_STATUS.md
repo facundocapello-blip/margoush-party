@@ -1025,3 +1025,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 ## Actualización 2026-11-28 · Música del baile: «disco de terror» ochentoso
 - Rollback: `e8eeb99` (cachengue). Facu no quiso el cachengue; pidió electrónica / hit de los 70-80 tipo Thriller, en chiste. No se copia Thriller (derechos): tema propio con esa onda en Fa# menor: bombo en negras, redoblante «gated», bajo de sinte en octavas, hook de sinte, bronces y un «uuuuh» de theremin cada vuelta. Sigue sincronizado a la negra de cada ronda.
 - QA: `npm test` 126/126, `chaky_dice.e2e` OK, baile en 430×932 y 932×430 con la música `disco` sonando y sin errores (Chromium emulado, no Safari físico).
+
+## Actualización 2026-11-28 · Contraseña para la pelea con Facu
+- Rollback: el commit anterior de este día («Música del baile: disco de terror…»).
+- El atajo 🎨 FACU de la portada y los links `?probar=facu*` piden contraseña en una ventanita del juego (ES/FR) antes de entrar. La contraseña la tiene solo Facu y no está en el repo: en el código queda solo un hash (`PASS_HASH` en `main.js`). Es un candado de juego: alguien que lea el código podría saltearlo. Una vez puesta, no se vuelve a pedir hasta recargar. La historia normal no cambia.
+- `boss_jump.e2e` necesita la variable `MARGOUSH_FACU_PASS` (pedírsela a Facu).
+- QA: `npm test` 126/126; `boss_jump.e2e` (escritorio + iPhone parado/acostado): pide contraseña, con la incorrecta no entra, con la correcta sigue; `?probar=facu` también la pide y Cancelar no deja entrar. Sin errores de consola. Chromium emulado, no Safari físico.
