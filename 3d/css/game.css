@@ -920,6 +920,8 @@ body.chaky-intro-on #arena-ui .piu { opacity: .25; transition: opacity .4s; }
 #arena-ui .boss-intro.on1 small, #arena-ui .boss-intro.on1 .l1 { opacity: 1; transform: none; }
 #arena-ui .boss-intro.on2 .l2 { animation: intro-pop .4s cubic-bezier(.2, 1.6, .4, 1) forwards; }
 #arena-ui .boss-intro .skip { position: absolute; bottom: calc(16px + var(--safe-b)); left: 0; right: 0; font: 700 12px Nunito, sans-serif; font-style: normal; color: #ffffffb8; }
+body.portrait #arena-ui .boss-intro { padding-top: calc(154px + var(--safe-t)); }
+body.portrait #arena-ui .boss-intro .skip { bottom: calc(172px + var(--safe-b)); color: #fff; font-size: 13px; text-shadow: 0 1px 4px #000, 0 0 8px #000; }
 @media (orientation: landscape) and (max-height: 500px) {
   #arena-ui .chaky-intro { padding-top: calc(48px + var(--safe-t)); }
   #arena-ui .chaky-intro .l1 { padding: 6px 12px; font-size: 17px; }
