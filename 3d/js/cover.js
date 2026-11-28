@@ -29,6 +29,14 @@ const PODIUM = (cls) => `<section id="cover-podium" class="${cls}" aria-label="R
   <p id="podium-empty" class="podium-empty hidden">Todavía nadie en el podio. ¡El primer lugar es tuyo!</p>
 </section>`;
 
+// Atajos para ir directo a cada jefe (demo / pruebas): main.js los conecta por #boss-jump [data-probar]
+const BOSS_JUMP = `<div id="boss-jump" class="boss-jump" role="group" aria-label="Ir directo al jefe">
+  <span class="boss-jump-t">Jefes</span>
+  <div class="boss-jump-row">
+    <button data-probar="chaky">🕺 CHAKY</button><button data-probar="cepi">🎾 CEPI</button><button data-probar="lale">🧈 LALE</button><button data-probar="pinky">🅿️ PINKY</button><button data-probar="facu">🎨 FACU</button>
+  </div>
+</div>`;
+
 const STAR_EMBLEM = `<svg class="pa-star-svg" viewBox="0 0 240 240" aria-hidden="true">
   <defs>
     <radialGradient id="pa-halo" cx="50%" cy="50%" r="50%">
@@ -71,6 +79,7 @@ const TEMPLATES = {
       ${CONTINUE}
       <button id="btn-play" class="pa-play">¡JUGAR!</button>
       <button id="btn-ranking" class="pa-link">Ver ranking completo</button>
+      ${BOSS_JUMP}
     </div>`,
   b: `
     <div class="pb-ba" aria-hidden="true"></div>

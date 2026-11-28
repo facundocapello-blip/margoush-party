@@ -928,7 +928,8 @@ const QUICK_TESTS = {
   calle: {},
   francia: { stage: 'francia' }
 };
-const PROBAR = (() => { try { const v = (new URLSearchParams(location.search).get('probar') || '').toLowerCase(); return QUICK_TESTS[v] ? v : null; } catch (_) { return null; } })();
+const URL_PROBAR = (() => { try { const v = (new URLSearchParams(location.search).get('probar') || '').toLowerCase(); return QUICK_TESTS[v] ? v : null; } catch (_) { return null; } })();
+let PROBAR = URL_PROBAR;
 const DEBUG = (() => { try { return new URLSearchParams(location.search).get('debug') === '1'; } catch (_) { return false; } })();
 game.probar = PROBAR;
 game.debug = DEBUG;
@@ -1306,7 +1307,15 @@ async function boot() {
   $('#screen-menu').addEventListener('click', startCover);
   addEventListener('keydown', (e) => { if (game.state === 'menu' && !game.coverStarted && !e.repeat) startCover(); });
   const justStarted = () => performance.now() - (game.coverStartedAt || 0) < 450;
-  $('#btn-play').addEventListener('click', () => { if (!justStarted()) showScreen('screen-select'); });
+  $('#btn-play').addEventListener('click', () => { if (justStarted()) return; PROBAR = game.probar = URL_PROBAR; showScreen('screen-select'); });
+  // Atajos de la portada: ir directo a cada jefe (mismo camino que ?probar=<jefe>, sin recargar)
+  for (const b of document.querySelectorAll('#boss-jump [data-probar]')) b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!game.coverStarted) startCover();
+    PROBAR = game.probar = b.dataset.probar;
+    audio.sfx('coin');
+    showScreen('screen-select');
+  });
   // Elegir héroe: el personaje salta y gira, grita (Douge «¡Diuuushbag!», Marine «¡Messi Goku!») y arranca
   let picking = false;
   for (const card of document.querySelectorAll('.card')) card.addEventListener('click', () => {

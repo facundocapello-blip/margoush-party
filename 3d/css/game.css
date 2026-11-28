@@ -983,3 +983,12 @@ body.cepi-duel-on #touch { display: none; }
   text-shadow: 0 1px 2px #000;
 }
 #debug-hud.has-err { border-color: #ff4d5e; color: #ffd4d8; background: rgba(58, 10, 18, 0.9); }
+
+/* Portada: atajos para ir directo a cada jefe (demo / pruebas), una sola fila compacta */
+.boss-jump { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.boss-jump-t { flex: none; font: 700 11px/1.05 Fredoka, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: #ffe6a8; text-align: right; max-width: 4.6em; text-shadow: 0 2px 4px #000a; }
+.boss-jump-row { display: flex; flex-wrap: nowrap; gap: 4px; min-width: 0; }
+.boss-jump-row button { flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 4px 7px; border-radius: 999px; border: 2px solid rgba(255, 211, 110, 0.75); background: rgba(20, 12, 38, 0.88); color: #fff6d0; font: 700 12px Fredoka, sans-serif; box-shadow: 0 3px 0 #0008; cursor: pointer; white-space: nowrap; }
+.boss-jump-row button:active { transform: translateY(2px); box-shadow: 0 1px 0 #0008; }
+.boss-jump-row button:focus-visible { outline: 3px solid #fff6d0; outline-offset: 2px; }
+.pa-actions .pa-link { padding: 0 8px; }
