@@ -894,3 +894,8 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Verificación: npm test 122/122. Solo Chromium; no se probó en Safari físico.
 - Pendientes del P3: `.pop` en vertical, «Tocá para empezar» en horizontal, mute en el menú, `onstatechange` de audio, código muerto de audio, poses de héroes, hojas > 2048 px.
 - Rollback: `git revert <hash de este commit>` en feat-3d y push.
+
+## 2026-11-28 · Pulido del intro de jefes en vertical (hecho por Claude)
+- `game.css`: en vertical el intro de Cepi, Lale y Pinky baja por debajo del HUD y de la barra del jefe (antes el nombre pisaba «¡PODER LISTO!»), y «Tocá para empezar» sube por encima de los botones táctiles y se lee más (blanco con sombra).
+- Verificación: npm test 122/122; capturas Chromium 430×932 de `?probar=cepi` antes/después. No se probó en Safari físico ni en horizontal (no se tocó).
+- Rollback: `git revert <hash de este commit>` en feat-3d y push.
