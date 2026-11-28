@@ -52,7 +52,7 @@ export function createShake({ decay = 2.4, maxX = 0.42, maxY = 0.28 } = {}) {
 //   apaga lineal; el signo cambia cada 2 cuadros (30 veces/s). Sin Math.random(): determinista.
 // `amount` es la intensidad que ya pasan los llamadores (≤0.06 casi nada, ≤0.15 chica, ≤0.30 media, >0.30 grande).
 export const HIT_SHAKE = {
-  tiny:  { x: 0,    y: 0.01, dur: 3 / 60 },
+  tiny:  { x: 0,    y: 0.02, dur: 3 / 60 },  // pasos del patovica: antes 0,01 m, imperceptible
   small: { x: 0,    y: 0.03, dur: 4 / 60 },
   mid:   { x: 0.10, y: 0.06, dur: 10 / 60 },
   big:   { x: 0.20, y: 0.14, dur: 18 / 60 }
@@ -64,8 +64,10 @@ export function createHitShake() {
   let tier = null, elapsed = 0;
   const out = { x: 0, y: 0 };
   return {
-    set(amount) {
-      const t = hitShakeTier(amount);
+    // `seconds` (opcional, lo pasan las cinemáticas): duración propia en vez de la del patrón
+    set(amount, seconds) {
+      const base = hitShakeTier(amount);
+      const t = seconds > 0 ? { x: base.x, y: base.y, dur: seconds } : base;
       // si ya hay una sacudida más fuerte en curso, no la pisa
       if (tier && elapsed < tier.dur && (tier.x + tier.y) * (1 - elapsed / tier.dur) > t.x + t.y) return;
       tier = t; elapsed = 0;

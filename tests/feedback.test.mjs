@@ -67,3 +67,15 @@ test('P1 Sakurai: anticipación al 55 % en el 1.er cuadro, seguimiento sostenido
   assert.ok(Math.abs(a) > Math.abs(b) && Math.sign(a) !== Math.sign(b), 'alterna de signo y decae');
   assert.equal(vibeOffset(0.2, 0.1, 0.1), 0);
 });
+
+test('P3 Sakurai: createHitShake respeta la duración propia (2.º argumento de fx.shake) y los pasos se notan', async () => {
+  const { createHitShake, HIT_SHAKE } = await import('../3d/js/feedback.js');
+  setReducedMotion(false);
+  assert.ok(HIT_SHAKE.tiny.y >= 0.02, 'el paso del patovica ya no es imperceptible (0,01 m)');
+  const s = createHitShake();
+  s.set(0.25, 0.3);
+  for (let i = 0; i < 12; i++) s.step(1 / 60); // 0,2 s: el patrón normal (10F) ya habría terminado
+  assert.equal(s.active, true, 'sigue activa dentro de los 0,3 s pedidos');
+  for (let i = 0; i < 10; i++) s.step(1 / 60);
+  assert.equal(s.active, false);
+});
