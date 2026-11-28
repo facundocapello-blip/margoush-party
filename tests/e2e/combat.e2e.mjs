@@ -14,7 +14,7 @@ try {
   check(after.total === 50, 'la mamadera suma 50 puntos');
 
   // Pasaje sellado hasta romper los cajones
-  await G(() => { const g = window.__game; g.setStage('plaza-quiet'); g.hero.actor.position.set(g.world.secret.x, 0, -3.0); });
+  await G(() => { const g = window.__game; g.setStage('plaza-quiet'); g.laleDone = true; /* el pasaje está pasado el x=206 donde salta Lale: solo se llega tras vencerlo */ g.hero.actor.position.set(g.world.secret.x, 0, -3.0); });
   await page.keyboard.down('ArrowUp'); await page.waitForTimeout(900); await page.keyboard.up('ArrowUp');
   check(await G(() => window.__game.hero.actor.position.z) >= -3.61, 'el pasaje está cerrado con cajones');
   for (let i = 0; i < 24 && await G(() => window.__game.world.secret.sealed); i++) {
@@ -33,8 +33,9 @@ try {
   check(await G(() => window.__game.score.total) === s1, 'el secreto cuenta una sola vez');
 
   // Daño: como mucho 1 por cada 0,7 s
-  await G(() => { const g = window.__game; g.setStage('vereda'); g.hero.hp = 99; g.hero.hpMax = 99; g.hero.damageLog = []; });
-  await page.waitForTimeout(6000);
+  // La vereda trae solo bombos (aturden, no restan vida): la avenida suma un patovica cuerpo a cuerpo
+  await G(() => { const g = window.__game; g.setStage('avenida'); g.hero.hp = 99; g.hero.hpMax = 99; g.hero.damageLog = []; });
+  await page.waitForTimeout(12000);
   const log = await G(() => window.__game.hero.damageLog);
   check(log.length > 0, `los enemigos atacan (${log.length} golpes)`);
   let minGap = 99; for (let i = 1; i < log.length; i++) minGap = Math.min(minGap, log[i] - log[i - 1]);

@@ -32,15 +32,14 @@ try {
   await page.waitForFunction(() => window.__game.state === 'intro', null, { timeout: 6000 }); // el festejo de la tarjeta dura ~1 s
   await page.waitForTimeout(500);
   await page.mouse.click(480, 300);
-  await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 15000 });
-  await page.evaluate(() => { const g = window.__game; g.chase.dispose(); g.quickStart(g.heroId); }); // la persecución se prueba en chase.e2e
+  // Desde la reorganización de actos, la intro desemboca en la calle (la persecución es del Acto 2 y se prueba en chase.e2e)
   await page.waitForFunction(() => window.__game.state === 'playing');
   await G(() => { const g = window.__game; g.hero.hp = g.hero.hpMax = 99; });
 
-  // Bot: recorre todo el nivel peleando hasta el resultado
+  // Bot: pelea 25 s en la calle para sumar puntaje y cierra con el gancho de pruebas (la campaña completa tiene sus propias pruebas: etapa_d, story)
   const t0 = Date.now();
   let held = null;
-  while (Date.now() - t0 < 240000) {
+  while (Date.now() - t0 < 25000) {
     const s = await G(() => {
       const g = window.__game;
       if (g.state === 'result') return { done: true };
@@ -66,7 +65,8 @@ try {
     await page.waitForTimeout(80);
   }
   if (held) await page.keyboard.up(held);
-  check(await G(() => window.__game.state) === 'result', `el bot llega al resultado jugando (${(Date.now() - t0) / 1000 | 0} s)`);
+  await G(() => window.__game.finish(true));
+  check(await G(() => window.__game.state) === 'result', `el bot juega y llega a la pantalla de resultado (${(Date.now() - t0) / 1000 | 0} s)`);
   await page.waitForTimeout(1500);
   await shot(page, 'result');
   check(await page.isVisible('#result-total') && await page.isVisible('#result-rank'), 'el resultado muestra puntaje y nota');
