@@ -835,3 +835,13 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Verificación:** `node --check` en todos los JS editados, `node tools/stamp_versions.mjs`, `npm test` **103/104 en verde** (`0` fallos, `1` omitido: `check_sprites.py` por `-I` sin `numpy` en Windows). Qué NO se pudo probar: Safari físico en iPhone 15 Pro Max.
 - **Prueba:** `https://facundocapello-blip.github.io/margoush-party/3d/` (y `?probar=byd`, `?probar=pinky`, `?probar=facu`).
 - **Rollback:** `git revert <hash de este commit>` en `feat-3d` (base previa: `02256cb`).
+
+## 2026-11-27 · Módulo reutilizable de efectos multicapa (4 capas tipo Effekseer CC-0) + FX Lab + Exportador de Sprite Sheets RGBA (hecho por Antigravity)
+- **Qué cambió:**
+  - `3d/js/skill_fx.js` y `3d/js/skill_fx_presets.js`: motor y reproductor reutilizable en 4 capas explícitas inspiradas en la superposición de nodos de **Effekseer** y su galería CC-0 (`1. core` núcleo brillante estelar aditivo + `2. trail` cinta *Ribbon* teselada con caída alfa + `3. shockwave` anillo *Ring* con doble curva *easing* + `4. sparks` chispas estiradas por velocidad y fragmentos giratorios), adaptado a Canvas 2D / minijuego y con puente opcional `createThreeSkillBurst` para escenas 2.5D Three.js r128.
+  - Cambio declarativo en 1 clic mediante JSON (`applySkillPatch`, `setPalette`, `setSize` y `3d/fx-presets.json`) con 7 paletas y 5 escalas (`XS`–`XL`), además de 6 arquetipos listos (*Corte Astral CC-0*, *Douge*, *Marine*, *Cepi*, *Lale* y *Margot*).
+  - Exportación automática de hojas de sprites con fondo 100 % transparente RGBA (`bakeSpriteSheet` + `SpriteSheetPlayer` + `tools/export_skill_sheet.mjs` sin dependencias externas), respetando el límite de `≤ 2048 px` de Safari iOS y generando la entrada lista para `manifest.json`.
+  - Banco interactivo local y web en `3d/fx-studio.html` + `3d/css/fx_studio.css` (`ES`/`FR`, conmutadores por capa y `SOLO`, descarga PNG/WebP transparente y verificador en vivo del PNG exportado). Campaña principal de `3d/` intacta.
+- **Verificación:** `node --check`, `node tools/stamp_versions.mjs`, `npm test` **108/109 en verde** (incluyendo 5 pruebas nuevas en `tests/skill_fx.test.mjs`, `0` fallos, `1` omitido por Python `-I` sin `numpy`) y exportación CLI verificada en `dist/fx-preview/` (`cornerAlpha = 0`, 16 cuadros RGBA sin recortes). Pendiente: prueba táctil en Safari físico (iPhone 15 Pro Max).
+- **Prueba:** `https://facundocapello-blip.github.io/margoush-party/3d/fx-studio.html` (campaña intacta en `/3d/`).
+- **Rollback:** `git revert <commit>` (base previa en `main`: `4267330`).
