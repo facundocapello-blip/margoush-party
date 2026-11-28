@@ -121,7 +121,7 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
     while (queue.length) getEntry(queue.shift());
   }
 
-  function play(presetId, pos, { worldSize = 3.0, facing = 1, flat = false, yOffset = 0, opacity = 1, soften = false } = {}) {
+  function play(presetId, pos, { worldSize = 3.0, facing = 1, flat = false, yOffset = 0, opacity = 1, soften = false, maxSeconds = 0 } = {}) {
     if (disposed) return null;
     const entry = getEntry(presetId);
     if (!entry) return null;
@@ -141,6 +141,7 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
     slot.elapsed = 0;
     slot.lastFrame = 0;
     slot.flat = Boolean(flat);
+    slot.cut = maxSeconds > 0 ? maxSeconds : 0; // corta el efecto antes de que termine la hoja (ej. 20F)
 
     if (slot.mat.map !== entry.tex) {
       slot.mat.map = entry.tex;
@@ -176,7 +177,7 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
       s.elapsed += dt;
       const e = s.entry;
       const idx = Math.floor(s.elapsed * e.fps);
-      if (idx >= e.frames) {
+      if (idx >= e.frames || (s.cut && s.elapsed >= s.cut)) {
         s.active = false;
         s.entry = null;
         s.lastFrame = -1;

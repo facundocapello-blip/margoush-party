@@ -8,7 +8,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
   // la sesión. Sus texturas (calle + poderes del héroe) quedan compartidas con las arenas, que las reusan sin
   // rehornear. Entre escenas solo se hace clear() (ver más abajo), nunca se destruye.
   const skillPool = createSkillFxPool(THREE, scene, camera, { maxActive: 10, reduceMotion: isReducedMotion });
-  skillPool.preload(['effekseer_astral_slash', 'douge_truth_slam', 'marine_ivy_whirl']);
+  skillPool.preload(['effekseer_astral_slash_gold', 'douge_truth_slam', 'marine_ivy_whirl']);
   const sparkTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
     const g = c.getContext('2d');
@@ -49,11 +49,17 @@ export function createFx(scene, camera, labelsEl, flashEl) {
   }
 
   return {
-    hit(pos, strength = 1) {
+    // opts.combo: golpe 2 un poco más grande que el 1 (12 chispas, aro 0,75). opts.armored: golpe que no entra
+    // (patovica embistiendo): chispas grises, sin aro.
+    hit(pos, strength = 1, { combo = -1, armored = false } = {}) {
       // con mucha gente (varios golpes seguidos) se baja a 3 chispas para no asignar decenas de sprites por cuadro
-      const n = parts.length > 36 ? 3 : Math.round(5 + strength * 5);
+      let n = parts.length > 36 ? 3 : Math.round(5 + strength * 5);
+      if (!armored && combo === 1 && n > 3) n += 2;
+      if (armored) n = Math.min(n, 4);
       for (let i = 0; i < n; i++) {
-        const s = new THREE.Sprite(sparkMat.clone());
+        const mat = sparkMat.clone();
+        if (armored) { mat.color.setHex(0x9aa0a8); mat.blending = THREE.NormalBlending; }
+        const s = new THREE.Sprite(mat);
         const size = 0.35 + Math.random() * 0.35 * strength;
         s.scale.set(size, size, 1);
         s.position.copy(pos);
@@ -62,11 +68,12 @@ export function createFx(scene, camera, labelsEl, flashEl) {
         scene.add(s);
         parts.push({ obj: s, v, life: 0.3 + Math.random() * 0.15, max: 0.45, kind: 'spark' });
       }
+      if (armored) return;
       const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: strength > 1.2 ? 0xffd36e : 0xffffff, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide }));
       ring.position.copy(pos);
       ring.lookAt(camera.position);
       scene.add(ring);
-      parts.push({ obj: ring, v: null, life: 0.2, max: 0.2, kind: 'ring', r: 0.6 + strength * 0.5 });
+      parts.push({ obj: ring, v: null, life: 0.2, max: 0.2, kind: 'ring', r: (combo === 1 ? 0.75 : 0.6) + strength * 0.5 });
       // Aro oscuro detrás (#effects «暗い色も混ぜる»): el blanco/dorado se pierde sobre asfalto claro y veredas
       const rim = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x3a1020, transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide }));
       rim.position.copy(pos);
@@ -85,9 +92,12 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       m.rotateZ(k.tilt * facing);
       scene.add(m);
       parts.push({ obj: m, v: null, life: k.life, max: k.life, kind: 'slash', r: k.r, facing });
-      if (kind === 'finisher') {
-        skillPool.play('effekseer_astral_slash', { x: pos.x + facing * 0.9, y: pos.y + 0.1, z: pos.z + 0.45 }, { worldSize: 3.1, facing });
-      }
+    },
+    // Corte astral del remate: solo si el golpe conectó, dorado como la estela, chico y cortado a 20F para no
+    // tapar el KO (antes: 40F, 3,1 m, cian, salía aunque no pegara).
+    finisherFx(pos, facing) {
+      skillPool.play('effekseer_astral_slash_gold', { x: pos.x + facing * 0.9, y: pos.y + 0.1, z: pos.z + 0.45 },
+        { worldSize: 2.2, facing, opacity: 0.8, maxSeconds: 20 / 60 });
     },
     skill(presetId, pos, opts) { return skillPool.play(presetId, pos, opts); },
     skillPool,

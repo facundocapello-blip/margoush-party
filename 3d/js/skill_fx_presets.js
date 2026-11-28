@@ -488,3 +488,13 @@ export const SKILL_PRESETS = {
     }
   }
 };
+
+// Variante dorada del corte astral para el remate de la calle: combina con la estela dorada del golpe
+// (el cian queda para las arenas y el FX Lab). Misma hoja y capas, solo cambia la paleta.
+SKILL_PRESETS.effekseer_astral_slash_gold = {
+  ...JSON.parse(JSON.stringify(SKILL_PRESETS.effekseer_astral_slash)),
+  id: 'effekseer_astral_slash_gold',
+  name: { es: 'Corte Astral Dorado', fr: 'Entaille Astrale Dorée' },
+  palette: 'solar_gold',
+  seed: 109
+};

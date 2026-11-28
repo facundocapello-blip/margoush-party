@@ -202,6 +202,7 @@ export function createAudio(assets) {
   const SFX = {
     swing: () => hiss(0.12, 0.25, 1800, 0.8),
     hit: () => punch(ac, master, noise, ac.currentTime, 1),
+    thud: () => tone('sine', 120, 55, 0.14, 0.3),
     hitHeavy: () => { punch(ac, master, noise, ac.currentTime, 1.6); maybeVoice(0.1, 0.1); },
     hurt: () => { tone('sawtooth', 220, 90, 0.22, 0.3); hiss(0.1, 0.25, 500); },
     ko: () => { punch(ac, master, noise, ac.currentTime, 1.4); tone('square', 320, 80, 0.3, 0.12, 0.05); maybeVoice(0.4, 0.15); },

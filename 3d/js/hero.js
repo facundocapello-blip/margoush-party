@@ -316,11 +316,13 @@ export function createHero(id, ctx) {
   let lastStopAt = -1e9;
   function landSwing() {
     const s = h.swing;
-    const area = { x: actor.position.x, z: actor.position.z, facing: actor.facing, reach: s.reach, depth: 0.75, dmg: s.dmg, knock: s.knock, strength: s.strength, airborne: h.lift > 0.5 };
-    fx.slash(new THREE.Vector3(actor.position.x, 1.25, actor.position.z), actor.facing, ['short', 'long', 'finisher'][h.combo]);
+    const area = { x: actor.position.x, z: actor.position.z, facing: actor.facing, reach: s.reach, depth: 0.75, dmg: s.dmg, knock: s.knock, strength: s.strength, airborne: h.lift > 0.5, combo: h.combo };
+    const slashPos = new THREE.Vector3(actor.position.x, 1.25, actor.position.z);
+    fx.slash(slashPos, actor.facing, ['short', 'long', 'finisher'][h.combo]);
     const alive0 = game.enemies.alive();
     const foes = game.enemies.hitArea(area);
     const hits = foes + game.props.hitArea(area);
+    if (foes > 0 && h.combo === 2 && (area.armoredHits || 0) < foes) fx.finisherFx(slashPos, actor.facing);
     if (foes > 0) {
       h.charge(s.strength > 1.2 ? POWER.finisher : POWER.hit);
       const ko = Math.max(0, alive0 - game.enemies.alive());
@@ -333,6 +335,8 @@ export function createHero(id, ctx) {
       const now = performance.now();
       if (!ko && now - lastStopAt < 350) f = Math.max(3 / 60, f * 0.6);
       lastStopAt = now;
+      // Si todo lo que se golpeó era armadura (no entró nada), congelado corto: no se premia como un golpe real
+      if ((area.armoredHits || 0) >= foes) f = Math.min(f, 2 / 60);
       fx.hitstop(f);
     } else if (hits > 0) fx.hitstop(HITSTOP.prop);
     if (hits > 0 && s.strength > 1.2) fx.shake(0.28);

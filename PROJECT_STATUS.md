@@ -953,3 +953,15 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Falta: probar P0+P1 en iPhone físico y decidir si se siente bien; después P2–P3 de la auditoría (el documento de la auditoría no está en el repo: si hace falta, pedirlo al usuario).
 - Para correr los e2e en este tipo de contenedor: Playwright está global en `/opt/node22/lib/node_modules/playwright` (enlazarlo en `node_modules/playwright`) y hace falta `node_modules/three/build/three.min.js` (three r128 de cdnjs). `node_modules/` está en `.gitignore`.
 - `check_sprites.py` falla sin `scipy` (no es un bug del juego).
+
+## 2026-11-28 · Auditoría Sakurai de la calle, P2: corte astral, punto de contacto, golpe 2, armadura, fundido y anticipación (hecho por Claude)
+- **Qué cambió** (solo la calle; las arenas no cambian):
+  1. **Corte astral del remate** (`fx.js` `finisherFx`, hero.js `landSwing`): ahora sale solo si el remate conecta con algo que no sea armadura, en dorado (preset nuevo `effekseer_astral_slash_gold`, misma hoja que el cian), `worldSize` 2,2, opacidad 0,8 y cortado a 20F (`maxSeconds` nuevo en `skill_fx_three.js` `play`). Antes salía siempre, cian, 3,1 m y 40F encima del KO. El cian sigue en las arenas y el FX Lab.
+  2. **Marca de impacto en el punto de contacto** (`enemies.js` `damage`): x −0,3 hacia el héroe y z +0,3 hacia la cámara, en vez del centro del malo.
+  3. **Golpe 2 distinto del 1** (`fx.js` `hit` con `combo`; `hero.js` pasa `combo` en el área): aro 0,75 contra 0,6 y +2 chispas (10 contra 12).
+  4. **Patovica con armadura** (`enemies.js`): si embiste y el golpe es chico, chispas grises sin aro, sonido sordo nuevo `thud` (`audio.js`), no se aplasta ni vibra y el congelado es de 2F como máximo. El daño sigue entrando.
+  5. **Sin fundido al entrar al golpe** (`sprites.js` `SNAP_POSE`): `attack*`, `strike` y `hurt` cortan en seco; el fundido de 80 ms queda para caminar, correr y reposo (solo héroes y malos de la calle, `snapHit`).
+  6. **Anticipación de los malos** (`enemies.js` `melee`): en el `windup` suman `offsetX −0,12` y `stretch −0,06` al `lean` 0,18; se reinician al soltar el golpe.
+- **Verificación:** `node --check`, `node tools/stamp_versions.mjs`, `npm test` 124/125 (falla solo `check_sprites.py`: sin `scipy` en el contenedor, no es del cambio). e2e nuevo `tests/e2e/p2_calle.e2e.mjs` (18 checks, Chrome 1280×720 y celu 430×932 táctil, sin errores de consola); `golpe_feel`, `attackfx`, `combat` y `skill_fx` siguen OK. Es Chromium emulado, no Safari físico, y no se midió la sensación jugando.
+- **Pendiente:** P3 (shake de pasos del patovica, 2.º argumento de `fx.shake`, `sparkMat.clone()` por chispa) y probar P0 + P1 + P2 en iPhone.
+- **Rollback:** `git revert <hash de este commit>` (base previa: `8c6a920`).

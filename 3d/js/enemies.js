@@ -179,7 +179,7 @@ export function createEnemies(ctx) {
 
   function hideTells(e) { if (e.zone) e.zone.visible = false; if (e.ring) e.ring.visible = false; if (e.lane) e.lane.visible = false; }
 
-  function damage(e, dmg, knockDir, knock, strength) {
+  function damage(e, dmg, knockDir, knock, strength, combo = -1, area = null) {
     e.hp -= dmg;
     // El patovica embistiendo no se frena con golpes chicos
     const armored = e.kind === 'patovica' && e.state === 'charge' && strength <= 1.2;
@@ -195,21 +195,25 @@ export function createEnemies(ctx) {
         fx.popup(tmp.copy(e.pos).setY(2.9), '¡PLAF!', '#ffd23a', { size: 26, life: 0.8 });
       }
     }
-    e.actor.hit();
-    e.actor.flash(0.12, 0.12); // sin parpadeo: el cuadro «hurt» no se esconde
-    e.actor.vibrate(Math.min(0.16, 0.07 + strength * 0.03), strength > 1.2 ? 0.14 : 0.09); // vibra durante el hit-stop
+    if (!armored) e.actor.hit(); // con armadura no se aplasta ni vibra: se nota que no le hizo nada
+    if (!armored) e.actor.flash(0.12, 0.12); // sin parpadeo: el cuadro «hurt» no se esconde
+    if (!armored) e.actor.vibrate(Math.min(0.16, 0.07 + strength * 0.03), strength > 1.2 ? 0.14 : 0.09); // vibra durante el hit-stop
     // El golpe deja al malo ladeado hacia atrás en el cuadro del impacto (queda visible en el hit-stop) y se endereza
     if (e.state === 'hitstun') {
       const big = strength > 1.2;
       e.actor.lean = big ? 0.45 : 0.25;
       e.actor.offsetX = big ? -0.2 : -0.12;
     }
+    // La marca sale del punto de contacto (lado del héroe, hacia la cámara), no del centro del malo
     tmp.copy(e.pos).setY(1.4);
-    fx.hit(tmp, strength);
+    tmp.x -= knockDir * 0.3; tmp.z += 0.3;
+    fx.hit(tmp, strength, { combo, armored });
+    if (armored && area) area.armoredHits = (area.armoredHits || 0) + 1;
+    tmp.x += knockDir * 0.3; tmp.z -= 0.3;
     fx.popup(tmp.setY(2.6), String(dmg * 10), strength > 1.2 ? '#ffd36e' : '#fff', { size: strength > 1.2 ? 26 : 20, life: 0.6 });
     game.score.addHit();
     game.combo.add(1);
-    ctx.audio?.sfx(strength > 1.2 ? 'hitHeavy' : 'hit');
+    ctx.audio?.sfx(armored ? 'thud' : strength > 1.2 ? 'hitHeavy' : 'hit');
     if (e.k.miniBoss) miniBossBar(e);
     if (e.hp <= 0) {
       e.state = 'dead';
@@ -231,8 +235,9 @@ export function createEnemies(ctx) {
     if (e.state === 'windup') {
       e.t -= dt;
       a.lean = 0.18; // toma impulso
+      a.offsetX = -0.12; a.stretch = -0.06; // se echa atrás y se encoge (anticipación visible)
       a.material.color.setHex(Math.floor(e.t * 20) % 2 ? 0xff8080 : 0xffffff);
-      if (e.t <= 0) { e.state = 'strike'; e.t = 0.15; a.lean = -0.12; a.material.color.setHex(0xffffff); fx.slash(tmp.copy(e.pos).setY(1.25), a.facing, 'enemy'); }
+      if (e.t <= 0) { e.state = 'strike'; e.t = 0.15; a.lean = -0.12; a.offsetX = 0; a.stretch = 0; a.material.color.setHex(0xffffff); fx.slash(tmp.copy(e.pos).setY(1.25), a.facing, 'enemy'); }
     } else if (e.state === 'strike') {
       e.t -= dt;
       const ex = (hp.x - e.pos.x) * a.facing;
@@ -616,13 +621,14 @@ export function createEnemies(ctx) {
       return true;
     },
 
-    hitArea({ x, z, facing, reach, depth, dmg, knock, strength }) {
+    hitArea(area) {
+      const { x, z, facing, reach, depth, dmg, knock, strength, combo } = area;
       let n = 0;
       for (const e of list) {
         if (e.hp <= 0) continue;
         const dx = (e.pos.x - x) * facing;
         if (dx < -0.4 || dx > reach || Math.abs(e.pos.z - z) > depth) continue;
-        damage(e, dmg, facing, knock, strength);
+        damage(e, dmg, facing, knock, strength, combo, area);
         n++;
       }
       return n;
