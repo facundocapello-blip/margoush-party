@@ -9,8 +9,9 @@ import { fillText, tr } from './i18n.js';
 import { attachBossIntro } from './boss_intro.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
-import { createShake, flashAlpha } from './feedback.js';
+import { createShake, flashAlpha, isReducedMotion } from './feedback.js';
 import { createSkillFxPool } from './skill_fx_three.js';
+import { FX, heroPowerFx, bossFrontFx, facingToward, createBurst, stepSparks } from './arena_fx.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -34,8 +35,8 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 250);
-    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6 }));
-    skillFx.preload([isM ? 'marine_ivy_whirl' : 'douge_truth_slam', 'cepi_golden_smash']);
+    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6, reduceMotion: isReducedMotion }));
+    skillFx.preload([isM ? FX.IVY : FX.TRUTH, FX.CEPI_SMASH]);
     scene.background = L('#101c3a');
     scene.fog = new T.Fog(L('#101c3a'), 26, 75);
     scene.add(new T.HemisphereLight(0x9fc8ff, 0x1a2c54, 0.95));
@@ -342,18 +343,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
 
     const sparkG = keep(new T.BoxGeometry(0.18, 0.18, 0.18));
     const sparks = [];
-    const burstMats = {};
-    function burst(px, py, pz, hex, count = 8) {
-      const m = burstMats[hex] || (burstMats[hex] = keep(new T.MeshBasicMaterial({ color: L(hex) })));
-      for (let i = 0; i < count; i++) {
-        const p = new T.Mesh(sparkG, m);
-        p.position.set(px, py, pz);
-        const ang = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-        const spd = 2.8 + Math.random() * 4.2;
-        scene.add(p);
-        sparks.push({ p, vx: Math.cos(ang) * spd, vy: 2.5 + Math.random() * 3.5, vz: Math.sin(ang) * spd, t: 0, life: 0.42 + Math.random() * 0.2 });
-      }
-    }
+    const burst = createBurst(T, scene, keep, L, sparks, { geo: sparkG, spd: [2.8, 4.2], vy: [2.5, 3.5], life: [0.42, 0.2] });
 
     function handle(evs) {
       for (const e of evs) {
@@ -368,7 +358,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             addPts(e.gold ? CEPI_ARENA.points.returned : CEPI_ARENA.points.normalReturn, e.x, 2.4, e.z);
             charge(e.gold ? 0.24 : 0.1);
             sfx(e.gold ? 'perfect' : 'hit'); shake(e.gold ? 0.3 : 0.16, e.gold ? 0.22 : 0.12);
-            if (e.gold) { freezeT = 0.075; burst(e.x, 1.6, e.z, '#ffe066', 12); skillFx.play('cepi_golden_smash', { x: e.x, y: 1.9, z: e.z + 0.4 }, { worldSize: 3.8 }); }
+            if (e.gold) { freezeT = 0.075; burst(e.x, 1.6, e.z, '#ffe066', 12); skillFx.play(FX.CEPI_SMASH, { x: e.x, y: 1.9, z: e.z + 0.4 }, { worldSize: 3.8 }); }
             else burst(e.x, 1.4, e.z, '#c8ff3d', 6);
             pop(e.x, 2.8, e.z, e.gold ? '¡PUNTO DE ORO!' : '¡DEVUELTA!', e.gold ? '#ffe066' : '#9fe4ff', e.gold ? 24 : 20);
             break;
@@ -437,7 +427,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             phase = 'ko'; phaseT = 0; setBar(); setBarName();
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.55); shake(0.5, 0.45);
-            skillFx.play('cepi_golden_smash', { x: logic.state.bossX, y: 2.6, z: CEPI_ARENA.bossZ + 0.6 }, { worldSize: 5.0 });
+            bossFrontFx(skillFx, FX.CEPI_SMASH, { x: logic.state.bossX, y: 2.6, z: CEPI_ARENA.bossZ + 0.6 }, { worldSize: 5.0, heroX: x });
             pop(logic.state.bossX, BOSS_H * 0.7, CEPI_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.5);
             break;
           }
@@ -454,7 +444,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     function usePower() {
       hero.power = 0; powT = 0.55; holdT = 0; freezeT = Math.max(freezeT, 0.085);
       sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.42, 0.32);
-      skillFx.play(isM ? 'marine_ivy_whirl' : 'douge_truth_slam', { x, y: 1.6, z: z + 0.4 }, { worldSize: 4.6 });
+      heroPowerFx(skillFx, isM, { x, z }, { facing: facingToward(x, logic.state.bossX) });
       pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);
       handle(logic.power());
     }
@@ -712,14 +702,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       }
 
       // Partículas de impacto (chispas/cartón)
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const q = sparks[i]; q.t += dt;
-        if (q.t >= q.life) { scene.remove(q.p); sparks.splice(i, 1); continue; }
-        q.vy -= 14 * dt;
-        q.p.position.x += q.vx * dt; q.p.position.y = Math.max(0.08, q.p.position.y + q.vy * dt); q.p.position.z += q.vz * dt;
-        q.p.rotation.x += dt * 10; q.p.rotation.y += dt * 8;
-        q.p.scale.setScalar(Math.max(0.01, 1 - q.t / q.life));
-      }
+      stepSparks(scene, sparks, dt, 0, [10, 8]);
 
       // Textos flotantes proyectados a pantalla
       lay.length = 0;
@@ -756,6 +739,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       dispose,
       syncBar: () => { lastBarHp = logic.state.hp; lastBarPhase = logic.state.phase; setBar(); setBarName(); },
       get state() { return logic.state; },
+      get skillFx() { return skillFx; },
       get heroPose() { return heroPose; },
       get bossKey() { return bossKey; }
     };
@@ -770,6 +754,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     syncBar: () => cur?.syncBar(),
     get active() { return !!cur; },
     get logic() { return cur?.logic || null; },
-    get state() { return cur?.state || null; }
+    get state() { return cur?.state || null; },
+    get skillFx() { return cur?.skillFx || null; }
   };
 }

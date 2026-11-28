@@ -14,10 +14,37 @@ function setCellUv(uv, col, row, cols, rows) {
   uv.needsUpdate = true;
 }
 
-export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker = bakeSpriteSheet } = {}) {
-  const cache = new Map();
+// Caché de módulo, compartida por todos los pools (calle + arenas):
+// 1) BAKED: el horneado en canvas es CPU puro y no depende de la escena; se hace una sola vez por preset.
+//    Se guarda solo canvas+meta (no `cells` ni `manifestEntry`) para no retener de más.
+// 2) TEXTURES: la textura GPU se comparte entre pools vivos con conteo de referencias. Cuando el último
+//    pool la suelta se hace dispose(), así cada arena sigue devolviendo el 100 % de lo que sube (R-2).
+const BAKED = new WeakMap(); // baker -> Map(presetId -> { canvas, meta })
+const TEXTURES = new WeakMap(); // THREE -> Map(presetId -> { entry, refs })
+
+function bakedFor(baker, presetId, preset) {
+  let perBaker = BAKED.get(baker);
+  if (!perBaker) { perBaker = new Map(); BAKED.set(baker, perBaker); }
+  let hit = perBaker.get(presetId);
+  if (!hit) {
+    const baked = baker(preset);
+    hit = { canvas: baked.canvas, meta: baked.meta };
+    perBaker.set(presetId, hit);
+  }
+  return hit;
+}
+
+// Efecto «suave»: se usa cuando el FX se dibuja delante del jefe (KO, cambio de fase) o si el jugador pidió
+// movimiento reducido. Achica y baja la opacidad para no tapar la lectura del jefe ni de sus telegrafiados.
+export const SOFT = { scale: 0.7, opacity: 0.5 };
+
+export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker = bakeSpriteSheet, reduceMotion = null } = {}) {
+  const cache = new Map(); // presetId -> entry compartido, solo los que este pool tiene retenidos
   const made = {};
+  const queue = []; // presets pendientes de precarga diferida
   let disposed = false;
+  let shared = TEXTURES.get(THREE);
+  if (!shared) { shared = new Map(); TEXTURES.set(THREE, shared); }
 
   const slots = Array.from({ length: Math.max(1, maxActive) }, () => {
     const geo = new THREE.PlaneGeometry(1, 1);
@@ -51,34 +78,50 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
     const preset = SKILL_PRESETS[presetId];
     if (!preset) return null;
 
-    const baked = baker(preset);
-    const tex = new THREE.CanvasTexture(baked.canvas);
-    tex.generateMipmaps = false;
-    if (THREE.LinearFilter !== undefined) {
-      tex.minFilter = THREE.LinearFilter;
-      tex.magFilter = THREE.LinearFilter;
+    let rec = shared.get(presetId);
+    if (!rec) {
+      const baked = bakedFor(baker, presetId, preset);
+      const tex = new THREE.CanvasTexture(baked.canvas);
+      tex.generateMipmaps = false;
+      if (THREE.LinearFilter !== undefined) {
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+      }
+      if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
+      tex.needsUpdate = true;
+      rec = {
+        refs: 0,
+        entry: {
+          id: presetId,
+          tex,
+          cols: baked.meta.cols,
+          rows: baked.meta.rows,
+          frames: baked.meta.frames,
+          fps: baked.meta.fps
+        }
+      };
+      shared.set(presetId, rec);
     }
-    if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
-    tex.needsUpdate = true;
-
-    const entry = {
-      id: presetId,
-      tex,
-      cols: baked.meta.cols,
-      rows: baked.meta.rows,
-      frames: baked.meta.frames,
-      fps: baked.meta.fps
-    };
-    cache.set(presetId, entry);
-    return entry;
+    rec.refs++;
+    cache.set(presetId, rec.entry);
+    return rec.entry;
   }
 
+  // Precarga diferida: encola y hornea de a un preset por update() para evitar el tirón al entrar.
+  // Si play() pide uno que sigue en cola, se hornea ahí mismo (sin esperas).
   function preload(presetIds = []) {
     if (disposed) return;
-    for (let i = 0; i < presetIds.length; i++) getEntry(presetIds[i]);
+    for (let i = 0; i < presetIds.length; i++) {
+      const id = presetIds[i];
+      if (id && !cache.has(id) && !queue.includes(id)) queue.push(id);
+    }
   }
 
-  function play(presetId, pos, { worldSize = 3.0, facing = 1, flat = false, yOffset = 0, opacity = 1 } = {}) {
+  function flushPreload() {
+    while (queue.length) getEntry(queue.shift());
+  }
+
+  function play(presetId, pos, { worldSize = 3.0, facing = 1, flat = false, yOffset = 0, opacity = 1, soften = false } = {}) {
     if (disposed) return null;
     const entry = getEntry(presetId);
     if (!entry) return null;
@@ -103,11 +146,13 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
       slot.mat.map = entry.tex;
       slot.mat.needsUpdate = true;
     }
-    slot.mat.opacity = opacity;
+    const soft = soften || (reduceMotion ? Boolean(reduceMotion()) : false);
+    const size = soft ? worldSize * SOFT.scale : worldSize;
+    slot.mat.opacity = soft ? opacity * SOFT.opacity : opacity;
 
     const sign = facing === -1 ? -1 : 1;
     slot.mesh.position.set(pos.x, pos.y + yOffset, pos.z);
-    slot.mesh.scale.set(sign * worldSize, worldSize, 1);
+    slot.mesh.scale.set(sign * size, size, 1);
 
     if (slot.flat) {
       slot.mesh.rotation.set(-Math.PI / 2, 0, 0);
@@ -124,6 +169,7 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
 
   function update(dt) {
     if (disposed) return;
+    if (queue.length) getEntry(queue.shift());
     for (let i = 0; i < slots.length; i++) {
       const s = slots[i];
       if (!s.active) continue;
@@ -168,14 +214,20 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
       s.geo.dispose();
       s.mat.dispose();
     }
-    for (const entry of cache.values()) {
-      entry.tex.dispose();
+    queue.length = 0;
+    for (const [id, entry] of cache) {
+      const rec = shared.get(id);
+      if (rec && rec.entry === entry && --rec.refs <= 0) {
+        entry.tex.dispose();
+        shared.delete(id);
+      }
     }
     cache.clear();
   }
 
   return {
     preload,
+    flushPreload,
     play,
     update,
     clear,

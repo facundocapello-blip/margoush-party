@@ -11,8 +11,9 @@ import { attachBossIntro } from './boss_intro.js';
 import { createMargotFinish } from './margot_finish.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
-import { createShake, flashAlpha } from './feedback.js';
+import { createShake, flashAlpha, isReducedMotion } from './feedback.js';
 import { createSkillFxPool } from './skill_fx_three.js';
+import { FX, heroPowerFx, bossFrontFx, facingToward, createBurst, stepSparks } from './arena_fx.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -38,8 +39,8 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 250);
-    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6 }));
-    skillFx.preload([isM ? 'marine_ivy_whirl' : 'douge_truth_slam', 'margot_hero_cry']);
+    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6, reduceMotion: isReducedMotion }));
+    skillFx.preload([isM ? FX.IVY : FX.TRUTH, FX.HERO_CRY]);
     scene.background = L('#1a1d26');
     scene.fog = new T.Fog(L('#1a1d26'), 26, 76);
     scene.add(new T.HemisphereLight(0xdce8ff, 0x262933, 0.95));
@@ -349,19 +350,10 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
 
     const billG = keep(new T.BoxGeometry(0.32, 0.04, 0.18));
     const sparks = [];
-    const burstMats = {};
-    function burst(px, py, pz, hex, count = 8, isBill = false) {
-      const m = burstMats[hex] || (burstMats[hex] = keep(new T.MeshBasicMaterial({ color: L(hex) })));
-      for (let i = 0; i < count; i++) {
-        const p = new T.Mesh(billG, m);
-        p.position.set(px, py, pz);
-        if (!isBill) p.scale.set(0.65, 3.5, 1.1);
-        const ang = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-        const spd = 2.6 + Math.random() * 4.2;
-        scene.add(p);
-        sparks.push({ p, vx: Math.cos(ang) * spd, vy: (isBill ? 3.2 : 2.6) + Math.random() * 3.2, vz: Math.sin(ang) * spd, t: 0, life: isBill ? 0.85 : 0.48, bill: isBill });
-      }
-    }
+    const burst = createBurst(T, scene, keep, L, sparks, {
+      geo: billG, scale: [0.65, 3.5, 1.1], spd: [2.6, 4.2], vy: [2.6, 3.2], life: [0.48, 0],
+      bill: { vy: [3.2, 3.2], life: [0.85, 0] }
+    });
 
     function handle(evs) {
       for (const e of evs) {
@@ -395,7 +387,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             after(0.65, () => {
               sfx('hit'); shake(0.5, 0.4);
               burst(logic.state.bossX, BOSS_H * 0.8, PINKY_ARENA.bossZ + 0.6, '#ffa53a', 16, false);
-              skillFx.play('margot_hero_cry', { x: logic.state.bossX, y: BOSS_H * 0.72, z: PINKY_ARENA.bossZ + 0.8 }, { worldSize: 5.0 });
+              skillFx.play(FX.HERO_CRY, { x: logic.state.bossX, y: BOSS_H * 0.72, z: PINKY_ARENA.bossZ + 0.8 }, { worldSize: 5.0 });
               pop(logic.state.bossX, BOSS_H + 0.9, PINKY_ARENA.bossZ, '¡SPLASH! 🥣😎', '#ffb347', 30, 1.5);
             });
             break;
@@ -422,7 +414,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.6); shake(0.55, 0.5);
             burst(logic.state.bossX, 2.6, PINKY_ARENA.bossZ + 0.4, '#6de37b', 18, true);
-            skillFx.play('margot_hero_cry', { x: logic.state.bossX, y: 2.8, z: PINKY_ARENA.bossZ + 0.7 }, { worldSize: 5.2 });
+            bossFrontFx(skillFx, FX.HERO_CRY, { x: logic.state.bossX, y: 2.8, z: PINKY_ARENA.bossZ + 0.7 }, { worldSize: 5.2, heroX: x });
             pop(logic.state.bossX, BOSS_H * 0.7, PINKY_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.6);
             pop(logic.state.bossX, BOSS_H * 0.45, PINKY_ARENA.bossZ, '💵 Cheque firmado: FACU', '#9fe4ff', 22, 2.4);
             break;
@@ -440,7 +432,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     function usePower() {
       hero.power = 0; powT = 0.55; holdT = 0; freezeT = Math.max(freezeT, 0.085);
       sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.4, 0.3);
-      skillFx.play(isM ? 'marine_ivy_whirl' : 'douge_truth_slam', { x, y: 1.6, z: z + 0.4 }, { worldSize: 4.6 });
+      heroPowerFx(skillFx, isM, { x, z }, { facing: facingToward(x, logic.state.bossX) });
       pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);
       handle(logic.power());
     }
@@ -642,17 +634,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       P.rotation.z = dashT > 0 && !hasDodge ? -dashX * 0.25 : lean;
 
       // Billetes verdes volando y chispas del Grito de Margot
-      for (let i = sparks.length - 1; i >= 0; i--) {
-        const q = sparks[i]; q.t += dt;
-        if (q.t >= q.life) { scene.remove(q.p); sparks.splice(i, 1); continue; }
-        q.vy -= (q.bill ? 5.5 : 13) * dt;
-        q.p.position.x += (q.vx + (q.bill ? Math.sin(t * 10 + i) * 1.1 : 0)) * dt;
-        q.p.position.y = Math.max(0.08, q.p.position.y + q.vy * dt);
-        q.p.position.z += q.vz * dt;
-        q.p.rotation.x += dt * (q.bill ? 6 : 10);
-        q.p.rotation.y += dt * (q.bill ? 9 : 8);
-        if (!q.bill) q.p.scale.setScalar(Math.max(0.01, 1 - q.t / q.life));
-      }
+      stepSparks(scene, sparks, dt, t);
 
       // Textos flotantes
       lay.length = 0;
@@ -687,6 +669,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       dispose,
       syncBar: () => { lastBarHp = logic.state.hp; lastBarPhase = logic.state.phase; setBar(); setBarName(); },
       get state() { return logic.state; },
+      get skillFx() { return skillFx; },
       get heroPose() { return heroPose; },
       get bossKey() { return bossKey; }
     };
@@ -701,6 +684,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     syncBar: () => cur?.syncBar(),
     get active() { return !!cur; },
     get logic() { return cur?.logic || null; },
-    get state() { return cur?.state || null; }
+    get state() { return cur?.state || null; },
+    get skillFx() { return cur?.skillFx || null; }
   };
 }

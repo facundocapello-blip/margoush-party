@@ -1,10 +1,10 @@
 // Efectos de golpe: chispas, anillos, sacudón, congelado y textos flotantes.
 import { fillText } from './i18n.js';
 import { placePops } from './pop_layout.js';
-import { createShake, flashAlpha } from './feedback.js';
+import { createShake, flashAlpha, isReducedMotion } from './feedback.js';
 import { createSkillFxPool } from './skill_fx_three.js';
 export function createFx(scene, camera, labelsEl, flashEl) {
-  const skillPool = createSkillFxPool(THREE, scene, camera, { maxActive: 10 });
+  const skillPool = createSkillFxPool(THREE, scene, camera, { maxActive: 10, reduceMotion: isReducedMotion });
   skillPool.preload(['effekseer_astral_slash', 'douge_truth_slam', 'marine_ivy_whirl']);
   const sparkTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;

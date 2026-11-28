@@ -327,12 +327,12 @@ export function createHero(id, ctx) {
     h.state = 'free'; h.swing = null;
     h.inv = Math.max(h.inv, 0.6);
     if (id === 'douge') {
-      game.powers.truthWave(p.x, p.z);
+      game.powers.truthWave(p.x, p.z, actor.facing);
       fx.popup(p.clone().setY(4.6), '¡VERDADES A LOS GRITOS!', '#ffd36e', { size: 24, life: 1.1 });
       fx.shake(0.5); fx.hitstop(0.12);
       ctx.audio?.sfx('diushbag'); // el grito tipo «¡Hadouken!» acompaña la onda
     } else {
-      game.powers.flambe(p.x, p.z, h);
+      game.powers.flambe(p.x, p.z, h, actor.facing);
       fx.popup(p.clone().setY(4.4), '¡HIEDRA! OH LÀ LÀ !', '#7ee0c3', { size: 24, life: 1.1 });
       fx.shake(0.35); fx.hitstop(0.1);
       ctx.audio?.say('Oh là là !', 'fr-FR', { female: true });
