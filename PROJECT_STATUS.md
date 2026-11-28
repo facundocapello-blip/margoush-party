@@ -929,3 +929,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Qué cambió:** `hero.js`: si hubo un hit-stop hace menos de 350 ms, el siguiente vale 60 % (mínimo 3F); KO y último malo no se recortan; el congelado por recibir un golpe tampoco se suma a uno reciente. `fx.js`: con más de 36 partículas vivas, `hit()` saca 3 chispas en vez de 5–10.
 - **Verificación:** `npm test` 123/124 (falla solo `check_sprites.py`, sin `scipy` en el contenedor), e2e `attackfx` y `combat` OK. No se midió en Safari físico: si sigue con lag, hay que medir con `game.perf`.
 - **Rollback:** `git revert <hash de este commit>` en feat-3d (base previa: `60b861f`).
+
+## 2026-11-28 · Regla de doble prueba (Chrome + celu) y e2e `golpe_feel`
+- Nueva regla en `AGENTS.md`: antes de entregar, probar como el usuario en Chrome de escritorio y en emulación de iPhone 15 Pro Max (táctil).
+- Nuevo `tests/e2e/golpe_feel.e2e.mjs`: pelea con 5 malos a la vez en los dos perfiles; mide cortes de cuadro, captura pantalla y revisa errores. Sin errores de consola en ambos.
+- Comparación en las mismas condiciones (SwiftShader, GL por software, ~17 cuadros/s; no es un iPhone): sin P0, con el P0 original y con el ajuste anti-lag dan lo mismo (prom 50–61 ms, cortes >100 ms: 1 en Chrome, 5–6 en celu). El costo de dibujar no cambió con el P0; lo que se sintió como lag son las pausas del juego, que este test no mide. La prueba en Safari físico sigue pendiente.
+- Rollback: `git revert <hash de este commit>` (base previa: `a31cc63`).
