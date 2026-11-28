@@ -354,17 +354,23 @@ body.has-screen #level-card { display: none; }
 #banner.with-avatar img { animation: facu-bob 0.5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .host img, #banner.with-avatar img { animation: none; } }
 
-/* Cepi «el Niño» en la pantalla de derrota: entra desde la derecha y tira trompadas (golpe ↔ parado) */
-.host.cepi { animation: cepi-in 0.25s ease-out both; }
+/* Cepi «el Niño» en la pantalla de derrota: entra desde la derecha enojado */
+.host.cepi { animation: cepi-in 0.25s ease-out both; gap: 10px; }
 .cepi-sprite { height: min(46vh, 300px); aspect-ratio: 226 / 400; background-size: 400% 100%; background-repeat: no-repeat;
   background-position: 66.667% 0; filter: drop-shadow(0 10px 16px #000a); animation: cepi-punch 0.6s steps(1) infinite; }
+.cepi-sprite.cepi-hd { aspect-ratio: 455 / 768; background-size: contain; background-position: center bottom;
+  transform-origin: 50% 92%; animation: cepi-rage 0.72s ease-in-out infinite; }
 .host.cepi .host-bubble { background: #ffe1db; border: 3px solid #e2412b; }
 @keyframes cepi-in { from { transform: translateX(60vw); } to { transform: none; } }
 @keyframes cepi-punch {
   0% { background-position: 66.667% 0; transform: translateX(14px); }
   50% { background-position: 0% 0; transform: translateX(0); }
 }
-@media (max-width: 640px) { .cepi-sprite { height: 18vh; } }
+@keyframes cepi-rage {
+  0%, 100% { transform: translateY(0) rotate(-2deg) scale(1); }
+  50% { transform: translateY(-6px) rotate(3deg) scale(1.04); }
+}
+@media (max-width: 640px) { .cepi-sprite { height: 21vh; } }
 @media (max-height: 460px) { .cepi-sprite { height: 62vh; } }
 @media (prefers-reduced-motion: reduce) { .host.cepi, .cepi-sprite { animation: none; } }
 
@@ -721,8 +727,8 @@ body.portrait #arena-ui .chaky-sign .txt { font-size: 22px; }
 @keyframes card-in { to { transform: translate(-50%, 0) scale(1); opacity: 1; } }
 /* Etapa D: el cartel de fase es una cinta debajo del HUD; ya no tapa la pelea del centro */
 #arena-ui .phase-card { max-width: min(92vw, 420px); }
-/* «Chaky dice»: el resto se oscurece, barra de tiempo en el cartel, rondas y veredicto */
-#arena-ui.dice-mode::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 62%; background: radial-gradient(ellipse at 50% 35%, transparent 35%, rgba(10, 0, 25, .5) 85%); pointer-events: none; }
+/* Viñeta suave a pantalla completa en el escenario de baile (sin corte horizontal a mitad de pantalla) */
+#arena-ui.dice-mode::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 48%, rgba(10, 0, 25, .42) 100%); pointer-events: none; }
 #arena-ui .chaky-sign .timer { display: block; height: 7px; margin: 6px -6px 0; border-radius: 4px; background: #0002; overflow: hidden; }
 #arena-ui .chaky-sign .timer i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ff5a3c, #ffd36e); border-radius: 4px; }
 /* El botón que pide el cartel late y brilla; con ¡QUIETO! se apagan todos */

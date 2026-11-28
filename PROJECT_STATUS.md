@@ -990,3 +990,17 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Confirmar que GitHub Pages desplegó `feat-3d` (https://facundocapello-blip.github.io/margoush-party/); no se verificó desde el contenedor.
 - `npm test` 126/126 con `scipy` instalado (pip install scipy). Los e2e `controls`, `enemies`, `gates`, `mobile` y `level` fallan igual sin estos cambios en el contenedor (no investigado: tiempos de espera/entorno); revisar en una máquina con Chrome real.
 - Menores sin hacer: popups de daño con DOM por golpe (medir en iPhone con 5 malos), aleatoriedad de chispas con semilla en modo debug, capturas de las 2 pruebas (escritorio 1280×720 y iPhone 430×932) que pide AGENTS.md.
+
+## 2026-11-28 · Douge (tamaño de cabeza), baile de Big Chaky (encuadre, Margot, piso y KO) y Cepi en derrota
+- **Qué cambió (respetando todos los FX, partículas y ajustes Sakurai previos):**
+  - **Douge (`3d/js/hero.js`):** normalizado `POSE_H.douge` (`idle: 0.96, walk: 1.06, run: 0.85, combo: 0.86, actions: 0.86`) para que la cabeza mantenga el mismo tamaño al estar quieto, caminar, correr y pegar (antes `run: 1.11` la agrandaba ~32 % respecto de `idle` y ~47 % respecto de `walk`).
+  - **Baile de Big Chaky (`3d/js/arena.js`, `3d/css/game.css`, `3d/js/cine.js`):**
+    - Eliminado el corte horizontal al 62 % de `#arena-ui.dice-mode::before` (ahora viñeta suave a pantalla completa) y ajustado el encuadre en vertical (`zPortrait: 11.4`, `fovPortrait: 58`) y en la intro para que Douge, Margot y Chaky entren completos sin recortes.
+    - **Margot en el centro del escenario** (`x = 0, z = STAGE_Z - 0.95`) durante el duelo y al costado interior de Chaky durante la intro (antes quedaba tapada detrás de Chaky y pegada al borde derecho).
+    - **Bailarines apoyados en el piso:** pies sobre las baldosas LED (`DANCE_Z`), descuento de `foot`, sombra de contacto más marcada que escala con la altura, ritmo expresado con *squash & stretch* y vaivén desde los pies sin flotar en el aire (salto acotado solo al carril central `●` y `dance_jump`).
+    - **Fin del nivel sin tildarse:** oculta el cartel de ronda en KO, mantiene el render animado durante el cierre de cortina, deja a `arena_chaky_dance_ko` arrodillado en el piso sin volcarlo `-66°`, y en `postChaky` (`3d/js/cine.js`) Chaky tiembla en pose `hurt` (sin cochecito duplicado) y sale corriendo hacia la derecha en lugar de quedar congelado.
+  - **Cepi en pantalla de derrota (`3d/js/ui.js`, `3d/css/game.css`):** usa `arena_cepi_smash.webp` (alta resolución, ya reparado con `fix_alpha_holes.py`) con clase `.cepi-sprite.cepi-hd` y animación `cepi-rage`, en reemplazo de `cepi_sheet.webp` (baja resolución con halo blanco).
+- **Verificación:** `node --check` en los 4 JS editados, `node tools/stamp_versions.mjs`, `npm test` **125/125 en verde** (`0` fallos, `1` omitido: `check_sprites.py` sin `numpy`/`scipy` en la VM). Doble prueba real en **Chromium emulado (no Safari físico)**: escritorio `1280×720` y celular iPhone 15 Pro Max `430×932` táctil jugando calle (quieto/corriendo), intro de Chaky, duelo de baile con flechas/toques en pantalla (`hp: 30 → 28.85`), KO, cinemática `post_chaky` y pantalla de derrota con Cepi HD; `0` errores de consola y capturas revisadas en ambos perfiles.
+- **Pendiente:** prueba física en Safari de iPhone 15 Pro Max (encuadre del baile, audio y feeling de la calle).
+- **Rollback:** `git revert <hash de este commit>` (base previa en `main`: `3055a31`).
+
