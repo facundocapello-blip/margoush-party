@@ -947,3 +947,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Verificación:** `node --check`, `node tools/stamp_versions.mjs`, `npm test` 124/125 (falla solo `check_sprites.py`: no hay `scipy` en el contenedor) con una prueba nueva en `tests/feedback.test.mjs`. e2e en Chromium: `golpe_feel` (Chrome 1280×720 y celu 430×932 táctil, sin errores de consola), `attackfx` y `combat` OK; capturas de impacto en ambos perfiles. Tiempos de cuadro iguales a la base en este contenedor (SwiftShader, ruido de ±15 %). No es Safari físico ni se midió la sensación jugando.
 - **Pendiente:** P2–P3 de la auditoría; probar en iPhone.
 - **Rollback:** `git revert <hash de este commit>` (base previa: `fba45c8`).
+
+## Para retomar en un chat nuevo (Sakurai, calle)
+- Hecho: P0 (hit-stop, pose en el impacto, sacudida), ajuste anti-lag y P1 (`7feeca3`). Todo publicado en `feat-3d`.
+- Falta: probar P0+P1 en iPhone físico y decidir si se siente bien; después P2–P3 de la auditoría (el documento de la auditoría no está en el repo: si hace falta, pedirlo al usuario).
+- Para correr los e2e en este tipo de contenedor: Playwright está global en `/opt/node22/lib/node_modules/playwright` (enlazarlo en `node_modules/playwright`) y hace falta `node_modules/three/build/three.min.js` (three r128 de cdnjs). `node_modules/` está en `.gitignore`.
+- `check_sprites.py` falla sin `scipy` (no es un bug del juego).
