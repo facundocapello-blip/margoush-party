@@ -1309,12 +1309,45 @@ async function boot() {
   const justStarted = () => performance.now() - (game.coverStartedAt || 0) < 450;
   $('#btn-play').addEventListener('click', () => { if (justStarted()) return; PROBAR = game.probar = URL_PROBAR; showScreen('screen-select'); });
   // Atajos de la portada: ir directo a cada jefe (mismo camino que ?probar=<jefe>, sin recargar)
+  // Contraseña para la pelea con Facu (solo la tiene Facu). Es un candado de juego, no seguridad real:
+  // se guarda solo el hash. Vale para el botón 🎨 FACU y para los links ?probar=facu*.
+  const PASS_HASH = 7397164075402648;
+  const passHash = (str, seed = 77) => {
+    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+    for (let i = 0; i < str.length; i++) { const ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507); h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507); h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  };
+  const isFacuTest = (id) => !!id && id.startsWith('facu');
+  let facuUnlocked = false, passOk = null;
+  const passGate = (onOk) => {
+    if (facuUnlocked) { onOk(); return; }
+    passOk = onOk;
+    $('#pass-input').value = '';
+    $('#pass-error').classList.add('hidden');
+    $('#pass-gate').classList.remove('hidden');
+    setTimeout(() => $('#pass-input').focus(), 50);
+  };
+  const closeGate = () => { $('#pass-gate').classList.add('hidden'); passOk = null; $('#pass-input').blur(); };
+  $('#pass-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (passHash($('#pass-input').value.trim().toLowerCase()) === PASS_HASH) {
+      facuUnlocked = true; audio.sfx('coin');
+      const ok = passOk; closeGate(); ok?.();
+    } else {
+      audio.sfx('hurt');
+      const err = $('#pass-error'); err.classList.remove('hidden', 'shake'); void err.offsetWidth; err.classList.add('shake');
+      $('#pass-input').select();
+    }
+  });
+  $('#pass-cancel').addEventListener('click', closeGate);
+  $('#pass-gate').addEventListener('click', (e) => { if (e.target.id === 'pass-gate') closeGate(); });
   for (const b of document.querySelectorAll('#boss-jump [data-probar]')) b.addEventListener('click', (e) => {
     e.stopPropagation();
     if (!game.coverStarted) startCover();
-    PROBAR = game.probar = b.dataset.probar;
-    audio.sfx('coin');
-    showScreen('screen-select');
+    const go = () => { PROBAR = game.probar = b.dataset.probar; audio.sfx('coin'); showScreen('screen-select'); };
+    if (isFacuTest(b.dataset.probar)) passGate(go); else go();
   });
   // Elegir héroe: el personaje salta y gira, grita (Douge «¡Diuuushbag!», Marine «¡Messi Goku!») y arranca
   let picking = false;
@@ -1332,7 +1365,8 @@ async function boot() {
     setTimeout(() => {
       card.classList.remove('chosen'); card.parentElement.classList.remove('picking');
       picking = false;
-      if (PROBAR) quickTest(card.dataset.hero, PROBAR);
+      if (PROBAR && isFacuTest(PROBAR) && !facuUnlocked) passGate(() => quickTest(card.dataset.hero, PROBAR));
+      else if (PROBAR) quickTest(card.dataset.hero, PROBAR);
       else startRun(card.dataset.hero, true);
     }, 1150);
   });
