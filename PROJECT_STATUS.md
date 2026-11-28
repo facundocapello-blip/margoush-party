@@ -899,3 +899,10 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - `game.css`: en vertical el intro de Cepi, Lale y Pinky baja por debajo del HUD y de la barra del jefe (antes el nombre pisaba «¡PODER LISTO!»), y «Tocá para empezar» sube por encima de los botones táctiles y se lee más (blanco con sombra).
 - Verificación: npm test 122/122; capturas Chromium 430×932 de `?probar=cepi` antes/después. No se probó en Safari físico ni en horizontal (no se tocó).
 - Rollback: `git revert <hash de este commit>` en feat-3d y push.
+
+## 2026-11-28 · Arte: reparación de agujeros en poses de Cepi, Lale y Pinky (hecho por Claude)
+- Defecto: el recorte del fondo verde dejó transparente parte de la ropa oscura (camisa/pantalón negros), y se veía el fondo a través de las piernas y el torso, sobre todo en Cepi golpeado/aturdido, Lale (tiro, golpeado, patín, KO) y Pinky (saludo, KO).
+- Arreglo: nuevo `tools/fix_alpha_holes.py` rellena los huecos interiores y los píxeles oscuros mal borrados; se aplicó a todas las `arena_cepi_*`, `arena_lale_*` (salvo `floured` y `fondo`) y `arena_pinky_*`. Mismas dimensiones, `manifest.json` sin cambios; `3d/assets` pasa de 9,15 a 9,30 MB (tope 10 MB).
+- Límite: en `arena_lale_throw` queda un hueco grande en la pierna derecha (el recorte original borró casi toda esa pierna); conviene regenerar esa pose en Gemini. No se tocaron los héroes ni Facu.
+- Verificación: npm test 122/122; capturas Chromium 430×932 de `?probar=lale`, `cepi`, `pinky`. No se probó en Safari físico.
+- Rollback: `git revert <hash de este commit>` en feat-3d y push.
