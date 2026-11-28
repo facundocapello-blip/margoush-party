@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FX, heroPowerPresetId, heroPowerFx, createBurst, stepSparks } from '../3d/js/arena_fx.js';
+import { FX, heroPowerPresetId, heroPowerFx, facingToward, bossFrontFx, createBurst, stepSparks } from '../3d/js/arena_fx.js';
 
 function fakeT() {
   class Mesh {
@@ -57,4 +57,19 @@ test('stepSparks las mueve y las saca de la escena al vencer', () => {
   stepSparks(scene, sparks, 0.15);
   assert.equal(sparks.length, 0);
   assert.equal(scene.children.length, 0);
+});
+
+test('facingToward mira hacia el objetivo y bossFrontFx sale suave y encarando al héroe', () => {
+  assert.equal(facingToward(0, 3), 1);
+  assert.equal(facingToward(0, -3), -1);
+  assert.equal(facingToward(2, 2), 1);
+
+  const calls = [];
+  const skillFx = { play: (...a) => { calls.push(a); return {}; } };
+  bossFrontFx(skillFx, FX.CEPI_SMASH, { x: 1, y: 2.6, z: -6 }, { worldSize: 5, heroX: -2 });
+  assert.equal(calls[0][0], FX.CEPI_SMASH);
+  assert.deepEqual(calls[0][2], { worldSize: 5, facing: -1, soften: true });
+
+  heroPowerFx(skillFx, true, { x: 0, z: 0 }, { facing: facingToward(0, 4) });
+  assert.equal(calls[1][2].facing, 1);
 });

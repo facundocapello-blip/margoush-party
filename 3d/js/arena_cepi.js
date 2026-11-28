@@ -9,9 +9,9 @@ import { fillText, tr } from './i18n.js';
 import { attachBossIntro } from './boss_intro.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
-import { createShake, flashAlpha } from './feedback.js';
+import { createShake, flashAlpha, isReducedMotion } from './feedback.js';
 import { createSkillFxPool } from './skill_fx_three.js';
-import { FX, heroPowerFx, createBurst, stepSparks } from './arena_fx.js';
+import { FX, heroPowerFx, bossFrontFx, facingToward, createBurst, stepSparks } from './arena_fx.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -35,7 +35,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 250);
-    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6 }));
+    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6, reduceMotion: isReducedMotion }));
     skillFx.preload([isM ? FX.IVY : FX.TRUTH, FX.CEPI_SMASH]);
     scene.background = L('#101c3a');
     scene.fog = new T.Fog(L('#101c3a'), 26, 75);
@@ -427,7 +427,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             phase = 'ko'; phaseT = 0; setBar(); setBarName();
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.55); shake(0.5, 0.45);
-            skillFx.play(FX.CEPI_SMASH, { x: logic.state.bossX, y: 2.6, z: CEPI_ARENA.bossZ + 0.6 }, { worldSize: 5.0 });
+            bossFrontFx(skillFx, FX.CEPI_SMASH, { x: logic.state.bossX, y: 2.6, z: CEPI_ARENA.bossZ + 0.6 }, { worldSize: 5.0, heroX: x });
             pop(logic.state.bossX, BOSS_H * 0.7, CEPI_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.5);
             break;
           }
@@ -444,7 +444,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     function usePower() {
       hero.power = 0; powT = 0.55; holdT = 0; freezeT = Math.max(freezeT, 0.085);
       sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.42, 0.32);
-      heroPowerFx(skillFx, isM, { x, z });
+      heroPowerFx(skillFx, isM, { x, z }, { facing: facingToward(x, logic.state.bossX) });
       pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);
       handle(logic.power());
     }

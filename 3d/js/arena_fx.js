@@ -15,9 +15,21 @@ export function heroPowerPresetId(isMarine) {
   return isMarine ? FX.IVY : FX.TRUTH;
 }
 
-// Poder del héroe (Marine: hiedra, Douge: verdades). `pos` es la posición del héroe en la arena.
+// Hacia dónde mira algo en `fromX` para encarar a `toX` (1 = derecha, -1 = izquierda). Sin diferencia, 1.
+export function facingToward(fromX, toX) {
+  return toX < fromX ? -1 : 1;
+}
+
+// Poder del héroe (Marine: hiedra, Douge: verdades). `pos` es la posición del héroe en la arena;
+// `facing` (opcional en `opts`) lo pasa la arena: normalmente hacia el jefe.
 export function heroPowerFx(skillFx, isMarine, pos, opts = {}) {
   return skillFx.play(heroPowerPresetId(isMarine), { x: pos.x, y: 1.6, z: pos.z + 0.4 }, { worldSize: 4.6, ...opts });
+}
+
+// FX que se dibuja sobre el jefe en KO o cambio de fase: sale suave (más chico y translúcido) y mirando
+// hacia el héroe, para no tapar al jefe ni sus telegrafiados (anti-objetivo del spec de FX).
+export function bossFrontFx(skillFx, presetId, pos, { worldSize, heroX = 0, ...opts } = {}) {
+  return skillFx.play(presetId, pos, { worldSize, facing: facingToward(pos.x, heroX), soften: true, ...opts });
 }
 
 // Chispas/cartón/billetes de impacto. `cfg`:

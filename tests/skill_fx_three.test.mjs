@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSkillFxPool } from '../3d/js/skill_fx_three.js';
+import { createSkillFxPool, SOFT } from '../3d/js/skill_fx_three.js';
 
 function createFakeThree() {
   const stats = { textures: 0, texDisposed: 0, geos: 0, geoDisposed: 0, mats: 0, matDisposed: 0 };
@@ -251,4 +251,24 @@ test('dos pools comparten horneado y textura; la textura se libera al soltarla e
   arena2.dispose();
   street.dispose();
   assert.equal(stats.texDisposed, 3);
+});
+
+test('soften y movimiento reducido achican y bajan la opacidad; sin ellos queda igual', () => {
+  const { THREE, scene, camera } = createFakeThree();
+  const { baker } = createFakeBaker();
+  let reduced = false;
+  const pool = createSkillFxPool(THREE, scene, camera, { maxActive: 4, baker, reduceMotion: () => reduced });
+
+  const normal = pool.play('douge_truth_slam', { x: 0, y: 1, z: 0 }, { worldSize: 5, facing: -1 });
+  assert.equal(normal.mesh.scale.x, -5);
+  assert.equal(normal.mat.opacity, 1);
+
+  const soft = pool.play('douge_truth_slam', { x: 0, y: 1, z: 0 }, { worldSize: 5, soften: true });
+  assert.equal(soft.mesh.scale.y, 5 * SOFT.scale);
+  assert.equal(soft.mat.opacity, SOFT.opacity);
+
+  reduced = true;
+  const rm = pool.play('douge_truth_slam', { x: 0, y: 1, z: 0 }, { worldSize: 5, opacity: 0.8 });
+  assert.equal(rm.mesh.scale.y, 5 * SOFT.scale);
+  assert.ok(Math.abs(rm.mat.opacity - 0.8 * SOFT.opacity) < 1e-9);
 });

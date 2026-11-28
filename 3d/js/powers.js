@@ -64,7 +64,7 @@ export function createPowers(ctx) {
   return {
     waves, fires, made,
 
-    truthWave(x, z) {
+    truthWave(x, z, facing = 1) {
       made.wave++;
       const P = POWERS.wave;
       const ring = flatRing(0xffd36e, x, z), ring2 = flatRing(0xffffff, x, z);
@@ -75,11 +75,11 @@ export function createPowers(ctx) {
         fx.popup(e.pos.clone().setY(2.7 + ((k - 1) % 3) * 0.65), line, '#ffd36e', { size: 19, life: 1.6, rise: 0.35 });
       });
       fx.hit(new THREE.Vector3(x, 0.4, z), 2);
-      fx.skill?.('douge_truth_slam', { x, y: 1.5, z: z + 0.35 }, { worldSize: 5.2 });
+      fx.skill?.('douge_truth_slam', { x, y: 1.5, z: z + 0.35 }, { worldSize: 5.2, facing });
       ctx.audio?.sfx('slam');
     },
 
-    flambe(x, z, hero) {
+    flambe(x, z, hero, facing = 1) {
       made.flambe++;
       const P = POWERS.flambe, F = POWERS.fire;
       // la sartén gira alrededor de Marine
@@ -102,7 +102,7 @@ export function createPowers(ctx) {
       const c = sprite(croissantMat, 1.1, x, 1.2, z);
       treats.push({ t: 0, x, z, hero, meshes: [c], c, healed: false });
       fx.hit(new THREE.Vector3(x, 0.8, z), 1.6);
-      fx.skill?.('marine_ivy_whirl', { x, y: 1.5, z: z + 0.35 }, { worldSize: 4.5 });
+      fx.skill?.('marine_ivy_whirl', { x, y: 1.5, z: z + 0.35 }, { worldSize: 4.5, facing });
       ctx.audio?.sfx('whoosh');
     },
 

@@ -34,7 +34,11 @@ function bakedFor(baker, presetId, preset) {
   return hit;
 }
 
-export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker = bakeSpriteSheet } = {}) {
+// Efecto «suave»: se usa cuando el FX se dibuja delante del jefe (KO, cambio de fase) o si el jugador pidió
+// movimiento reducido. Achica y baja la opacidad para no tapar la lectura del jefe ni de sus telegrafiados.
+export const SOFT = { scale: 0.7, opacity: 0.5 };
+
+export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker = bakeSpriteSheet, reduceMotion = null } = {}) {
   const cache = new Map(); // presetId -> entry compartido, solo los que este pool tiene retenidos
   const made = {};
   const queue = []; // presets pendientes de precarga diferida
@@ -117,7 +121,7 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
     while (queue.length) getEntry(queue.shift());
   }
 
-  function play(presetId, pos, { worldSize = 3.0, facing = 1, flat = false, yOffset = 0, opacity = 1 } = {}) {
+  function play(presetId, pos, { worldSize = 3.0, facing = 1, flat = false, yOffset = 0, opacity = 1, soften = false } = {}) {
     if (disposed) return null;
     const entry = getEntry(presetId);
     if (!entry) return null;
@@ -142,11 +146,13 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
       slot.mat.map = entry.tex;
       slot.mat.needsUpdate = true;
     }
-    slot.mat.opacity = opacity;
+    const soft = soften || (reduceMotion ? Boolean(reduceMotion()) : false);
+    const size = soft ? worldSize * SOFT.scale : worldSize;
+    slot.mat.opacity = soft ? opacity * SOFT.opacity : opacity;
 
     const sign = facing === -1 ? -1 : 1;
     slot.mesh.position.set(pos.x, pos.y + yOffset, pos.z);
-    slot.mesh.scale.set(sign * worldSize, worldSize, 1);
+    slot.mesh.scale.set(sign * size, size, 1);
 
     if (slot.flat) {
       slot.mesh.rotation.set(-Math.PI / 2, 0, 0);
