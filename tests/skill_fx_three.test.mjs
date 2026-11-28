@@ -174,6 +174,7 @@ test('dispose() es idempotente y libera todas las geometrías, materiales y text
   const pool = createSkillFxPool(THREE, scene, camera, { maxActive: 3, baker });
 
   pool.preload(['douge_truth_slam', 'lale_oven_flare']);
+  pool.flushPreload();
   pool.play('douge_truth_slam', { x: 0, y: 1, z: 0 });
   assert.equal(stats.textures, 2);
   assert.equal(scene.children.length, 3);
@@ -202,4 +203,52 @@ test('configura sRGBEncoding, NormalBlending y depthTest:false para fidelidad en
   assert.equal(slot.mat.depthTest, false);
   assert.equal(slot.mat.depthWrite, false);
   assert.ok(slot.mesh.renderOrder >= 18);
+});
+
+test('preload es diferido: hornea un preset por update() y play() lo hornea al instante si aún no tocó', () => {
+  const { THREE, scene, camera, stats } = createFakeThree();
+  const { baker, calls } = createFakeBaker();
+  const pool = createSkillFxPool(THREE, scene, camera, { maxActive: 2, baker });
+
+  pool.preload(['douge_truth_slam', 'lale_oven_flare', 'margot_hero_cry']);
+  assert.equal(calls.length, 0, 'preload no hornea en el mismo cuadro');
+  pool.update(0.016);
+  assert.equal(calls.length, 1);
+  pool.update(0.016);
+  assert.equal(calls.length, 2);
+
+  // Pedido directo de uno que sigue en cola: se hornea ahí mismo y no se vuelve a hornear después
+  assert.ok(pool.play('margot_hero_cry', { x: 0, y: 1, z: 0 }));
+  assert.equal(calls.length, 3);
+  pool.update(0.016);
+  pool.update(0.016);
+  assert.equal(calls.length, 3);
+  assert.equal(stats.textures, 3);
+  pool.dispose();
+});
+
+test('dos pools comparten horneado y textura; la textura se libera al soltarla el último', () => {
+  const { THREE, scene, camera, stats } = createFakeThree();
+  const { baker, calls } = createFakeBaker();
+  const street = createSkillFxPool(THREE, scene, camera, { maxActive: 2, baker });
+  street.preload(['douge_truth_slam']);
+  street.flushPreload();
+
+  const arena = createSkillFxPool(THREE, scene, camera, { maxActive: 2, baker });
+  arena.play('douge_truth_slam', { x: 0, y: 1, z: 0 });
+  arena.play('lale_oven_flare', { x: 0, y: 1, z: 0 });
+  assert.equal(calls.filter(id => id === 'douge_truth_slam').length, 1, 'no se vuelve a hornear');
+  assert.equal(stats.textures, 2, 'douge_truth_slam se sube a GPU una sola vez');
+
+  arena.dispose();
+  assert.equal(stats.texDisposed, 1, 'solo la propia de la arena (lale) se libera; la de la calle sigue viva');
+
+  // Segunda arena: lale se re-sube a GPU pero NO se vuelve a hornear
+  const arena2 = createSkillFxPool(THREE, scene, camera, { maxActive: 2, baker });
+  arena2.play('lale_oven_flare', { x: 0, y: 1, z: 0 });
+  assert.equal(calls.filter(id => id === 'lale_oven_flare').length, 1);
+  assert.equal(stats.textures, 3);
+  arena2.dispose();
+  street.dispose();
+  assert.equal(stats.texDisposed, 3);
 });
