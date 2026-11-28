@@ -323,12 +323,12 @@ function evalTrajectory(trail, u, ribbonIdx, ribbonCount, scale, facing) {
 
 // Buffers preasignados para teselación de cinta (máx 32 segmentos, 0 allocs en render)
 const MAX_SEG = 28;
-const _lx = new Float32Array(MAX_SEG + 1);
-const _ly = new Float32Array(MAX_SEG + 1);
-const _rx = new Float32Array(MAX_SEG + 1);
-const _ry = new Float32Array(MAX_SEG + 1);
-const _cx = new Float32Array(MAX_SEG + 1);
-const _cy = new Float32Array(MAX_SEG + 1);
+const _ribbonLeftX = new Float32Array(MAX_SEG + 1);
+const _ribbonLeftY = new Float32Array(MAX_SEG + 1);
+const _ribbonRightX = new Float32Array(MAX_SEG + 1);
+const _ribbonRightY = new Float32Array(MAX_SEG + 1);
+const _ribbonCenterX = new Float32Array(MAX_SEG + 1);
+const _ribbonCenterY = new Float32Array(MAX_SEG + 1);
 
 // --- CAPA 3: Onda de choque anular (Effekseer Ring Renderer) ---
 
@@ -417,17 +417,17 @@ function strokeTaperedRibbon(ctx, count, halfWidths, colorHead, colorTail, alpha
   for (let i = 0; i < count; i++) {
     const s = last > 0 ? i / last : 0;
     const hw = halfWidths * Math.sin(Math.pow(s, 0.65) * Math.PI);
-    const dx = _cx[Math.min(last, i + 1)] - _cx[Math.max(0, i - 1)];
-    const dy = _cy[Math.min(last, i + 1)] - _cy[Math.max(0, i - 1)];
+    const dx = _ribbonCenterX[Math.min(last, i + 1)] - _ribbonCenterX[Math.max(0, i - 1)];
+    const dy = _ribbonCenterY[Math.min(last, i + 1)] - _ribbonCenterY[Math.max(0, i - 1)];
     const len = Math.hypot(dx, dy) || 1;
     const nx = -dy / len;
     const ny = dx / len;
-    _lx[i] = _cx[i] + nx * hw;
-    _ly[i] = _cy[i] + ny * hw;
-    _rx[i] = _cx[i] - nx * hw;
-    _ry[i] = _cy[i] - ny * hw;
+    _ribbonLeftX[i] = _ribbonCenterX[i] + nx * hw;
+    _ribbonLeftY[i] = _ribbonCenterY[i] + ny * hw;
+    _ribbonRightX[i] = _ribbonCenterX[i] - nx * hw;
+    _ribbonRightY[i] = _ribbonCenterY[i] - ny * hw;
   }
-  const grad = ctx.createLinearGradient(_cx[0], _cy[0], _cx[count - 1], _cy[count - 1]);
+  const grad = ctx.createLinearGradient(_ribbonCenterX[0], _ribbonCenterY[0], _ribbonCenterX[count - 1], _ribbonCenterY[count - 1]);
   grad.addColorStop(0, rgba(colorTail, 0));
   grad.addColorStop(0.35, rgba(colorTail, alpha * 0.62));
   grad.addColorStop(0.82, rgba(colorHead, alpha * 0.95));
@@ -435,9 +435,9 @@ function strokeTaperedRibbon(ctx, count, halfWidths, colorHead, colorTail, alpha
 
   ctx.fillStyle = grad;
   ctx.beginPath();
-  ctx.moveTo(_lx[0], _ly[0]);
-  for (let i = 1; i < count; i++) ctx.lineTo(_lx[i], _ly[i]);
-  for (let i = count - 1; i >= 0; i--) ctx.lineTo(_rx[i], _ry[i]);
+  ctx.moveTo(_ribbonLeftX[0], _ribbonLeftY[0]);
+  for (let i = 1; i < count; i++) ctx.lineTo(_ribbonLeftX[i], _ribbonLeftY[i]);
+  for (let i = count - 1; i >= 0; i--) ctx.lineTo(_ribbonRightX[i], _ribbonRightY[i]);
   ctx.closePath();
   ctx.fill();
 }
@@ -470,8 +470,8 @@ function renderTrailLayer(ctx, compiled, tNorm, ox, oy, facing) {
       const s = i / (segs - 1);
       const u = lerp(uTail, uHead, s);
       const pt = evalTrajectory(tr, u, r, ribbonCount, scale, facing);
-      _cx[i] = pt.x;
-      _cy[i] = pt.y;
+      _ribbonCenterX[i] = pt.x;
+      _ribbonCenterY[i] = pt.y;
     }
     const rScale = r === 0 ? 1 : (tr.mode === 'radial_burst' || tr.mode === 'spiral_vortex' ? 0.92 : 0.65);
     const outerCol = r % 2 === 0 ? rgb.primary : rgb.accent;

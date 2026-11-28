@@ -4,6 +4,9 @@ import { placePops } from './pop_layout.js';
 import { createShake, flashAlpha, isReducedMotion } from './feedback.js';
 import { createSkillFxPool } from './skill_fx_three.js';
 export function createFx(scene, camera, labelsEl, flashEl) {
+  // Este pool NO tiene dispose() a propósito: createFx se llama una sola vez al arrancar (main.js) y vive toda
+  // la sesión. Sus texturas (calle + poderes del héroe) quedan compartidas con las arenas, que las reusan sin
+  // rehornear. Entre escenas solo se hace clear() (ver más abajo), nunca se destruye.
   const skillPool = createSkillFxPool(THREE, scene, camera, { maxActive: 10, reduceMotion: isReducedMotion });
   skillPool.preload(['effekseer_astral_slash', 'douge_truth_slam', 'marine_ivy_whirl']);
   const sparkTex = (() => {

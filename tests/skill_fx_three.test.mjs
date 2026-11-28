@@ -116,7 +116,7 @@ test('cachea texturas por preset y no vuelve a hornear en disparos repetidos', (
   assert.equal(stats.textures, 1);
   assert.equal(pool.textureCount, 1);
   assert.equal(pool.activeCount, 2);
-  assert.equal(pool.made.douge_truth_slam, 2);
+  assert.equal(pool.playsByPreset.douge_truth_slam, 2);
 });
 
 test('recicla el slot más antiguo cuando se supera maxActive sin crear meshes extra', () => {

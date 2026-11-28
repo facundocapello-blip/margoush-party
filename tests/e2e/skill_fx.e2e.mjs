@@ -11,11 +11,11 @@ async function streetPower(hero, presetId, key) {
     g.hero.hp = g.hero.hpMax = 99; g.hero.inv = 0; g.hero.power = 1; g.hero.actor.position.set(170, 0, 0); g.hero.actor.setFacing(1);
     for (const k in g.waves) g.waves[k] = 'cleared';
     window.__sceneKids = g.ctx.scene.children.length;
-    window.__madeBefore = g.ctx.fx.skillPool.made[h] || 0;
+    window.__madeBefore = g.ctx.fx.skillPool.playsByPreset[h] || 0;
   }, presetId);
   await page.keyboard.press(key);
   await page.waitForTimeout(150);
-  const during = await G((h) => ({ active: window.__game.ctx.fx.skillPool.activeCount, made: window.__game.ctx.fx.skillPool.made[h] || 0 }), presetId);
+  const during = await G((h) => ({ active: window.__game.ctx.fx.skillPool.activeCount, made: window.__game.ctx.fx.skillPool.playsByPreset[h] || 0 }), presetId);
   check(during.made === (await G(() => window.__madeBefore)) + 1, `calle (${hero}): el poder dispara ${presetId}`);
   check(during.active >= 1, `calle (${hero}): el burst está en pantalla`);
   await page.waitForTimeout(1300);
@@ -48,10 +48,10 @@ try {
     // Esperar a que arranque la pelea (termina el cartel de entrada del jefe)
     await page.waitForFunction((k) => { const m = window.__game[k]; return m.state && m.skillFx && (m.state.t > 0.5 || m.state.phase); }, arenaKey, { timeout: 10000 });
     await page.waitForTimeout(3500);
-    await G(({ k }) => { const g = window.__game; g.hero.hp = g.hero.hpMax = 99; g.hero.power = 1; window.__made0 = window.__game[k].skillFx.made.douge_truth_slam || 0; }, { k: arenaKey });
+    await G(({ k }) => { const g = window.__game; g.hero.hp = g.hero.hpMax = 99; g.hero.power = 1; window.__made0 = window.__game[k].skillFx.playsByPreset.douge_truth_slam || 0; }, { k: arenaKey });
     await page.keyboard.press('l');
     await page.waitForTimeout(200);
-    const during = await G(({ k }) => ({ active: window.__game[k].skillFx.activeCount, made: (window.__game[k].skillFx.made.douge_truth_slam || 0) - window.__made0 }), { k: arenaKey });
+    const during = await G(({ k }) => ({ active: window.__game[k].skillFx.activeCount, made: (window.__game[k].skillFx.playsByPreset.douge_truth_slam || 0) - window.__made0 }), { k: arenaKey });
     check(during.made === 1, `${name}: el poder dispara el burst (${during.made})`);
     check(during.active >= 1, `${name}: el burst está en pantalla`);
     await page.waitForTimeout(1300);
