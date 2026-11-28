@@ -948,12 +948,6 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Pendiente:** P2–P3 de la auditoría; probar en iPhone.
 - **Rollback:** `git revert <hash de este commit>` (base previa: `fba45c8`).
 
-## Para retomar en un chat nuevo (Sakurai, calle)
-- Hecho: P0 (hit-stop, pose en el impacto, sacudida), ajuste anti-lag y P1 (`7feeca3`). Todo publicado en `feat-3d`.
-- Falta: probar P0+P1 en iPhone físico y decidir si se siente bien; después P2–P3 de la auditoría (el documento de la auditoría no está en el repo: si hace falta, pedirlo al usuario).
-- Para correr los e2e en este tipo de contenedor: Playwright está global en `/opt/node22/lib/node_modules/playwright` (enlazarlo en `node_modules/playwright`) y hace falta `node_modules/three/build/three.min.js` (three r128 de cdnjs). `node_modules/` está en `.gitignore`.
-- `check_sprites.py` falla sin `scipy` (no es un bug del juego).
-
 ## 2026-11-28 · Auditoría Sakurai de la calle, P2: corte astral, punto de contacto, golpe 2, armadura, fundido y anticipación (hecho por Claude)
 - **Qué cambió** (solo la calle; las arenas no cambian):
   1. **Corte astral del remate** (`fx.js` `finisherFx`, hero.js `landSwing`): ahora sale solo si el remate conecta con algo que no sea armadura, en dorado (preset nuevo `effekseer_astral_slash_gold`, misma hoja que el cian), `worldSize` 2,2, opacidad 0,8 y cortado a 20F (`maxSeconds` nuevo en `skill_fx_three.js` `play`). Antes salía siempre, cian, 3,1 m y 40F encima del KO. El cian sigue en las arenas y el FX Lab.
@@ -965,3 +959,11 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Verificación:** `node --check`, `node tools/stamp_versions.mjs`, `npm test` 124/125 (falla solo `check_sprites.py`: sin `scipy` en el contenedor, no es del cambio). e2e nuevo `tests/e2e/p2_calle.e2e.mjs` (18 checks, Chrome 1280×720 y celu 430×932 táctil, sin errores de consola); `golpe_feel`, `attackfx`, `combat` y `skill_fx` siguen OK. Es Chromium emulado, no Safari físico, y no se midió la sensación jugando.
 - **Pendiente:** P3 (shake de pasos del patovica, 2.º argumento de `fx.shake`, `sparkMat.clone()` por chispa) y probar P0 + P1 + P2 en iPhone.
 - **Rollback:** `git revert <hash de este commit>` (base previa: `8c6a920`).
+
+## Para retomar en un chat nuevo (Sakurai, calle)
+- Hecho y publicado en `feat-3d` (`fca543d`): P0, ajuste anti-lag, P1 y P2 de la auditoría.
+- Falta: (1) probar P0+P1+P2 en iPhone físico y decidir si se siente bien; (2) P3: `fx.shake(0.04)` de los pasos del patovica (`enemies.js` ~152, imperceptible: sacarlo o pasarlo a vertical 0,02 m / 3F), `cine.js` llama `fx.shake(a, b)` pero `fx.js` ignora el 2.º argumento, y `sparkMat.clone()` por chispa en `fx.js` (le toca a `margoush-perf`).
+- Otros pendientes sueltos: poses de héroes (golpe de poder y 2.º golpe), hojas > 2048 px a medir en iPhone, regenerar `arena_lale_throw` en Gemini, y los e2e viejos `enemies.e2e` (`setStage`) y `cover.e2e` (línea 39).
+- El documento de la auditoría no está en el repo: está en el chat «Auditoría de impacto en Sakurai» (mensaje largo del 28/11 ~11:30). Si hace falta, pedirlo al usuario.
+- Para correr los e2e en este tipo de contenedor: Playwright global en `/opt/node22/lib/node_modules/playwright` (enlazarlo en `node_modules/playwright`) y `node_modules/three/build/three.min.js` (three r128; ojo: `npm install` borra el enlace de Playwright, enlazarlo después). `node_modules/` está en `.gitignore`.
+- `check_sprites.py` falla sin `scipy` (no es un bug del juego).
