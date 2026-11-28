@@ -23,6 +23,8 @@ export const TEXTOS = {
   'Ver ranking completo': 'Voir tout le classement',
   'Idioma': 'Langue',
   'Elegí tu héroe': 'Choisis ton héros',
+  'Ir directo al jefe': 'Aller direct au boss',
+  'Jefes': 'Boss',
   'Pega fuerte': 'Frappe fort',
   '⚡ Verdades a los gritos: los vuela a todos': '⚡ Vérités en pleine face : il les fait tous voler',
   'Más rápida': 'Plus rapide',

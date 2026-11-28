@@ -148,14 +148,16 @@ export function makeThemes(tone, hiss) {
     else melodyAt(CUNA_MEL, bar, i, (m, len) => bando(m - 12, len * step * 0.95, 0.025, d));
   } };
 
-  // ---------- Duelo de baile (BIG CHAKY): disco funk sincronizado a la negra de cada ronda (0.58 / 0.52 / 0.46 s) ----------
-  const DISCO_CH = [[45, [69, 72, 76]], [41, [65, 69, 72]], [38, [62, 65, 69]], [40, [64, 68, 71]]];
+  // ---------- Duelo de baile (BIG CHAKY): cachengue (cumbia + dembow) en La menor, sincronizado a la negra de cada ronda (0.58 / 0.52 / 0.46 s) ----------
+  // Am–F–C–G con estribillo pegadizo de pluck, bajo 808, güiro de cumbia y bronces «¡hey!» al cierre de cada vuelta.
+  const DISCO_CH = [[45, [69, 72, 76]], [41, [65, 69, 72]], [48, [67, 72, 76]], [43, [67, 71, 74]]];
   const DISCO_MEL = {
-    0: [[0, 76, 2], [4, 79, 2], [8, 81, 4], [12, 79, 2], [14, 76, 2]],
-    1: [[0, 77, 2], [4, 81, 2], [8, 84, 4], [12, 81, 4]],
-    2: [[0, 74, 2], [4, 77, 2], [8, 81, 4], [12, 77, 2], [14, 74, 2]],
-    3: [[0, 76, 4], [4, 79, 4], [8, 83, 4], [12, 80, 4]]
+    0: [[0, 76, 1], [2, 76, 1], [3, 74, 1], [4, 72, 2], [6, 69, 2], [10, 72, 1], [11, 74, 1], [12, 76, 2]],
+    1: [[0, 77, 1], [2, 77, 1], [3, 76, 1], [4, 74, 2], [6, 72, 2], [12, 69, 3]],
+    2: [[0, 76, 1], [2, 76, 1], [3, 74, 1], [4, 72, 2], [6, 67, 2], [10, 69, 1], [11, 72, 1], [12, 74, 2]],
+    3: [[0, 74, 2], [2, 72, 1], [3, 71, 1], [4, 67, 3], [12, 71, 1], [13, 72, 1], [14, 74, 2]]
   };
+  const pluck = (m, len, vol, d) => { const f = m2f(m); tone('triangle', f, f, len, vol, d); tone('sine', f * 2, f * 2, len * 0.5, vol * 0.35, d); };
   const disco = {
     step: 0.58 / 4,
     stepFor: (ctx) => Math.max(0.08, Math.min(0.22, (ctx?.beat || 0.58) / 4)),
@@ -163,24 +165,25 @@ export function makeThemes(tone, hiss) {
       const step = Math.max(0.08, Math.min(0.22, (ctx?.beat || 0.58) / 4));
       const i = n % 16, bar = Math.floor(n / 16) % 4, round = Math.floor(n / 64) % 2;
       const [root, triad] = DISCO_CH[bar];
-      // Four-on-the-floor: bombo exacto en cada negra (i = 0, 4, 8, 12) alineado con cada flecha
-      if (i % 4 === 0) kick(d, 0.52);
-      if (i === 4 || i === 12) snare(d, 0.24); // palmas / redoblante en 2 y 4
-      if (i % 4 === 2) hiss(0.06, 0.09, 7600, 1.8, d); // hi-hat abierto disco en el contratiempo
-      else if (i % 2 === 1) hat(d, 0.035);
-      // Bajo disco en octavas (pulso bailable)
-      if (i % 2 === 0) {
-        const oct = (i % 4 === 2) ? 12 : 0;
-        const f = m2f(root - 12 + oct);
-        tone('sawtooth', f, f, step * 1.4, 0.085, d);
-      }
-      // Guitarra/teclado disco «chic» en contratiempos
-      if (i === 2 || i === 6 || i === 10 || i === 14) {
-        for (const m of triad) tone('triangle', m2f(m), m2f(m), step * 0.7, 0.022, d);
-      }
-      // Cuerdas / sinte brillante arriba
-      if (i === 0) for (const m of triad) tone('sine', m2f(m + 12), m2f(m + 12), step * 7, 0.015, d);
-      if (round === 1 || i < 12) melodyAt(DISCO_MEL, bar, i, (m, len) => lead(m, len * step * 0.85, 0.042, d));
+      // Bombo en cada negra (i = 0, 4, 8, 12), alineado con cada flecha
+      if (i % 4 === 0) kick(d, 0.55);
+      // Dembow: redoblante/rim en 3, 6, 11 y 14
+      if (i === 3 || i === 6 || i === 11 || i === 14) snare(d, i === 6 || i === 14 ? 0.2 : 0.13);
+      // Güiro de cumbia: rasguido largo-corto en corcheas
+      if (i % 2 === 0) hiss(i % 4 === 0 ? 0.09 : 0.04, 0.045, 5200, 1.4, d);
+      // Bajo 808 con caída de tono, siguiendo el dembow
+      if (i === 0 || i === 7 || i === 10) { const f = m2f(root - 12); tone('sine', f * 1.03, f, step * (i === 0 ? 3 : 2), 0.2, d); }
+      // Teclado cumbiero en los contratiempos
+      if (i % 4 === 2) for (const m of triad) tone('square', m2f(m - 12), m2f(m - 12), step * 0.55, 0.012, d);
+      // Colchón suave al principio de cada compás
+      if (i === 0) for (const m of triad) tone('sine', m2f(m), m2f(m), step * 14, 0.011, d);
+      // Estribillo (pluck) y, en la segunda vuelta, una octava arriba de refuerzo
+      melodyAt(DISCO_MEL, bar, i, (m, len) => {
+        pluck(m, len * step * 0.9, 0.055, d);
+        if (round === 1) tone('sine', m2f(m + 12), m2f(m + 12), len * step * 0.7, 0.014, d);
+      });
+      // Bronces «¡hey!» cerrando la vuelta
+      if (bar === 3 && (i === 8 || i === 10)) for (const m of [64, 67, 71]) { const f = m2f(m); tone('sawtooth', f * 0.97, f, step * 0.9, 0.022, d); }
     }
   };
 
