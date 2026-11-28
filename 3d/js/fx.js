@@ -50,7 +50,8 @@ export function createFx(scene, camera, labelsEl, flashEl) {
 
   return {
     hit(pos, strength = 1) {
-      const n = Math.round(5 + strength * 5);
+      // con mucha gente (varios golpes seguidos) se baja a 3 chispas para no asignar decenas de sprites por cuadro
+      const n = parts.length > 36 ? 3 : Math.round(5 + strength * 5);
       for (let i = 0; i < n; i++) {
         const s = new THREE.Sprite(sparkMat.clone());
         const size = 0.35 + Math.random() * 0.35 * strength;
