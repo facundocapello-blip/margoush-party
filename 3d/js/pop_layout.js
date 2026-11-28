@@ -38,7 +38,7 @@ export function resolveOverlaps(boxes, { gap = 4, top = 0, bottom = Infinity } =
   return boxes;
 }
 
-let hudBottom = 0, hudCheck = 0;
+let hudBottom = 0, hudCheck = 0, popTop = 0;
 function topLimit() {
   if (--hudCheck <= 0) {
     hudCheck = 8;
@@ -54,8 +54,15 @@ function topLimit() {
     // El cartel de fase se ubica justo debajo del HUD (variable CSS --hud-b)
     if (nb !== hudBottom) document.documentElement.style.setProperty('--hud-b', nb + 'px');
     hudBottom = nb;
+    // Mientras el cartel de fase está a la vista, los textos van debajo de él (no se cortan contra el cartel)
+    popTop = nb;
+    for (const c of document.querySelectorAll('.phase-card.on')) {
+      if (c.classList.contains('hidden')) continue;
+      const r = c.getBoundingClientRect();
+      if (r.height && r.top < innerHeight * 0.45) popTop = Math.max(popTop, Math.round(r.bottom + 6));
+    }
   }
-  return hudBottom;
+  return popTop;
 }
 
 // list = [{ o, el, x, y }] en orden de aparición (el más viejo primero). `o` guarda el desplazamiento suave.

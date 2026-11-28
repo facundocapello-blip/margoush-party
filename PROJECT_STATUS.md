@@ -841,7 +841,25 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
   - `3d/js/skill_fx.js` y `3d/js/skill_fx_presets.js`: motor y reproductor reutilizable en 4 capas explícitas inspiradas en la superposición de nodos de **Effekseer** y su galería CC-0 (`1. core` núcleo brillante estelar aditivo + `2. trail` cinta *Ribbon* teselada con caída alfa + `3. shockwave` anillo *Ring* con doble curva *easing* + `4. sparks` chispas estiradas por velocidad y fragmentos giratorios), adaptado a Canvas 2D / minijuego y con puente opcional `createThreeSkillBurst` para escenas 2.5D Three.js r128.
   - Cambio declarativo en 1 clic mediante JSON (`applySkillPatch`, `setPalette`, `setSize` y `3d/fx-presets.json`) con 7 paletas y 5 escalas (`XS`–`XL`), además de 6 arquetipos listos (*Corte Astral CC-0*, *Douge*, *Marine*, *Cepi*, *Lale* y *Margot*).
   - Exportación automática de hojas de sprites con fondo 100 % transparente RGBA (`bakeSpriteSheet` + `SpriteSheetPlayer` + `tools/export_skill_sheet.mjs` sin dependencias externas), respetando el límite de `≤ 2048 px` de Safari iOS y generando la entrada lista para `manifest.json`.
-  - Banco interactivo local y web en `3d/fx-studio.html` + `3d/css/fx_studio.css` (`ES`/`FR`, conmutadores por capa y `SOLO`, descarga PNG/WebP transparente y verificador en vivo del PNG exportado). Campaña principal de `3d/` intacta.
+  - Banco interactivo local y web en `3d/fx-studio.html` + `3d/css/fx_studio.css` (`ES`/`FR`, conmutadores por capa y `SOLO`, descarga PNG/WebP transparente y verificador en vivo del PNG exportado). En este commit (`517a699`) la campaña no cambia; los dos commits siguientes sí la tocan (ver abajo).
 - **Verificación:** `node --check`, `node tools/stamp_versions.mjs`, `npm test` **108/109 en verde** (incluyendo 5 pruebas nuevas en `tests/skill_fx.test.mjs`, `0` fallos, `1` omitido por Python `-I` sin `numpy`) y exportación CLI verificada en `dist/fx-preview/` (`cornerAlpha = 0`, 16 cuadros RGBA sin recortes). Pendiente: prueba táctil en Safari físico (iPhone 15 Pro Max).
-- **Prueba:** `https://facundocapello-blip.github.io/margoush-party/3d/fx-studio.html` (campaña intacta en `/3d/`).
+- **Prueba:** `https://facundocapello-blip.github.io/margoush-party/3d/fx-studio.html`.
 - **Rollback:** `git revert <commit>` (base previa en `main`: `4267330`).
+
+## 2026-11-27/28 · FX integrados en la campaña (`5473a16` + `52d502e`) — registro completado en la revisión del 28/11
+- **Qué cambió en la campaña** (no quedó registrado en su momento):
+  - `fx.js`: pool de skill FX en la calle (remate con `effekseer_astral_slash`); `sparkTex` en sRGB.
+  - `powers.js` y las 4 arenas (`arena_cepi/lale/pinky/facu.js`): burst al usar el poder, golpes dorados, `ko` y cambio de fase; `burst` con materiales cacheados.
+  - `skill_fx_three.js`: `NormalBlending` + `depthTest:false` (antes `AdditiveBlending`), por fidelidad de color sobre fondos claros.
+  - Hit-stop de 0,085 s al usar el poder en las 4 arenas (cambio de timing aceptado; el spec decía no tocarlos).
+  - `game.css`: barra del jefe a 84 px en arenas horizontales, `#debug-hud` abajo a la izquierda, barra de poder más ancha, y la postal BA→París usa `arena_lale_fondo` porque `chase_paris_fondo.webp` no existe.
+- **Revisión 28/11** (código + capturas Chromium 430×932 y 932×430 en cepi, lale, pinky y facu): el poder se dispara sin errores, el burst dura ~250 ms, tapa al héroe un instante y no al jefe. Pendientes en `claude/margoush_revision_fx_20261128.md` del Proyecto (caché de sheets compartido, duplicación en arenas, `facing`, movimiento reducido, E2E de skill FX).
+- **Rollback de los FX en la campaña:** `git revert 52d502e 5473a16` (base: `c8d57eb`).
+
+## 2026-11-28 · Botones táctiles nuevos + textos debajo del cartel de fase
+- **Qué cambió:**
+  - `game.css`: botones de acción rediseñados. El golpe pasa a ser macizo naranja-rojo con aro crema (se lee sobre la cancha azul, la alfombra roja y el piso claro). Salto y esquive pasan a ser oscuros como el HUD, con borde e ícono menta / celeste. El aviso de poder listo late en dorado sobre el botón nuevo.
+  - `pop_layout.js`: mientras el cartel de fase está a la vista, los textos flotantes se ubican debajo de él (en Pinky horizontal la frase del jefe quedaba cortada detrás del cartel).
+- **Verificación:** `node tools/stamp_versions.mjs`, `npm test` 115/115, capturas Chromium en 430×932 (cepi, lale, facu, pinky) y 932×430 (pinky), sin errores de consola. No es Safari físico.
+- **Prueba:** `https://facundocapello-blip.github.io/margoush-party/3d/?probar=pinky` (y `cepi`, `lale`, `facu`).
+- **Rollback:** `git revert <hash de este commit>` en `feat-3d` (base previa: `52d502e`).
