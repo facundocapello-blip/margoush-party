@@ -10,13 +10,14 @@
  },
  "douge_run": {
   "file": "douge_run.webp",
-  "w": 1200,
+  "w": 1680,
   "h": 400,
   "frames": 6,
   "cols": 6,
   "rows": 1,
-  "skull": 143,
-  "foot": 0.925
+  "skull": 119,
+  "foot": 0.985,
+  "v": "f8bff87f"
  },
  "douge_attack": {
   "file": "douge_attack.webp",
