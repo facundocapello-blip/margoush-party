@@ -984,3 +984,9 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Inercia corta del héroe (~4F arrancar, ~3F frenar).
 - Verificado: `npm test` 125/126 (falla `assets` por falta de `scipy`, ya fallaba); e2e `golpe_feel` y `combat` OK en Chromium emulado (SwiftShader: los ms de cuadro no sirven como medida). `controls`, `enemies`, `gates`, `mobile` fallan igual sin mis cambios. No probado en Safari físico.
 - Rollback: `git revert` del commit de esta entrada.
+
+### Cierre de sesión 2026-11-28 · qué falta
+- Probar en iPhone real (Safari): hit-stop local con varios malos, sonido del golpe en el altavoz, inercia y esquive. Si el mundo se siente raro durante el hit-stop, ajustar `FREEZE_WORLD` (0,12) en `3d/js/main.js`.
+- Confirmar que GitHub Pages desplegó `feat-3d` (https://facundocapello-blip.github.io/margoush-party/); no se verificó desde el contenedor.
+- `npm test` 126/126 con `scipy` instalado (pip install scipy). Los e2e `controls`, `enemies`, `gates`, `mobile` y `level` fallan igual sin estos cambios en el contenedor (no investigado: tiempos de espera/entorno); revisar en una máquina con Chrome real.
+- Menores sin hacer: popups de daño con DOM por golpe (medir en iPhone con 5 malos), aleatoriedad de chispas con semilla en modo debug, capturas de las 2 pruebas (escritorio 1280×720 y iPhone 430×932) que pide AGENTS.md.
