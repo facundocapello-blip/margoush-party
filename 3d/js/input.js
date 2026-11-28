@@ -39,7 +39,7 @@ export function createInput(dom) {
     const dead = 0.15;
     const nx = dx / rad, ny = dy / rad;
     stick.x = Math.abs(nx) < dead ? 0 : nx;
-    stick.z = Math.abs(ny) < dead ? 0 : ny;
+    stick.z = Math.abs(ny) < 0.25 ? 0 : ny; // profundidad con zona muerta mayor: no se activa sin querer al tirar a un lado
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
   };
   const homeStick = () => { joy.style.left = joy.style.top = joy.style.bottom = ''; joy.classList.remove('floating'); };

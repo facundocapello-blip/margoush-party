@@ -1058,6 +1058,7 @@ function frame(now) {
   if (debugBox) paintDebugBox(now);
 }
 game.frameErrors = () => frameErrors;
+const FREEZE_WORLD = 0.12; // velocidad del resto del mundo durante el hit-stop
 function frameStep(now) {
   const realDt = Math.min(0.1, last ? (now - last) / 1000 : 0);
   const dt = Math.min(0.05, realDt) * game.timeScale;
@@ -1094,7 +1095,10 @@ function frameStep(now) {
   if (game.state === 'playing') {
     const t0 = performance.now();
     if (fx.frozen(dt)) {
+      // Hit-stop local (#047): el héroe y el golpeado se paran, el resto del mundo sigue casi en cámara lenta
       game.enemies.vibe(dt); game.hero.actor.vibeStep(dt);
+      game.enemies.update(dt * FREEZE_WORLD);
+      if (game.state !== 'playing') { requestAnimationFrame(frame); return; }
     } else {
       game.time += dt;
       game.hero.update(dt);

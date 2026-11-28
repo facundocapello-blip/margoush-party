@@ -59,7 +59,7 @@ export function createHero(id, ctx) {
     combo: 0, comboWindow: 0, buffer: 0, swing: null, swingHit: false,
     lift: 0, vy: 0,
     dodgeDir: 1, power: POWER.start, holdT: 0, holdUsed: false, dodgeCd: 0,
-    knock: 0, knockZ: 0,
+    knock: 0, knockZ: 0, mvx: 0, mvz: 0,
     slowT: 0, slowF: 1, stunT: 0,
     slideT: 0, slideDir: 1, slideSpeed: 5,
 
@@ -99,6 +99,7 @@ export function createHero(id, ctx) {
       if (h.state === 'dodge' && game.state === 'playing' && !h.dodgeRewarded) {
         h.dodgeRewarded = true;
         h.charge(POWER.dodge);
+        h.dodgeCd = 0; // esquive justo: se puede repetir enseguida (riesgo con retorno)
         fx.popup(actor.position.clone().setY(2.8), '¡JUSTO!', '#9ad7ff', { size: 22, life: 0.7 });
       }
       if (h.inv > 0 || h.state === 'dodge' || game.state !== 'playing') return false;
@@ -155,7 +156,7 @@ export function createHero(id, ctx) {
       if (input.consume('jump') && h.lift === 0 && h.state !== 'dodge') { h.vy = 8.5; h.lift = 0.001; ctx.audio?.sfx('jump'); }
       h.dodgeCd = Math.max(0, h.dodgeCd - dt);
       if (input.consume('dodge') && h.state !== 'dodge' && h.dodgeCd <= 0) {
-        h.state = 'dodge'; h.t = 0.24; h.inv = Math.max(h.inv, 0.35); h.dodgeCd = 0.7; h.dodgeRewarded = false;
+        h.state = 'dodge'; h.t = 0.24; h.inv = Math.max(h.inv, 0.35); h.dodgeCd = 0.55; h.dodgeRewarded = false;
         h.dodgeDir = Math.abs(input.moveX) > 0.2 ? Math.sign(input.moveX) : actor.facing;
         fx.dust(p);
         ctx.audio?.sfx('dodge');
@@ -177,7 +178,7 @@ export function createHero(id, ctx) {
       let vx = 0, vz = 0;
       if (h.state === 'dodge') {
         h.t -= dt;
-        vx = h.dodgeDir * 15;
+        vx = h.dodgeDir * 15; h.mvx = 0; h.mvz = 0;
         actor.setFacing(h.dodgeDir);
         if (h.t <= 0) h.state = 'free';
       } else if (h.slideT > 0) {
@@ -186,8 +187,13 @@ export function createHero(id, ctx) {
         const mx = input.moveX, mz = input.moveZ;
         const len = Math.max(1, Math.hypot(mx, mz));
         const slow = (h.state === 'attack' ? 0.25 : 1) * (h.slowT > 0 ? h.slowF : 1);
-        vx = (mx / len) * h.speed * slow;
-        vz = (mz / len) * h.speed * 0.7 * slow;
+        const tvx = (mx / len) * h.speed * slow, tvz = (mz / len) * h.speed * 0.7 * slow;
+        // inercia corta (#019): ~4F para arrancar, ~3F para frenar; da peso sin quitar respuesta
+        const kk = 1 - Math.exp(-dt * ((tvx || tvz) ? 38 : 50));
+        h.mvx += (tvx - h.mvx) * kk; h.mvz += (tvz - h.mvz) * kk;
+        if (Math.abs(h.mvx) < 0.05 && !tvx) h.mvx = 0;
+        if (Math.abs(h.mvz) < 0.05 && !tvz) h.mvz = 0;
+        vx = h.mvx; vz = h.mvz;
         if (h.state !== 'attack' && Math.abs(mx) > 0.15) actor.setFacing(Math.sign(mx));
       }
       h.knock *= Math.max(0, 1 - dt * 8);
@@ -212,7 +218,7 @@ export function createHero(id, ctx) {
     },
 
     reset() {
-      h.hp = h.hpMax; h.inv = 0; h.state = 'free'; h.combo = 0; h.buffer = 0; h.lift = 0; h.vy = 0; h.knock = 0; h.knockZ = 0; h.power = POWER.start; h.holdT = 0; h.slowT = 0; h.stunT = 0; h.slideT = 0;
+      h.hp = h.hpMax; h.inv = 0; h.state = 'free'; h.combo = 0; h.buffer = 0; h.lift = 0; h.vy = 0; h.knock = 0; h.knockZ = 0; h.mvx = 0; h.mvz = 0; h.power = POWER.start; h.holdT = 0; h.slowT = 0; h.stunT = 0; h.slideT = 0;
       h.damageLog = [];
     }
   };
