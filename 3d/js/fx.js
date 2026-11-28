@@ -5,13 +5,16 @@ import { createShake, flashAlpha } from './feedback.js';
 import { createSkillFxPool } from './skill_fx_three.js';
 export function createFx(scene, camera, labelsEl, flashEl) {
   const skillPool = createSkillFxPool(THREE, scene, camera, { maxActive: 10 });
+  skillPool.preload(['effekseer_astral_slash', 'douge_truth_slam', 'marine_ivy_whirl']);
   const sparkTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
     const g = c.getContext('2d');
     const r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
     r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.4, 'rgba(255,220,120,0.9)'); r.addColorStop(1, 'rgba(255,140,60,0)');
     g.fillStyle = r; g.fillRect(0, 0, 64, 64);
-    return new THREE.CanvasTexture(c);
+    const t = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+    return t;
   })();
   const sparkMat = new THREE.SpriteMaterial({ map: sparkTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true });
   const ringGeo = new THREE.RingGeometry(0.75, 1, 32);

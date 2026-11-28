@@ -349,8 +349,9 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
 
     const billG = keep(new T.BoxGeometry(0.32, 0.04, 0.18));
     const sparks = [];
+    const burstMats = {};
     function burst(px, py, pz, hex, count = 8, isBill = false) {
-      const m = keep(new T.MeshBasicMaterial({ color: L(hex) }));
+      const m = burstMats[hex] || (burstMats[hex] = keep(new T.MeshBasicMaterial({ color: L(hex) })));
       for (let i = 0; i < count; i++) {
         const p = new T.Mesh(billG, m);
         p.position.set(px, py, pz);
@@ -437,7 +438,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     }
 
     function usePower() {
-      hero.power = 0; powT = 0.55; holdT = 0;
+      hero.power = 0; powT = 0.55; holdT = 0; freezeT = Math.max(freezeT, 0.085);
       sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.4, 0.3);
       skillFx.play(isM ? 'marine_ivy_whirl' : 'douge_truth_slam', { x, y: 1.6, z: z + 0.4 }, { worldSize: 4.6 });
       pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);

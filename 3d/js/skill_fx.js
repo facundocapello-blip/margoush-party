@@ -1047,6 +1047,12 @@ export class SkillFxSystem {
 
 export function createThreeSkillBurst(THREE, scene, camera, bakedSheet, position, { worldSize = 2.6 } = {}) {
   const tex = new THREE.CanvasTexture(bakedSheet.canvas);
+  tex.generateMipmaps = false;
+  if (THREE.LinearFilter !== undefined) {
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+  }
+  if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
   const { cols, rows, frames, fps } = bakedSheet.meta;
   tex.repeat.set(1 / cols, 1 / rows);
   tex.offset.set(0, 1 - 1 / rows);
@@ -1056,11 +1062,13 @@ export function createThreeSkillBurst(THREE, scene, camera, bakedSheet, position
     map: tex,
     transparent: true,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
+    depthTest: false,
+    blending: THREE.NormalBlending ?? 1,
     side: THREE.DoubleSide
   });
   const geo = new THREE.PlaneGeometry(worldSize, worldSize);
   const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = 18;
   mesh.position.copy(position);
   if (camera) mesh.lookAt(camera.position);
   scene.add(mesh);

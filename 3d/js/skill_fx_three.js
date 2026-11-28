@@ -25,12 +25,13 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
       transparent: true,
       opacity: 1,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
+      depthTest: false,
+      blending: THREE.NormalBlending ?? 1,
       side: THREE.DoubleSide
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.visible = false;
-    mesh.renderOrder = 12;
+    mesh.renderOrder = 18;
     scene.add(mesh);
     return {
       active: false,
@@ -53,7 +54,11 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
     const baked = baker(preset);
     const tex = new THREE.CanvasTexture(baked.canvas);
     tex.generateMipmaps = false;
-    if (THREE.LinearFilter !== undefined) tex.minFilter = THREE.LinearFilter;
+    if (THREE.LinearFilter !== undefined) {
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+    }
+    if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
     tex.needsUpdate = true;
 
     const entry = {

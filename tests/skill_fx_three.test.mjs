@@ -75,9 +75,11 @@ function createFakeThree() {
     PlaneGeometry,
     MeshBasicMaterial,
     Mesh,
+    NormalBlending: 1,
     AdditiveBlending: 2,
     DoubleSide: 2,
-    LinearFilter: 1006
+    LinearFilter: 1006,
+    sRGBEncoding: 3001
   };
 
   const scene = {
@@ -185,4 +187,19 @@ test('dispose() es idempotente y libera todas las geometrías, materiales y text
   assert.equal(stats.texDisposed, 2);
   assert.equal(pool.activeCount, 0);
   assert.equal(pool.textureCount, 0);
+});
+
+test('configura sRGBEncoding, NormalBlending y depthTest:false para fidelidad en escenas 3D', () => {
+  const { THREE, scene, camera } = createFakeThree();
+  const { baker } = createFakeBaker();
+  const pool = createSkillFxPool(THREE, scene, camera, { maxActive: 1, baker });
+
+  const slot = pool.play('douge_truth_slam', { x: 0, y: 1.5, z: 0 });
+  assert.equal(slot.mat.map.encoding, THREE.sRGBEncoding);
+  assert.equal(slot.mat.map.minFilter, THREE.LinearFilter);
+  assert.equal(slot.mat.map.magFilter, THREE.LinearFilter);
+  assert.equal(slot.mat.blending, THREE.NormalBlending);
+  assert.equal(slot.mat.depthTest, false);
+  assert.equal(slot.mat.depthWrite, false);
+  assert.ok(slot.mesh.renderOrder >= 18);
 });
