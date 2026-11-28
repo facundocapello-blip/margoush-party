@@ -887,3 +887,10 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Verificación:** `node tools/stamp_versions.mjs`, `npm test` 122/122; e2e OK: `skill_fx` (18 checks; una corrida suelta falló en Cepi y no se repitió en 4 corridas más, ya estaba pasando en la base), `leaks`, `combat`, `ui`, `layout`. Chromium, no Safari físico.
 - **Pendiente:** ítem 9, prueba física en Safari iPhone (botones nuevos, FX, barra PODER, precarga diferida). Posible flakiness de `skill_fx.e2e` en Cepi (el `L` justo después del cartel).
 - **Rollback:** `git revert 08d4716^..HEAD` en `feat-3d` (base previa: `08defea`).
+
+## 2026-11-28 · P3 auditoría (pulido), parte 1 (hecho por Claude)
+- Textos de 11 px en el HUD pasan a 12 px (`game.css`: `#act-dodge small` y `.phase-card small`).
+- «Textos sin traducir» (`chase.js`, `enemies.js`): ya estaban en `i18n.js` y pasan por `fillText`; no había nada que hacer.
+- Verificación: npm test 122/122. Solo Chromium; no se probó en Safari físico.
+- Pendientes del P3: `.pop` en vertical, «Tocá para empezar» en horizontal, mute en el menú, `onstatechange` de audio, código muerto de audio, poses de héroes, hojas > 2048 px.
+- Rollback: `git revert <hash de este commit>` en feat-3d y push.
