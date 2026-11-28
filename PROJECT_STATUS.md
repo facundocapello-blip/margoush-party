@@ -875,3 +875,15 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Ya fallaban antes (probado sobre `2f70f91`, no son de este cambio):** `combat.e2e` («romper los cajones abre el pasaje»), `ui.e2e` y `layout.e2e` (esperan el estado `chase`, timeout).
 - **Pendiente:** P2 del doc (dispose del pool de la calle, partir `skill_fx.js`, renombrar `_lx…_cy`/`made`) y prueba física en Safari iPhone (botones nuevos, FX, barra PODER, precarga diferida).
 - **Rollback:** `git revert 309c467^..5df70d1` en `feat-3d` (base previa: `2f70f91`).
+
+## 2026-11-28 · P2 de la revisión de FX (orden interno y e2e viejos)
+- **Qué cambió (sin cambios de comportamiento del juego):**
+  - **6.** `fx.js`: comentario que explica que el pool de la calle no tiene `dispose()` a propósito (`createFx` se llama una vez al arrancar y vive toda la sesión; entre escenas solo `clear()`). `leaks.e2e` confirma que no pierde nada.
+  - **7.** `skill_fx.js` (1104 líneas) partido en `skill_fx_engine.js` (compilar + render por capas, 727), `skill_fx_bake.js` (hoja de sprites, 162) y `skill_fx_player.js` (reproductor, `SkillFxSystem`, puente Three.js, 225). `skill_fx.js` queda como fachada con exactamente la misma API pública (17 exports); sigue siendo el único punto de importación para el juego, `fx-studio.html` y las pruebas. `stamp_versions` ya sella los 3 módulos nuevos en el import map.
+  - **8.** Renombres: `_lx/_ly/_rx/_ry/_cx/_cy` → `_ribbonLeftX/…/_ribbonCenterY` en el motor; `made` → `playsByPreset` solo en el pool de `skill_fx_three.js` (`fx.made` y `powers.made` son otros contadores y no se tocaron). Pruebas actualizadas.
+  - **10.** Los 3 e2e que ya fallaban eran pruebas desactualizadas, no bugs del juego:
+    - `ui` y `layout`: esperaban `chase` tras la intro, pero la intro ahora desemboca en la calle (la persecución es del Acto 2). Se quitó esa espera; `ui` ahora juega 25 s en la calle y cierra con `finish(true)` (la campaña completa la cubren `etapa_d` y las pruebas de historia).
+    - `combat`: el pasaje secreto (x=230) queda pasado el x=206 donde salta Lale, así que solo se llega tras vencerlo (`laleDone`); y la vereda trae solo bombos (aturden, no restan vida), así que el chequeo de daño usa la avenida (hay patovica).
+- **Verificación:** `node tools/stamp_versions.mjs`, `npm test` 122/122; e2e OK: `skill_fx` (18 checks; una corrida suelta falló en Cepi y no se repitió en 4 corridas más, ya estaba pasando en la base), `leaks`, `combat`, `ui`, `layout`. Chromium, no Safari físico.
+- **Pendiente:** ítem 9, prueba física en Safari iPhone (botones nuevos, FX, barra PODER, precarga diferida). Posible flakiness de `skill_fx.e2e` en Cepi (el `L` justo después del cartel).
+- **Rollback:** `git revert 08d4716^..HEAD` en `feat-3d` (base previa: `08defea`).

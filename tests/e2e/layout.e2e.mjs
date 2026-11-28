@@ -29,8 +29,7 @@ try {
   check(seen.every(t => t.length < 110), 'los mensajes son cortos (menos de 110 caracteres)');
 
   // Jugando: nada tapa el puntaje
-  await page.waitForFunction(() => window.__game.state === 'chase', null, { timeout: 15000 });
-  await page.evaluate(() => { const g = window.__game; g.chase.dispose(); g.quickStart(g.heroId); }); // la persecución se prueba en chase.e2e
+  // Desde la reorganización de actos, la intro desemboca en la calle (la persecución es del Acto 2 y se prueba en chase.e2e)
   await page.waitForFunction(() => window.__game.state === 'playing', null, { timeout: 8000 });
   await G(() => window.__game.banner('PRUEBA', '¡Prueba de globo!', 3));
   await page.waitForTimeout(200);

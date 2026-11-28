@@ -40,7 +40,7 @@ export const SOFT = { scale: 0.7, opacity: 0.5 };
 
 export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker = bakeSpriteSheet, reduceMotion = null } = {}) {
   const cache = new Map(); // presetId -> entry compartido, solo los que este pool tiene retenidos
-  const made = {};
+  const playsByPreset = {};
   const queue = []; // presets pendientes de precarga diferida
   let disposed = false;
   let shared = TEXTURES.get(THREE);
@@ -163,7 +163,7 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
     setCellUv(slot.geo.attributes.uv, 0, 0, entry.cols, entry.rows);
     slot.mesh.visible = true;
 
-    made[presetId] = (made[presetId] || 0) + 1;
+    playsByPreset[presetId] = (playsByPreset[presetId] || 0) + 1;
     return slot;
   }
 
@@ -232,7 +232,7 @@ export function createSkillFxPool(THREE, scene, camera, { maxActive = 8, baker =
     update,
     clear,
     dispose,
-    made,
+    playsByPreset,
     get activeCount() {
       let n = 0;
       for (let i = 0; i < slots.length; i++) if (slots[i].active) n++;
