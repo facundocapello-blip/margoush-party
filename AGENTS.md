@@ -11,3 +11,4 @@
 - Cambios incrementales; preservar versiones y recursos. No modificar otros proyectos.
 - Publicar pruebas personales mediante GitHub Pages HTTPS con rollback, comprobar el despliegue si las herramientas lo permiten y entregar URL. No entregar solo HTML/ZIP.
 - Registrar resultados verificables y pendientes en PROJECT_STATUS.md.
+- **Regla del usuario:** al terminar cualquier cambio, siempre dejarlo listo para probar: commit, push y pasarlo a `feat-3d` (publica solo en GitHub Pages), y entregar el link. No quedarse en una rama sin publicar. Con el rollback anotado en PROJECT_STATUS.md.
