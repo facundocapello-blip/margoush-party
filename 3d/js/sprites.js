@@ -9,6 +9,8 @@ const TILT = -0.32; // inclina la figura hacia la cámara (estilo Paper Mario)
 const shadowGeo = new THREE.CircleGeometry(1, 20);
 const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false });
 
+// Poses de golpe: el corte tiene que ser seco (#148), el fundido de 80 ms queda para caminar, correr y reposo
+const SNAP_POSE = n => n === 'hurt' || n === 'strike' || n.startsWith('attack');
 export class SpriteActor {
   // scaleRef: pose de referencia (p. ej. 'douge_idle'); las demás se escalan para que la cabeza mida igual
   constructor(scene, assets, { poses, heightM, tint = 0xffffff, shadow = 0.55, scaleRef = null }) {
@@ -81,7 +83,7 @@ export class SpriteActor {
 
   setPose(name) {
     if (this.pose === name || !this.poses[name]) return;
-    if (this.pose && this.poses[this.pose] && !(this.snapHit && name === 'hurt')) {
+    if (this.pose && this.poses[this.pose] && !(this.snapHit && SNAP_POSE(name))) {
       const prev = this.poses[this.pose];
       const prevH = this.heightM * prev.h;
       this.prevW = prevH * prev.aspect;
@@ -97,7 +99,7 @@ export class SpriteActor {
       this.ghostMesh.position.z = -0.012;
       this.ghostMesh.rotation.copy(this.mesh.rotation);
       this.ghostMesh.visible = true;
-    } else if (this.snapHit && name === 'hurt') this.fadeT = 0;
+    } else if (this.snapHit && SNAP_POSE(name)) this.fadeT = 0;
     this.pose = name;
     this.frame = 0;
     this.dist = 0;
