@@ -10,6 +10,7 @@ import { attachBossIntro } from './boss_intro.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
 import { createShake, flashAlpha } from './feedback.js';
+import { createSkillFxPool } from './skill_fx_three.js';
 
 const MOVE = 6.3;
 const DASH_SPEED = 11.5;
@@ -36,6 +37,8 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 250);
+    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6 }));
+    skillFx.preload([isM ? 'marine_ivy_whirl' : 'douge_truth_slam', 'lale_oven_flare']);
     scene.background = L('#3a2518');
     scene.fog = new T.Fog(L('#3a2518'), 26, 75);
     scene.add(new T.HemisphereLight(0xffe7c2, 0x5c361d, 0.95));
@@ -383,13 +386,17 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
               sfx('pickup');
             }
             break;
-          case 'phase': setBarName(); phaseCard(e.phase, 2.1); shake(0.32, 0.3); sfx('roar'); break;
+          case 'phase':
+            setBarName(); phaseCard(e.phase, 2.1); shake(0.32, 0.3); sfx('roar');
+            if (e.phase === 3) skillFx.play('lale_oven_flare', { x: logic.state.bossX, y: 2.8, z: LALE_ARENA.bossZ + 0.6 }, { worldSize: 5.2 });
+            break;
           case 'voice': speak(e.event); break;
           case 'ko': {
             phase = 'ko'; phaseT = 0; setBar(); setBarName(); freezeT = 0.1;
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.55); shake(0.48, 0.45);
             burst(logic.state.bossX, 2.6, LALE_ARENA.bossZ + 0.4, '#ffe169', 16);
+            skillFx.play('lale_oven_flare', { x: logic.state.bossX, y: 2.6, z: LALE_ARENA.bossZ + 0.6 }, { worldSize: 5.2 });
             pop(logic.state.bossX, BOSS_H * 0.7, LALE_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.5);
             break;
           }
@@ -406,6 +413,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     function usePower() {
       hero.power = 0; powT = 0.55; holdT = 0;
       sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.4, 0.3);
+      skillFx.play(isM ? 'marine_ivy_whirl' : 'douge_truth_slam', { x, y: 1.6, z: z + 0.4 }, { worldSize: 4.6 });
       pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);
       handle(logic.power());
     }
@@ -421,6 +429,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       if (disposed || closing) return;
       if (input.consume('pause')) { pause(); return; }
       t += dt;
+      skillFx.update(dt);
       if (freezeT > 0) { freezeT -= dt; draw(0); return; }
       phaseT += dt;
       if (hurtT > 0) hurtT = Math.max(0, hurtT - dt);

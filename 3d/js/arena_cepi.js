@@ -10,6 +10,7 @@ import { attachBossIntro } from './boss_intro.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
 import { createShake, flashAlpha } from './feedback.js';
+import { createSkillFxPool } from './skill_fx_three.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -33,6 +34,8 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 250);
+    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6 }));
+    skillFx.preload([isM ? 'marine_ivy_whirl' : 'douge_truth_slam', 'cepi_golden_smash']);
     scene.background = L('#101c3a');
     scene.fog = new T.Fog(L('#101c3a'), 26, 75);
     scene.add(new T.HemisphereLight(0x9fc8ff, 0x1a2c54, 0.95));
@@ -364,7 +367,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             addPts(e.gold ? CEPI_ARENA.points.returned : CEPI_ARENA.points.normalReturn, e.x, 2.4, e.z);
             charge(e.gold ? 0.24 : 0.1);
             sfx(e.gold ? 'perfect' : 'hit'); shake(e.gold ? 0.3 : 0.16, e.gold ? 0.22 : 0.12);
-            if (e.gold) { freezeT = 0.075; burst(e.x, 1.6, e.z, '#ffe066', 12); }
+            if (e.gold) { freezeT = 0.075; burst(e.x, 1.6, e.z, '#ffe066', 12); skillFx.play('cepi_golden_smash', { x: e.x, y: 1.9, z: e.z + 0.4 }, { worldSize: 3.8 }); }
             else burst(e.x, 1.4, e.z, '#c8ff3d', 6);
             pop(e.x, 2.8, e.z, e.gold ? '¡PUNTO DE ORO!' : '¡DEVUELTA!', e.gold ? '#ffe066' : '#9fe4ff', e.gold ? 24 : 20);
             break;
@@ -433,6 +436,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
             phase = 'ko'; phaseT = 0; setBar(); setBarName();
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.55); shake(0.5, 0.45);
+            skillFx.play('cepi_golden_smash', { x: logic.state.bossX, y: 2.6, z: CEPI_ARENA.bossZ + 0.6 }, { worldSize: 5.0 });
             pop(logic.state.bossX, BOSS_H * 0.7, CEPI_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.5);
             break;
           }
@@ -449,6 +453,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
     function usePower() {
       hero.power = 0; powT = 0.55; holdT = 0;
       sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.42, 0.32);
+      skillFx.play(isM ? 'marine_ivy_whirl' : 'douge_truth_slam', { x, y: 1.6, z: z + 0.4 }, { worldSize: 4.6 });
       pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);
       handle(logic.power());
     }
@@ -464,6 +469,7 @@ export function createCepiArena({ game, input, audio, assets, renderer, updateHu
       if (disposed || closing) return;
       if (input.consume('pause')) { pause(); return; }
       t += dt;
+      skillFx.update(dt);
       if (freezeT > 0) { freezeT -= dt; draw(0); return; }
       phaseT += dt;
       if (hurtT > 0) hurtT = Math.max(0, hurtT - dt);

@@ -12,6 +12,7 @@ import { createMargotFinish } from './margot_finish.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
 import { createShake, flashAlpha } from './feedback.js';
+import { createSkillFxPool } from './skill_fx_three.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -37,6 +38,8 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 250);
+    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6 }));
+    skillFx.preload([isM ? 'marine_ivy_whirl' : 'douge_truth_slam', 'margot_hero_cry']);
     scene.background = L('#1a1d26');
     scene.fog = new T.Fog(L('#1a1d26'), 26, 76);
     scene.add(new T.HemisphereLight(0xdce8ff, 0x262933, 0.95));
@@ -391,6 +394,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             after(0.65, () => {
               sfx('hit'); shake(0.5, 0.4);
               burst(logic.state.bossX, BOSS_H * 0.8, PINKY_ARENA.bossZ + 0.6, '#ffa53a', 16, false);
+              skillFx.play('margot_hero_cry', { x: logic.state.bossX, y: BOSS_H * 0.72, z: PINKY_ARENA.bossZ + 0.8 }, { worldSize: 5.0 });
               pop(logic.state.bossX, BOSS_H + 0.9, PINKY_ARENA.bossZ, '¡SPLASH! 🥣😎', '#ffb347', 30, 1.5);
             });
             break;
@@ -417,6 +421,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.6); shake(0.55, 0.5);
             burst(logic.state.bossX, 2.6, PINKY_ARENA.bossZ + 0.4, '#6de37b', 18, true);
+            skillFx.play('margot_hero_cry', { x: logic.state.bossX, y: 2.8, z: PINKY_ARENA.bossZ + 0.7 }, { worldSize: 5.2 });
             pop(logic.state.bossX, BOSS_H * 0.7, PINKY_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.6);
             pop(logic.state.bossX, BOSS_H * 0.45, PINKY_ARENA.bossZ, '💵 Cheque firmado: FACU', '#9fe4ff', 22, 2.4);
             break;
@@ -434,6 +439,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
     function usePower() {
       hero.power = 0; powT = 0.55; holdT = 0;
       sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.4, 0.3);
+      skillFx.play(isM ? 'marine_ivy_whirl' : 'douge_truth_slam', { x, y: 1.6, z: z + 0.4 }, { worldSize: 4.6 });
       pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);
       handle(logic.power());
     }
@@ -449,6 +455,7 @@ export function createPinkyArena({ game, input, audio, assets, renderer, updateH
       if (disposed || closing) return;
       if (input.consume('pause')) { pause(); return; }
       t += dt;
+      skillFx.update(dt);
       if (freezeT > 0) { freezeT -= dt; draw(0); return; }
       phaseT += dt;
       if (hurtT > 0) hurtT = Math.max(0, hurtT - dt);

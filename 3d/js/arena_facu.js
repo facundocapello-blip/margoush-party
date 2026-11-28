@@ -13,6 +13,7 @@ import { createMargotFinish } from './margot_finish.js';
 import { placePops } from './pop_layout.js';
 import { triggerSpriteBlend, stepSpriteBlend } from './poses.js';
 import { createShake, flashAlpha } from './feedback.js';
+import { createSkillFxPool } from './skill_fx_three.js';
 
 const MOVE = 6.4;
 const DASH_SPEED = 11.5;
@@ -36,6 +37,8 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     const L = (h) => new T.Color(h).convertSRGBToLinear();
     const own = [], keep = (o) => (own.push(o), o);
     const scene = new T.Scene(), cam = new T.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 250);
+    const skillFx = keep(createSkillFxPool(T, scene, cam, { maxActive: 6 }));
+    skillFx.preload([isM ? 'marine_ivy_whirl' : 'douge_truth_slam', 'margot_hero_cry', 'effekseer_astral_slash']);
     scene.background = L('#1b1220');
     scene.fog = new T.Fog(L('#1b1220'), 30, 80);
     scene.add(new T.HemisphereLight(0xfff0dc, 0x3a2a33, 1.0));
@@ -404,6 +407,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
           case 'margotArt':
             addPts(FACU_ARENA.points.margot, 0, 3.5, -5);
             sfx('power'); flash('#ffd400', 0.32); shake(0.3, 0.3);
+            skillFx.play('margot_hero_cry', { x: EASEL.x, y: 2.4, z: EASEL.z + 0.6 }, { worldSize: 4.6 });
             pop(EASEL.x, 3.4, EASEL.z, '👶🖍️ ¡GARABATOS!', '#ffd400', 26, 1.0);
             after(1.1, () => {
               sfx('fanfare');
@@ -420,6 +424,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
             addPts(FACU_ARENA.points.pick, e.x, 3.2, FACU_ARENA.pickZ); charge(POWER.hit * 1.5);
             sfx('hit'); shake(0.3, 0.2); freezeT = 0.06;
             burst(e.x, 2.6, FACU_ARENA.pickZ + 0.4, '#ffd36e', 12, false);
+            skillFx.play('effekseer_astral_slash', { x: e.x, y: 2.6, z: FACU_ARENA.pickZ + 0.6 }, { worldSize: 3.8 });
             pop(e.x, 4.0, FACU_ARENA.pickZ, '¡ESE ERA! 🖼️💥', '#9bf7c4', 24, 1.3);
             break;
           case 'pickWrong':
@@ -453,6 +458,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
             const before = game.score.total; game.score.addKill('boss');
             sfx('fanfare'); flash('#fff', 0.6); shake(0.55, 0.5);
             burst(logic.state.bossX, 2.6, FACU_ARENA.bossZ + 0.4, '#ffd36e', 18, false);
+            skillFx.play('margot_hero_cry', { x: logic.state.bossX, y: 2.8, z: FACU_ARENA.bossZ + 0.7 }, { worldSize: 5.2 });
             pop(logic.state.bossX, BOSS_H * 0.7, FACU_ARENA.bossZ, '¡K.O.! +' + (game.score.total - before), '#ffe066', 32, 1.6);
             pop(logic.state.bossX, BOSS_H * 0.45, FACU_ARENA.bossZ, '¡FACU SE RINDE ANTE EL ARTE!', '#9fe4ff', 22, 2.4);
             break;
@@ -470,6 +476,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
     function usePower() {
       hero.power = 0; powT = 0.55; holdT = 0;
       sfx('power'); flash(isM ? '#78e08f' : '#ffd36e', 0.38); shake(0.4, 0.3);
+      skillFx.play(isM ? 'marine_ivy_whirl' : 'douge_truth_slam', { x, y: 1.6, z: z + 0.4 }, { worldSize: 4.6 });
       pop(x, 3.3, z, isM ? '¡HIEDRA!' : '¡VERDADES A LOS GRITOS!', isM ? '#9bf7c4' : '#ffe066', 24, 1.2);
       handle(logic.power());
     }
@@ -485,6 +492,7 @@ export function createFacuArena({ game, input, audio, assets, renderer, updateHu
       if (disposed || closing) return;
       if (input.consume('pause')) { pause(); return; }
       t += dt;
+      skillFx.update(dt);
       if (freezeT > 0) { freezeT -= dt; draw(0); return; }
       phaseT += dt;
       if (hurtT > 0) hurtT = Math.max(0, hurtT - dt);

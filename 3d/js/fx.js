@@ -2,7 +2,9 @@
 import { fillText } from './i18n.js';
 import { placePops } from './pop_layout.js';
 import { createShake, flashAlpha } from './feedback.js';
+import { createSkillFxPool } from './skill_fx_three.js';
 export function createFx(scene, camera, labelsEl, flashEl) {
+  const skillPool = createSkillFxPool(THREE, scene, camera, { maxActive: 10 });
   const sparkTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
     const g = c.getContext('2d');
@@ -69,7 +71,12 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       m.rotateZ(k.tilt * facing);
       scene.add(m);
       parts.push({ obj: m, v: null, life: k.life, max: k.life, kind: 'slash', r: k.r, facing });
+      if (kind === 'finisher') {
+        skillPool.play('effekseer_astral_slash', { x: pos.x + facing * 0.9, y: pos.y + 0.1, z: pos.z + 0.45 }, { worldSize: 3.1, facing });
+      }
     },
+    skill(presetId, pos, opts) { return skillPool.play(presetId, pos, opts); },
+    skillPool,
     // Raya de velocidad detrás de algo que corre (embestida del patovica)
     speedLine(pos, facing) {
       made.line++;
@@ -113,6 +120,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       camera.position.y += s.y;
     },
     update(dt) {
+      skillPool.update(dt);
       for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i];
         p.life -= dt;
@@ -154,6 +162,7 @@ export function createFx(scene, camera, labelsEl, flashEl) {
       placePops(lay.reverse(), dt);
     },
     clear() {
+      skillPool.clear();
       for (const p of parts) { scene.remove(p.obj); p.obj.material.dispose(); }
       parts.length = 0;
       for (const p of pops) p.el.remove();
