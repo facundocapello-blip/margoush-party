@@ -1021,3 +1021,7 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - QA: `npm test` 126/126. Nuevo `tests/e2e/boss_jump.e2e.mjs` (Chrome 1280×720, iPhone 15 Pro Max 430×932 y 932×430 táctil): los 5 atajos entran a su arena con Douge y Marine, sin errores de consola. `probar.e2e` y `chaky_dice.e2e` OK. Chromium emulado, no Safari físico.
 - Ya fallaban antes de este cambio (probado sobre `a604247`): `cover.e2e` (espera la persecución tras la intro, ya no existe ahí) e `idioma.e2e` (texto «⚡ POUVOIR PRÊT !» del HUD).
 - Chequeo rápido (capturas): en horizontal la frase de Pinky y de Facu cae encima de la cabeza del jefe y a Facu casi no se lo ve detrás del cartel de fase; en vertical el «¡VIDA EXTRA!» del baile queda apenas cortado a la izquierda.
+
+## Actualización 2026-11-28 · Música del baile: «disco de terror» ochentoso
+- Rollback: `e8eeb99` (cachengue). Facu no quiso el cachengue; pidió electrónica / hit de los 70-80 tipo Thriller, en chiste. No se copia Thriller (derechos): tema propio con esa onda en Fa# menor: bombo en negras, redoblante «gated», bajo de sinte en octavas, hook de sinte, bronces y un «uuuuh» de theremin cada vuelta. Sigue sincronizado a la negra de cada ronda.
+- QA: `npm test` 126/126, `chaky_dice.e2e` OK, baile en 430×932 y 932×430 con la música `disco` sonando y sin errores (Chromium emulado, no Safari físico).
