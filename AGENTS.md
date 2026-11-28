@@ -12,3 +12,4 @@
 - Publicar pruebas personales mediante GitHub Pages HTTPS con rollback, comprobar el despliegue si las herramientas lo permiten y entregar URL. No entregar solo HTML/ZIP.
 - Registrar resultados verificables y pendientes en PROJECT_STATUS.md.
 - **Regla del usuario:** al terminar cualquier cambio, siempre dejarlo listo para probar: commit, push y pasarlo a `feat-3d` (publica solo en GitHub Pages), y entregar el link. No quedarse en una rama sin publicar. Con el rollback anotado en PROJECT_STATUS.md.
+- **Regla del usuario (pruebas):** antes de entregar el link, hacer 2 pruebas como si fuera el usuario: (1) Chrome de escritorio (1280×720) y (2) celular (emulación iPhone 15 Pro Max 430×932, táctil, con los botones en pantalla). Jugar de verdad el cambio (no solo `npm test`), mirar capturas y errores de consola. Hay una base en `tests/e2e/golpe_feel.e2e.mjs`. Decir siempre que es Chromium emulado y no Safari físico.
