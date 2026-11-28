@@ -619,6 +619,7 @@ function updateZones() {
     if (st === 'idle' && x > w.trigger && game.cameos.busy) { game.cameos.hurry(); break; }
     if (st === 'idle' && x > w.trigger) {
       game.waves[w.id] = 'active';
+      game.waveHurt0 = game.hero.damageLog.length; // para el bonus «LIMPIO»
       game.enemies.spawnWave(w.id);
       break;
     }
@@ -627,6 +628,12 @@ function updateZones() {
       if (w.gate != null) openGate(w.gate);
       // Margot (carita del HUD + guiño flotante) festeja cada tramo despejado
       game.margot.cheer(3.2);
+      // Tramo despejado sin que te peguen: premio (la mejor pelea es la que no duele)
+      if (game.hero.damageLog.length <= (game.waveHurt0 ?? 1e9)) {
+        game.score.addFlat(300);
+        fx.popup(hp.clone().setY(4.1), '✨ ¡LIMPIO! +300', '#7ee0c3', { size: 26, life: 1.4, rise: 0.4 });
+        audio?.sfx('secret');
+      }
       const margotCheer = game.heroId === 'marine' ? '👶 ¡Allez maman !' : '👶 ¡Vamos, papá!';
       fx.popup(hp.clone().setY(3.3), margotCheer, '#ffb3e6', { size: 22, life: 1.4, rise: 0.35 });
       if (w.endsLevel) {

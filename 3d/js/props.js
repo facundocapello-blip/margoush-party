@@ -6,6 +6,9 @@ const POISON_X = [84, 232];
 // nunca se camina sin nada y cada una carga un poquito el poder.
 const TRAILS = [[7, 19], [26, 46], [53, 62], [76, 100], [108, 116], [127, 142], [157, 160], [165, 184], [189, 202], [214, 236], [241, 254]];
 const TRAIL_STEP = 1.5;
+// Tachos de basura rompibles a lo largo de la calle: 2 golpes y sueltan monedas (cada tercero, una cerveza)
+const BINS = [[12, 2.2], [31, -2.3], [58, 2.1], [90, -2.2], [112, 2.3], [128, -2.1], [160, 2.2], [178, -2.3], [198, 2.1], [222, -2.2], [244, 2.2], [266, -2.1]];
+const BEER_BINS = [2, 5, 8, 11];
 
 function coinTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 128;
@@ -64,20 +67,31 @@ export function createProps(ctx) {
     setTrailVisible(v) { for (const b of pickups.list) if (!b.taken && (b.kind === 'coin' || b.kind === 'croissant')) b.sprite.visible = v; }
   };
   const crates = { list: [] };
+  const bins = { list: [] };
+  const binMat = new THREE.SpriteMaterial({ map: emojiTexture('🗑️'), transparent: true, depthWrite: false });
+
+  function place(x, z, kind, seed) {
+    const s = new THREE.Sprite(mats[kind]);
+    const small = kind === 'coin' || kind === 'croissant';
+    s.scale.set(small ? 0.62 : 1.1, small ? 0.62 : 1.1, 1);
+    s.position.set(x, 0.9, z);
+    scene.add(s);
+    pickups.list.push({ x, z, kind, taken: false, sprite: s, seed });
+  }
 
   function build() {
+    for (const b of bins.list) scene.remove(b.sprite);
+    bins.list.length = 0;
+    BINS.forEach(([x, z], i) => {
+      const sp = new THREE.Sprite(binMat);
+      sp.scale.set(1.3, 1.3, 1); sp.position.set(x, 0.65, z);
+      scene.add(sp);
+      bins.list.push({ x, z, hp: 2, broken: false, sprite: sp, beer: BEER_BINS.includes(i), i });
+    });
     for (const p of pickups.list) scene.remove(p.sprite);
     for (const c of crates.list) scene.remove(c.mesh);
     pickups.list.length = 0;
     crates.list.length = 0;
-    const place = (x, z, kind, seed) => {
-      const s = new THREE.Sprite(mats[kind]);
-      const small = kind === 'coin' || kind === 'croissant';
-      s.scale.set(small ? 0.62 : 1.1, small ? 0.62 : 1.1, 1);
-      s.position.set(x, 0.9, z);
-      scene.add(s);
-      pickups.list.push({ x, z, kind, taken: false, sprite: s, seed });
-    };
     GOOD_X.forEach((x, i) => place(x, [-2, 1.5, -0.5, 2.5][i % 4], i % 2 ? 'mushroom' : 'beer', i));
     POISON_X.forEach((x, i) => place(x, [1.2, -1.2][i], 'poison', 20 + i));
     const busy = [...GOOD_X, ...POISON_X];
@@ -102,7 +116,7 @@ export function createProps(ctx) {
   build();
 
   return {
-    pickups, crates,
+    pickups, crates, bins,
     reset: build,
     hitArea({ x, z, facing, reach, depth }) {
       let n = 0;
@@ -119,6 +133,23 @@ export function createProps(ctx) {
           c.broken = true;
           scene.remove(c.mesh);
           fx.dust(c.mesh.position);
+        }
+      }
+      for (const b of bins.list) {
+        if (b.broken) continue;
+        const dx = (b.x - x) * facing;
+        if (dx < -0.5 || dx > reach + 0.4 || Math.abs(b.z - z) > depth + 0.6) continue;
+        b.hp--; n++;
+        fx.hit(b.sprite.position.clone().setY(0.9), 0.8);
+        b.sprite.position.x += facing * 0.12; // el golpe lo sacude
+        ctx.audio?.sfx('crate');
+        if (b.hp <= 0) {
+          b.broken = true;
+          scene.remove(b.sprite);
+          fx.dust(b.sprite.position);
+          if (b.beer) place(b.x, b.z, 'beer', 300 + b.i);
+          for (let k = 0; k < (b.beer ? 2 : 4); k++) place(b.x + (k - 1.5) * 0.8, Math.max(-2.6, Math.min(2.6, b.z - Math.sign(b.z) * (0.5 + (k % 2) * 0.6))), 'coin', 400 + b.i * 7 + k);
+          fx.popup(b.sprite.position.clone().setY(2), b.beer ? '🍺 ¡PREMIO!' : '💰', '#ffe08a', { size: 22, life: 0.8, rise: 0.5 });
         }
       }
       if (n && world.secret.sealed && crates.list.every(c => c.broken)) {

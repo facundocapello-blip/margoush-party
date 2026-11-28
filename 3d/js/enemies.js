@@ -39,6 +39,8 @@ export const BOMBO = { every: 4, windup: 0.9, radius: 3.2, stun: 1 };
 export const MOZO = { every: 2.5, flight: 0.9, hitRadius: 0.75 };
 export const LALE = { every: 3.2, flight: 0.9, keep: 6, slipChance: 0.35, windup: 0.4, slip: 1 };
 export const DELIVERY = { warn: 0.85, speed: 13, run: 14, dizzy: 1.5 };
+export const WEAK = { mult: 2, patovica: 1.5, delivery: 1.5, bombo: 1 }; // segundos agotado tras el ataque grande
+export const REFLECT = { flight: 0.45, arc: 1.2, from: 0.35, hitRadius: 1.2, dmg: 2 }; // devolver el pelotazo / la medialuna
 
 function emojiTex(emoji) {
   const c = document.createElement('canvas'); c.width = c.height = 128;
@@ -180,6 +182,11 @@ export function createEnemies(ctx) {
   function hideTells(e) { if (e.zone) e.zone.visible = false; if (e.ring) e.ring.visible = false; if (e.lane) e.lane.visible = false; }
 
   function damage(e, dmg, knockDir, knock, strength, combo = -1, area = null) {
+    // Después de un ataque grande (embestida, bombazo) el malo queda agotado: un golpe ahí vale doble (riesgo → recompensa)
+    if (e.weak > 0 && e.hp > 0) {
+      dmg *= WEAK.mult;
+      fx.popup(tmp.copy(e.pos).setY(3.3), '¡PUNTO DÉBIL!', '#ffd23a', { size: 24, life: 0.9, rise: 0.4 });
+    }
     e.hp -= dmg;
     // El patovica embistiendo no se frena con golpes chicos
     const armored = e.kind === 'patovica' && e.state === 'charge' && strength <= 1.2;
@@ -226,6 +233,11 @@ export function createEnemies(ctx) {
       // destello de KO: blanco y enseguida oscuro (#221), así se nota también sobre calle clara
       fx.flash('#ffffff', 0.22); setTimeout(() => fx.flash('#1a0a14', 0.2), 70);
     }
+  }
+
+  function setWeak(e, secs) {
+    e.weak = secs;
+    fx.popup(tmp.copy(e.pos).setY(2.25 * e.k.scale + 0.5), '💫', '#fff', { size: 26, life: secs, rise: 0.1 });
   }
 
   function heroCanBeHit(hero, maxLift) { return hero.lift < maxLift && !hero.isDodging(); }
@@ -361,6 +373,7 @@ export function createEnemies(ctx) {
     }
     if (e.ran >= PATOVICA.run || moved < PATOVICA.speed * dt * 0.3) {
       e.state = 'hitstun'; e.t = 0.5; e.cd = 2.5; e.engaged = false; a.lean = 0; // frena de golpe, tambaleando
+      setWeak(e, WEAK.patovica);
     }
   }
 
@@ -397,6 +410,7 @@ export function createEnemies(ctx) {
         const d = Math.hypot(hp.x - e.pos.x, hp.z - e.pos.z);
         if (d < BOMBO.radius && heroCanBeHit(hero, 0.5)) hero.stun(BOMBO.stun);
         e.state = 'walk'; e.cd = BOMBO.every;
+        setWeak(e, WEAK.bombo);
       }
       return;
     }
@@ -515,17 +529,39 @@ export function createEnemies(ctx) {
     shots.push({ from, target, t: 0, sprite: sp, mark, owner: e });
   }
 
+  function reflect(s, hx, hz, facing) {
+    const o = s.owner && s.owner.hp > 0 ? s.owner : null;
+    s.reflected = true;
+    s.from = s.sprite.position.clone();
+    s.target = o ? new THREE.Vector3(o.pos.x, 0, o.pos.z) : new THREE.Vector3(hx + facing * 6, 0, hz);
+    s.t = 0;
+    s.mark.dispose();
+    s.mark = makeWarning(scene, s.target.x, s.target.z, REFLECT.hitRadius, '#7ee0c3');
+    fx.popup(tmp.copy(s.from).setY(s.from.y + 0.6), '¡DEVUELTA!', '#7ee0c3', { size: 26, life: 0.8, rise: 0.4 });
+    fx.hit(s.from, 1.2);
+    ctx.audio?.sfx('swing');
+  }
+
   function updateShots(dt) {
     const hero = game.hero, hp = hero.actor.position;
     for (let i = shots.length - 1; i >= 0; i--) {
       const s = shots[i];
       s.t += dt;
-      const k = Math.min(1, s.t / MOZO.flight);
+      const k = Math.min(1, s.t / (s.reflected ? REFLECT.flight : MOZO.flight));
       s.sprite.position.lerpVectors(s.from, s.target, k);
-      s.sprite.position.y = s.from.y * (1 - k) + Math.sin(k * Math.PI) * 3 + 0.3 * k;
+      s.sprite.position.y = s.from.y * (1 - k) + Math.sin(k * Math.PI) * (s.reflected ? REFLECT.arc : 3) + 0.3 * k;
       s.sprite.material.rotation = k * 8;
       s.mark.update(k);
-      if (k >= 1) {
+      if (k >= 1 && s.reflected) {
+        // La pelota devuelta pega a todos los malos que estén en el punto de caída
+        for (const e of list) {
+          if (e.hp > 0 && Math.hypot(e.pos.x - s.target.x, e.pos.z - s.target.z) < REFLECT.hitRadius) damage(e, REFLECT.dmg, Math.sign(e.pos.x - s.from.x) || 1, 5, 1.3);
+        }
+        fx.dust(s.target);
+        scene.remove(s.sprite);
+        s.mark.dispose();
+        shots.splice(i, 1);
+      } else if (k >= 1) {
         if (Math.hypot(hp.x - s.target.x, hp.z - s.target.z) < MOZO.hitRadius && heroCanBeHit(hero, 0.8)) hero.hurt(1, s.target.x - 0.1);
         fx.dust(s.target);
         scene.remove(s.sprite);
@@ -558,7 +594,7 @@ export function createEnemies(ctx) {
         if (hero.hurt(1, e.pos.x - e.dir)) hero.push(e.dir * 10, 0);
       }
       if (e.ran >= DELIVERY.run || moved < DELIVERY.speed * dt * 0.3) {
-        e.state = 'dizzy'; e.t = DELIVERY.dizzy;
+        e.state = 'dizzy'; e.t = DELIVERY.dizzy; setWeak(e, WEAK.delivery);
         fx.popup(tmp.copy(e.pos).setY(2.9), '💫', '#fff', { size: 26, life: DELIVERY.dizzy, rise: 0.1 });
       }
       return;
@@ -632,6 +668,14 @@ export function createEnemies(ctx) {
         damage(e, dmg, facing, knock, strength, combo, area);
         n++;
       }
+      // Devolver el tiro: si el golpe agarra una pelota o medialuna que ya viene bajando, vuelve contra el que la tiró
+      for (const s of shots) {
+        if (s.reflected || s.t / MOZO.flight < REFLECT.from) continue;
+        const sp = s.sprite.position, dx = (sp.x - x) * facing;
+        if (dx < -0.5 || dx > reach + 1.6 || Math.abs(sp.z - z) > depth + 0.9 || sp.y > 3.2) continue;
+        reflect(s, x, z, facing);
+        n++;
+      }
       return n;
     },
 
@@ -667,6 +711,10 @@ export function createEnemies(ctx) {
           continue;
         }
         e.cd = Math.max(0, e.cd - dt);
+        if (e.weak > 0) {
+          e.weak -= dt; e.tinted = true;
+          a.material.color.setHex(Math.floor(e.weak * 10) % 2 ? 0xffe9a0 : 0xffffff);
+        } else if (e.tinted) { e.tinted = false; a.material.color.setHex(0xffffff); }
         const dx = hp.x - e.pos.x, dz = hp.z - e.pos.z;
 
         if (e.stun > 0) {

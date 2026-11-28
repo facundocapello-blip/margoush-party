@@ -1035,3 +1035,10 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 ## Actualización 2026-11-28 · 3 propuestas nuevas de portada (para elegir)
 - Facu no quiere más la portada A. Se sumaron como opciones, sin cambiar la portada por defecto: `?portada=d` (fichín de los 80, con los jefes como elección de rival), `?portada=e` (placa roja «URGENTE: SECUESTRARON A MARGOT» con zócalo que corre) y `?portada=f` (flyer «MARGOUSH PARTY» con los jefes como line-up). Las tres mantienen ¡JUGAR!, idioma, podio, ranking, continuar y los atajos a jefes (Facu con contraseña). Fuentes nuevas de Google: Press Start 2P y Monoton.
 - QA: Chromium emulado 430×932 y 932×430, sin errores de consola; el atajo a Cepi entra a su arena en las tres. En las capturas de prueba las fuentes de Google no cargan (el arnés corta internet); en el sitio sí.
+
+## 2026-11-28 · Ronda de diversión en la calle (auditoría Sakurai)
+- Malos: **devolver el tiro** (golpear la medialuna/pelota de mozo o Cepi cuando baja la manda de vuelta, 2 de daño al que la tiró y a los que estén en el punto de caída, «¡DEVUELTA!»); **punto débil** (tras la embestida del patovica, el mareo del delivery y el bombazo del bombo quedan agotados, 💫 y destellan: el siguiente golpe vale doble). Constantes `WEAK` y `REFLECT` en `3d/js/enemies.js`.
+- Cosas para hacer: **12 tachos** rompibles en la calle (`BINS` en `3d/js/props.js`, 2 golpes, sueltan monedas; 4 de ellos una cerveza) y bonus **✨ ¡LIMPIO! +300** al despejar un tramo sin recibir daño (`updateZones` en `3d/js/main.js`).
+- Verificado: `tests/e2e/diversion.e2e.mjs` en Chromium emulado, escritorio 1280×720 y iPhone 15 Pro Max 430×932 táctil, sin errores de consola; capturas en `tests/e2e/out/`. `npm test` 125/126 (falla `assets` por falta de `scipy`, ya fallaba). No probado en Safari físico.
+- Pendiente de afinar jugando: si 300 de «LIMPIO» o el doble de daño desbalancean el puntaje (rangos S/A/B en `score.js`); ventana de devolver tiro (`REFLECT.from`, alcance +1,6 m en `hitArea`); si las 4 cervezas de tachos regalan demasiada vida.
+- Rollback: `git revert` del commit de esta entrada.
