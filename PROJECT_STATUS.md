@@ -906,3 +906,10 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - Límite: en `arena_lale_throw` queda un hueco grande en la pierna derecha (el recorte original borró casi toda esa pierna); conviene regenerar esa pose en Gemini. No se tocaron los héroes ni Facu.
 - Verificación: npm test 122/122; capturas Chromium 430×932 de `?probar=lale`, `cepi`, `pinky`. No se probó en Safari físico.
 - Rollback: `git revert <hash de este commit>` en feat-3d y push.
+
+## 2026-11-28 · P3 auditoría (pulido), parte 2: mute en la portada (hecho por Claude)
+- Antes el silencio solo estaba en el HUD de juego y la portada no tenía forma de apagar el sonido. Botón nuevo `#btn-mute-menu` en la portada A (`cover.js`, `game.css`): arriba a la izquierda en vertical y junto al selector de idioma en horizontal. Comparte estado (`audio.toggleMute`, `localStorage`) con el del HUD y ambos muestran el mismo ícono. En la portada vieja (`?portada=vieja`) no está.
+- Revisado en el código y ya resuelto antes, sin cambios: `onstatechange` del AudioContext (`audio.js` ~148), `.pop` acotado al ancho de pantalla (`pop_layout.js`, `max-width` en `.pop`), «Tocá para empezar» de Chaky sobre la cubierta de botones (`game.css` ~860), código muerto de audio (`bossBabblePlan` y `MUSIC_VOL` se usan).
+- Siguen pendientes del P3: poses de héroes (golpe de poder y 2.º golpe) y hojas > 2048 px (a medir en iPhone). Además, la pose `arena_lale_throw` necesita regenerarse en Gemini (hueco en la pierna). `tests/e2e/cover.e2e.mjs` falla desde antes en la línea 39 (espera `chase` tras la intro; ahora va a la calle).
+- Verificación: npm test 122/122; capturas Chromium 390×844 y 844×390 sin errores de consola; el toque silencia y cambia el ícono en ambos botones. No se probó en Safari físico.
+- Rollback: `git revert <hash de este commit>` en feat-3d y push.
