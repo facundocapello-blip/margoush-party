@@ -2,6 +2,7 @@
 //  a) Póster de película: la familia adelante, la sombra de BIG CHAKY atrás, atardecer porteño.
 //  b) Postal Buenos Aires → París: las dos ciudades del juego; el idioma son los sellos de cada ciudad.
 //  c) Fileteado arcade: marco porteño, Margot en la «O» y la tabla de récords de los fichines.
+//  Propuestas 28/11 (Facu no quería más la A): d) Fichín de los 80 · e) Placa roja de último momento · f) Flyer MARGOUSH PARTY.
 // Facu eligió la A (20/11): es la portada por defecto. ?portada=b|c muestra las otras; ?portada=vieja la de antes. Cada propuesta usa los mismos ids que la actual
 // (btn-play, lang-pick, btn-ranking, podium-*, btn-continue): main.js no cambia.
 
@@ -111,7 +112,84 @@ const TEMPLATES = {
       <button id="btn-play" class="pc-play">¡JUGAR!</button>
       <button id="btn-ranking" class="pc-link">Ver ranking completo</button>
     </div>
-    <i class="pc-douge" aria-hidden="true"></i><i class="pc-marine" aria-hidden="true"></i>`
+    <i class="pc-douge" aria-hidden="true"></i><i class="pc-marine" aria-hidden="true"></i>`,
+  d: `
+    <div class="pd-crt" aria-hidden="true"></div>
+    <div class="pd-top"><button id="btn-mute-menu" class="icon-btn pd-mute" aria-label="Silenciar">♪</button>${LANG('pd-lang')}</div>
+    <div class="pd-head">
+      <h1 class="pd-logo">MARGOUSH</h1>
+      <p class="pd-tag">EL RESCATE DE MARGOT</p>
+    </div>
+    ${PODIUM('pd-score')}
+    <div id="boss-jump" class="pd-roster" role="group" aria-label="Ir directo al jefe">
+      <p class="pd-roster-t">ELEGÍ TU RIVAL</p>
+      <div class="pd-grid">
+        <button data-probar="chaky"><img src="assets/arena_chaky_dance_idle.webp" alt=""><b>CHAKY</b></button>
+        <button data-probar="cepi"><img src="assets/arena_cepi_idle.webp" alt=""><b>CEPI</b></button>
+        <button data-probar="lale"><img src="assets/arena_lale_idle.webp" alt=""><b>LALE</b></button>
+        <button data-probar="pinky"><img src="assets/arena_pinky_idle.webp" alt=""><b>PINKY</b></button>
+        <button data-probar="facu" class="pd-locked"><img src="assets/arena_facu_idle.webp" alt=""><b>FACU 🔒</b></button>
+      </div>
+    </div>
+    <div class="pd-foot">
+      ${CONTINUE}
+      <button id="btn-play" class="pd-play">▶ INSERTE FICHA</button>
+      <div class="pd-credits"><span>CRÉDITOS ∞</span><button id="btn-ranking" class="pd-link">RANKING</button></div>
+    </div>`,
+  e: `
+    <div class="pe-bg" aria-hidden="true"></div>
+    <div class="pe-top">
+      <div class="pe-bug"><b>MARGOUSH</b><span><i></i>EN VIVO</span></div>
+      <button id="btn-mute-menu" class="icon-btn pe-mute" aria-label="Silenciar">♪</button>${LANG('pe-lang')}
+    </div>
+    <div class="pe-placa">
+      <p class="pe-urg">URGENTE</p>
+      <h1 class="pe-title">SECUESTRARON<br>A MARGOT</h1>
+    </div>
+    <div class="pe-people" aria-hidden="true">
+      <figure><img src="assets/douge_idle.webp" alt=""><figcaption><b>DOUGE</b>papá desesperado</figcaption></figure>
+      <figure class="pe-baby"><img src="assets/arena_margot_scared.webp" alt=""></figure>
+      <figure><img src="assets/marine_idle.webp" alt=""><figcaption><b>MARINE</b>mamá furiosa</figcaption></figure>
+    </div>
+    <div class="pe-actions">
+      ${PODIUM('pe-rating')}
+      ${CONTINUE}
+      <button id="btn-play" class="pe-play">IR AL RESCATE ▶</button>
+      <div id="boss-jump" class="pe-suspects" role="group" aria-label="Ir directo al jefe">
+        <span>SOSPECHOSOS</span>
+        <div class="boss-jump-row">
+          <button data-probar="chaky">CHAKY</button><button data-probar="cepi">CEPI</button><button data-probar="lale">LALE</button><button data-probar="pinky">PINKY</button><button data-probar="facu">FACU 🔒</button>
+        </div>
+      </div>
+      <button id="btn-ranking" class="pe-link">Ver ranking completo</button>
+    </div>
+    <div class="pe-ticker" aria-hidden="true"><div>
+      <span>BIG CHAKY NIEGA TODO</span><span>LALE SIGUE UNTANDO MANTECA EN LA 9 DE JULIO</span><span>PINKY COBRA ESTACIONAMIENTO EN LA ESCENA DEL CRIMEN</span><span>CEPI: «YO SOLO VINE A JUGAR AL PÁDEL»</span><span>EL DUQUE NO CONFIESA CUÁNTOS FUERON</span>
+      <span>BIG CHAKY NIEGA TODO</span><span>LALE SIGUE UNTANDO MANTECA EN LA 9 DE JULIO</span><span>PINKY COBRA ESTACIONAMIENTO EN LA ESCENA DEL CRIMEN</span><span>CEPI: «YO SOLO VINE A JUGAR AL PÁDEL»</span><span>EL DUQUE NO CONFIESA CUÁNTOS FUERON</span>
+    </div></div>`,
+  f: `
+    <div class="pf-bg" aria-hidden="true"></div>
+    <div class="pf-beams" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="pf-top"><button id="btn-mute-menu" class="icon-btn pf-mute" aria-label="Silenciar">♪</button>${LANG('pf-lang')}</div>
+    <div class="pf-head">
+      <p class="pf-date">SÁBADO · HANGAR VIP · HASTA QUE APAREZCA MARGOT</p>
+      <h1 class="pf-logo">MARGOUSH<span>PARTY</span></h1>
+    </div>
+    <div class="pf-guest" aria-hidden="true"><img src="assets/arena_margot_cheer.webp" alt=""><b>INVITADA ESPECIAL</b></div>
+    <div id="boss-jump" class="pf-lineup" role="group" aria-label="Ir directo al jefe">
+      <p class="pf-lineup-t">LINE-UP</p>
+      <button data-probar="chaky"><b>BIG CHAKY</b><span>disco de terror</span></button>
+      <button data-probar="cepi"><b>CEPI «EL NIÑO»</b><span>pádel set</span></button>
+      <button data-probar="lale"><b>LALE</b><span>set mantecoso</span></button>
+      <button data-probar="pinky"><b>PINKY</b><span>cumbia de cancha</span></button>
+      <button data-probar="facu" class="pf-secret"><b>FACU</b><span>secret set 🔒</span></button>
+    </div>
+    <div class="pf-actions">
+      ${PODIUM('pf-vip')}
+      ${CONTINUE}
+      <button id="btn-play" class="pf-play">ENTRÁ GRATIS</button>
+      <button id="btn-ranking" class="pf-link">Ver ranking completo</button>
+    </div>`
 };
 
 export const COVER_VARIANT = (() => {
