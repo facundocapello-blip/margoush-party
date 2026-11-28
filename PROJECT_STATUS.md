@@ -863,3 +863,15 @@ Candidata de Sites en /auditoria/. Rollback del sitio: versión 4, commit 944a6b
 - **Verificación:** `node tools/stamp_versions.mjs`, `npm test` 115/115, capturas Chromium en 430×932 (cepi, lale, facu, pinky) y 932×430 (pinky), sin errores de consola. No es Safari físico.
 - **Prueba:** `https://facundocapello-blip.github.io/margoush-party/3d/?probar=pinky` (y `cepi`, `lale`, `facu`).
 - **Rollback:** `git revert <hash de este commit>` en `feat-3d` (base previa: `52d502e`).
+
+## 2026-11-28 · P1 de la revisión de FX (calidad y rendimiento)
+- **Qué cambió (un commit por ítem, `309c467..5df70d1`):**
+  1. `skill_fx_three.js`: horneado cacheado a nivel de módulo y textura compartida entre pools vivos con conteo de referencias (la libera el último pool, R-2 intacto). `preload()` ahora es diferido (un preset por `update()`; `play()` hornea al instante si aún no tocó; `flushPreload()` para forzarlo).
+  2. Nuevo `arena_fx.js` (ids de preset `FX`, `heroPowerFx`, `createBurst`, `stepSparks`, `facingToward`, `bossFrontFx`) usado por Cepi, Lale, Pinky y Facu. Vive aparte de `arena.js` (Chaky) para no acoplar las otras arenas a ese módulo.
+  3. `facing` desde `hero.js` → `powers.js` y desde las arenas (poder hacia el jefe); en `ko` y cambio de fase el FX delante del jefe sale al 70 % de tamaño y 50 % de opacidad; `prefers-reduced-motion`/botón «Efectos: suaves» aplican la misma versión suave a todos los FX (calle y arenas).
+  4. Nuevo `tests/e2e/skill_fx.e2e.mjs` (calle + 4 arenas reales: el burst sale, se ve, desaparece solo; el pool no suma mallas) y pool de FX en `leaks.e2e.mjs` (4 presets subidos a GPU; al salir 0 texturas y 0 activos; probado en rojo rompiendo `dispose`). Las arenas exponen `skillFx` solo lectura.
+  5. `game.css`: texto de la barra «PODER» con contorno oscuro; era ilegible entre ~30 % y ~70 % de carga.
+- **Verificación:** `node tools/stamp_versions.mjs`, `npm test` 122/122, e2e OK: `leaks`, `skill_fx`, `attackfx`, `cepi_pinky`, `facu_galerista`, `etapa_d`. Capturas Chromium en 430×932 y 932×430 (poder y KO en las 4 arenas; barra PODER a 0/30/50/70/100 %), sin errores de consola. No es Safari físico.
+- **Ya fallaban antes (probado sobre `2f70f91`, no son de este cambio):** `combat.e2e` («romper los cajones abre el pasaje»), `ui.e2e` y `layout.e2e` (esperan el estado `chase`, timeout).
+- **Pendiente:** P2 del doc (dispose del pool de la calle, partir `skill_fx.js`, renombrar `_lx…_cy`/`made`) y prueba física en Safari iPhone (botones nuevos, FX, barra PODER, precarga diferida).
+- **Rollback:** `git revert 309c467^..5df70d1` en `feat-3d` (base previa: `2f70f91`).
