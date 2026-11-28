@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="Generador y reproductor reutilizable de efectos de habilidades multicapa en 4 capas (inspirado en Effekseer CC-0) con cambio JSON en un clic y exportación automática de hoja de sprites PNG/WebP transparente.">
+  <title>MARGOUSH FX Lab · Generador Multicapa y Exportador de Hoja de Sprites</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="css/fx_studio.css">
+</head>
+<body>
+  <div class="studio-shell">
+    <header class="studio-header">
+      <div class="brand-group">
+        <h1 id="title-main">MARGOUSH FX Lab · 4 Capas</h1>
+        <span id="title-sub" class="brand-sub">Arquitectura superpuesta tipo Effekseer CC-0 · JSON 1-clic + Sprite Sheet RGBA</span>
+      </div>
+      <div class="header-actions">
+        <div class="seg-group" role="group" aria-label="Idioma">
+          <button id="lang-es" class="seg-btn is-active" type="button">ES</button>
+          <button id="lang-fr" class="seg-btn" type="button">FR</button>
+        </div>
+        <a id="link-back-game" class="btn" href="./index.html">← MARGOUSH 3D</a>
+      </div>
+    </header>
+
+    <main class="workspace-grid">
+      <!-- Escenario 2D interactivo + Interruptores de las 4 capas -->
+      <section class="panel" aria-labelledby="stage-heading">
+        <div class="panel-head">
+          <h2 id="stage-heading" class="panel-title">Escenario 2D / Minijuego en Tiempo Real</h2>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div class="seg-group" role="group" aria-label="Fondo del escenario">
+              <button id="bg-checker-btn" class="seg-btn is-active" type="button" data-bg="bg-checker">Alfa</button>
+              <button id="bg-night-btn" class="seg-btn" type="button" data-bg="bg-night">Noche</button>
+              <button id="bg-arena-btn" class="seg-btn" type="button" data-bg="bg-arena">Arena</button>
+              <button id="bg-light-btn" class="seg-btn" type="button" data-bg="bg-light">Claro</button>
+            </div>
+            <button id="btn-trigger-fx" class="btn btn-primary" type="button">⚡ Lanzar habilidad</button>
+          </div>
+        </div>
+
+        <div id="stage-container" class="stage-frame bg-checker">
+          <canvas id="stage-canvas" width="768" height="480"></canvas>
+          <div class="stage-hud">
+            <span id="stage-hint" class="stage-badge">Tocá o hacé clic en el escenario para lanzar</span>
+            <span id="stage-metrics" class="stage-badge">60 FPS · 4 capas activas</span>
+          </div>
+        </div>
+
+        <div class="transport-bar">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <button id="btn-autoloop" class="btn is-active" type="button">↻ Bucle auto</button>
+            <button id="btn-dummy" class="btn is-active" type="button">🎯 Silueta guía</button>
+            <div class="seg-group" role="group" aria-label="Velocidad">
+              <button class="seg-btn speed-btn" type="button" data-speed="0.25">0.25×</button>
+              <button class="seg-btn speed-btn" type="button" data-speed="0.5">0.5×</button>
+              <button class="seg-btn speed-btn is-active" type="button" data-speed="1">1×</button>
+            </div>
+          </div>
+          <div class="scrub-wrap">
+            <label for="timeline-scrub" id="scrub-label" class="meta-readout">Cuadro:</label>
+            <input id="timeline-scrub" type="range" min="0" max="100" value="0">
+            <span id="scrub-readout" class="meta-readout">Auto</span>
+          </div>
+        </div>
+
+        <div class="layers-strip" id="layer-controls">
+          <div class="layer-toggle" data-layer-row="core">
+            <label class="layer-label" for="chk-core">
+              <input id="chk-core" type="checkbox" checked data-layer="core">
+              <span>
+                <span data-i18n="layerCore">1. Núcleo brillante</span>
+                <small class="layer-sub" data-i18n="layerCoreSub">Sprite aditivo + destello estelar</small>
+              </span>
+            </label>
+            <button class="solo-btn" type="button" data-solo="core">SOLO</button>
+          </div>
+
+          <div class="layer-toggle" data-layer-row="trail">
+            <label class="layer-label" for="chk-trail">
+              <input id="chk-trail" type="checkbox" checked data-layer="trail">
+              <span>
+                <span data-i18n="layerTrail">2. Estela de trayectoria</span>
+                <small class="layer-sub" data-i18n="layerTrailSub">Cinta Ribbon teselada con caída alfa</small>
+              </span>
+            </label>
+            <button class="solo-btn" type="button" data-solo="trail">SOLO</button>
+          </div>
+
+          <div class="layer-toggle" data-layer-row="shockwave">
+            <label class="layer-label" for="chk-shockwave">
+              <input id="chk-shockwave" type="checkbox" checked data-layer="shockwave">
+              <span>
+                <span data-i18n="layerShock">3. Onda de choque anular</span>
+                <small class="layer-sub" data-i18n="layerShockSub">Anillo Ring con doble curva easing</small>
+              </span>
+            </label>
+            <button class="solo-btn" type="button" data-solo="shockwave">SOLO</button>
+          </div>
+
+          <div class="layer-toggle" data-layer-row="sparks">
+            <label class="layer-label" for="chk-sparks">
+              <input id="chk-sparks" type="checkbox" checked data-layer="sparks">
+              <span>
+                <span data-i18n="layerSparks">4. Chispas y fragmentos</span>
+                <small class="layer-sub" data-i18n="layerSparksSub">Trazos por velocidad + escombros 3D</small>
+              </span>
+            </label>
+            <button class="solo-btn" type="button" data-solo="sparks">SOLO</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Controles JSON en 1 clic: Habilidad, Paleta, Tamaño y Editor JSON -->
+      <aside class="panel control-stack" aria-labelledby="config-heading">
+        <div class="panel-head" style="margin-bottom:2px;">
+          <h2 id="config-heading" class="panel-title">Control Declarativo JSON en 1 Clic</h2>
+          <span id="active-summary" class="meta-readout">astral_cyan · 1.0×</span>
+        </div>
+
+        <div class="control-block">
+          <div class="block-label">
+            <span data-i18n="lblArchetype">Arquetipo de habilidad</span>
+          </div>
+          <div id="preset-buttons" class="preset-grid"></div>
+        </div>
+
+        <div class="control-block">
+          <div class="block-label">
+            <span data-i18n="lblPalette">Paleta de colores (1 clic JSON)</span>
+          </div>
+          <div id="palette-buttons" class="palette-grid"></div>
+        </div>
+
+        <div class="control-block">
+          <div class="block-label">
+            <span data-i18n="lblSize">Tamaño / Escala (1 clic JSON)</span>
+          </div>
+          <div id="size-buttons" class="size-row"></div>
+        </div>
+
+        <div class="control-block">
+          <div class="block-label">
+            <span data-i18n="lblJson">JSON del efecto (editable en vivo)</span>
+            <span id="json-status" class="json-status">JSON válido ✓</span>
+          </div>
+          <textarea id="json-editor" class="json-box" spellcheck="false" aria-label="Configuración JSON del efecto"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="btn-apply-json" class="btn btn-primary" type="button">Aplicar JSON</button>
+            <button id="btn-copy-json" class="btn" type="button">Copiar JSON</button>
+            <button id="btn-reset-preset" class="btn" type="button">Restaurar</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Exportador automático de Hoja de Sprites Transparente + Probador Local -->
+    <section id="sheet-section" class="panel" aria-labelledby="sheet-heading">
+      <div class="panel-head">
+        <div>
+          <h2 id="sheet-heading" class="panel-title">Hoja de Sprites Transparente Auto-Exportada (PNG / WebP)</h2>
+          <span id="sheet-specs" class="meta-readout">1536×384 px · 8×2 (16 cuadros @ 24 FPS) · RGBA transparente · Safari iOS ≤ 2048 px OK</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label class="layer-label" for="chk-grid-overlay" style="font-size:0.78rem;">
+            <input id="chk-grid-overlay" type="checkbox" checked>
+            <span data-i18n="lblShowGrid">Guías de celdas</span>
+          </label>
+          <div class="seg-group" role="group" aria-label="Cantidad de cuadros">
+            <button class="seg-btn frames-btn" type="button" data-frames="12">12f</button>
+            <button class="seg-btn frames-btn is-active" type="button" data-frames="16">16f</button>
+            <button class="seg-btn frames-btn" type="button" data-frames="24">24f</button>
+          </div>
+          <a id="btn-download-png" class="btn btn-primary" download="skill_sheet.png" href="#">⬇ Descargar PNG transparente</a>
+          <button id="btn-download-webp" class="btn" type="button">⬇ WebP</button>
+          <button id="btn-copy-manifest" class="btn" type="button">📋 Copiar manifest.json</button>
+        </div>
+      </div>
+
+      <div class="sheet-workbench">
+        <div id="atlas-viewport" class="atlas-viewport bg-checker">
+          <div class="atlas-stage-inner">
+            <img id="atlas-preview-img" alt="Previsualización de la hoja de sprites con fondo transparente">
+            <canvas id="atlas-grid-overlay"></canvas>
+          </div>
+        </div>
+
+        <div class="sheet-tester-box">
+          <div class="block-label">
+            <span data-i18n="lblSheetTester">Prueba del PNG exportado</span>
+            <span id="sheet-frame-counter" class="meta-readout">F01 / 16</span>
+          </div>
+          <div id="tester-canvas-wrap" class="tester-canvas-wrap bg-checker">
+            <canvas id="sheet-player-canvas" width="220" height="220"></canvas>
+          </div>
+          <pre id="manifest-preview" class="manifest-snippet"></pre>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import {
+      SKILL_PALETTES,
+      SKILL_SIZES,
+      SKILL_PRESETS,
+      SkillFxSystem,
+      SpriteSheetPlayer,
+      renderSkillFrame
+    } from './js/skill_fx.js';
+
+    const I18N = {
+      es: {
+        titleMain: 'MARGOUSH FX Lab · 4 Capas',
+        titleSub: 'Arquitectura superpuesta tipo Effekseer CC-0 · JSON 1-clic + Sprite Sheet RGBA',
+        stageHeading: 'Escenario 2D / Minijuego en Tiempo Real',
+        trigger: '⚡ Lanzar habilidad',
+        hint: 'Tocá o hacé clic en el escenario para lanzar',
+        autoloop: '↻ Bucle auto',
+        dummy: '🎯 Silueta guía',
+        scrubLabel: 'Cuadro:',
+        layerCore: '1. Núcleo brillante',
+        layerCoreSub: 'Sprite aditivo + destello estelar',
+        layerTrail: '2. Estela de trayectoria',
+        layerTrailSub: 'Cinta Ribbon teselada con caída alfa',
+        layerShock: '3. Onda de choque anular',
+        layerShockSub: 'Anillo Ring con doble curva easing',
+        layerSparks: '4. Chispas y fragmentos',
+        layerSparksSub: 'Trazos por velocidad + escombros 3D',
+        configHeading: 'Control Declarativo JSON en 1 Clic',
+        lblArchetype: 'Arquetipo de habilidad',
+        lblPalette: 'Paleta de colores (1 clic JSON)',
+        lblSize: 'Tamaño / Escala (1 clic JSON)',
+        lblJson: 'JSON del efecto (editable en vivo)',
+        applyJson: 'Aplicar JSON',
+        copyJson: 'Copiar JSON',
+        resetPreset: 'Restaurar',
+        sheetHeading: 'Hoja de Sprites Transparente Auto-Exportada (PNG / WebP)',
+        lblShowGrid: 'Guías de celdas',
+        downloadPng: '⬇ Descargar PNG transparente',
+        lblSheetTester: 'Prueba del PNG exportado',
+        jsonOk: 'JSON válido ✓',
+        copied: '¡Copiado!'
+      },
+      fr: {
+        titleMain: 'MARGOUSH FX Lab · 4 Couches',
+        titleSub: 'Architecture multicouche inspirée d’Effekseer CC-0 · JSON 1-clic + Sprite Sheet RGBA',
+        stageHeading: 'Scène 2D / Mini-jeu en Temps Réel',
+        trigger: '⚡ Lancer la compétence',
+        hint: 'Touchez ou cliquez sur la scène pour lancer',
+        autoloop: '↻ Boucle auto',
+        dummy: '🎯 Cible repère',
+        scrubLabel: 'Image :',
+        layerCore: '1. Noyau brillant',
+        layerCoreSub: 'Sprite additif + éclat stellaire',
+        layerTrail: '2. Traînée de trajectoire',
+        layerTrailSub: 'Ruban Ribbon tessellé à fondu alpha',
+        layerShock: '3. Onde de choc annulaire',
+        layerShockSub: 'Anneau Ring à double courbe easing',
+        layerSparks: '4. Étincelles et fragments',
+        layerSparksSub: 'Traits vélocité + éclats 3D',
+        configHeading: 'Contrôle Déclaratif JSON en 1 Clic',
+        lblArchetype: 'Archétype de compétence',
+        lblPalette: 'Palette de couleurs (1 clic JSON)',
+        lblSize: 'Taille / Échelle (1 clic JSON)',
+        lblJson: 'JSON de l’effet (éditable en direct)',
+        applyJson: 'Appliquer JSON',
+        copyJson: 'Copier JSON',
+        resetPreset: 'Réinitialiser',
+        sheetHeading: 'Feuille de Sprites Transparente Auto-Exportée (PNG / WebP)',
+        lblShowGrid: 'Grille des cellules',
+        downloadPng: '⬇ Télécharger PNG transparent',
+        lblSheetTester: 'Test du PNG exporté',
+        jsonOk: 'JSON valide ✓',
+        copied: 'Copié !'
+      }
+    };
+
+    let lang = 'es';
+    let currentPresetId = 'effekseer_astral_slash';
+    let autoLoop = true;
+    let showDummy = true;
+    let speedScale = 1.0;
+    let scrubNorm = null;
+    let soloLayer = null;
+    let currentSheetFrames = 16;
+    let currentBlobUrl = null;
+    let latestBaked = null;
+    let loopCooldown = 0;
+    let facingToggle = 1;
+    let bakeTimer = 0;
+
+    const stageCanvas = document.getElementById('stage-canvas');
+    const stageCtx = stageCanvas.getContext('2d');
+    const stageContainer = document.getElementById('stage-container');
+    const testerWrap = document.getElementById('tester-canvas-wrap');
+    const atlasViewport = document.getElementById('atlas-viewport');
+    const playerCanvas = document.getElementById('sheet-player-canvas');
+    const playerCtx = playerCanvas.getContext('2d');
+    const atlasImg = document.getElementById('atlas-preview-img');
+    const gridCanvas = document.getElementById('atlas-grid-overlay');
+    const jsonEditor = document.getElementById('json-editor');
+    const jsonStatus = document.getElementById('json-status');
+    const downloadPngLink = document.getElementById('btn-download-png');
+
+    const sheetPlayer = new SpriteSheetPlayer(null, null);
+
+    const fxSystem = new SkillFxSystem(SKILL_PRESETS[currentPresetId], {
+      maxInstances: 24,
+      onChange: () => scheduleAutoBake()
+    });
+
+    // Exponer API en window para pruebas automatizadas E2E y depuración local
+    window.__skillFxLab = { fxSystem, sheetPlayer, getLatestBaked: () => latestBaked };
+
+    function renderControlButtons() {
+      const presetWrap = document.getElementById('preset-buttons');
+      presetWrap.innerHTML = '';
+      for (const [id, preset] of Object.entries(SKILL_PRESETS)) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'preset-btn' + (id === currentPresetId ? ' is-active' : '');
+        b.dataset.preset = id;
+        b.textContent = preset.name[lang] || preset.name.es;
+        b.addEventListener('click', () => {
+          currentPresetId = id;
+          const fresh = JSON.parse(JSON.stringify(SKILL_PRESETS[id]));
+          fresh.sheet.frames = currentSheetFrames;
+          fxSystem.setConfig(fresh);
+          syncUiFromSystem();
+          triggerCenterBurst();
+        });
+        presetWrap.appendChild(b);
+      }
+
+      const palWrap = document.getElementById('palette-buttons');
+      palWrap.innerHTML = '';
+      const activePal = fxSystem.compiled.palette.id;
+      for (const [id, pal] of Object.entries(SKILL_PALETTES)) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'palette-chip' + (id === activePal ? ' is-active' : '');
+        b.dataset.palette = id;
+        b.innerHTML = `
+          <span class="swatch-bar" aria-hidden="true">
+            <i style="background:${pal.core}"></i>
+            <i style="background:${pal.primary}"></i>
+            <i style="background:${pal.secondary}"></i>
+            <i style="background:${pal.debris}"></i>
+          </span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pal.label[lang] || pal.label.es}</span>
+        `;
+        b.addEventListener('click', () => {
+          fxSystem.setPalette(id);
+          syncUiFromSystem();
+          triggerCenterBurst();
+        });
+        palWrap.appendChild(b);
+      }
+
+      const sizeWrap = document.getElementById('size-buttons');
+      sizeWrap.innerHTML = '';
+      const activeSize = fxSystem.compiled.size.id;
+      for (const [id, sz] of Object.entries(SKILL_SIZES)) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'size-btn' + (id === activeSize ? ' is-active' : '');
+        b.dataset.size = id;
+        b.textContent = `${id.toUpperCase()} ${sz.scale}×`;
+        b.addEventListener('click', () => {
+          fxSystem.setSize(id);
+          syncUiFromSystem();
+          triggerCenterBurst();
+        });
+        sizeWrap.appendChild(b);
+      }
+    }
+
+    function syncUiFromSystem() {
+      const c = fxSystem.compiled;
+      document.getElementById('active-summary').textContent = `${c.palette.id} · ${c.scale}× · ${c.duration}s`;
+      jsonEditor.value = JSON.stringify(fxSystem.toJSON(), null, 2);
+      jsonStatus.textContent = I18N[lang].jsonOk;
+      jsonStatus.classList.remove('is-error');
+      renderControlButtons();
+    }
+
+    function scheduleAutoBake() {
+      clearTimeout(bakeTimer);
+      bakeTimer = setTimeout(runAutoBake, 20);
+    }
+
+    async function runAutoBake() {
+      const baked = fxSystem.bakeSheet({ frames: currentSheetFrames });
+      latestBaked = baked;
+      sheetPlayer.setSheet(baked);
+
+      const m = baked.meta;
+      document.getElementById('sheet-specs').textContent =
+        `${m.w}×${m.h} px · ${m.cols}×${m.rows} (${m.frames}f @ ${m.fps} FPS, celda ${m.cellW}px) · RGBA transparente · Safari iOS ≤ 2048 px OK`;
+      document.getElementById('manifest-preview').textContent = JSON.stringify(baked.manifestEntry, null, 2);
+
+      const blob = await baked.toBlob('image/png');
+      if (blob) {
+        if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+        currentBlobUrl = URL.createObjectURL(blob);
+        atlasImg.src = currentBlobUrl;
+        downloadPngLink.href = currentBlobUrl;
+        downloadPngLink.download = m.file;
+      } else {
+        const url = baked.toDataURL('image/png');
+        atlasImg.src = url;
+        downloadPngLink.href = url;
+        downloadPngLink.download = m.file;
+      }
+
+      drawGridOverlay(m);
+    }
+
+    function drawGridOverlay(meta) {
+      gridCanvas.width = meta.w;
+      gridCanvas.height = meta.h;
+      const g = gridCanvas.getContext('2d');
+      g.clearRect(0, 0, meta.w, meta.h);
+      if (!document.getElementById('chk-grid-overlay').checked) return;
+
+      g.strokeStyle = 'rgba(255, 212, 59, 0.28)';
+      g.lineWidth = 1;
+      g.font = '700 12px "JetBrains Mono", monospace';
+      g.fillStyle = 'rgba(255, 212, 59, 0.78)';
+
+      for (let i = 0; i < meta.frames; i++) {
+        const col = i % meta.cols;
+        const row = Math.floor(i / meta.cols);
+        const x = col * meta.cellW;
+        const y = row * meta.cellH;
+        g.strokeRect(x + 0.5, y + 0.5, meta.cellW - 1, meta.cellH - 1);
+        g.fillText(`F${String(i + 1).padStart(2, '0')}`, x + 6, y + 16);
+      }
+    }
+
+    function triggerCenterBurst() {
+      scrubNorm = null;
+      document.getElementById('scrub-readout').textContent = 'Auto';
+      fxSystem.clear();
+      const slot = fxSystem.spawn(stageCanvas.width * 0.5, stageCanvas.height * 0.52, { facing: facingToggle });
+      slot.t = slot.compiled.duration * 0.05;
+      facingToggle *= -1;
+      loopCooldown = fxSystem.compiled.duration * 0.92;
+    }
+
+    // Interacción táctil y ratón sobre el escenario 2D
+    stageCanvas.addEventListener('pointerdown', (ev) => {
+      const rect = stageCanvas.getBoundingClientRect();
+      const x = ((ev.clientX - rect.left) / rect.width) * stageCanvas.width;
+      const y = ((ev.clientY - rect.top) / rect.height) * stageCanvas.height;
+      scrubNorm = null;
+      document.getElementById('scrub-readout').textContent = 'Auto';
+      fxSystem.spawn(x, y, { facing: x >= stageCanvas.width * 0.5 ? 1 : -1 });
+      loopCooldown = fxSystem.compiled.duration * 1.1;
+    });
+
+    document.getElementById('btn-trigger-fx').addEventListener('click', triggerCenterBurst);
+
+    document.getElementById('btn-autoloop').addEventListener('click', (e) => {
+      autoLoop = !autoLoop;
+      e.currentTarget.classList.toggle('is-active', autoLoop);
+    });
+
+    document.getElementById('btn-dummy').addEventListener('click', (e) => {
+      showDummy = !showDummy;
+      e.currentTarget.classList.toggle('is-active', showDummy);
+    });
+
+    for (const btn of document.querySelectorAll('[data-bg]')) {
+      btn.addEventListener('click', () => {
+        for (const b of document.querySelectorAll('[data-bg]')) b.classList.remove('is-active');
+        btn.classList.add('is-active');
+        const cls = btn.dataset.bg;
+        for (const el of [stageContainer, testerWrap, atlasViewport]) {
+          el.classList.remove('bg-checker', 'bg-night', 'bg-arena', 'bg-light');
+          el.classList.add(cls);
+        }
+      });
+    }
+
+    for (const btn of document.querySelectorAll('.speed-btn')) {
+      btn.addEventListener('click', () => {
+        for (const b of document.querySelectorAll('.speed-btn')) b.classList.remove('is-active');
+        btn.classList.add('is-active');
+        speedScale = Number(btn.dataset.speed) || 1;
+      });
+    }
+
+    for (const btn of document.querySelectorAll('.frames-btn')) {
+      btn.addEventListener('click', () => {
+        for (const b of document.querySelectorAll('.frames-btn')) b.classList.remove('is-active');
+        btn.classList.add('is-active');
+        currentSheetFrames = Number(btn.dataset.frames) || 16;
+        fxSystem.applyJson({ sheet: { frames: currentSheetFrames } });
+        syncUiFromSystem();
+      });
+    }
+
+    document.getElementById('timeline-scrub').addEventListener('input', (e) => {
+      scrubNorm = Number(e.target.value) / 100;
+      document.getElementById('scrub-readout').textContent = `${Math.round(scrubNorm * 100)}%`;
+    });
+
+    // Interruptores de las 4 capas + modo SOLO
+    for (const chk of document.querySelectorAll('[data-layer]')) {
+      chk.addEventListener('change', () => {
+        soloLayer = null;
+        for (const sb of document.querySelectorAll('[data-solo]')) sb.classList.remove('is-solo');
+        const layer = chk.dataset.layer;
+        fxSystem.setLayerEnabled(layer, chk.checked);
+        document.querySelector(`[data-layer-row="${layer}"]`).classList.toggle('is-muted', !chk.checked);
+      });
+    }
+
+    for (const sb of document.querySelectorAll('[data-solo]')) {
+      sb.addEventListener('click', () => {
+        const target = sb.dataset.solo;
+        soloLayer = (soloLayer === target) ? null : target;
+        for (const b of document.querySelectorAll('[data-solo]')) {
+          b.classList.toggle('is-solo', b.dataset.solo === soloLayer);
+        }
+        for (const layer of ['core', 'trail', 'shockwave', 'sparks']) {
+          const on = soloLayer ? (layer === soloLayer) : true;
+          document.querySelector(`[data-layer="${layer}"]`).checked = on;
+          document.querySelector(`[data-layer-row="${layer}"]`).classList.toggle('is-muted', !on);
+          fxSystem.layerMask[layer] = on;
+        }
+        scheduleAutoBake();
+      });
+    }
+
+    document.getElementById('chk-grid-overlay').addEventListener('change', () => {
+      if (latestBaked) drawGridOverlay(latestBaked.meta);
+    });
+
+    document.getElementById('btn-apply-json').addEventListener('click', () => {
+      try {
+        const parsed = JSON.parse(jsonEditor.value);
+        fxSystem.setConfig(parsed);
+        syncUiFromSystem();
+        triggerCenterBurst();
+      } catch (err) {
+        jsonStatus.textContent = 'Error JSON: ' + err.message;
+        jsonStatus.classList.add('is-error');
+      }
+    });
+
+    document.getElementById('btn-copy-json').addEventListener('click', async (e) => {
+      await navigator.clipboard?.writeText(jsonEditor.value);
+      const prev = e.currentTarget.textContent;
+      e.currentTarget.textContent = I18N[lang].copied;
+      setTimeout(() => { e.currentTarget.textContent = prev; }, 1100);
+    });
+
+    document.getElementById('btn-reset-preset').addEventListener('click', () => {
+      const fresh = JSON.parse(JSON.stringify(SKILL_PRESETS[currentPresetId]));
+      fresh.sheet.frames = currentSheetFrames;
+      fxSystem.setConfig(fresh);
+      syncUiFromSystem();
+      triggerCenterBurst();
+    });
+
+    document.getElementById('btn-download-webp').addEventListener('click', async () => {
+      if (!latestBaked) return;
+      const blob = await latestBaked.toBlob('image/webp', 0.92);
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = latestBaked.meta.file.replace(/\.png$/, '.webp');
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    });
+
+    document.getElementById('btn-copy-manifest').addEventListener('click', async (e) => {
+      if (!latestBaked) return;
+      await navigator.clipboard?.writeText(JSON.stringify(latestBaked.manifestEntry, null, 2));
+      const prev = e.currentTarget.textContent;
+      e.currentTarget.textContent = I18N[lang].copied;
+      setTimeout(() => { e.currentTarget.textContent = prev; }, 1100);
+    });
+
+    function applyLanguage(nextLang) {
+      lang = nextLang;
+      document.documentElement.lang = lang;
+      document.getElementById('lang-es').classList.toggle('is-active', lang === 'es');
+      document.getElementById('lang-fr').classList.toggle('is-active', lang === 'fr');
+      const t = I18N[lang];
+      document.getElementById('title-main').textContent = t.titleMain;
+      document.getElementById('title-sub').textContent = t.titleSub;
+      document.getElementById('stage-heading').textContent = t.stageHeading;
+      document.getElementById('btn-trigger-fx').textContent = t.trigger;
+      document.getElementById('stage-hint').textContent = t.hint;
+      document.getElementById('btn-autoloop').textContent = t.autoloop;
+      document.getElementById('btn-dummy').textContent = t.dummy;
+      document.getElementById('scrub-label').textContent = t.scrubLabel;
+      document.getElementById('config-heading').textContent = t.configHeading;
+      document.getElementById('btn-apply-json').textContent = t.applyJson;
+      document.getElementById('btn-copy-json').textContent = t.copyJson;
+      document.getElementById('btn-reset-preset').textContent = t.resetPreset;
+      document.getElementById('sheet-heading').textContent = t.sheetHeading;
+      downloadPngLink.textContent = t.downloadPng;
+      for (const el of document.querySelectorAll('[data-i18n]')) {
+        const k = el.dataset.i18n;
+        if (t[k]) el.textContent = t[k];
+      }
+      syncUiFromSystem();
+    }
+
+    document.getElementById('lang-es').addEventListener('click', () => applyLanguage('es'));
+    document.getElementById('lang-fr').addEventListener('click', () => applyLanguage('fr'));
+
+    function drawStageDummy(ctx, cx, cy) {
+      ctx.save();
+      // Sombra elíptica de referencia estilo MARGOUSH 2.5D
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 44, 38, 13, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Silueta maniquí de impacto
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.arc(cx, cy - 30, 16, 0, Math.PI * 2);
+      ctx.moveTo(cx, cy - 14);
+      ctx.lineTo(cx, cy + 28);
+      ctx.moveTo(cx - 22, cy + 2);
+      ctx.lineTo(cx + 22, cy + 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    let prevNow = performance.now();
+    let fpsSmooth = 60;
+
+    function tick(now) {
+      const rawDt = Math.min(0.05, Math.max(0.001, (now - prevNow) / 1000));
+      prevNow = now;
+      fpsSmooth = fpsSmooth * 0.92 + (1 / rawDt) * 0.08;
+      const dt = rawDt * speedScale;
+
+      stageCtx.clearRect(0, 0, stageCanvas.width, stageCanvas.height);
+      const cx = stageCanvas.width * 0.5;
+      const cy = stageCanvas.height * 0.52;
+      if (showDummy) drawStageDummy(stageCtx, cx, cy);
+
+      if (scrubNorm !== null) {
+        renderSkillFrame(stageCtx, fxSystem.compiled, scrubNorm, {
+          x: cx,
+          y: cy,
+          facing: 1,
+          layerMask: fxSystem.layerMask
+        });
+      } else {
+        if (autoLoop) {
+          loopCooldown -= dt;
+          if (loopCooldown <= 0 && fxSystem.activeCount === 0) {
+            fxSystem.spawn(cx, cy, { facing: facingToggle });
+            facingToggle *= -1;
+            loopCooldown = 0.14;
+          }
+        }
+        fxSystem.update(dt);
+        fxSystem.render(stageCtx);
+      }
+
+      const activeLayers = Object.values(fxSystem.layerMask).filter(Boolean).length;
+      document.getElementById('stage-metrics').textContent =
+        `${Math.round(fpsSmooth)} FPS · ${activeLayers}/4 capas · ${fxSystem.activeCount} inst.`;
+
+      // Reproductor lateral que dibuja directamente desde el canvas/PNG exportado
+      playerCtx.clearRect(0, 0, playerCanvas.width, playerCanvas.height);
+      if (latestBaked) {
+        if (scrubNorm !== null) {
+          sheetPlayer.time = scrubNorm * (latestBaked.meta.frames / latestBaked.meta.fps) * 0.999;
+        } else {
+          sheetPlayer.update(dt);
+        }
+        const fit = Math.min(1, 196 / latestBaked.meta.cellW);
+        sheetPlayer.draw(playerCtx, playerCanvas.width * 0.5, playerCanvas.height * 0.5, { scale: fit });
+        document.getElementById('sheet-frame-counter').textContent =
+          `F${String(sheetPlayer.frameIndex + 1).padStart(2, '0')} / ${latestBaked.meta.frames}`;
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    syncUiFromSystem();
+    runAutoBake().then(() => {
+      triggerCenterBurst();
+      requestAnimationFrame(tick);
+    });
+  </script>
+</body>
+</html>

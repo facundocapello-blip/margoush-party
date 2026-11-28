@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Configuración declarativa JSON de habilidades en 4 capas (inspirado en Effekseer CC-0) para cambio rápido de paleta y escala.",
+  "defaultPreset": "effekseer_astral_slash",
+  "quickOverrides": {
+    "palettes": ["astral_cyan", "solar_gold", "emerald_ivy", "electric_padel", "amber_oven", "heroic_coral", "crimson_flare"],
+    "sizes": {
+      "xs": 0.5,
+      "sm": 0.75,
+      "md": 1.0,
+      "lg": 1.35,
+      "xl": 1.75
+    }
+  },
+  "exampleOneClickPatch": {
+    "palette": "solar_gold",
+    "size": "lg"
+  }
+}
