@@ -699,6 +699,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
       dispose,
       syncBar: () => { lastBarHp = logic.state.hp; lastBarPhase = logic.state.phase; setBar(); setBarName(); },
       get state() { return logic.state; },
+      get skillFx() { return skillFx; },
       get heroPose() { return heroPose; },
       get bossKey() { return bossKey; }
     };
@@ -713,6 +714,7 @@ export function createLaleArena({ game, input, audio, assets, renderer, updateHu
     syncBar: () => cur?.syncBar(),
     get active() { return !!cur; },
     get logic() { return cur?.logic || null; },
-    get state() { return cur?.state || null; }
+    get state() { return cur?.state || null; },
+    get skillFx() { return cur?.skillFx || null; }
   };
 }

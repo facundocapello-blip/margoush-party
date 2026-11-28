@@ -32,10 +32,19 @@ try {
     mod.start();
     // Renderizar varios cuadros para que Three.js suba las geometrías/texturas a GPU
     for (let i = 0; i < 6; i++) { mod.update(0.05); mod.render(); }
+    // Pool de FX multicapa de la arena: disparar 4 presets y renderizar para que sus texturas suban a GPU
+    // (si no se dispara nada, el pool nunca sube nada y esta prueba no lo vería)
+    const pool = mod.skillFx || null;
+    let poolPeak = null;
+    if (pool) {
+      for (const id of ['douge_truth_slam', 'cepi_golden_smash', 'lale_oven_flare', 'margot_hero_cry']) pool.play(id, { x: 0, y: 1.6, z: -2 }, { worldSize: 3 });
+      for (let i = 0; i < 3; i++) { mod.update(0.05); mod.render(); }
+      poolPeak = { tex: pool.textureCount, active: pool.activeCount };
+    }
     const peak = g.memory();
     mod.dispose();
     const after = g.memory();
-    return { before, peak, after };
+    return { before, peak, after, poolPeak, poolAfter: pool ? { tex: pool.textureCount, active: pool.activeCount } : null };
   }, name);
 
   const modes = ['chaky', 'cepi', 'lale', 'pinky', 'facu', 'chase', 'byd'];
@@ -57,6 +66,11 @@ try {
     const dt = r.after.textures - r.before.textures;
     console.log(`[pass2] ${m}: geo ${r.before.geometries}->${r.peak.geometries}->${r.after.geometries} (d=${dg}), tex ${r.before.textures}->${r.peak.textures}->${r.after.textures} (d=${dt})`);
     if (dg > 0 || dt > 0) leaks.push(`${m}(geo+${dg},tex+${dt})`);
+    if (r.poolPeak) {
+      console.log(`        pool FX: texturas ${r.poolPeak.tex} activos ${r.poolPeak.active} -> al salir ${r.poolAfter.tex}/${r.poolAfter.active}`);
+      if (r.poolPeak.tex < 4 || r.poolPeak.active < 1) leaks.push(`${m}(el pool no llegó a subir sus texturas: ${r.poolPeak.tex} tex, ${r.poolPeak.active} activos)`);
+      if (r.poolAfter.tex !== 0 || r.poolAfter.active !== 0) leaks.push(`${m}(pool FX retiene ${r.poolAfter.tex} tex / ${r.poolAfter.active} activos tras dispose)`);
+    }
   }
 
   const end = await G(page, () => window.__game.memory());
