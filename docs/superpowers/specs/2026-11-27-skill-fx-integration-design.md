@@ -92,3 +92,9 @@ Encapsula `createSkillFxPool(THREE, scene, camera, { maxActive = 8 })`:
 - Ajuste fino de `worldSize`, altura `y` y `z`-offset (+0.35 / +0.5) en cada arena para que el plano aditivo nunca haga z-fighting con el sprite del personaje ni tape los carteles de fase.
 - Decidir si `preload()` de los 2–3 presets de cada arena corre al crear la arena o de forma perezosa en el primer uso (recomendado: `preload` en la creación de la arena para 0 ms de latencia en el primer golpe).
 - Verificar con la suite existente (`attackfx.e2e.mjs`, fugas WebGL R-2 y pruebas de arenas) y agregar verificación puntual de que los bursts se disparan y se limpian sin fugas.
+
+## Decisiones tomadas en la implementación (actualizado 2026-11-28)
+- **Blending:** se usa `NormalBlending` con `depthTest:false` y `renderOrder` alto en lugar de `AdditiveBlending`; el aditivo lavaba los colores sobre fondos claros (piso de Lale, galería). Consecuencia: el efecto se dibuja delante de todo, así que no debe salir grande delante del jefe mientras hay un ataque avisado.
+- **Geometría:** una `PlaneGeometry` por slot del pool (no una compartida), porque cada slot cambia sus UV al avanzar de cuadro. El costo es fijo (máx. 10 en la calle, 6 por arena).
+- **Hit-stop:** se acepta un congelado de 0,085 s al usar el poder en las 4 arenas, como excepción a «no cambiar timings».
+- **Pendiente:** pasar `facing` desde `powers.js` y las arenas, respetar movimiento reducido y E2E de bursts y fugas.

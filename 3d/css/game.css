@@ -74,25 +74,35 @@ body.has-screen #offscreen, body.chasing #offscreen { visibility: hidden; }
   #joystick { left: max(26px, calc(18px + var(--safe-l))); bottom: calc(18px + var(--safe-b)); }
   #actions { right: max(22px, calc(18px + var(--safe-r))); bottom: calc(14px + var(--safe-b)); }
 }
-.act { position: absolute; display: grid; place-items: center; align-content: center; gap: 1px; pointer-events: auto; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.55); background: rgba(40, 30, 80, 0.72); color: #fff; font-weight: 900; box-shadow: 0 4px 10px #0007; transition: transform 0.08s ease-out; }
-.act small { font-size: 12px; letter-spacing: 0.5px; line-height: 1; }
-.act svg.ico { width: 26px; height: 26px; fill: currentColor; stroke: currentColor; stroke-width: 0; }
+.act { position: absolute; display: grid; place-items: center; align-content: center; gap: 2px; pointer-events: auto; border-radius: 50%;
+  border: 2.5px solid var(--btn-rim, rgba(255, 255, 255, 0.6));
+  background: radial-gradient(circle at 34% 26%, #3d2f72 0%, #241a4a 55%, #160f30 100%);
+  color: var(--btn-ink, #fff); font-weight: 900;
+  box-shadow: 0 5px 12px rgba(8, 4, 20, 0.55), inset 0 2px 0 rgba(255, 255, 255, 0.14), inset 0 -4px 8px rgba(0, 0, 0, 0.35);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out; }
+.act small { font-size: 12px; letter-spacing: 0.6px; line-height: 1; color: #fff; text-shadow: 0 1px 2px #000; }
+.act svg.ico { width: 26px; height: 26px; fill: currentColor; stroke: currentColor; stroke-width: 0; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
 #act-dodge svg.ico { fill: none; stroke-width: 2.4; stroke-linecap: round; }
-.act.pressed { transform: scale(0.92); }
-#act-attack { width: 98px; height: 98px; right: 0; bottom: 0; font-size: 42px; background: rgba(255, 124, 143, 0.66); }
-#act-attack .ico { line-height: 1; }
-#act-jump { width: 76px; height: 76px; right: 110px; bottom: 4px; background: rgba(126, 224, 195, 0.62); color: #10241e; }
-#act-dodge { width: 76px; height: 76px; right: 10px; bottom: 110px; background: rgba(150, 190, 255, 0.6); color: #10183a; }
+.act.pressed { transform: scale(0.92); box-shadow: 0 2px 6px rgba(8, 4, 20, 0.55), inset 0 3px 8px rgba(0, 0, 0, 0.45); }
+/* Golpe: el botón principal, macizo y cálido; se lee sobre la cancha azul, la alfombra roja y el piso claro */
+#act-attack { width: 98px; height: 98px; right: 0; bottom: 0; font-size: 42px; --btn-rim: #2a1640;
+  background: radial-gradient(circle at 34% 26%, #ff9a6b 0%, #f2573f 48%, #b8283a 100%);
+  box-shadow: 0 0 0 2.5px rgba(255, 236, 200, 0.85), 0 6px 14px rgba(8, 4, 20, 0.6), inset 0 3px 0 rgba(255, 255, 255, 0.28), inset 0 -6px 10px rgba(90, 10, 30, 0.45); }
+#act-attack.pressed { box-shadow: 0 0 0 2.5px rgba(255, 236, 200, 0.85), 0 2px 6px rgba(8, 4, 20, 0.6), inset 0 4px 10px rgba(90, 10, 30, 0.55); }
+#act-attack .ico { line-height: 1; filter: drop-shadow(0 2px 2px rgba(60, 0, 20, 0.55)); }
+/* Salto y esquive: oscuros como el HUD, con el color de la acción en el borde y el ícono */
+#act-jump { width: 76px; height: 76px; right: 110px; bottom: 4px; --btn-rim: #7ee0c3; --btn-ink: #9ff2d6; }
+#act-dodge { width: 76px; height: 76px; right: 10px; bottom: 110px; --btn-rim: #8fc1ff; --btn-ink: #b5d6ff; }
 #act-dodge small { font-size: 11px; letter-spacing: 0; }
 /* Anillo de poder alrededor del 👊: se llena pegando; lleno, late y dice "mantené" */
 #act-attack .ring { position: absolute; inset: -7px; border-radius: 50%; pointer-events: none;
   background: conic-gradient(var(--gold) calc(var(--pw, 0) * 360deg), rgba(255, 255, 255, 0.14) 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px)); }
-#act-attack.ready { border-color: var(--gold); animation: power-ready 0.9s ease-in-out infinite; }
+#act-attack.ready { border-color: var(--gold); --btn-rim: var(--gold); animation: power-ready 0.9s ease-in-out infinite; }
 #act-attack.ready::after { content: attr(data-ready); position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 1px 3px #000; letter-spacing: 0.5px; white-space: nowrap; }
 #act-attack.ready .ico { transform: translateY(-7px); }
 #act-attack.charging .ring { background: conic-gradient(#fff calc(var(--hold, 0) * 360deg), var(--gold) 0); }
-@keyframes power-ready { 0%, 100% { box-shadow: 0 4px 10px #0007, 0 0 0 0 rgba(255, 211, 110, 0.7); } 50% { box-shadow: 0 4px 10px #0007, 0 0 0 10px rgba(255, 211, 110, 0); } }
+@keyframes power-ready { 0%, 100% { box-shadow: 0 6px 14px rgba(8, 4, 20, 0.6), inset 0 3px 0 rgba(255, 255, 255, 0.28), inset 0 -6px 10px rgba(90, 10, 30, 0.45), 0 0 0 0 rgba(255, 211, 110, 0.75); } 50% { box-shadow: 0 6px 14px rgba(8, 4, 20, 0.6), inset 0 3px 0 rgba(255, 255, 255, 0.28), inset 0 -6px 10px rgba(90, 10, 30, 0.45), 0 0 0 12px rgba(255, 211, 110, 0); } }
 
 /* Celu parado: carteles arriba de los botones y barra del jefe debajo del HUD */
 body.portrait #banner { top: calc(150px + var(--safe-t)); max-width: 88vw; }
